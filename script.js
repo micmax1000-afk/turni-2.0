@@ -415,11 +415,6 @@ function inizializza(){
     if(p && p.hidden) apriPannelloColori();
     else p?.scrollIntoView({behavior:'smooth',block:'start'});
   });
-  on('linkColoriTurni','click', (e) => {
-    e.preventDefault();
-    mostraScheda('impostazioni');
-    setTimeout(() => { el('settingsColori')?.click(); }, 80);
-  });
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
   on('settingsDrive','click', () => mostraImpostazioniBackup('sezioneBackupDrive'));
   on('btnChiudiSettingsBackup','click', () => { const p=el('impostazioniBackupPanel'); if(p) p.hidden = true; });

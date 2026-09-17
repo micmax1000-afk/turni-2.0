@@ -77,6 +77,12 @@
   <div class="pannello-turno-inline" id="pannelloTurno" hidden>
       <div class="pannello-turno-header"><h2 id="titoloModaleTurno">Turno del giorno</h2><button class="btn-icona" id="btnChiudiTurno" aria-label="Chiudi">✕</button></div>
       <div class="pannello-turno-corpo">
+        <label class="campo-modale">📋 Servizio svolto
+          <input type="text" id="campoServizioSvolto" placeholder="es. Pattugliamento, Ufficio denunce, Scorta...">
+        </label>
+        <label class="campo-modale nota-giorno-campo">🗒️ Nota del giorno
+          <textarea id="campoNotaGiorno" rows="2" placeholder="Impegni lavorativi o personali da svolgere nella giornata selezionata..."></textarea>
+        </label>
         <label class="campo-modale campo-riga">
           <input type="checkbox" id="campoRiposo"> Giorno di riposo
         </label>
@@ -112,6 +118,9 @@
           <label class="campo-modale">Ora inizio<input type="time" id="campoOraInizio"></label>
           <label class="campo-modale">Ora fine<input type="time" id="campoOraFine"></label>
 
+          <details class="pannello-indennita-straordinario">
+            <summary>+ Aggiungi indennità o straordinario</summary>
+            <div class="pannello-indennita-straordinario-corpo">
           <label class="campo-modale campo-riga">
             <input type="checkbox" id="campoSecondoAttivo"> Rientro / turno spezzato con pausa
           </label>
@@ -189,6 +198,8 @@
             </label>
             <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore (fonte SIULP); sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
           </div>
+            </div>
+          </details>
         </div>
         <div id="anteprimaClassificazione" class="anteprima-classificazione"></div>
       </div>
@@ -275,44 +286,35 @@
 
   <div id="vistaAssenze" hidden>
   <section class="scheda" id="sezioneStrumentiTurni">
-    <h2>Strumenti</h2>
-    <p class="sotto-titolo">Colori, azioni rapide e riepiloghi (in via di riordino nella nuova versione).</p>
+    <h2>Turni</h2>
+    <p class="sotto-titolo">Modelli, sequenza automatica, colori e assenze.</p>
 
     <div class="legenda-colori" id="legendaColoriTurni">
     </div>
-    <a href="#" class="link-colori-turni" id="linkColoriTurni">🎨 Personalizza i colori dei turni</a>
 
-    <div id="prossimoTurnoWidget" class="prossimo-turno-widget" hidden>
-      <span class="prossimo-turno-eyebrow">⏭️ Prossimo turno</span>
-      <div class="prossimo-turno-corpo">
-        <span class="prossimo-turno-icona" id="prossimoTurnoIcona">☀️</span>
-        <div class="prossimo-turno-testo">
-          <strong id="prossimoTurnoLabel">—</strong>
-          <span id="prossimoTurnoOrario">—</span>
-        </div>
-        <span class="prossimo-turno-quando" id="prossimoTurnoQuando">—</span>
-      </div>
+    <p class="strumenti-turni-titolo">Strumenti</p>
+    <div class="lista-strumenti-turni">
+      <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span> Genera turni automaticamente <b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span> Colori turni <b>›</b></button>
     </div>
 
-    <div id="riepilogoTurniV45" class="riepilogo-turni-v45" aria-live="polite">
-      <button type="button" class="riepilogo-turni-v45-titolo" id="riepilogoTurniV45Toggle" aria-expanded="false">
-        <span><strong>Riepilogo mese</strong> <span id="riepilogoTurniV45Mese">—</span></span>
-        <span class="riepilogo-turni-v45-freccia" aria-hidden="true">▾</span>
-      </button>
-      <div class="riepilogo-turni-v45-grid">
-        <div><strong id="v45RtLavoro">0</strong><span>turni</span></div>
-        <div><strong id="v45RtRiposi">0</strong><span>riposi</span></div>
-        <div><strong id="v45RtAssenze">0</strong><span>assenze</span></div>
-        <div><strong id="v45RtStraordinario">0:00</strong><span>straordinario</span></div>
+    <div id="sezioneSequenzaHost" class="impostazioni-sottosezione"></div>
+
+    <div id="pannelloColoriTurni" class="pannello-colori-turni" hidden>
+      <div class="pannello-colori-header">
+        <div>
+          <strong class="pannello-colori-titolo">Colori turni</strong>
+          <p class="sotto-titolo" style="margin:4px 0 0;">Il colore si applica a tutta la casella (turni, riposo e assenze). Tocca il quadrato per cambiare.</p>
+        </div>
+        <button type="button" class="btn-icona" id="btnChiudiColoriTurni" aria-label="Chiudi tavolozza" title="Chiudi">✕</button>
       </div>
-      <div id="riepilogoTurniV45Espanso" class="riepilogo-turni-v45-espanso" hidden>
-        <div><span>🛡️ Missioni</span><strong id="v45RtMissioni">0</strong></div>
-        <div><span>🚓 Servizio esterno</span><strong id="v45RtServizioEsterno">0</strong></div>
-        <div><span>📞 Reperibilità</span><strong id="v45RtReperibilita">0</strong></div>
-        <div><span>🛡 Ordine pubblico</span><strong id="v45RtOrdinePubblico">0</strong></div>
-        <div><span>🍽️ Buoni pasto</span><strong id="v45RtBuoniPasto">0</strong></div>
-        <div><span>🔄 Ore compensate</span><strong id="v45RtOreCompensate">0:00</strong></div>
-        <div><span>⚡ Extra</span><strong id="v45RtExtra">0</strong></div>
+      <div id="corpoColoriTurni"></div>
+      <div class="pannello-colori-azioni">
+        <button class="btn-secondario" id="btnEsportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Esporta colori (Drive)</button>
+        <button class="btn-secondario" id="btnImportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Importa colori (Drive)</button>
+        <input type="file" id="campoImportaColoriTurni" accept="application/json,.json" hidden>
+        <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">↺ Ripristina predefiniti</button>
+        <button class="btn-primario" id="btnChiudiColoriTurni2" type="button">Fatto</button>
       </div>
     </div>
 
@@ -320,12 +322,6 @@
       <div class="azioni-calendario-header">
         <div><strong>⚡ Azioni rapide</strong><span>Prepara rapidamente un'azione per il giorno selezionato.</span></div>
       </div>
-      <label class="campo-modale nota-giorno-campo">🗒️ Nota del giorno
-        <textarea id="campoNotaGiorno" rows="2" placeholder="Impegni lavorativi o personali da svolgere nella giornata selezionata..."></textarea>
-      </label>
-      <label class="campo-modale">📋 Servizio svolto
-        <input type="text" id="campoServizioSvolto" placeholder="es. Pattugliamento, Ufficio denunce, Scorta...">
-      </label>
       <div class="azioni-calendario-grid">
         <label class="campo-modale">➕ Inserisci rapidamente
           <select id="azioneRapidaCalendario">
@@ -555,35 +551,15 @@
     <!-- Sezioni Fase 2: impostazioni / statistiche (stub funzionali) -->
   <div id="vistaImpostazioni" hidden>
     <section class="scheda">
-      <h2>Impostazioni</h2>
+      <h2>Altro</h2>
       <div id="statoConnessioneV23" class="stato-connessione-v23" role="status" aria-live="polite"></div>
       <div class="impostazioni-lista" style="display:flex;flex-direction:column;gap:8px;margin:12px 0;">
         <button type="button" class="btn-secondario" id="settingsAnagrafica">🪪 Anagrafica</button>
         <button type="button" class="btn-secondario" id="settingsTabelle">📊 Tabelle ufficiali</button>
-        <button type="button" class="btn-secondario" id="settingsColori">🎨 Colori turni</button>
         <button type="button" class="btn-secondario" id="settingsBackup">💾 Backup locale</button>
         <button type="button" class="btn-secondario" id="settingsDrive">☁ Backup Drive</button>
-        <button type="button" class="btn-secondario" id="settingsSequenza">🔁 Sequenza automatica dei turni</button>
         <button type="button" class="btn-secondario" id="btnInstallaAppV23" hidden>📲 Installa l'app</button>
       </div>
-      <div id="pannelloColoriTurni" class="pannello-colori-turni" hidden>
-        <div class="pannello-colori-header">
-          <div>
-            <strong class="pannello-colori-titolo">Colori turni</strong>
-            <p class="sotto-titolo" style="margin:4px 0 0;">Il colore si applica a tutta la casella (turni, riposo e assenze). Tocca il quadrato per cambiare.</p>
-          </div>
-          <button type="button" class="btn-icona" id="btnChiudiColoriTurni" aria-label="Chiudi tavolozza" title="Chiudi">✕</button>
-        </div>
-        <div id="corpoColoriTurni"></div>
-        <div class="pannello-colori-azioni">
-          <button class="btn-secondario" id="btnEsportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Esporta colori (Drive)</button>
-          <button class="btn-secondario" id="btnImportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Importa colori (Drive)</button>
-          <input type="file" id="campoImportaColoriTurni" accept="application/json,.json" hidden>
-          <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">↺ Ripristina predefiniti</button>
-          <button class="btn-primario" id="btnChiudiColoriTurni2" type="button">Fatto</button>
-        </div>
-      </div>
-      <div id="sezioneSequenzaHost" class="impostazioni-sottosezione"></div>
   <section class="scheda" id="sezioneSequenza">
     <div class="intestazione-scheda">
       <h2>🔁 Genera turni automaticamente</h2>
@@ -688,6 +664,43 @@
   </div>
 
   <div id="vistaStatistiche" hidden>
+    <section class="scheda" id="sezioneReportTop">
+      <h2>Report</h2>
+      <div id="prossimoTurnoWidget" class="prossimo-turno-widget" hidden>
+        <span class="prossimo-turno-eyebrow">⏭️ Prossimo turno</span>
+        <div class="prossimo-turno-corpo">
+          <span class="prossimo-turno-icona" id="prossimoTurnoIcona">☀️</span>
+          <div class="prossimo-turno-testo">
+            <strong id="prossimoTurnoLabel">—</strong>
+            <span id="prossimoTurnoOrario">—</span>
+          </div>
+          <span class="prossimo-turno-quando" id="prossimoTurnoQuando">—</span>
+        </div>
+      </div>
+
+      <div id="riepilogoTurniV45" class="riepilogo-turni-v45" aria-live="polite">
+        <button type="button" class="riepilogo-turni-v45-titolo" id="riepilogoTurniV45Toggle" aria-expanded="false">
+          <span><strong>Riepilogo mese</strong> <span id="riepilogoTurniV45Mese">—</span></span>
+          <span class="riepilogo-turni-v45-freccia" aria-hidden="true">▾</span>
+        </button>
+        <div class="riepilogo-turni-v45-grid">
+          <div><strong id="v45RtLavoro">0</strong><span>turni</span></div>
+          <div><strong id="v45RtRiposi">0</strong><span>riposi</span></div>
+          <div><strong id="v45RtAssenze">0</strong><span>assenze</span></div>
+          <div><strong id="v45RtStraordinario">0:00</strong><span>straordinario</span></div>
+        </div>
+        <div id="riepilogoTurniV45Espanso" class="riepilogo-turni-v45-espanso" hidden>
+          <div><span>🛡️ Missioni</span><strong id="v45RtMissioni">0</strong></div>
+          <div><span>🚓 Servizio esterno</span><strong id="v45RtServizioEsterno">0</strong></div>
+          <div><span>📞 Reperibilità</span><strong id="v45RtReperibilita">0</strong></div>
+          <div><span>🛡 Ordine pubblico</span><strong id="v45RtOrdinePubblico">0</strong></div>
+          <div><span>🍽️ Buoni pasto</span><strong id="v45RtBuoniPasto">0</strong></div>
+          <div><span>🔄 Ore compensate</span><strong id="v45RtOreCompensate">0:00</strong></div>
+          <div><span>⚡ Extra</span><strong id="v45RtExtra">0</strong></div>
+        </div>
+      </div>
+    </section>
+
     <section class="scheda" id="sezioneRiepilogo">
       <h2>Riepilogo Ore del Mese</h2>
       <p class="sotto-titolo">Ore riconosciute dal motore in base ai turni inseriti (mese visualizzato nel calendario) — nessun importo, solo classificazione.</p>

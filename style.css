@@ -1422,3 +1422,18 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .riga-modello-freccia{opacity:.4;font-size:1.1rem;flex-shrink:0}
 
 #sezioneStrumentiTurni .dettaglio-giorno{margin-top:18px}
+
+/* Pannello richiudibile "+ Aggiungi indennità o straordinario" nel dettaglio turno */
+.pannello-indennita-straordinario{margin-top:12px;border:1px solid var(--bordo);border-radius:14px;background:var(--carta);overflow:hidden}
+.pannello-indennita-straordinario>summary{cursor:pointer;padding:12px 14px;font-weight:700;font-size:.84rem;color:var(--gallone,#2563eb);list-style:none}
+.pannello-indennita-straordinario>summary::-webkit-details-marker{display:none}
+.pannello-indennita-straordinario-corpo{padding:0 14px 14px;display:flex;flex-direction:column;gap:2px}
+
+/* Lista "Strumenti" nella scheda Turni */
+.strumenti-turni-titolo{margin:16px 0 6px;font-size:.72rem;font-weight:700;color:var(--testo-tenue);text-transform:uppercase;letter-spacing:.04em}
+.lista-strumenti-turni{display:flex;flex-direction:column;border:1px solid var(--bordo);border-radius:14px;overflow:hidden;background:var(--pannello)}
+.riga-strumento-turni{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:0;border-bottom:1px solid var(--bordo);padding:13px 14px;cursor:pointer;text-align:left;font:600 .86rem var(--font-corpo);color:var(--testo)}
+.riga-strumento-turni:last-child{border-bottom:0}
+.riga-strumento-turni:hover{background:var(--carta)}
+.riga-strumento-turni span{font-size:1rem}
+.riga-strumento-turni b{margin-left:auto;font-weight:400;opacity:.4;font-size:1.1rem}
