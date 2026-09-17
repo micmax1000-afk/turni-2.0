@@ -1,0 +1,46 @@
+{
+  "packageId": "turniaccessorio.ps",
+  "host": "micmax1000-afk.github.io",
+  "name": "Turni & Accessorio PS",
+  "launcherName": "Turni PS",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#1B2440",
+  "navigationColor": "#1B2440",
+  "navigationColorDark": "#1B2440",
+  "navigationDividerColor": "#1B2440",
+  "backgroundColor": "#ECEFEA",
+  "enableNotifications": false,
+  "startUrl": "/turni/index.html",
+  "webManifestUrl": "https://micmax1000-afk.github.io/turni/manifest.json",
+  "iconUrl": "https://micmax1000-afk.github.io/turni/icons/icon-512.png",
+  "maskableIconUrl": "https://micmax1000-afk.github.io/turni/icons/icon-512.png",
+  "shortcuts": [
+    {
+      "name": "Genera turni",
+      "short_name": "Genera turni",
+      "url": "/turni/index.html?scorciatoia=sequenza",
+      "chosenIconUrl": "https://micmax1000-afk.github.io/turni/icons/icon-192.png"
+    },
+    {
+      "name": "Cedolino",
+      "short_name": "Cedolino",
+      "url": "/turni/index.html?scorciatoia=cedolino",
+      "chosenIconUrl": "https://micmax1000-afk.github.io/turni/icons/icon-192.png"
+    }
+  ],
+  "appVersionName": "2.0.0",
+  "appVersionCode": 1,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "turniaccessorioPS"
+  },
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://micmax1000-afk.github.io/turni/",
+  "minSdkVersion": 21
+}
