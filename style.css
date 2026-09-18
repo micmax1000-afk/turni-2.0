@@ -532,12 +532,12 @@ h3{ font-family: var(--font-display); font-weight:600; }
   text-overflow:ellipsis;
   background:#E9EDF3;color:#4B5563;
 }
-.tipo-mattina .giorno-turno-badge{background:var(--badge-mattina, var(--tipo-mattina));color:#A85A00;}
-.tipo-pomeriggio .giorno-turno-badge{background:var(--badge-pomeriggio, var(--tipo-pomeriggio));color:#8A6A00;}
-.tipo-sera .giorno-turno-badge{background:var(--badge-sera, var(--tipo-sera));color:#5A3AA6;}
-.tipo-notte .giorno-turno-badge{background:var(--badge-notte, var(--tipo-notte));color:#174EA6;}
-.tipo-riposo .giorno-turno-badge{background:var(--badge-riposo, var(--tipo-riposo));color:#397246;}
-.tipo-assenza .giorno-turno-badge{background:var(--badge-assenza, var(--tipo-assenza));color:#4B5563;}
+.tipo-mattina .giorno-turno-badge{background:var(--badge-mattina, var(--tipo-mattina));color:#8A4F00;}
+.tipo-pomeriggio .giorno-turno-badge{background:var(--badge-pomeriggio, var(--tipo-pomeriggio));color:#7A2E00;}
+.tipo-sera .giorno-turno-badge{background:var(--badge-sera, var(--tipo-sera));color:#7A1F4D;}
+.tipo-notte .giorno-turno-badge{background:var(--badge-notte, var(--tipo-notte));color:#3D2E6B;}
+.tipo-riposo .giorno-turno-badge{background:var(--badge-riposo, var(--tipo-riposo));color:#155647;}
+.tipo-assenza .giorno-turno-badge{background:var(--badge-assenza, var(--tipo-assenza));color:#3D4451;}
 .giorno-meta{display:flex;align-items:center;justify-content:space-between;gap:4px;font:600 .58rem/1 var(--font-cifre);color:var(--testo-tenue);white-space:nowrap;}
 .giorno-meta-vuoto{opacity:.45;}
 .giorno-orario{overflow:hidden;text-overflow:ellipsis;}
@@ -1385,14 +1385,27 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .calendario-header-v2{padding:4px 2px 12px}
 .scheda-calendario-v2{position:relative;padding-bottom:70px}
 
-/* Celle più alte, pillola colorata con nome+orario impilati, stile pulito senza badge extra */
+/* Celle più alte, pillola colorata con nome+orario impilati, stile pulito senza badge extra.
+   !important su alcune proprietà: ci sono diverse vecchie regole storiche su .giorno-turno-badge
+   (sfondo bianco semi-trasparente, overflow:hidden, altezza fissa) che altrimenti competerebbero
+   in modo poco prevedibile con lo stile nuovo, rischiando di nascondere il testo del turno. */
 .scheda-calendario-v2 .giorno-cella{min-height:76px}
-.scheda-calendario-v2 .giorno-turno-badge{flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px;min-height:34px}
-.scheda-calendario-v2 .giorno-turno-codice{display:none}
-.scheda-calendario-v2 .giorno-turno-nome{display:block;font-size:.66rem;font-weight:800;white-space:normal;line-height:1.15;text-align:center}
-.scheda-calendario-v2 .giorno-orario{display:block;font-size:.6rem;opacity:.75;text-align:center}
-.scheda-calendario-v2 .giorno-badge-list,.scheda-calendario-v2 .giorno-ore{display:none}
-@media(max-width:390px){.scheda-calendario-v2 .giorno-cella{min-height:64px}.scheda-calendario-v2 .giorno-turno-nome{font-size:.6rem}}
+.scheda-calendario-v2 .giorno-turno-badge{flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:1px!important;padding:4px 2px!important;min-height:34px!important;height:auto!important;width:auto!important;overflow:visible!important}
+.scheda-calendario-v2 .giorno-turno-codice{display:none!important}
+.scheda-calendario-v2 .giorno-turno-nome{display:block!important;font-size:.66rem!important;font-weight:800;white-space:normal!important;line-height:1.15;text-align:center;overflow:visible!important;color:inherit}
+.scheda-calendario-v2 .giorno-orario{display:block!important;font-size:.6rem;opacity:.75;text-align:center}
+.scheda-calendario-v2 .giorno-badge-list,.scheda-calendario-v2 .giorno-ore{display:none!important}
+@media(max-width:390px){.scheda-calendario-v2 .giorno-cella{min-height:64px}.scheda-calendario-v2 .giorno-turno-nome{font-size:.6rem!important}}
+
+/* "Filtra o svuota il mese" — menu compatto sotto la griglia, richiudibile, chiuso di default */
+.azioni-calendario-rapide-v2{margin-top:10px;border:1px solid var(--bordo);border-radius:12px;background:var(--carta);overflow:hidden}
+.azioni-calendario-rapide-v2>summary{cursor:pointer;padding:10px 12px;font-size:.78rem;font-weight:700;color:var(--testo-tenue);list-style:none}
+.azioni-calendario-rapide-v2>summary::-webkit-details-marker{display:none}
+.azioni-calendario-rapide-v2-corpo{padding:2px 12px 12px;display:flex;flex-direction:column;gap:10px}
+
+/* Banner "Nuova versione disponibile" */
+.avviso-nuova-versione-v65{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:12px;background:var(--inchiostro);color:#fff;padding:12px 14px;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);font-size:.82rem;max-width:min(360px,92vw)}
+.avviso-nuova-versione-v65 button{flex-shrink:0;background:#fff;color:var(--inchiostro);border:0;border-radius:9px;padding:8px 12px;font:700 .78rem var(--font-corpo);cursor:pointer}
 
 /* Pulsante matita in basso a destra, fisso sopra la griglia */
 .fab-aggiungi-v2{position:absolute;right:6px;bottom:14px;width:52px;height:52px;border-radius:50%;background:var(--inchiostro);color:#fff;border:none;font-size:1.3rem;cursor:pointer;box-shadow:0 4px 14px rgba(27,36,64,.3)}
@@ -1404,6 +1417,8 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .popup-rapido-btn{flex:1;background:transparent;border:0;color:#fff;padding:15px 20px;font:600 .92rem var(--font-corpo);cursor:pointer;white-space:nowrap}
 .popup-rapido-btn:hover{background:rgba(255,255,255,.1)}
 .popup-rapido-divider{width:1px;align-self:stretch;background:rgba(255,255,255,.22)}
+.popup-rapido-chiudi{flex-shrink:0;background:transparent;border:0;border-left:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.7);padding:15px 16px;cursor:pointer;font-size:.9rem}
+.popup-rapido-chiudi:hover{background:rgba(255,255,255,.1);color:#fff}
 
 /* Selettore Turni di lavoro / Assenze */
 .switch-turno-assenza{display:flex;gap:4px;background:var(--carta);border-radius:12px;padding:4px;margin-bottom:12px}

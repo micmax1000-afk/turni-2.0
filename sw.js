@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V60 (v2.0.0 — nuova interfaccia) */
+/* Turni & Accessorio PS — Service Worker V65 (v2.5.1 — aggiornamento con avviso all'utente) */
 'use strict';
-const CACHE='turni-ps-v60';
+const CACHE='turni-ps-v65';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
@@ -10,8 +10,13 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
+    // Niente più skipWaiting() automatico qui: il nuovo service worker resta "in attesa"
+    // finché l'utente non tocca "Aggiorna ora" (vedi script.js) — così un aggiornamento non
+    // interrompe mai a sorpresa chi sta scrivendo qualcosa, es. un turno non ancora salvato.
   );
+});
+self.addEventListener('message', event => {
+  if(event.data && event.data.tipo === 'skipWaiting') self.skipWaiting();
 });
 self.addEventListener('activate', event => {
   event.waitUntil(

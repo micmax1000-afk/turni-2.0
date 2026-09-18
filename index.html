@@ -49,6 +49,23 @@
     </div>
     <div class="calendario-griglia" id="calendarioGriglia"></div>
 
+    <details class="azioni-calendario-rapide-v2">
+      <summary>⚡ Filtra o svuota il mese ▾</summary>
+      <div class="azioni-calendario-rapide-v2-corpo">
+        <label class="campo-modale">🔎 Visualizza
+          <select id="filtroCalendarioSelect">
+            <option value="tutti">Tutti i giorni</option>
+            <option value="turni">Turni</option>
+            <option value="assenze">Assenze</option>
+            <option value="riposi">Riposi</option>
+            <option value="extra">Extra e servizi</option>
+            <option value="vuoto">Giorni liberi</option>
+          </select>
+        </label>
+        <button class="btn-secondario btn-cancella-turni" id="btnCancellaTurniMese" type="button">🗑️ Cancella turni del mese</button>
+      </div>
+    </details>
+
     <button class="fab-aggiungi-v2" id="btnFabAggiungiV2" type="button" aria-label="Aggiungi turno o evento">✏️</button>
 
     <!-- Popup rapido "+ Turno / + Evento" al tocco di un giorno vuoto -->
@@ -56,6 +73,7 @@
       <button type="button" class="popup-rapido-btn" id="btnPopupAggiungiTurno">＋ Turno</button>
       <div class="popup-rapido-divider" aria-hidden="true"></div>
       <button type="button" class="popup-rapido-btn" id="btnPopupAggiungiEvento">＋ Evento</button>
+      <button type="button" class="popup-rapido-chiudi" id="btnPopupChiudi" aria-label="Chiudi">✕</button>
     </div>
 
     <!-- Selettore Turno di lavoro / Assenza, con Modelli pronti (colore incluso) -->
@@ -317,55 +335,6 @@
         <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">↺ Ripristina predefiniti</button>
         <button class="btn-primario" id="btnChiudiColoriTurni2" type="button">Fatto</button>
       </div>
-    </div>
-
-    <div class="azioni-calendario-rapide" id="azioniCalendarioRapide">
-      <div class="azioni-calendario-header">
-        <div><strong>⚡ Azioni rapide</strong><span>Prepara rapidamente un'azione per il giorno selezionato.</span></div>
-      </div>
-      <div class="azioni-calendario-grid">
-        <label class="campo-modale">➕ Vai a un'indennità o straordinario
-          <select id="azioneRapidaCalendario">
-            <option value="">— scegli una voce —</option>
-            <optgroup label="Straordinario e recuperi">
-              <option value="straordinario">⏱ Straordinario</option>
-              <option value="permessoBreve">🕐 Permesso breve</option>
-              <option value="recuperoPermessoBreve">↩ Recupero permesso breve</option>
-              <option value="compensazioneRiposo">🔄 Recupero riposo</option>
-              <option value="recuperoFestivo">📅 Recupero festivo</option>
-            </optgroup>
-            <optgroup label="Servizi e indennità">
-              <option value="missione">🚓 Missione</option>
-              <option value="reperibilita">📞 Reperibilità</option>
-              <option value="servizioEsterno">🚗 Servizio esterno</option>
-              <option value="ordinePubblico">🛡️ Ordine pubblico</option>
-              <option value="controlloTerritorio">🔦 Controllo territorio</option>
-              <option value="cambioTurno">🔁 Cambio turno</option>
-              <option value="buonoPasto">🍽️ Buono pasto</option>
-              <option value="aggiornamentoProfessionale">📚 Aggiornamento professionale</option>
-              <option value="addestramentoTiro">🎯 Addestramento tiro</option>
-            </optgroup>
-          </select>
-        </label>
-      </div>
-      <button class="btn-primario btn-modifica-giorno-selezionato" id="btnApriModificaGiorno" type="button">✏️ Modifica turno del giorno selezionato</button>
-
-      <details class="azioni-rapide-altro">
-        <summary>Altro ▾</summary>
-        <div class="azioni-rapide-altro-corpo">
-          <label class="campo-modale">🔎 Visualizza
-            <select id="filtroCalendarioSelect">
-              <option value="tutti">Tutti i giorni</option>
-              <option value="turni">Turni</option>
-              <option value="assenze">Assenze</option>
-              <option value="riposi">Riposi</option>
-              <option value="extra">Extra e servizi</option>
-              <option value="vuoto">Giorni liberi</option>
-            </select>
-          </label>
-          <button class="btn-secondario btn-cancella-turni" id="btnCancellaTurniMese" type="button">🗑️ Cancella turni del mese</button>
-        </div>
-      </details>
     </div>
 
   </section>

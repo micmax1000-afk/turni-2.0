@@ -456,53 +456,7 @@ function inizializza(){
     renderAssenze();
   });
 
-  function preparaAzioneRapida(azione){
-    if(!azione) return;
-    if(!giornoSelezionato){
-      mostraAvviso('Seleziona prima un giorno del calendario.');
-      el('azioneRapidaCalendario').value = '';
-      return;
-    }
-    // Se il pannello è già aperto per QUESTO STESSO giorno, NON lo riapriamo: apriModaleTurno
-    // ricarica tutti i campi dal salvato, cancellando silenziosamente ogni casella già spuntata
-    // ma non ancora confermata con "Salva turno" — bug segnalato dall'utente selezionando più
-    // indennità extra di seguito (es. Missione poi Buono pasto: la seconda azzerava la prima).
-    // Se invece il pannello è aperto per un giorno diverso, va ricaricato normalmente.
-    const pannello = el('pannelloTurno');
-    const pannelloGiaApertoPerQuestoGiorno = !pannello.hidden && pannello.dataset.iso === giornoSelezionato;
-    if(!pannelloGiaApertoPerQuestoGiorno) apriModaleTurno(giornoSelezionato);
-    // I campi qui sotto vivono dentro il pannello richiudibile "+ Aggiungi indennità o
-    // straordinario": se resta chiuso, scrollIntoView/focus su un elemento al suo interno non
-    // funzionano (un <details> chiuso non è renderizzato). Lo apriamo prima di puntarci.
-    const pannelloIndennita = pannello.querySelector('.pannello-indennita-straordinario');
-    if(pannelloIndennita) pannelloIndennita.open = true;
-    const setCheck = (id, value=true) => { const x=el(id); if(x) x.checked=value; };
-    if(azione==='straordinario'){
-      el('campoStrPrimaInizio')?.focus();
-    } else if(azione==='permessoBreve'){
-      setCheck('campoPermessoBreveAttivo');
-      el('campiPermessoBreve').style.display='';
-      el('campoPermessoBreveInizio')?.focus();
-    } else if(azione==='recuperoPermessoBreve'){
-      setCheck('campoRecuperoPermessoBreveAttivo');
-      el('campiRecuperoPermessoBreve').style.display='';
-      el('campoRecuperoPermessoBreveInizio')?.focus();
-    } else {
-      const map={missione:'campoMissione',reperibilita:'campoReperibilita',servizioEsterno:'campoServizioEsterno',ordinePubblico:'campoOrdinePubblico',controlloTerritorio:'campoControlloTerritorio',cambioTurno:'campoCambioTurno',compensazioneRiposo:'campoCompensazioneRiposo',recuperoFestivo:'campoRecuperoFestivo',buonoPasto:'campoBuonoPasto',aggiornamentoProfessionale:'campoAggiornamentoProfessionale',addestramentoTiro:'campoAddestramentoTiro'};
-      const id=map[azione];
-      if(id){
-        setCheck(id);
-        const target=el(id);
-        target?.scrollIntoView({behavior:'smooth',block:'center'});
-        target?.focus({preventScroll:true});
-        if(azione==='missione' || azione==='ordinePubblico') target.dispatchEvent(new Event('change'));
-      }
-    }
-    el('azioneRapidaCalendario').value='';
-  }
-
   on('filtroCalendarioSelect','change', e => impostaFiltroCalendario(e.target.value));
-  on('azioneRapidaCalendario','change', e => preparaAzioneRapida(e.target.value));
 
   on('settingsSequenza','click', () => {
     mostraScheda('sequenza');
@@ -828,6 +782,7 @@ function inizializza(){
     apriPopupRapidoGiornoV2();
   });
   on('btnPopupAggiungiTurno','click', () => { chiudiPopupRapidoGiornoV2(); apriSelettoreModelliV2('turni'); });
+  on('btnPopupChiudi','click', () => chiudiPopupRapidoGiornoV2());
   on('btnPopupAggiungiEvento','click', () => {
     chiudiPopupRapidoGiornoV2();
     if(!giornoPerPopupV2) return;
@@ -852,10 +807,6 @@ function inizializza(){
   on('btnImpostazioni','click', () => mostraScheda('impostazioni'));
   on('btnStatistiche','click', () => mostraScheda('statistiche'));
 
-
-  el('btnApriModificaGiorno').addEventListener('click', () => {
-    if(giornoSelezionato) apriModaleTurno(giornoSelezionato);
-  });
 
   el('btnRimuoviTurno').addEventListener('click', () => {
     delete AppState.turni[giornoSelezionato];
@@ -897,10 +848,19 @@ function gestisciTocchGiornoV2(iso){
 function apriPopupRapidoGiornoV2(){
   const p = el('popupRapidoGiorno');
   if(p) p.hidden = false;
+  // Il tocco che ha aperto il popup (FAB o cella del calendario) sta ancora "in corso": rimandiamo
+  // di un istante l'ascolto dei tocchi fuori dal popup, altrimenti si chiuderebbe da solo appena
+  // aperto, scambiando lo stesso tocco per un "tocco fuori".
+  setTimeout(() => document.addEventListener('click', chiudiPopupSeTocchiFuori), 0);
 }
 function chiudiPopupRapidoGiornoV2(){
   const p = el('popupRapidoGiorno');
   if(p) p.hidden = true;
+  document.removeEventListener('click', chiudiPopupSeTocchiFuori);
+}
+function chiudiPopupSeTocchiFuori(e){
+  const p = el('popupRapidoGiorno');
+  if(p && !p.hidden && !p.contains(e.target)) chiudiPopupRapidoGiornoV2();
 }
 
 function apriSelettoreModelliV2(scheda){
@@ -979,6 +939,53 @@ document.addEventListener('DOMContentLoaded', inizializza);
    --------------------------------------------------------- */
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Service worker non registrato:', e));
+    navigator.serviceWorker.register('sw.js').then(registrazione => {
+      // Controlla subito se c'è un aggiornamento in attesa (senza aspettare il controllo
+      // periodico del browser, che può metterci ore su un'app aperta raramente).
+      registrazione.update().catch(() => {});
+
+      // Se un nuovo service worker è già pronto ma non ancora attivo (successo prima che
+      // questa pagina si caricasse), avvisa subito.
+      if(registrazione.waiting) mostraAvvisoNuovaVersione(registrazione.waiting);
+
+      // Se un nuovo service worker inizia l'installazione ORA (mentre l'app è aperta),
+      // aspettiamo che finisca di installarsi e poi avvisiamo.
+      registrazione.addEventListener('updatefound', () => {
+        const installing = registrazione.installing;
+        if(!installing) return;
+        installing.addEventListener('statechange', () => {
+          if(installing.state === 'installed' && navigator.serviceWorker.controller){
+            mostraAvvisoNuovaVersione(installing);
+          }
+        });
+      });
+    }).catch((e) => console.warn('Service worker non registrato:', e));
+
+    // Quando il nuovo service worker prende davvero il controllo (dopo skipWaiting), la pagina
+    // corrente è rimasta con i file vecchi già caricati: un'unica ricarica automatica la porta
+    // alla versione nuova. La guardia evita ricariche multiple se l'evento scattasse più volte.
+    let giaRicaricato = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(giaRicaricato) return;
+      giaRicaricato = true;
+      window.location.reload();
+    });
   });
+}
+
+// Avviso "nuova versione disponibile": invece di ricaricare subito da soli (interromperebbe
+// l'utente a metà di qualcosa, es. mentre sta scrivendo un turno), mostriamo un invito esplicito;
+// al tocco, diciamo al nuovo service worker di attivarsi — questo farà scattare 'controllerchange'
+// sopra, che si occupa della ricarica.
+function mostraAvvisoNuovaVersione(worker){
+  if(document.getElementById('avvisoNuovaVersioneV65')) return; // non duplicare l'avviso
+  const banner = document.createElement('div');
+  banner.id = 'avvisoNuovaVersioneV65';
+  banner.className = 'avviso-nuova-versione-v65';
+  banner.innerHTML = '<span>🔄 Nuova versione disponibile.</span><button type="button">Aggiorna ora</button>';
+  banner.querySelector('button').addEventListener('click', () => {
+    worker.postMessage({ tipo: 'skipWaiting' });
+    banner.remove();
+  });
+  document.body.appendChild(banner);
 }
