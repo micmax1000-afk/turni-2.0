@@ -383,18 +383,8 @@ function inizializzaToggleRiepilogoV45(){
     toggle.classList.toggle('aperto', !aperto);
   });
 }
-function inizializzaToggleDettaglioGiorno(){
-  const toggle = el('dettaglioGiornoToggle');
-  const pannello = el('dettaglioGiornoCollassabile');
-  if(!toggle || !pannello) return;
-  toggle.addEventListener('click', () => {
-    const aperto = !pannello.hidden;
-    pannello.hidden = aperto;
-    toggle.setAttribute('aria-expanded', aperto ? 'false' : 'true');
-  });
-}
-if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { inizializzaToggleRiepilogoV45(); inizializzaToggleDettaglioGiorno(); });
-else { inizializzaToggleRiepilogoV45(); inizializzaToggleDettaglioGiorno(); }
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { inizializzaToggleRiepilogoV45(); });
+else { inizializzaToggleRiepilogoV45(); }
 
 function aggiornaProssimoTurno(){
   const widget = el('prossimoTurnoWidget');
@@ -631,128 +621,17 @@ function totaleStraordinario(c){
   return Number(c?.strDiurno || 0) + Number(c?.strNotturno || 0) + Number(c?.strFestivo || 0) + Number(c?.strNotturnoFestivo || 0);
 }
 
+// V64 — Versione ridotta al minimo necessario: nella nuova interfaccia il "dettaglio del
+// giorno" (l'anteprima sotto il calendario) non è più mostrato — si tocca il giorno e si apre
+// direttamente il pannello di modifica (apriModaleTurno). Questa funzione resta solo per
+// popolare Nota del giorno e Servizio svolto quando si seleziona un giorno, che è l'unica
+// parte ancora davvero usata; il resto (badge, indicatori, pillole) è stato rimosso perché
+// scriveva in elementi ormai sempre nascosti, senza alcun effetto visibile per l'utente.
 function aggiornaDettaglioGiorno(){
   if(!giornoSelezionato) return;
-  const d = new Date(giornoSelezionato + 'T00:00:00');
-  const titolo = el('dettaglioGiornoTitolo');
-  titolo.textContent = `${NOMI_GIORNI[d.getDay()]} ${d.getDate()} ${NOMI_MESI[d.getMonth()]} ${d.getFullYear()}`;
   const t = AppState.turni[giornoSelezionato];
-  const corpo = el('dettaglioGiornoCorpo');
-  const sempre = el('dettaglioGiornoSempre');
-  const btnModifica = el('btnModificaGiorno');
-  const btnRimuovi = el('btnRimuoviGiorno');
-  const azioni = document.querySelector('.dettaglio-giorno-azioni-principali');
-
-  if(btnModifica){
-    btnModifica.onclick = () => apriModaleTurno(giornoSelezionato);
-    btnModifica.textContent = t ? '✎ Modifica giorno' : '＋ Aggiungi turno';
-  }
-  if(btnRimuovi){
-    btnRimuovi.hidden = !t;
-    btnRimuovi.onclick = () => {
-      if(!t) return;
-      const messaggio = `Vuoi rimuovere il turno del ${d.getDate()} ${NOMI_MESI[d.getMonth()]}?`;
-      if(typeof mostraConferma === 'function'){
-        mostraConferma(messaggio, () => {
-          delete AppState.turni[giornoSelezionato];
-          if(typeof salvaTurniStorage === 'function') salvaTurniStorage();
-          renderCalendario();
-        }, 'Rimuovi turno');
-      } else {
-        delete AppState.turni[giornoSelezionato];
-        if(typeof salvaTurniStorage === 'function') salvaTurniStorage();
-        renderCalendario();
-      }
-    };
-  }
-  if(azioni) azioni.hidden = false;
-
-  if(!t){
-    sempre.innerHTML = `
-      <div class="giorno-vuoto-card">
-        <span class="giorno-vuoto-icona">＋</span>
-        <div><strong>Nessun turno inserito</strong><span>Aggiungi il turno o segnala un'assenza per questa giornata.</span></div>
-      </div>`;
-    corpo.innerHTML = '';
-  } else if(t.assenzaTipo){
-    const voceAssenza = AppState.assenze.find(a => a.id === t.assenzaTipo);
-    const nome = voceAssenza ? voceAssenza.nome : 'Assenza';
-    sempre.innerHTML = `
-      <div class="dettaglio-hero dettaglio-hero-assenza">
-        <div class="dettaglio-hero-badge">${iconaAssenza(nome)}</div>
-        <div><strong>${escapeHtml(nome)}</strong><span>Giornata registrata come assenza</span></div>
-      </div>
-      <div class="dettaglio-indicatori">
-        <div><span>Stato</span><strong>Assenza</strong></div>
-        <div><span>Data</span><strong>${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</strong></div>
-        <div><span>Ore turno</span><strong>—</strong></div>
-      </div>`;
-    corpo.innerHTML = '';
-  } else if(t.riposo){
-    sempre.innerHTML = `
-      <div class="dettaglio-hero dettaglio-hero-riposo">
-        <div class="dettaglio-hero-badge">${ICONA_CATEGORIA.riposo}</div>
-        <div><strong>Riposo</strong><span>Giornata senza turno programmato</span></div>
-      </div>
-      <div class="dettaglio-indicatori">
-        <div><span>Stato</span><strong>Riposo</strong></div>
-        <div><span>Ore lavoro</span><strong>0:00</strong></div>
-        <div><span>Extra</span><strong>—</strong></div>
-      </div>`;
-    corpo.innerHTML = '';
-  } else if(t.oraInizio && t.oraFine){
-    const c = classificaTurno(t);
-    const straordinario = totaleStraordinario(c);
-    // c.oreTotali è già comprensivo dello straordinario (turno base + finestre di straordinario/rientro):
-    // le ore ordinarie sono la differenza, il totale giorno è semplicemente c.oreTotali (non va sommato di nuovo).
-    const oreOrdinarie = Math.max(0, Number(c.oreTotali || 0) - straordinario);
-    const totaleGiorno = Number(c.oreTotali || 0);
-    const categoria = categoriaTurno(t.oraInizio, t.oraFine, t.data);
-    const etichetta = INIZIALE_CATEGORIA[categoria] || categoria || 'Turno';
-    const servizi = [];
-    if(t.missione) servizi.push(['missione','🛡','Missione']);
-    if(t.servizioEsterno) servizi.push(['esterno','🚓','Servizio esterno']);
-    if(t.reperibilita) servizi.push(['reperibilita','★','Reperibilità']);
-    if(t.controlloTerritorio) servizi.push(['controllo','⌾','Controllo territorio']);
-    if(t.ordinePubblico) servizi.push(['op','⬟','Ordine pubblico']);
-    if(t.buonoPasto) servizi.push(['buono','€','Buono pasto']);
-    if(t.aggiornamentoProfessionale) servizi.push(['agg','◎','Aggiornamento']);
-    if(t.addestramentoTiro) servizi.push(['tiro','◉','Addestramento tiro']);
-    const servizioPrincipale = t.servizioSvolto || (servizi[0] ? servizi[0][2] : 'Servizio ordinario');
-    const badges = [];
-    if(straordinario > 0) badges.push('<span class="dettaglio-pill pill-straordinario">⏱ Straordinario</span>');
-    if(t.missione) badges.push('<span class="dettaglio-pill pill-missione">🛡 Missione</span>');
-    if(t.servizioEsterno) badges.push('<span class="dettaglio-pill pill-esterno">🚓 Esterno</span>');
-    if(t.reperibilita) badges.push('<span class="dettaglio-pill pill-reperibilita">★ Reperibilità</span>');
-    sempre.innerHTML = `
-      <div class="dettaglio-hero dettaglio-hero-${escapeHtml(categoria || 'turno')}">
-        <div class="dettaglio-hero-badge">${svgIconaMomento(categoria)}</div>
-        <div><strong>${escapeHtml(categoria === 'notte' ? 'Notte' : categoria === 'pomeriggio' ? 'Pomeriggio' : categoria === 'mattina' ? 'Mattina' : categoria === 'sera' ? 'Sera' : 'Turno')} (${formatOreMinuti(oreOrdinarie)})</strong><span>🕐 ${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</span></div>
-      </div>
-      ${badges.length ? `<div class="dettaglio-pills">${badges.join('')}</div>` : ''}
-      <div class="dettaglio-indicatori">
-        <div><span>Ore ordinarie</span><strong>${formatOreMinuti(oreOrdinarie)}</strong></div>
-        <div><span>Straordinario</span><strong class="valore-straordinario">${formatOreMinuti(straordinario)}</strong></div>
-        <div><span>Totale giorno</span><strong>${formatOreMinuti(totaleGiorno)}</strong></div>
-      </div>`;
-    corpo.innerHTML = `
-      <div class="dettaglio-sezione-titolo">Indicatori del giorno</div>
-      <div class="dettaglio-indicatori-icone" id="dettaglioIndicatoriIcone">
-        ${servizi.length ? servizi.slice(0,4).map(x => `<div><span class="indicatore-icona indicatore-${x[0]}">${x[1]}</span><small>${escapeHtml(x[2])}</small></div>`).join('') : '<div class="dettaglio-nessun-extra">Nessun indicatore extra</div>'}
-      </div>
-      <div class="dettaglio-sezione-titolo">Dettagli</div>
-      <div class="dettaglio-dettagli-lista">
-        <div><span>◷ Servizio</span><strong>${escapeHtml(servizioPrincipale)}</strong></div>
-        <div><span>★ Reperibilità</span><strong>${t.reperibilita ? 'Sì' : 'No'}</strong></div>
-        <div><span>⇄ Cambio turno</span><strong>${t.cambioTurno ? 'Sì' : 'No'}</strong></div>
-        <div><span>🍴 Buono pasto</span><strong>${t.buonoPasto ? 'Sì' : 'No'}</strong></div>
-        <div><span>◎ Aggiornamento</span><strong>${t.aggiornamentoProfessionale ? 'Sì' : 'No'}</strong></div>
-      </div>`;
-  } else {
-    sempre.innerHTML = `<div class="giorno-vuoto-card"><span class="giorno-vuoto-icona">⚠</span><div><strong>Turno incompleto</strong><span>Inserisci ora di inizio e fine per completare la giornata.</span></div></div>`;
-    corpo.innerHTML = '';
-  }
-  el('campoNotaGiorno').value = AppState.noteGiorni[giornoSelezionato] || '';
+  const campoNota = el('campoNotaGiorno');
+  if(campoNota) campoNota.value = AppState.noteGiorni[giornoSelezionato] || '';
   const campoServizio = el('campoServizioSvolto');
   if(campoServizio) campoServizio.value = (t && t.servizioSvolto) || '';
 }

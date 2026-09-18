@@ -415,6 +415,12 @@ function inizializza(){
     if(p && p.hidden) apriPannelloColori();
     else p?.scrollIntoView({behavior:'smooth',block:'start'});
   });
+  on('btnApriAssenzeV64','click', () => {
+    const p = el('sezioneAssenze');
+    if(!p) return;
+    p.hidden = !p.hidden;
+    if(!p.hidden) p.scrollIntoView({behavior:'smooth',block:'start'});
+  });
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
   on('settingsDrive','click', () => mostraImpostazioniBackup('sezioneBackupDrive'));
   on('btnChiudiSettingsBackup','click', () => { const p=el('impostazioniBackupPanel'); if(p) p.hidden = true; });
@@ -450,14 +456,6 @@ function inizializza(){
     renderAssenze();
   });
 
-  function popolaAzioniRapide(){
-    const host = el('azioniRapideAssenze');
-    if(!host) return;
-    host.innerHTML = (AppState.assenze || []).map(a =>
-      `<option value="assenza:${escapeHtml(a.id)}">🗂️ ${escapeHtml(a.nome)}</option>`
-    ).join('');
-  }
-
   function preparaAzioneRapida(azione){
     if(!azione) return;
     if(!giornoSelezionato){
@@ -473,13 +471,13 @@ function inizializza(){
     const pannello = el('pannelloTurno');
     const pannelloGiaApertoPerQuestoGiorno = !pannello.hidden && pannello.dataset.iso === giornoSelezionato;
     if(!pannelloGiaApertoPerQuestoGiorno) apriModaleTurno(giornoSelezionato);
+    // I campi qui sotto vivono dentro il pannello richiudibile "+ Aggiungi indennità o
+    // straordinario": se resta chiuso, scrollIntoView/focus su un elemento al suo interno non
+    // funzionano (un <details> chiuso non è renderizzato). Lo apriamo prima di puntarci.
+    const pannelloIndennita = pannello.querySelector('.pannello-indennita-straordinario');
+    if(pannelloIndennita) pannelloIndennita.open = true;
     const setCheck = (id, value=true) => { const x=el(id); if(x) x.checked=value; };
-    if(azione.startsWith('assenza:')){
-      const id = azione.slice(8);
-      const x=el('campoAssenzaTipo'); if(x) x.value=id;
-      setCheck('campoRiposo',false);
-      aggiornaVisibilitaCampiOrario(); aggiornaAnteprima();
-    } else if(azione==='straordinario'){
+    if(azione==='straordinario'){
       el('campoStrPrimaInizio')?.focus();
     } else if(azione==='permessoBreve'){
       setCheck('campoPermessoBreveAttivo');
@@ -503,18 +501,12 @@ function inizializza(){
     el('azioneRapidaCalendario').value='';
   }
 
-  popolaAzioniRapide();
   on('filtroCalendarioSelect','change', e => impostaFiltroCalendario(e.target.value));
   on('azioneRapidaCalendario','change', e => preparaAzioneRapida(e.target.value));
 
   on('settingsSequenza','click', () => {
-    mostraScheda('impostazioni');
-    const seq = el('sezioneSequenza');
-    const host = el('sezioneSequenzaHost');
-    if(host && seq && seq.parentElement !== host) host.appendChild(seq);
-    if(seq) seq.hidden = false;
-    renderSequenza();
-    seq?.scrollIntoView({behavior:'smooth', block:'start'});
+    mostraScheda('sequenza');
+    el('sezioneSequenza')?.scrollIntoView({behavior:'smooth', block:'start'});
   });
   on('btnChiudiSequenza','click', () => {
     const seq = el('sezioneSequenza');
@@ -836,7 +828,14 @@ function inizializza(){
     apriPopupRapidoGiornoV2();
   });
   on('btnPopupAggiungiTurno','click', () => { chiudiPopupRapidoGiornoV2(); apriSelettoreModelliV2('turni'); });
-  on('btnPopupAggiungiEvento','click', () => { chiudiPopupRapidoGiornoV2(); if(giornoPerPopupV2) apriModaleTurno(giornoPerPopupV2); });
+  on('btnPopupAggiungiEvento','click', () => {
+    chiudiPopupRapidoGiornoV2();
+    if(!giornoPerPopupV2) return;
+    apriModaleTurno(giornoPerPopupV2);
+    // "+ Evento" serve per una nota/promemoria, non per assegnare un turno: portiamo subito
+    // l'attenzione lì invece di lasciare aperto lo stesso modulo di "+ Turno" senza differenza.
+    setTimeout(() => el('campoNotaGiorno')?.focus(), 60);
+  });
   on('btnChiudiSelettoreModelli','click', () => { el('overlaySelettoreModelli').hidden = true; });
   on('tabSelettoreModelliTurni','click', () => apriSelettoreModelliV2('turni'));
   on('tabSelettoreModelliAssenze','click', () => apriSelettoreModelliV2('assenze'));

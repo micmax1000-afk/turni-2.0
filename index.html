@@ -296,6 +296,7 @@
     <div class="lista-strumenti-turni">
       <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span> Genera turni automaticamente <b>›</b></button>
       <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span> Colori turni <b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span> Assenze e permessi <b>›</b></button>
     </div>
 
     <div id="sezioneSequenzaHost" class="impostazioni-sottosezione"></div>
@@ -323,10 +324,9 @@
         <div><strong>⚡ Azioni rapide</strong><span>Prepara rapidamente un'azione per il giorno selezionato.</span></div>
       </div>
       <div class="azioni-calendario-grid">
-        <label class="campo-modale">➕ Inserisci rapidamente
+        <label class="campo-modale">➕ Vai a un'indennità o straordinario
           <select id="azioneRapidaCalendario">
-            <option value="">— scegli un'azione —</option>
-            <optgroup label="Assenze" id="azioniRapideAssenze"></optgroup>
+            <option value="">— scegli una voce —</option>
             <optgroup label="Straordinario e recuperi">
               <option value="straordinario">⏱ Straordinario</option>
               <option value="permessoBreve">🕐 Permesso breve</option>
@@ -368,21 +368,9 @@
       </details>
     </div>
 
-    <div class="dettaglio-giorno" id="dettaglioGiorno" hidden>
-      <div class="dettaglio-giorno-riga">
-        <button type="button" class="dettaglio-giorno-titolo-btn" id="dettaglioGiornoToggle" aria-expanded="false">
-          <span class="dettaglio-giorno-titolo" id="dettaglioGiornoTitolo">Seleziona un giorno</span>
-          <span class="dettaglio-giorno-freccia" aria-hidden="true">▾</span>
-        </button>
-      </div>
-      <div class="dettaglio-giorno-sempre" id="dettaglioGiornoSempre"></div>
-      <div class="dettaglio-giorno-collassabile" id="dettaglioGiornoCollassabile" hidden>
-        <div class="dettaglio-giorno-corpo" id="dettaglioGiornoCorpo"></div>
-      </div>
-    </div>
   </section>
 
-  <section class="scheda" id="sezioneAssenze">
+  <section class="scheda" id="sezioneAssenze" hidden>
     <div class="intestazione-scheda">
       <h2>Assenze dal Servizio</h2>
       <button class="btn-mini-icona" id="btnAggiungiAssenza" title="Aggiungi voce" aria-label="Aggiungi voce">+</button>
