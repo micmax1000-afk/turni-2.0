@@ -1211,6 +1211,11 @@ h3{ font-family: var(--font-display); font-weight:600; }
 /* V37 — tabella dettaglio statistiche */
 .stat-tabella-scroll{overflow-x:auto}.stat-tabella{width:100%;border-collapse:collapse;font-size:.74rem}.stat-tabella th{text-align:left;color:var(--testo-tenue);font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;padding:7px 6px;border-bottom:1px solid var(--bordo);white-space:nowrap}.stat-tabella td{padding:8px 6px;border-bottom:1px solid var(--bordo);white-space:nowrap}.stat-tabella tbody tr:last-child td{border-bottom:none}.stat-tabella td:not(:first-child){font-family:var(--font-cifre)}
 
+/* Selettore del grafico mensile (Ore / Straordinario / Netto), uno alla volta invece di tre impilati */
+.stat-switch-v17{display:flex;gap:4px;background:var(--carta);border-radius:12px;padding:4px;margin-bottom:12px}
+.stat-switch-btn{flex:1;background:transparent;border:0;border-radius:9px;padding:9px 6px;font:600 .74rem var(--font-corpo);color:var(--testo-tenue);cursor:pointer;white-space:nowrap}
+.stat-switch-btn.attivo{background:var(--inchiostro);color:#fff}
+
 /* V38 — Assenze: toolbar e filtri */
 .assenze-toolbar-v38{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 10px;padding:12px 14px;border:1px solid var(--bordo);border-radius:14px;background:var(--sfondo-secondario,#f5f7fb)}
 .assenze-toolbar-title{display:flex;flex-direction:column;gap:2px;min-width:0}.assenze-toolbar-title strong{font-size:.95rem}.assenze-toolbar-title span{font-size:.72rem;color:var(--testo-tenue)}
