@@ -93,6 +93,27 @@ function caricaIndennitaPersonalizzate(){
 }
 function salvaIndennitaPersonalizzateStorage(){ TurniPSStorage.setItem(CHIAVE_INDENNITA_PERSONALIZZATE, JSON.stringify(AppState.indennitaPersonalizzate)); }
 
+function caricaReportBlocchi(){
+  const predefinito = { prossimoTurno: true, riepilogoMese: true, riepilogoOre: true, statistiche: true, cedolino: true };
+  try{
+    const salvato = JSON.parse(TurniPSStorage.getItem(CHIAVE_REPORT_BLOCCHI));
+    return (salvato && typeof salvato === 'object') ? Object.assign(predefinito, salvato) : predefinito;
+  }catch{ return predefinito; }
+}
+function salvaReportBlocchiStorage(){ TurniPSStorage.setItem(CHIAVE_REPORT_BLOCCHI, JSON.stringify(AppState.reportBlocchi)); }
+
+// "Ultimo modello/assenza usato": per la pressione lunga su un giorno vuoto, che ripete
+// l'ultima scelta fatta dal selettore Modelli/Assenze senza doverlo riaprire.
+function salvaUltimoModelloUsato(tipo, id){
+  try{ TurniPSStorage.setItem(CHIAVE_ULTIMO_MODELLO_USATO, JSON.stringify({ tipo, id })); }catch{}
+}
+function caricaUltimoModelloUsato(){
+  try{
+    const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_ULTIMO_MODELLO_USATO));
+    return (v && v.tipo && v.id) ? v : null;
+  }catch{ return null; }
+}
+
 function caricaNoteGiorni(){
   try{ return JSON.parse(TurniPSStorage.getItem(CHIAVE_NOTE_GIORNI)) || {}; }catch{ return {}; }
 }

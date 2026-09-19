@@ -14,7 +14,8 @@ window.AppState = window.AppState || {
   indennitaPersonalizzate: [],
   noteGiorni: {},
   sequenzaTurni: [],
-  coloriTurni: {}
+  coloriTurni: {},
+  reportBlocchi: { prossimoTurno: true, riepilogoMese: true, riepilogoOre: true, statistiche: true, cedolino: true }
 };
 
 window.AppStateMeta = Object.freeze({

@@ -92,6 +92,7 @@ idContatore = 1; // già dichiarato in utils.js
 
 AppState.assenze = caricaAssenze(); // array [{ id, nome, valore, unita, personalizzata }]
 AppState.indennitaPersonalizzate = caricaIndennitaPersonalizzate(); // array [{ id, nome, valore, unita: 'mese'|'turno' }]
+AppState.reportBlocchi = caricaReportBlocchi(); // { prossimoTurno, riepilogoMese, riepilogoOre, statistiche, cedolino }
 TurniPSStorage.setItem(CHIAVE_ASSENZE, JSON.stringify(AppState.assenze)); // persiste subito l'eventuale merge di nuove voci predefinite
 
 AppState.noteGiorni = caricaNoteGiorni(); // { 'AAAA-MM-GG': 'testo nota' }
@@ -775,6 +776,21 @@ function inizializza(){
   on('tabTurni','click', () => mostraScheda('turni'));
   on('tabAltro','click', () => mostraScheda('altro'));
 
+  on('btnPersonalizzaReport','click', apriPersonalizzaReport);
+  on('btnChiudiPersonalizzaReport','click', () => { el('overlayPersonalizzaReport').hidden = true; });
+  on('btnFattoPersonalizzaReport','click', () => {
+    AppState.reportBlocchi = {
+      prossimoTurno: el('toggleReportProssimoTurno')?.checked !== false,
+      riepilogoMese: el('toggleReportRiepilogoMese')?.checked !== false,
+      riepilogoOre: el('toggleReportRiepilogoOre')?.checked !== false,
+      statistiche: el('toggleReportStatistiche')?.checked !== false,
+      cedolino: el('toggleReportCedolino')?.checked !== false
+    };
+    salvaReportBlocchiStorage();
+    applicaVisibilitaReportBlocchi();
+    el('overlayPersonalizzaReport').hidden = true;
+  });
+
   // ===================== V60 — Popup rapido + selettore Modelli/Assenze =====================
   on('btnFabAggiungiV2','click', () => {
     if(!giornoSelezionato) return;
@@ -901,7 +917,7 @@ function renderListaModelliAssenzeV2(){
     return;
   }
   host.innerHTML = assenze.map(a => `<button type="button" class="riga-modello-selettore" data-assenza="${escapeHtml(a.id)}">
-    <span class="cerchio-modello cerchio-modello-assenza">${escapeHtml((a.nome || '??').slice(0,2).toUpperCase())}</span>
+    <span class="cerchio-modello cerchio-modello-assenza">${escapeHtml(siglaAssenza(a.nome || '??'))}</span>
     <span class="riga-modello-testo"><strong>${escapeHtml(a.nome)}</strong></span>
     <span class="riga-modello-freccia" aria-hidden="true">›</span>
   </button>`).join('');
@@ -914,6 +930,7 @@ function applicaModelloV2(idModello){
   const iso = giornoPerPopupV2;
   AppState.turni[iso] = m.riposo ? { data: iso, riposo: true } : { data: iso, oraInizio: m.oraInizio, oraFine: m.oraFine };
   salvaTurniStorage();
+  salvaUltimoModelloUsato('modello', m.id);
   el('overlaySelettoreModelli').hidden = true;
   renderCalendario();
   selezionaGiorno(iso);
@@ -925,11 +942,87 @@ function applicaAssenzaV2(idAssenza){
   const iso = giornoPerPopupV2;
   AppState.turni[iso] = { data: iso, assenzaTipo: idAssenza };
   salvaTurniStorage();
+  salvaUltimoModelloUsato('assenza', idAssenza);
   el('overlaySelettoreModelli').hidden = true;
   renderCalendario();
   selezionaGiorno(iso);
   const nomeAssenza = (AppState.assenze || []).find(a => a.id === idAssenza);
   mostraToast(`${nomeAssenza ? nomeAssenza.nome : 'Assenza'} aggiunta`, 'successo');
+}
+
+// ===================== Pressione lunga su giorno vuoto: ripete l'ultimo turno/assenza usato =====================
+// ===================== Pressione lunga su giorno vuoto: ripete l'ultimo turno/assenza usato =====================
+// 500ms di pressione tengono conto sia del tocco (touch) sia del mouse (per i test su desktop).
+// Il flag su cella.dataset serve a impedire che il "click" generato dal rilascio del dito, subito
+// dopo una pressione lunga già gestita, riapra anche il popup normale "+ Turno / + Evento".
+function attaccaPressioneLungaV2(cella, iso){
+  let timer = null;
+  const inizia = () => {
+    timer = setTimeout(() => {
+      cella.dataset.pressioneLunga = '1';
+      gestisciPressioneLungaGiornoV2(iso);
+    }, 500);
+  };
+  const annulla = () => clearTimeout(timer);
+  cella.addEventListener('touchstart', inizia, { passive: true });
+  cella.addEventListener('touchend', annulla);
+  cella.addEventListener('touchmove', annulla);
+  cella.addEventListener('touchcancel', annulla);
+  cella.addEventListener('mousedown', inizia);
+  cella.addEventListener('mouseup', annulla);
+  cella.addEventListener('mouseleave', annulla);
+}
+function gestisciPressioneLungaGiornoV2(iso){
+  const t = AppState.turni[iso];
+  const haGiaQualcosa = !!(t && (t.oraInizio || t.riposo || t.assenzaTipo));
+  if(haGiaQualcosa) return; // ha senso solo su un giorno ancora vuoto
+  const ultimo = caricaUltimoModelloUsato();
+  if(!ultimo){
+    mostraToast('Nessun turno recente da ripetere: usa "+ Turno" per scegliere.', 'info');
+    return;
+  }
+  if(navigator.vibrate) navigator.vibrate(15);
+  giornoPerPopupV2 = iso;
+  if(ultimo.tipo === 'modello') applicaModelloV2(ultimo.id);
+  else if(ultimo.tipo === 'assenza') applicaAssenzaV2(ultimo.id);
+}
+
+// ===================== Personalizza Report: mostra/nascondi blocchi a scelta =====================
+// Applica lo stato attuale di AppState.reportBlocchi ai contenitori reali della pagina.
+// "Prossimo turno" e "Riepilogo mese" restano dentro sezioneReportTop indipendentemente dal fatto
+// che siano nascosti: nascondiamo solo i LORO elementi, non l'intera sezione (che ospita anche il
+// titolo "Report" e il pulsante ⚙️, sempre visibili).
+function applicaVisibilitaReportBlocchi(){
+  const b = AppState.reportBlocchi || {};
+  const mappa = {
+    prossimoTurno: 'prossimoTurnoWidget',
+    riepilogoMese: 'riepilogoTurniV45',
+    riepilogoOre: 'sezioneRiepilogo',
+    statistiche: 'sezioneStatisticheGrafici',
+    cedolino: 'sezioneCedolino'
+  };
+  Object.keys(mappa).forEach(chiave => {
+    const el1 = el(mappa[chiave]);
+    if(el1) el1.hidden = (b[chiave] === false);
+  });
+  // Il Cedolino comprende più sezioni oltre a quella principale: le nascondiamo tutte insieme.
+  ['sezioneAccreditoConto','sezioneStorico','sezioneRiepilogoAnnuale'].forEach(id => {
+    const n = el(id);
+    if(n) n.hidden = (b.cedolino === false);
+  });
+}
+
+function apriPersonalizzaReport(){
+  const overlay = el('overlayPersonalizzaReport');
+  if(!overlay) return;
+  const b = AppState.reportBlocchi || {};
+  const setChecked = (id, val) => { const c = el(id); if(c) c.checked = val !== false; };
+  setChecked('toggleReportProssimoTurno', b.prossimoTurno);
+  setChecked('toggleReportRiepilogoMese', b.riepilogoMese);
+  setChecked('toggleReportRiepilogoOre', b.riepilogoOre);
+  setChecked('toggleReportStatistiche', b.statistiche);
+  setChecked('toggleReportCedolino', b.cedolino);
+  overlay.hidden = false;
 }
 
 document.addEventListener('DOMContentLoaded', inizializza);

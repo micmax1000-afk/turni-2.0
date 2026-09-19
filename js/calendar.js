@@ -406,6 +406,9 @@ function aggiornaProssimoTurno(){
       return fine > adesso;
     })
     .sort();
+  // Rispettiamo la scelta dell'utente in "Personalizza Report": se ha nascosto questo blocco,
+  // non lo forziamo di nuovo visibile solo perché è stato trovato un turno da mostrare.
+  if(AppState.reportBlocchi && AppState.reportBlocchi.prossimoTurno === false) return;
   widget.hidden = false;
   if(!chiaviFuture.length){
     el('prossimoTurnoIcona').textContent = 'ℹ️';
@@ -585,7 +588,11 @@ function renderCalendario(){
       ${orario || oreLabel ? `<span class="giorno-meta">${orario}${oreLabel}</span>` : '<span class="giorno-meta giorno-meta-vuoto">—</span>'}
     `;
 
-    cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
+    cella.addEventListener('click', (e) => {
+      if(cella.dataset.pressioneLunga === '1'){ delete cella.dataset.pressioneLunga; return; } // evita che il "click" dopo il rilascio riapra anche il popup normale
+      gestisciTocchGiornoV2(iso);
+    });
+    attaccaPressioneLungaV2(cella, iso);
     griglia.appendChild(cella);
   }
 

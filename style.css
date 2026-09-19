@@ -1314,16 +1314,16 @@ h3{ font-family: var(--font-display); font-weight:600; }
 /* V44.1 — selezione calendario più chiara e data dei riposi in grassetto */
 .giorno-cella.riposo-giorno .giorno-numero{font-weight:800!important;}
 .giorno-cella.selezionata{
-  background:#D9F0FF!important;
-  border-color:#2196F3!important;
-  box-shadow:0 0 0 3px rgba(33,150,243,.24),0 3px 10px rgba(33,150,243,.16);
+  background:#1B2440!important;
+  border-color:#1B2440!important;
+  box-shadow:0 3px 10px rgba(27,36,64,.28);
   transform:translateY(-1px);
   z-index:3;
 }
-.giorno-cella.selezionata .giorno-numero{color:#0B4F8A!important;font-weight:800!important;}
+.giorno-cella.selezionata .giorno-numero{color:#fff!important;font-weight:800!important;}
 .giorno-cella.selezionata.sabato .giorno-numero,
-.giorno-cella.selezionata.festivo .giorno-numero{color:#0B4F8A!important;}
-.giorno-cella.selezionata .giorno-turno-badge{background:rgba(255,255,255,.88);color:var(--inchiostro);}
+.giorno-cella.selezionata.festivo .giorno-numero{color:#fff!important;}
+.giorno-cella.selezionata .giorno-turno-badge{background:rgba(255,255,255,.92);color:var(--inchiostro);}
 
 
 /* V46 — miglioramenti Turni e Assenze */
@@ -1396,6 +1396,14 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .scheda-calendario-v2 .giorno-orario{display:block!important;font-size:.6rem;opacity:.75;text-align:center}
 .scheda-calendario-v2 .giorno-badge-list,.scheda-calendario-v2 .giorno-ore{display:none!important}
 @media(max-width:390px){.scheda-calendario-v2 .giorno-cella{min-height:64px}.scheda-calendario-v2 .giorno-turno-nome{font-size:.6rem!important}}
+.scheda-calendario-v2 .giorno-cella.vuota{background:var(--carta)!important;border-radius:14px!important;box-shadow:none!important}
+
+/* Numero del giorno più piccolo e sbiadito, in alto a sinistra — lascia il chip colorato come
+   vero protagonista della cella, invece di competere con un numero grande e in grassetto. */
+.scheda-calendario-v2 .giorno-topline{justify-content:flex-start!important}
+.scheda-calendario-v2 .giorno-numero{font-size:.72rem!important;font-weight:600!important;opacity:.55}
+.scheda-calendario-v2 .giorno-cella.oggi .giorno-numero{opacity:.9;font-weight:800!important}
+.scheda-calendario-v2 .giorno-cella.selezionata .giorno-numero{opacity:.9!important}
 
 /* "Filtra o svuota il mese" — menu compatto sotto la griglia, richiudibile, chiuso di default */
 .azioni-calendario-rapide-v2{margin-top:10px;border:1px solid var(--bordo);border-radius:12px;background:var(--carta);overflow:hidden}
@@ -1430,7 +1438,7 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .riga-modello-selettore:last-child{border-bottom:0}
 .riga-modello-selettore:hover{background:var(--carta)}
 .cerchio-modello{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 .68rem var(--font-corpo);color:var(--inchiostro)}
-.cerchio-modello-assenza{background:var(--bordo)}
+.cerchio-modello-assenza{background:var(--bordo);width:auto;min-width:34px;height:26px;border-radius:13px;padding:0 8px;font-size:.62rem;white-space:nowrap}
 .riga-modello-testo{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .riga-modello-testo strong{font-size:.86rem}
 .riga-modello-testo small{font-size:.72rem;color:var(--testo-tenue)}

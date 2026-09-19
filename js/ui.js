@@ -91,7 +91,7 @@ function mostraScheda(nome){
     const seq = el('sezioneSequenza');
     if(seq) seq.hidden = true;
   }
-  if(nome === 'statistiche' || nome === 'report'){ const a=el('campoAnnoStatistiche'); if(a && !a.value) a.value=new Date().getFullYear(); renderStatistiche(); if(typeof aggiornaRiepilogoMensile === 'function') aggiornaRiepilogoMensile(); }
+  if(nome === 'statistiche' || nome === 'report'){ const a=el('campoAnnoStatistiche'); if(a && !a.value) a.value=new Date().getFullYear(); renderStatistiche(); if(typeof aggiornaRiepilogoMensile === 'function') aggiornaRiepilogoMensile(); if(typeof applicaVisibilitaReportBlocchi === 'function') applicaVisibilitaReportBlocchi(); }
   if(nome === 'impostazioni' || nome === 'altro') inizializzaImpostazioni();
   window.scrollTo({ top:0, behavior:'instant' });
 }
@@ -133,6 +133,30 @@ function aggiornaAvvisiApp(){
   const ultimo = TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP);
   if(Object.keys(AppState.turni || {}).length && !ultimo) out.push({tipo:'avviso', testo:'Backup non ancora effettuato: esporta una copia dei tuoi dati.'});
   else if(ultimo){ const giorni=Math.floor((oggi-new Date(ultimo))/86400000); if(giorni>=30) out.push({tipo:'avviso', testo:`Backup vecchio di ${giorni} giorni. È consigliato crearne uno nuovo.`}); }
+
+  // La turnazione automatica sta per finire (o è già finita): proponiamo di continuarla con un
+  // tocco solo, invece di dover andare in Turni → Genera automaticamente → Continua manualmente.
+  // Soglia di 10 giorni: abbastanza in anticipo da poter continuare con calma, non così tanto da
+  // risultare un avviso permanente e inutile.
+  const ultimoGiornoSequenzaStr = TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO);
+  if(ultimoGiornoSequenzaStr){
+    const ultimoGiornoSequenza = new Date(ultimoGiornoSequenzaStr + 'T00:00:00');
+    const giorniRimasti = Math.round((ultimoGiornoSequenza - oggi) / 86400000);
+    if(giorniRimasti <= 10){
+      const dataLeggibile = `${String(ultimoGiornoSequenza.getDate()).padStart(2,'0')}/${String(ultimoGiornoSequenza.getMonth()+1).padStart(2,'0')}`;
+      const testoAvviso = giorniRimasti < 0
+        ? `La tua turnazione automatica è terminata il ${dataLeggibile}.`
+        : `La tua turnazione automatica finisce il ${dataLeggibile}.`;
+      out.push({ tipo:'info', testo: testoAvviso, azione:{ label:'🔁 Continua per un altro mese', onClick: () => {
+        const campoGiorni = el('campoSequenzaGiorni');
+        if(campoGiorni) campoGiorni.value = '30';
+        if(typeof continuaSequenzaTurni === 'function') continuaSequenzaTurni();
+        if(typeof renderCalendario === 'function') renderCalendario();
+        if(typeof mostraToast === 'function') mostraToast('Turnazione continuata: la rotazione prosegue per un altro mese, senza sfasare i turni già inseriti.', 'successo');
+        if(typeof renderAvvisiApp === 'function') renderAvvisiApp();
+      } } });
+    }
+  }
   const ass = AppState.assenze || {};
   Object.entries(ass).forEach(([nome,v])=>{
     const spettanti=Number(v?.spettanti ?? v?.totale ?? 0), usati=Number(v?.usati ?? v?.utilizzati ?? 0);

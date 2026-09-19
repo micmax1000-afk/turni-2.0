@@ -622,7 +622,10 @@
 
   <div id="vistaStatistiche" hidden>
     <section class="scheda" id="sezioneReportTop">
-      <h2>Report</h2>
+      <div class="intestazione-scheda">
+        <h2>Report</h2>
+        <button type="button" class="btn-icona" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
+      </div>
       <div id="prossimoTurnoWidget" class="prossimo-turno-widget" hidden>
         <span class="prossimo-turno-eyebrow">⏭️ Prossimo turno</span>
         <div class="prossimo-turno-corpo">
@@ -694,7 +697,7 @@
       </div>
     </section>
 
-    <section class="scheda">
+    <section class="scheda" id="sezioneStatisticheGrafici">
       <div class="intestazione-scheda">
         <h2>Statistiche</h2>
       </div>
@@ -718,6 +721,22 @@
     </div>
   </div>
 
+<div class="overlay" id="overlayPersonalizzaReport" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Personalizza Report</h2><button class="btn-icona" id="btnChiudiPersonalizzaReport" aria-label="Chiudi">✕</button></div>
+    <div class="modale-corpo">
+      <p class="sotto-titolo" style="margin:0 0 4px;">Scegli quali blocchi vedere in Report. Puoi riattivarli in qualsiasi momento.</p>
+      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportProssimoTurno"> ⏭️ Prossimo turno</label>
+      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoMese"> 📊 Riepilogo mese (compatto)</label>
+      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoOre"> 🕐 Riepilogo Ore del Mese (dettagliato)</label>
+      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportStatistiche"> 📈 Statistiche (grafici annuali)</label>
+      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportCedolino"> 💶 Cedolino</label>
+    </div>
+    <div class="modale-footer">
+      <button class="btn-primario" id="btnFattoPersonalizzaReport" type="button">Fatto</button>
+    </div>
+  </div>
+</div>
 </main>
 
 <!-- Moduli core (ordine obbligatorio) -->

@@ -47,3 +47,28 @@ test('aggiornaAvvisiApp: con turni già presenti nel mese corrente, nessun avvis
   assert.equal(avvisi.find(a => a.azione), undefined);
   assert.equal(avvisi.find(a => /Nessun turno registrato/.test(a.testo)), undefined);
 });
+
+test('aggiornaAvvisiApp: propone di continuare la turnazione automatica quando sta per finire (entro 10 giorni)', () => {
+  const app = caricaApp();
+  app.AppState.anagrafica = { qualifica: 'Assistente Capo' };
+  const oggi = app.dataISO(new Date());
+  app.AppState.turni = { [oggi]: { data: oggi, oraInizio: '07:00', oraFine: '13:00' } };
+  app.AppState.assenze = [];
+  const CHIAVE = 'simCedolino_sequenzaUltimoGiorno_v1';
+
+  const tra5giorni = new Date(Date.now() + 5 * 86400000);
+  app.localStorage.setItem(CHIAVE, app.dataISO(tra5giorni));
+  let invito = app.aggiornaAvvisiApp().find(a => a.azione && a.azione.label.includes('Continua'));
+  assert.ok(invito, 'entro 10 giorni deve proporre di continuare');
+
+  const tra60giorni = new Date(Date.now() + 60 * 86400000);
+  app.localStorage.setItem(CHIAVE, app.dataISO(tra60giorni));
+  invito = app.aggiornaAvvisiApp().find(a => a.azione && a.azione.label.includes('Continua'));
+  assert.equal(invito, undefined, 'con oltre 10 giorni di margine non deve proporre nulla');
+
+  const fa3giorni = new Date(Date.now() - 3 * 86400000);
+  app.localStorage.setItem(CHIAVE, app.dataISO(fa3giorni));
+  invito = app.aggiornaAvvisiApp().find(a => a.azione && a.azione.label.includes('Continua'));
+  assert.ok(invito, 'anche se già terminata deve proporre di continuare');
+  assert.match(invito.testo, /è terminata/);
+});
