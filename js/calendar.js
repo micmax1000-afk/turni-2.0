@@ -96,6 +96,47 @@ function classificaFinestra(inizio, fine){
   return cat;
 }
 
+// Somma (o sottrae) un numero di ore a un orario "HH:MM", avvolgendo su 24h se necessario.
+// direzione: +1 per sommare (es. straordinario "dopo"), -1 per sottrarre (es. "prima").
+function sommaOreAOrario(oraStr, ore, direzione){
+  const [h, m] = oraStr.split(':').map(Number);
+  let minutiTotali = h * 60 + m + direzione * Math.round(Number(ore) * 60);
+  minutiTotali = ((minutiTotali % 1440) + 1440) % 1440;
+  const hh = Math.floor(minutiTotali / 60), mm = minutiTotali % 60;
+  return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+}
+
+// Dati "quante ore" di straordinario e se sono prima o dopo il turno, calcola l'orario preciso
+// (dalle/alle), usando come riferimento l'inizio o la fine del turno stesso. Così l'utente inserisce
+// solo un numero di ore — il programma continua a sapere l'orario esatto per la tariffa giusta.
+function calcolaOrarioStraordinarioDaOre(oraInizioTurno, oraFineTurno, ore, posizione){
+  if(!ore || Number(ore) <= 0) return { inizio: '', fine: '' };
+  if(posizione === 'dopo'){
+    if(!oraFineTurno) return { inizio: '', fine: '' };
+    return { inizio: oraFineTurno, fine: sommaOreAOrario(oraFineTurno, ore, +1) };
+  }
+  if(!oraInizioTurno) return { inizio: '', fine: '' };
+  return { inizio: sommaOreAOrario(oraInizioTurno, ore, -1), fine: oraInizioTurno };
+}
+
+// Operazione inversa: da un orario dalle/alle già salvato, ricava quante ore sono e se erano
+// "prima" o "dopo" il turno — usata per ripopolare il modulo quando riapri un turno esistente.
+function scomponiOrarioStraordinarioInOre(oraInizioBlocco, oraFineBlocco, oraInizioTurno, oraFineTurno){
+  if(!oraInizioBlocco || !oraFineBlocco) return { ore: '', posizione: 'prima' };
+  const differenzaOre = (a, b) => { // ore da a a b, avvolgendo su 24h
+    const [ha, ma] = a.split(':').map(Number), [hb, mb] = b.split(':').map(Number);
+    let diff = (hb * 60 + mb) - (ha * 60 + ma);
+    if(diff <= 0) diff += 1440;
+    return round2(diff / 60);
+  };
+  // "Dopo" se il blocco inizia esattamente dove finisce il turno (o è comunque ancorato lì);
+  // altrimenti assumiamo "prima" (il blocco finisce dove inizia il turno) — il caso tipico.
+  if(oraFineTurno && oraInizioBlocco === oraFineTurno){
+    return { ore: differenzaOre(oraInizioBlocco, oraFineBlocco), posizione: 'dopo' };
+  }
+  return { ore: differenzaOre(oraInizioBlocco, oraFineBlocco), posizione: 'prima' };
+}
+
 function finestraDaOrari(dataBase, oraInizioStr, oraFineStr){
   if(!oraInizioStr || !oraFineStr) return { ore:0, classificazione:{ ordinarie:0, notturne:0, festive:0, domenicali:0, notturneFestive:0, serali:0 } };
   const [hs, ms] = oraInizioStr.split(':').map(Number);

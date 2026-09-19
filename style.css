@@ -570,6 +570,10 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .link-aggiungi-straordinario:hover{text-decoration:underline}
 .link-rimuovi-straordinario{color:var(--rosso-bollo,#a23b34);margin-top:2px}
 .link-rimuovi-straordinario:hover{text-decoration:underline}
+
+/* V77 — Straordinario a sole ore + prima/dopo, invece di orario preciso */
+.riga-straordinario-ore{display:flex;gap:10px;margin-bottom:2px}
+.riga-straordinario-ore .campo-modale{flex:1;min-width:0}
 .legenda-colori .pallino{width:10px;height:10px;}
 @media(max-width:600px){
   .scheda-calendario{padding:14px 10px 24px;}

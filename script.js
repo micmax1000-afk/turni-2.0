@@ -678,10 +678,12 @@ function inizializza(){
   el('btnAggiungiSecondoStraordinario').addEventListener('click', () => {
     el('blocchStrSecondo').hidden = false;
     el('btnAggiungiSecondoStraordinario').hidden = true;
-    el('campoStrDopoInizio')?.focus();
+    el('campoStrOre2')?.focus();
     aggiornaAnteprima();
   });
   el('btnRimuoviSecondoStraordinario').addEventListener('click', () => {
+    el('campoStrOre2').value = '';
+    el('campoStrPosizione2').value = 'prima';
     el('campoStrDopoInizio').value = '';
     el('campoStrDopoFine').value = '';
     el('blocchStrSecondo').hidden = true;
@@ -737,6 +739,10 @@ function inizializza(){
   });
   ['campoOraInizio','campoOraFine','campoStrPrimaInizio','campoStrPrimaFine','campoStrDopoInizio','campoStrDopoFine','campoSecondoOraInizio','campoSecondoOraFine'].forEach(id => {
     el(id).addEventListener('input', aggiornaAnteprima);
+  });
+  ['campoStrOre1','campoStrPosizione1','campoStrOre2','campoStrPosizione2'].forEach(id => {
+    const campo = el(id);
+    if(campo) campo.addEventListener('input', aggiornaAnteprima);
   });
   el('campoCompensaStraordinario').addEventListener('change', aggiornaAnteprima);
   el('campoPermessoBreveAttivo').addEventListener('change', () => {
@@ -923,7 +929,7 @@ function renderListaModelliAssenzeV2(){
   </button>`).join('');
 }
 
-function applicaModelloV2(idModello){
+function applicaModelloV2(idModello, apriDettaglio = true){
   if(!giornoPerPopupV2) return;
   const m = MODELLI_TURNO_V2.find(x => x.id === idModello);
   if(!m) return;
@@ -935,9 +941,13 @@ function applicaModelloV2(idModello){
   renderCalendario();
   selezionaGiorno(iso);
   mostraToast(`${m.nome} aggiunto`, 'successo');
+  // Invece di fermarci qui e farti ritoccare il giorno una seconda volta per aggiungere
+  // indennità/straordinario, apriamo subito il pannello di modifica — il turno è già salvato,
+  // qui puoi solo eventualmente aggiungere il resto, o chiudere se non ti serve altro.
+  if(apriDettaglio) apriModaleTurno(iso);
 }
 
-function applicaAssenzaV2(idAssenza){
+function applicaAssenzaV2(idAssenza, apriDettaglio = true){
   if(!giornoPerPopupV2) return;
   const iso = giornoPerPopupV2;
   AppState.turni[iso] = { data: iso, assenzaTipo: idAssenza };
@@ -948,6 +958,7 @@ function applicaAssenzaV2(idAssenza){
   selezionaGiorno(iso);
   const nomeAssenza = (AppState.assenze || []).find(a => a.id === idAssenza);
   mostraToast(`${nomeAssenza ? nomeAssenza.nome : 'Assenza'} aggiunta`, 'successo');
+  if(apriDettaglio) apriModaleTurno(iso);
 }
 
 // ===================== Pressione lunga su giorno vuoto: ripete l'ultimo turno/assenza usato =====================
@@ -983,8 +994,8 @@ function gestisciPressioneLungaGiornoV2(iso){
   }
   if(navigator.vibrate) navigator.vibrate(15);
   giornoPerPopupV2 = iso;
-  if(ultimo.tipo === 'modello') applicaModelloV2(ultimo.id);
-  else if(ultimo.tipo === 'assenza') applicaAssenzaV2(ultimo.id);
+  if(ultimo.tipo === 'modello') applicaModelloV2(ultimo.id, false);
+  else if(ultimo.tipo === 'assenza') applicaAssenzaV2(ultimo.id, false);
 }
 
 // ===================== Personalizza Report: mostra/nascondi blocchi a scelta =====================

@@ -72,6 +72,41 @@ test('classificaTurno: stesso orario di inizio e fine viene interpretato come tu
   assert.equal(c.oreTotali, 24);
 });
 
+test('calcolaOrarioStraordinarioDaOre: converte "quante ore + prima/dopo" nell\'orario esatto, gestendo anche la mezzanotte', () => {
+  const app = caricaApp();
+  let r = app.calcolaOrarioStraordinarioDaOre('07:00', '13:00', 2, 'prima');
+  assert.equal(r.inizio, '05:00'); assert.equal(r.fine, '07:00');
+
+  r = app.calcolaOrarioStraordinarioDaOre('07:00', '13:00', 3, 'dopo');
+  assert.equal(r.inizio, '13:00'); assert.equal(r.fine, '16:00');
+
+  // Turno notturno: lo straordinario "dopo" deve ancorarsi alla vera fine (06:00), non confondersi con l'inizio (22:00).
+  r = app.calcolaOrarioStraordinarioDaOre('22:00', '06:00', 2, 'dopo');
+  assert.equal(r.inizio, '06:00'); assert.equal(r.fine, '08:00');
+
+  // Avvolgimento all'indietro oltre la mezzanotte.
+  r = app.calcolaOrarioStraordinarioDaOre('00:30', '07:00', 1, 'prima');
+  assert.equal(r.inizio, '23:30'); assert.equal(r.fine, '00:30');
+
+  // Nessuna ora inserita -> nessun orario calcolato (niente straordinario).
+  r = app.calcolaOrarioStraordinarioDaOre('07:00', '13:00', 0, 'prima');
+  assert.equal(r.inizio, ''); assert.equal(r.fine, '');
+
+  // Verifica end-to-end: le ore calcolate risultano poi classificate correttamente (pomeriggio = diurno, non notturno).
+  const c = app.classificaTurno({ data:'2026-09-05', oraInizio:'07:00', oraFine:'13:00', straordinarioPrimaInizio:'13:00', straordinarioPrimaFine:'16:00' });
+  assert.equal(c.strDiurno, 3, 'le 3 ore dalle 13 alle 16 devono classificarsi come straordinario diurno');
+  assert.equal(c.strNotturno, 0);
+});
+
+test('scomponiOrarioStraordinarioInOre: ricava ore e posizione (prima/dopo) da un orario già salvato', () => {
+  const app = caricaApp();
+  let r = app.scomponiOrarioStraordinarioInOre('05:00', '07:00', '07:00', '13:00');
+  assert.equal(r.ore, 2); assert.equal(r.posizione, 'prima');
+
+  r = app.scomponiOrarioStraordinarioInOre('13:00', '16:00', '07:00', '13:00');
+  assert.equal(r.ore, 3); assert.equal(r.posizione, 'dopo');
+});
+
 test('calcolaFineAssolutaTurno: calcola correttamente l\'istante di fine, anche a cavallo di mezzanotte', () => {
   // Base per la regressione "prossimo turno mostra un turno già concluso di oggi":
   // verifica che il calcolo dell'istante di fine sia corretto sia per turni nello stesso

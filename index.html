@@ -149,13 +149,19 @@
           <p class="sotto-titolo" style="margin:-4px 0 6px;">Esempio: turno 08:00–14:00, pausa, poi rientro 15:00–18:00 — il periodo di pausa non viene conteggiato.</p>
 
           <p style="margin:6px 0 -2px; font-weight:700;">Straordinario</p>
-          <p class="sotto-titolo" style="margin:-2px 0 6px;">Inserisci l'orario reale svolto: il calcolo è automatico.</p>
-          <label class="campo-modale">Dalle<input type="time" id="campoStrPrimaInizio"></label>
-          <label class="campo-modale">Alle<input type="time" id="campoStrPrimaFine"></label>
+          <p class="sotto-titolo" style="margin:-2px 0 6px;">Indica solo quante ore e se sono prima o dopo il turno: calcoliamo noi l'orario esatto per la tariffa giusta.</p>
+          <div class="riga-straordinario-ore">
+            <label class="campo-modale">Ore<input type="number" id="campoStrOre1" min="0" step="0.25" placeholder="es. 2"></label>
+            <label class="campo-modale">Quando<select id="campoStrPosizione1"><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select></label>
+          </div>
+          <input type="hidden" id="campoStrPrimaInizio"><input type="hidden" id="campoStrPrimaFine">
           <button type="button" class="link-aggiungi-straordinario" id="btnAggiungiSecondoStraordinario">+ Aggiungi un altro straordinario</button>
           <div id="blocchStrSecondo" hidden>
-            <label class="campo-modale">Dalle<input type="time" id="campoStrDopoInizio"></label>
-            <label class="campo-modale">Alle<input type="time" id="campoStrDopoFine"></label>
+            <div class="riga-straordinario-ore">
+              <label class="campo-modale">Ore<input type="number" id="campoStrOre2" min="0" step="0.25" placeholder="es. 1"></label>
+              <label class="campo-modale">Quando<select id="campoStrPosizione2"><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select></label>
+            </div>
+            <input type="hidden" id="campoStrDopoInizio"><input type="hidden" id="campoStrDopoFine">
             <button type="button" class="link-rimuovi-straordinario" id="btnRimuoviSecondoStraordinario">✕ Rimuovi questo straordinario</button>
           </div>
           <p class="sotto-titolo" id="anteprimaStraordinario" style="margin:-4px 0 6px;"></p>

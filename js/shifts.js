@@ -88,7 +88,38 @@ function aggiornaVisibilitaCampiOrario(){
   el('campiRiposoCompensativo').style.display = eOraria ? '' : 'none';
 }
 
+// Calcola gli orari nascosti di straordinario (dalle/alle) a partire dai due campi visibili
+// "quante ore" + "prima/dopo il turno", usando l'orario del turno corrente come riferimento.
+// Chiamata prima di leggere il turno dal modulo, così i campi nascosti sono sempre aggiornati
+// indipendentemente dall'ordine in cui l'utente ha compilato i campi.
+function sincronizzaCampiStraordinarioDaOre(){
+  const oraInizioTurno = el('campoOraInizio')?.value;
+  const oraFineTurno = el('campoOraFine')?.value;
+  const applica = (campoOre, campoPosizione, campoInizioNascosto, campoFineNascosto) => {
+    const ore = el(campoOre)?.value;
+    const posizione = el(campoPosizione)?.value || 'prima';
+    const r = calcolaOrarioStraordinarioDaOre(oraInizioTurno, oraFineTurno, ore, posizione);
+    if(el(campoInizioNascosto)) el(campoInizioNascosto).value = r.inizio;
+    if(el(campoFineNascosto)) el(campoFineNascosto).value = r.fine;
+  };
+  applica('campoStrOre1', 'campoStrPosizione1', 'campoStrPrimaInizio', 'campoStrPrimaFine');
+  applica('campoStrOre2', 'campoStrPosizione2', 'campoStrDopoInizio', 'campoStrDopoFine');
+}
+
+// Operazione inversa: quando riapri un turno che ha già uno straordinario salvato, ricostruisce
+// "quante ore" + "prima/dopo" da mostrare nei campi visibili, a partire dall'orario nascosto.
+function popolaCampiOreStraordinarioDaOrario(t){
+  const popola = (inizioSalvato, fineSalvato, campoOre, campoPosizione) => {
+    const r = scomponiOrarioStraordinarioInOre(inizioSalvato, fineSalvato, t.oraInizio, t.oraFine);
+    if(el(campoOre)) el(campoOre).value = r.ore || '';
+    if(el(campoPosizione)) el(campoPosizione).value = r.posizione;
+  };
+  popola(t.straordinarioPrimaInizio, t.straordinarioPrimaFine, 'campoStrOre1', 'campoStrPosizione1');
+  popola(t.straordinarioDopoInizio, t.straordinarioDopoFine, 'campoStrOre2', 'campoStrPosizione2');
+}
+
 function leggiTurnoDalModale(){
+  sincronizzaCampiStraordinarioDaOre();
   return {
     data: giornoSelezionato,
     riposo: el('campoRiposo').checked,
@@ -230,6 +261,7 @@ function apriModaleTurno(iso){
   el('campoStrPrimaFine').value = t.straordinarioPrimaFine || '';
   el('campoStrDopoInizio').value = t.straordinarioDopoInizio || '';
   el('campoStrDopoFine').value = t.straordinarioDopoFine || '';
+  popolaCampiOreStraordinarioDaOrario(t);
   // Il secondo blocco straordinario resta nascosto finché non serve: lo mostriamo di default
   // solo se il turno ha già dati salvati lì (riapertura di un turno con due finestre distinte).
   const secondoStrPresente = !!(t.straordinarioDopoInizio || t.straordinarioDopoFine);
