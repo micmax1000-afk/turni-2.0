@@ -196,11 +196,8 @@ function aggiornaCardAssenza(riga, voce){
   if(status) status.textContent=rimangono<0?'⚠ Esaurito':rimangono===0?'0 disponibili':percentuale>=80?'Quasi esaurito':'Disponibile';
 }
 
-function renderAssenze(){
-  renderDashboardAssenze();
-  const box = el('corpoAssenze');
+function renderCardAssenzaItem(a){
   const NOMI_ANNUALI_SEMPLICI = ['Congedo straordinario', 'Riposo legge', 'Donazione sangue', 'Ore studio', 'Permesso breve', 'Permesso sindacale'];
-  box.innerHTML = AppState.assenze.map(a => {
     const eRiposoCompensativo = a.nome === 'Riposo compensativo';
     const eRecuperoRiposo = a.nome === 'Recupero riposo';
     const eRecuperoFestivo = a.nome === 'Recupero festivo';
@@ -305,10 +302,28 @@ function renderAssenze(){
       </div>
       <span class="indicatore-salvato">✓ Salvato</span>
     </article>`;
-  }).join('');
+}
+
+function renderAssenze(){
+  renderDashboardAssenze();
+  const box = el('corpoAssenze');
+  const boxPersonalizzate = el('corpoAssenzePersonalizzate');
+  box.innerHTML = AppState.assenze.filter(a => !a.personalizzata).map(renderCardAssenzaItem).join('');
+  if(boxPersonalizzate){
+    const personalizzate = AppState.assenze.filter(a => a.personalizzata);
+    boxPersonalizzate.innerHTML = personalizzate.length
+      ? personalizzate.map(renderCardAssenzaItem).join('')
+      : '<p class="sotto-titolo" style="padding:8px 2px;">Nessuna assenza personalizzata. Aggiungine una con il pulsante qui sotto.</p>';
+  }
 
   if(!window.__filtriAssenzeInizializzati){ inizializzaFiltriAssenze(); window.__filtriAssenzeInizializzati = true; }
 
+  [box, boxPersonalizzate].filter(Boolean).forEach(contenitore => wireEventiCardAssenza(contenitore));
+}
+
+// Collega gli eventi (modifica campo, apri/chiudi date, rimuovi) alle card già renderizzate in un
+// contenitore — usata sia per la lista ufficiale sia per quella personalizzata, stessa logica.
+function wireEventiCardAssenza(box){
   box.querySelectorAll('[data-toggle-date]').forEach(btn => {
     btn.addEventListener('click', () => {
       const lista = box.querySelector(`[data-lista-date="${btn.dataset.toggleDate}"]`);

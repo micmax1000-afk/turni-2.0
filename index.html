@@ -76,17 +76,54 @@
       <button type="button" class="popup-rapido-chiudi" id="btnPopupChiudi" aria-label="Chiudi">✕</button>
     </div>
 
-    <!-- Selettore Turno di lavoro / Assenza, con Modelli pronti (colore incluso) -->
+    <!-- Selettore Turno di lavoro / Assenza / Indennità, con Modelli pronti (colore incluso) -->
     <div class="overlay" id="overlaySelettoreModelli" hidden>
       <div class="modale">
         <div class="modale-header"><h2>Cosa vuoi aggiungere?</h2><button class="btn-icona" id="btnChiudiSelettoreModelli" aria-label="Chiudi">✕</button></div>
         <div class="modale-corpo">
           <div class="switch-turno-assenza" role="tablist">
-            <button type="button" class="switch-turno-assenza-btn attivo" id="tabSelettoreModelliTurni" role="tab" aria-selected="true">Turni di lavoro</button>
+            <button type="button" class="switch-turno-assenza-btn attivo" id="tabSelettoreModelliTurni" role="tab" aria-selected="true">Turni</button>
             <button type="button" class="switch-turno-assenza-btn" id="tabSelettoreModelliAssenze" role="tab" aria-selected="false">Assenze</button>
+            <button type="button" class="switch-turno-assenza-btn" id="tabSelettoreModelliIndennita" role="tab" aria-selected="false">Indennità</button>
           </div>
           <div id="listaModelliTurni" class="lista-modelli-selettore"></div>
           <div id="listaModelliAssenze" class="lista-modelli-selettore" hidden></div>
+          <div id="listaModelliIndennita" class="lista-modelli-selettore" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nuovo turno personalizzato / modifica di un turno esistente (dei 5 di base o personalizzato) -->
+    <div class="overlay" id="overlayModificaModello" hidden>
+      <div class="modale">
+        <div class="modale-header"><h2 id="titoloModificaModello">Nuovo turno</h2><button class="btn-icona" id="btnChiudiModificaModello" aria-label="Chiudi">✕</button></div>
+        <div class="modale-corpo">
+          <label class="campo-modale">Nome<input type="text" id="campoModModelloNome" placeholder="es. Turno spezzato"></label>
+          <div id="campiModModelloOrario">
+            <label class="campo-modale">Ora inizio<input type="time" id="campoModModelloInizio"></label>
+            <label class="campo-modale">Ora fine<input type="time" id="campoModModelloFine"></label>
+          </div>
+        </div>
+        <div class="modale-footer" style="justify-content:space-between;">
+          <button class="btn-secondario" id="btnEliminaModello" type="button">🗑️ Elimina</button>
+          <button class="btn-primario" id="btnSalvaModello" type="button">Salva</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Straordinario rapido dalla scheda Indennità: sole ore + prima/dopo, come nel pannello del turno -->
+    <div class="overlay" id="overlayStraordinarioRapido" hidden>
+      <div class="modale">
+        <div class="modale-header"><h2>Straordinario</h2><button class="btn-icona" id="btnChiudiStraordinarioRapido" aria-label="Chiudi">✕</button></div>
+        <div class="modale-corpo">
+          <p class="sotto-titolo" style="margin-top:0;">Indica solo quante ore e se sono prima o dopo il turno: calcoliamo noi l'orario esatto per la tariffa giusta.</p>
+          <div class="riga-straordinario-ore">
+            <label class="campo-modale">Ore<input type="number" id="campoStrRapidoOre" min="0" step="0.25" placeholder="es. 2"></label>
+            <label class="campo-modale">Quando<select id="campoStrRapidoPosizione"><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select></label>
+          </div>
+        </div>
+        <div class="modale-footer">
+          <button class="btn-primario" id="btnSalvaStraordinarioRapido" type="button">Salva</button>
         </div>
       </div>
     </div>
@@ -354,7 +391,6 @@
   <section class="scheda" id="sezioneAssenze" hidden>
     <div class="intestazione-scheda">
       <h2>Assenze dal Servizio</h2>
-      <button class="btn-mini-icona" id="btnAggiungiAssenza" title="Aggiungi voce" aria-label="Aggiungi voce">+</button>
     </div>
     <p class="sotto-titolo">Elenco personalizzabile, solo informativo (non incide sul cedolino). Si salva da solo.</p>
     <details class="info-richiudibile-assenze">
@@ -377,6 +413,13 @@
     <div class="assenze-search-wrap" role="search"><span aria-hidden="true">🔎</span><input id="cercaAssenza" type="search" autocomplete="off" placeholder="Cerca un tipo di assenza…" aria-label="Cerca assenza"></div>
     <div id="assenzeSummaryGrid" class="assenze-summary-grid" aria-live="polite"></div>
     <div id="corpoAssenze"></div>
+  </section>
+
+  <section class="scheda" id="sezioneAssenzePersonalizzate">
+    <h2>🎁 Assenze personalizzate</h2>
+    <p class="sotto-titolo">Voci libere non coperte da quelle sopra (es. un permesso specifico del tuo reparto). Si salvano da sole.</p>
+    <div id="corpoAssenzePersonalizzate"></div>
+    <button type="button" class="btn-secondario" id="btnAggiungiAssenzaPersonalizzata" style="margin-top:10px;">+ Aggiungi assenza personalizzata</button>
   </section>
   </div>
 

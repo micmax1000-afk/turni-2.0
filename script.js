@@ -93,6 +93,7 @@ idContatore = 1; // già dichiarato in utils.js
 AppState.assenze = caricaAssenze(); // array [{ id, nome, valore, unita, personalizzata }]
 AppState.indennitaPersonalizzate = caricaIndennitaPersonalizzate(); // array [{ id, nome, valore, unita: 'mese'|'turno' }]
 AppState.reportBlocchi = caricaReportBlocchi(); // { prossimoTurno, riepilogoMese, riepilogoOre, statistiche, cedolino }
+AppState.modelliTurno = caricaModelliTurno(); // array di modelli turno (5 di base + eventuali personalizzati)
 TurniPSStorage.setItem(CHIAVE_ASSENZE, JSON.stringify(AppState.assenze)); // persiste subito l'eventuale merge di nuove voci predefinite
 
 AppState.noteGiorni = caricaNoteGiorni(); // { 'AAAA-MM-GG': 'testo nota' }
@@ -451,7 +452,7 @@ function inizializza(){
     renderTabelle();
   });
 
-  el('btnAggiungiAssenza').addEventListener('click', () => {
+  on('btnAggiungiAssenzaPersonalizzata','click', () => {
     AppState.assenze.push({ id: nuovoId(), nome:'Nuova voce', valore:0, unita:'gg', personalizzata:true });
     salvaAssenzeStorage();
     renderAssenze();
@@ -816,8 +817,13 @@ function inizializza(){
   on('btnChiudiSelettoreModelli','click', () => { el('overlaySelettoreModelli').hidden = true; });
   on('tabSelettoreModelliTurni','click', () => apriSelettoreModelliV2('turni'));
   on('tabSelettoreModelliAssenze','click', () => apriSelettoreModelliV2('assenze'));
+  on('tabSelettoreModelliIndennita','click', () => apriSelettoreModelliV2('indennita'));
   const listaModelliTurniHost = el('listaModelliTurni');
   if(listaModelliTurniHost) listaModelliTurniHost.addEventListener('click', (e) => {
+    const btnNuovo = e.target.closest('#btnNuovoModelloV2');
+    if(btnNuovo){ apriModificaModelloV2(null); return; }
+    const btnMatita = e.target.closest('[data-modifica-modello]');
+    if(btnMatita){ apriModificaModelloV2(btnMatita.dataset.modificaModello); return; }
     const btn = e.target.closest('[data-modello]');
     if(btn) applicaModelloV2(btn.dataset.modello);
   });
@@ -826,7 +832,18 @@ function inizializza(){
     const btn = e.target.closest('[data-assenza]');
     if(btn) applicaAssenzaV2(btn.dataset.assenza);
   });
+  const listaModelliIndennitaHost = el('listaModelliIndennita');
+  if(listaModelliIndennitaHost) listaModelliIndennitaHost.addEventListener('click', (e) => {
+    if(e.target.closest('#btnIndennitaStraordinarioV2')){ apriStraordinarioRapidoV2(); return; }
+    const btn = e.target.closest('[data-indennita]');
+    if(btn) applicaIndennitaRapidaV2(btn.dataset.indennita);
+  });
   on('btnImpostazioni','click', () => mostraScheda('impostazioni'));
+  on('btnChiudiModificaModello','click', () => { el('overlayModificaModello').hidden = true; });
+  on('btnSalvaModello','click', salvaModificaModelloV2);
+  on('btnEliminaModello','click', eliminaModelloV2);
+  on('btnChiudiStraordinarioRapido','click', () => { el('overlayStraordinarioRapido').hidden = true; });
+  on('btnSalvaStraordinarioRapido','click', salvaStraordinarioRapidoV2);
   on('btnStatistiche','click', () => mostraScheda('statistiche'));
 
 
@@ -838,19 +855,12 @@ function inizializza(){
   });
 }
 
-// ===================== V60 — Calendario stile "Supershift": funzioni di supporto =====================
-// Modelli pronti per l'inserimento rapido di un turno di lavoro. Colore preso dalla stessa
-// personalizzazione già usata sul calendario (coloreCategoria), quindi resta coerente se l'utente
-// cambia i colori da Impostazioni.
-const MODELLI_TURNO_V2 = [
-  { id:'sera', nome:'Sera', oraInizio:'19:00', oraFine:'01:00', sigla:'SE', chiaveColore:'sera' },
-  { id:'pomeriggio', nome:'Pomeriggio', oraInizio:'13:00', oraFine:'19:00', sigla:'PO', chiaveColore:'pomeriggio' },
-  { id:'mattina', nome:'Mattino', oraInizio:'07:00', oraFine:'13:00', sigla:'MA', chiaveColore:'mattina' },
-  { id:'notte', nome:'Notte', oraInizio:'01:00', oraFine:'07:00', sigla:'NO', chiaveColore:'notte' },
-  { id:'riposo', nome:'Riposo', riposo:true, sigla:'RI', chiaveColore:'riposo' }
-];
+// ===================== V60/V78 — Calendario stile "Supershift": funzioni di supporto =====================
+// I modelli turno vivono in AppState.modelliTurno (persistente, modificabile e ampliabile) — vedi
+// caricaModelliTurno() in storage.js per i 5 di base usati come seme al primo avvio.
 
 let giornoPerPopupV2 = null;
+let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifica/creazione (null = nuovo)
 
 // Tocco su una cella del calendario: se il giorno ha già qualcosa (turno, riposo o assenza),
 // apre direttamente il dettaglio/modifica; se è vuoto, propone il popup rapido "+ Turno / + Evento"
@@ -889,29 +899,40 @@ function apriSelettoreModelliV2(scheda){
   const overlay = el('overlaySelettoreModelli');
   if(!overlay) return;
   overlay.hidden = false;
-  const tabTurni = el('tabSelettoreModelliTurni'), tabAssenze = el('tabSelettoreModelliAssenze');
-  const listaTurni = el('listaModelliTurni'), listaAssenze = el('listaModelliAssenze');
-  const suTurni = scheda !== 'assenze';
-  if(tabTurni) { tabTurni.classList.toggle('attivo', suTurni); tabTurni.setAttribute('aria-selected', String(suTurni)); }
-  if(tabAssenze) { tabAssenze.classList.toggle('attivo', !suTurni); tabAssenze.setAttribute('aria-selected', String(!suTurni)); }
-  if(listaTurni) listaTurni.hidden = !suTurni;
-  if(listaAssenze) listaAssenze.hidden = suTurni;
+  const tabs = { turni: el('tabSelettoreModelliTurni'), assenze: el('tabSelettoreModelliAssenze'), indennita: el('tabSelettoreModelliIndennita') };
+  const liste = { turni: el('listaModelliTurni'), assenze: el('listaModelliAssenze'), indennita: el('listaModelliIndennita') };
+  const attiva = scheda === 'assenze' ? 'assenze' : scheda === 'indennita' ? 'indennita' : 'turni';
+  Object.keys(tabs).forEach(k => {
+    if(tabs[k]) { tabs[k].classList.toggle('attivo', k === attiva); tabs[k].setAttribute('aria-selected', String(k === attiva)); }
+    if(liste[k]) liste[k].hidden = (k !== attiva);
+  });
   renderListaModelliTurniV2();
   renderListaModelliAssenzeV2();
+  renderListaModelliIndennitaV2();
+}
+
+function coloreModelloV2(m){
+  if(typeof coloreCategoria !== 'function') return '#E8ECF0';
+  if(m.riposo) return coloreCategoria('riposo');
+  const categoria = (typeof categoriaTurno === 'function' && m.oraInizio && m.oraFine) ? categoriaTurno(m.oraInizio, m.oraFine) : null;
+  return coloreCategoria(categoria || 'mattina');
 }
 
 function renderListaModelliTurniV2(){
   const host = el('listaModelliTurni');
   if(!host) return;
-  host.innerHTML = MODELLI_TURNO_V2.map(m => {
-    const colore = typeof coloreCategoria === 'function' ? coloreCategoria(m.chiaveColore) : '#E8ECF0';
+  const righe = (AppState.modelliTurno || []).map(m => {
+    const colore = coloreModelloV2(m);
     const sotto = m.riposo ? 'giornata libera' : `${m.oraInizio} - ${m.oraFine}`;
-    return `<button type="button" class="riga-modello-selettore" data-modello="${m.id}">
-      <span class="cerchio-modello" style="background:${colore}">${m.sigla}</span>
-      <span class="riga-modello-testo"><strong>${m.nome}</strong><small>${sotto}</small></span>
-      <span class="riga-modello-freccia" aria-hidden="true">›</span>
-    </button>`;
+    return `<div class="riga-modello-selettore">
+      <button type="button" class="riga-modello-selettore-corpo" data-modello="${escapeHtml(m.id)}">
+        <span class="cerchio-modello" style="background:${colore}">${escapeHtml(m.sigla || (m.nome||'??').slice(0,2).toUpperCase())}</span>
+        <span class="riga-modello-testo"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(sotto)}</small></span>
+      </button>
+      <button type="button" class="riga-modello-matita" data-modifica-modello="${escapeHtml(m.id)}" aria-label="Modifica ${escapeHtml(m.nome)}">✏️</button>
+    </div>`;
   }).join('');
+  host.innerHTML = righe + `<button type="button" class="riga-modello-nuovo" id="btnNuovoModelloV2">＋ Nuovo turno personalizzato</button>`;
 }
 
 function renderListaModelliAssenzeV2(){
@@ -922,16 +943,46 @@ function renderListaModelliAssenzeV2(){
     host.innerHTML = '<p class="sotto-titolo" style="padding:8px 2px;">Nessuna assenza configurata. Aggiungine una dalla scheda Turni.</p>';
     return;
   }
-  host.innerHTML = assenze.map(a => `<button type="button" class="riga-modello-selettore" data-assenza="${escapeHtml(a.id)}">
+  host.innerHTML = assenze.map(a => `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-assenza="${escapeHtml(a.id)}">
     <span class="cerchio-modello cerchio-modello-assenza">${escapeHtml(siglaAssenza(a.nome || '??'))}</span>
     <span class="riga-modello-testo"><strong>${escapeHtml(a.nome)}</strong></span>
     <span class="riga-modello-freccia" aria-hidden="true">›</span>
   </button>`).join('');
 }
 
-function applicaModelloV2(idModello, apriDettaglio = true){
+// Le indennità restano fisse (non modificabili, come deciso): qui solo etichetta+chiave del
+// campo booleano già esistente nel turno, per poterle spuntare rapidamente dal popup.
+const INDENNITA_RAPIDE_V2 = [
+  { chiave:'missione', sigla:'MI', nome:'Missione' },
+  { chiave:'ordinePubblico', sigla:'OP', nome:'Ordine pubblico' },
+  { chiave:'servizioEsterno', sigla:'SE', nome:'Servizio esterno' },
+  { chiave:'buonoPasto', sigla:'BP', nome:'Buono pasto' },
+  { chiave:'reperibilita', sigla:'RE', nome:'Reperibilità' },
+  { chiave:'controlloTerritorio', sigla:'CT', nome:'Controllo territorio' },
+  { chiave:'cambioTurno', sigla:'CA', nome:'Cambio turno' },
+  { chiave:'compensazioneRiposo', sigla:'CR', nome:'Recupero riposo' },
+  { chiave:'recuperoFestivoLavorato', sigla:'RF', nome:'Recupero festivo' },
+  { chiave:'aggiornamentoProfessionale', sigla:'AG', nome:'Aggiornamento professionale' },
+  { chiave:'addestramentoTiro', sigla:'AT', nome:'Addestramento tiro' }
+];
+function renderListaModelliIndennitaV2(){
+  const host = el('listaModelliIndennita');
+  if(!host) return;
+  const t = giornoPerPopupV2 ? (AppState.turni[giornoPerPopupV2] || {}) : {};
+  const righeIndennita = INDENNITA_RAPIDE_V2.map(x => `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-indennita="${x.chiave}">
+    <span class="cerchio-modello cerchio-modello-assenza">${x.sigla}${t[x.chiave] ? ' ✓' : ''}</span>
+    <span class="riga-modello-testo"><strong>${x.nome}</strong></span>
+  </button>`).join('');
+  const rigaStraordinario = `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" id="btnIndennitaStraordinarioV2">
+    <span class="cerchio-modello cerchio-modello-assenza">⏱️</span>
+    <span class="riga-modello-testo"><strong>Straordinario</strong><small>ore, prima o dopo il turno</small></span>
+  </button>`;
+  host.innerHTML = rigaStraordinario + righeIndennita;
+}
+
+function applicaModelloV2(idModello){
   if(!giornoPerPopupV2) return;
-  const m = MODELLI_TURNO_V2.find(x => x.id === idModello);
+  const m = (AppState.modelliTurno || []).find(x => x.id === idModello);
   if(!m) return;
   const iso = giornoPerPopupV2;
   AppState.turni[iso] = m.riposo ? { data: iso, riposo: true } : { data: iso, oraInizio: m.oraInizio, oraFine: m.oraFine };
@@ -941,13 +992,9 @@ function applicaModelloV2(idModello, apriDettaglio = true){
   renderCalendario();
   selezionaGiorno(iso);
   mostraToast(`${m.nome} aggiunto`, 'successo');
-  // Invece di fermarci qui e farti ritoccare il giorno una seconda volta per aggiungere
-  // indennità/straordinario, apriamo subito il pannello di modifica — il turno è già salvato,
-  // qui puoi solo eventualmente aggiungere il resto, o chiudere se non ti serve altro.
-  if(apriDettaglio) apriModaleTurno(iso);
 }
 
-function applicaAssenzaV2(idAssenza, apriDettaglio = true){
+function applicaAssenzaV2(idAssenza){
   if(!giornoPerPopupV2) return;
   const iso = giornoPerPopupV2;
   AppState.turni[iso] = { data: iso, assenzaTipo: idAssenza };
@@ -958,10 +1005,102 @@ function applicaAssenzaV2(idAssenza, apriDettaglio = true){
   selezionaGiorno(iso);
   const nomeAssenza = (AppState.assenze || []).find(a => a.id === idAssenza);
   mostraToast(`${nomeAssenza ? nomeAssenza.nome : 'Assenza'} aggiunta`, 'successo');
-  if(apriDettaglio) apriModaleTurno(iso);
 }
 
-// ===================== Pressione lunga su giorno vuoto: ripete l'ultimo turno/assenza usato =====================
+// Spunta/rimuove un'indennità rapida per il giorno del popup, senza aprire il pannello grande.
+// Richiede che il giorno abbia già un turno di lavoro (le indennità si aggiungono a un turno,
+// non stanno da sole) — se manca, avvisiamo invece di salvare qualcosa senza senso.
+function applicaIndennitaRapidaV2(chiave){
+  if(!giornoPerPopupV2) return;
+  const iso = giornoPerPopupV2;
+  const t = AppState.turni[iso];
+  if(!t || !t.oraInizio || !t.oraFine){
+    mostraToast('Assegna prima un turno di lavoro a questo giorno: le indennità si aggiungono a un turno.', 'avviso');
+    return;
+  }
+  t[chiave] = !t[chiave];
+  salvaTurniStorage();
+  renderCalendario();
+  const nome = (INDENNITA_RAPIDE_V2.find(x => x.chiave === chiave) || {}).nome || chiave;
+  mostraToast(t[chiave] ? `${nome} aggiunta` : `${nome} rimossa`, 'successo');
+  renderListaModelliIndennitaV2();
+}
+
+// ===================== Nuovo/modifica turno personalizzato =====================
+function apriModificaModelloV2(id){
+  modelloInModificaV2 = id;
+  const m = id ? (AppState.modelliTurno || []).find(x => x.id === id) : null;
+  el('titoloModificaModello').textContent = m ? `Modifica "${m.nome}"` : 'Nuovo turno';
+  el('campoModModelloNome').value = m ? m.nome : '';
+  const isRiposo = !!(m && m.riposo);
+  el('campiModModelloOrario').hidden = isRiposo;
+  el('campoModModelloInizio').value = m ? (m.oraInizio || '') : '';
+  el('campoModModelloFine').value = m ? (m.oraFine || '') : '';
+  // "Elimina" ha senso solo per un turno che già esiste, non per uno nuovo che stai ancora creando.
+  el('btnEliminaModello').hidden = !m;
+  el('overlayModificaModello').hidden = false;
+}
+function salvaModificaModelloV2(){
+  const nome = el('campoModModelloNome').value.trim();
+  if(!nome){ mostraToast('Dai un nome al turno prima di salvare.', 'avviso'); return; }
+  const esistente = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
+  const isRiposo = !!(esistente && esistente.riposo); // il tipo "riposo" non si crea da qui, solo si rinomina se già esistente
+  if(!isRiposo){
+    const oraInizio = el('campoModModelloInizio').value, oraFine = el('campoModModelloFine').value;
+    if(!oraInizio || !oraFine){ mostraToast('Inserisci ora di inizio e fine.', 'avviso'); return; }
+    if(esistente){ esistente.nome = nome; esistente.oraInizio = oraInizio; esistente.oraFine = oraFine; esistente.sigla = nome.slice(0,2).toUpperCase(); }
+    else {
+      AppState.modelliTurno.push({ id: 'personalizzato_' + Date.now(), nome, oraInizio, oraFine, sigla: nome.slice(0,2).toUpperCase() });
+    }
+  } else {
+    esistente.nome = nome;
+  }
+  salvaModelliTurnoStorage();
+  el('overlayModificaModello').hidden = true;
+  renderListaModelliTurniV2();
+  mostraToast(`"${nome}" salvato`, 'successo');
+}
+function eliminaModelloV2(){
+  if(!modelloInModificaV2) return;
+  AppState.modelliTurno = (AppState.modelliTurno || []).filter(x => x.id !== modelloInModificaV2);
+  salvaModelliTurnoStorage();
+  el('overlayModificaModello').hidden = true;
+  renderListaModelliTurniV2();
+  mostraToast('Turno eliminato', 'successo');
+}
+
+// ===================== Straordinario rapido dalla scheda Indennità =====================
+function apriStraordinarioRapidoV2(){
+  if(!giornoPerPopupV2) return;
+  const t = AppState.turni[giornoPerPopupV2];
+  if(!t || !t.oraInizio || !t.oraFine){
+    mostraToast('Assegna prima un turno di lavoro a questo giorno: lo straordinario si calcola a partire dal suo orario.', 'avviso');
+    return;
+  }
+  el('campoStrRapidoOre').value = '';
+  el('campoStrRapidoPosizione').value = 'prima';
+  el('overlayStraordinarioRapido').hidden = false;
+}
+function salvaStraordinarioRapidoV2(){
+  if(!giornoPerPopupV2) return;
+  const iso = giornoPerPopupV2;
+  const t = AppState.turni[iso];
+  if(!t || !t.oraInizio || !t.oraFine) return;
+  const ore = el('campoStrRapidoOre').value;
+  const posizione = el('campoStrRapidoPosizione').value;
+  if(!ore || Number(ore) <= 0){ mostraToast('Inserisci quante ore di straordinario.', 'avviso'); return; }
+  const r = calcolaOrarioStraordinarioDaOre(t.oraInizio, t.oraFine, ore, posizione);
+  // Il primo blocco straordinario libero va nella coppia "Prima"; se è già occupata (raro, da
+  // un'aggiunta precedente) usiamo la coppia "Dopo" — le stesse due coppie usate dal pannello
+  // completo, quindi tutto resta coerente comunque poi si riapra il turno.
+  if(!t.straordinarioPrimaInizio){ t.straordinarioPrimaInizio = r.inizio; t.straordinarioPrimaFine = r.fine; }
+  else { t.straordinarioDopoInizio = r.inizio; t.straordinarioDopoFine = r.fine; }
+  salvaTurniStorage();
+  el('overlayStraordinarioRapido').hidden = true;
+  renderCalendario();
+  mostraToast('Straordinario aggiunto', 'successo');
+}
+
 // ===================== Pressione lunga su giorno vuoto: ripete l'ultimo turno/assenza usato =====================
 // 500ms di pressione tengono conto sia del tocco (touch) sia del mouse (per i test su desktop).
 // Il flag su cella.dataset serve a impedire che il "click" generato dal rilascio del dito, subito
@@ -994,8 +1133,8 @@ function gestisciPressioneLungaGiornoV2(iso){
   }
   if(navigator.vibrate) navigator.vibrate(15);
   giornoPerPopupV2 = iso;
-  if(ultimo.tipo === 'modello') applicaModelloV2(ultimo.id, false);
-  else if(ultimo.tipo === 'assenza') applicaAssenzaV2(ultimo.id, false);
+  if(ultimo.tipo === 'modello') applicaModelloV2(ultimo.id);
+  else if(ultimo.tipo === 'assenza') applicaAssenzaV2(ultimo.id);
 }
 
 // ===================== Personalizza Report: mostra/nascondi blocchi a scelta =====================

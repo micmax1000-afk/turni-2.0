@@ -114,6 +114,25 @@ function caricaUltimoModelloUsato(){
   }catch{ return null; }
 }
 
+// Modelli turno: partono da questi 5 di base, ma da qui in poi vivono in AppState.modelliTurno
+// (modificabili e ampliabili dall'utente) — questo array serve solo come "seme" iniziale al primo
+// avvio, o come ripristino se l'utente svuota tutto per errore.
+const MODELLI_TURNO_BASE_V2 = [
+  { id:'sera', nome:'Sera', oraInizio:'19:00', oraFine:'01:00', sigla:'SE' },
+  { id:'pomeriggio', nome:'Pomeriggio', oraInizio:'13:00', oraFine:'19:00', sigla:'PO' },
+  { id:'mattina', nome:'Mattino', oraInizio:'07:00', oraFine:'13:00', sigla:'MA' },
+  { id:'notte', nome:'Notte', oraInizio:'01:00', oraFine:'07:00', sigla:'NO' },
+  { id:'riposo', nome:'Riposo', riposo:true, sigla:'RI' }
+];
+function caricaModelliTurno(){
+  try{
+    const salvati = JSON.parse(TurniPSStorage.getItem(CHIAVE_MODELLI_TURNO));
+    if(Array.isArray(salvati) && salvati.length) return salvati;
+  }catch{}
+  return MODELLI_TURNO_BASE_V2.map(m => ({ ...m }));
+}
+function salvaModelliTurnoStorage(){ TurniPSStorage.setItem(CHIAVE_MODELLI_TURNO, JSON.stringify(AppState.modelliTurno)); }
+
 function caricaNoteGiorni(){
   try{ return JSON.parse(TurniPSStorage.getItem(CHIAVE_NOTE_GIORNI)) || {}; }catch{ return {}; }
 }

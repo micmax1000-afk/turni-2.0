@@ -1448,7 +1448,13 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .switch-turno-assenza-btn.attivo{background:var(--inchiostro);color:#fff}
 .lista-modelli-selettore{display:flex;flex-direction:column;gap:2px}
 .lista-modelli-selettore[hidden]{display:none!important}
-.riga-modello-selettore{display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:0;border-bottom:1px solid var(--bordo);padding:11px 4px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.riga-modello-selettore{display:flex;align-items:center;gap:2px;width:100%;border-bottom:1px solid var(--bordo)}
+.riga-modello-selettore-corpo{display:flex;align-items:center;gap:12px;flex:1;min-width:0;background:transparent;border:0;padding:11px 4px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.riga-modello-selettore-corpo:hover{background:var(--carta)}
+.riga-modello-matita{flex-shrink:0;background:transparent;border:0;font-size:1rem;padding:8px;cursor:pointer;opacity:.55}
+.riga-modello-matita:hover{opacity:1}
+.riga-modello-nuovo{display:block;width:100%;background:transparent;border:0;border-top:1px dashed var(--bordo);margin-top:4px;padding:13px 4px 4px;text-align:center;color:var(--inchiostro);font:700 .84rem var(--font-corpo);cursor:pointer}
+.riga-modello-nuovo:hover{text-decoration:underline}
 .riga-modello-selettore:last-child{border-bottom:0}
 .riga-modello-selettore:hover{background:var(--carta)}
 .cerchio-modello{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 .68rem var(--font-corpo);color:var(--inchiostro)}
