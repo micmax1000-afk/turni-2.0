@@ -243,18 +243,21 @@
     </div>
   </section>
 
-  <section class="scheda" id="sezioneAccreditoConto">
-    <h2>💰 Cosa arriva sul conto</h2>
+  <details class="cedolino-sezione-secondaria">
+    <summary>💰 Cosa arriva sul conto ▾</summary>
+    <section class="scheda" id="sezioneAccreditoConto">
     <p class="sotto-titolo">Il Cedolino Simulato sopra mostra quanto <strong>maturi</strong> lavorando nel mese selezionato. Questa scheda invece ricostruisce quanto ti <strong>arriva davvero sul conto</strong> in quel mese, tenendo conto dei tempi reali di accredito NoiPA: lo stipendio base del mese lavorato arriva il mese dopo, le indennità accessorie con un mese di ritardo ulteriore. La tredicesima invece non è sfasata, arriva a dicembre.</p>
     <p class="avviso-tabelle">⚠ Il calcolo fiscale qui è una stima: nella realtà NoiPA emette due cedolini separati (stipendio e accessorio) con trattamento fiscale proprio; questa scheda somma i due lordi e applica un unico calcolo approssimato — usala per farti un'idea, non come previsione esatta.</p>
     <button class="btn-primario" id="btnGeneraAccreditoConto" type="button">Genera Stima Accredito</button>
     <div id="contenitoreAccreditoConto" class="contenitore-cedolino" hidden></div>
     <button class="btn-secondario" id="btnCancellaAccreditoConto" type="button" hidden style="margin-top:12px;">🗑️ Cancella Stima Accredito</button>
-  </section>
+    </section>
+  </details>
 
-  <section class="scheda" id="sezioneStorico">
-    <div class="intestazione-scheda">
-      <h2>Storico Mensile</h2>
+  <details class="cedolino-sezione-secondaria">
+    <summary>📊 Storico Mensile ▾</summary>
+    <section class="scheda" id="sezioneStorico">
+    <div style="display:flex; justify-content:flex-end;">
       <button class="btn-mini-icona" id="btnCancellaStorico" title="Cancella storico" aria-label="Cancella storico">🗑️</button>
     </div>
     <p class="sotto-titolo">Ogni cedolino generato viene archiviato qui per il confronto tra mesi diversi.</p>
@@ -262,10 +265,12 @@
       <thead><tr><th>Mese</th><th>Totale Lordo</th><th>Netto</th></tr></thead>
       <tbody><tr><td colspan="3" class="sotto-titolo">Nessun cedolino generato finora.</td></tr></tbody>
     </table>
-  </section>
+    </section>
+  </details>
 
-  <section class="scheda" id="sezioneRiepilogoAnnuale">
-    <h2>Riepilogo Annuale</h2>
+  <details class="cedolino-sezione-secondaria">
+    <summary>📅 Riepilogo Annuale ▾</summary>
+    <section class="scheda" id="sezioneRiepilogoAnnuale">
     <p class="sotto-titolo">Ore e competenze sommate su tutto l'anno scelto. Lordo e Netto includono solo i mesi per cui hai già generato il cedolino nella scheda "Cedolino Simulato".</p>
     <div style="display:flex; gap:10px; align-items:end; margin-bottom:12px; flex-wrap:wrap;">
       <label class="campo-modale" style="max-width:140px;">Anno
@@ -296,6 +301,7 @@
     <button class="btn-secondario" id="btnStampaRiepilogoAnnuale" type="button" hidden style="margin-top:12px;">🖨️ Stampa / Esporta PDF</button>
     <button class="btn-secondario" id="btnCancellaRiepilogoAnnuale" type="button" hidden style="margin-top:12px;">🗑️ Cancella Riepilogo</button>
   </section>
+  </details>
   <section class="scheda nota-finale">
     <p class="nota-piede">Cedolino simulato con conguagli manuali, tredicesima automatica a dicembre e storico mensile. Valori delle tabelle ufficiali indicativi: verificali sul tuo cedolino reale prima di usarli per decisioni economiche.</p>
     <p class="nota-piede" style="margin-top:8px;">Progetto indipendente, non ufficiale e non affiliato alla Polizia di Stato né ad alcun ente pubblico. Tutti i valori delle tabelle sono stati reperiti da fonti pubbliche disponibili online (siti sindacali, normativa pubblicata) e possono contenere errori, essere incompleti o non aggiornati. L'autore declina ogni responsabilità per incongruenze, errori o danni derivanti dall'uso di questa app: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni economiche o personali.</p>
@@ -392,45 +398,42 @@
       <span>Parametro stipendiale</span>
       <div class="valore-automatico" id="visualizzaParametro">—</div>
     </div>
-    <label class="campo-modale">Anni di servizio
-      <input type="number" id="campoAnni" min="0" step="1">
-    </label>
-    <label class="campo-modale">Regione
-      <select id="campoRegione">
-        <option>Abruzzo</option><option>Basilicata</option><option>Calabria</option><option>Campania</option>
-        <option>Emilia-Romagna</option><option>Friuli Venezia Giulia</option><option>Lazio</option><option>Liguria</option>
-        <option>Lombardia</option><option>Marche</option><option>Molise</option><option>Piemonte</option>
-        <option>Provincia di Trento</option><option>Provincia di Bolzano</option>
-        <option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option>
-        <option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
-      </select>
-    </label>
 
-    <details class="anagrafica-altri-dati">
-      <summary>Altri dati (fiscali e familiari) ▾</summary>
-      <div class="anagrafica-altri-dati-corpo">
-        <label class="campo-modale">Addizionale comunale IRPEF (%)
-          <input type="number" id="campoAddComunale" min="0" step="0.01" value="0.8">
-        </label>
-        <label class="campo-modale">Coniuge a carico
-          <select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select>
-        </label>
-        <label class="campo-modale">Figli a carico over 21 anni (numero)
-          <input type="number" id="campoFigliOver21" min="0" step="1" value="0">
-        </label>
-        <div class="info-richiudibile">
-          <button type="button" class="info-richiudibile-toggle" id="toggleInfoFigliUnder21" aria-expanded="false">ℹ️ Figli under 21 a carico? <span class="info-richiudibile-freccia" aria-hidden="true">▾</span></button>
-          <div class="info-richiudibile-corpo" id="corpoInfoFigliUnder21" hidden>
-            <p>Dal marzo 2022 la detrazione fiscale per i figli under 21 è sostituita dall'<strong>Assegno Unico e Universale</strong> (INPS), che questa app non gestisce. Non c'è quindi un campo da compilare qui: verifica l'importo dell'Assegno Unico direttamente sul cedolino ufficiale o sull'app INPS.</p>
-          </div>
-        </div>
-        <label class="campo-modale">Iscrizione sindacale
-          <select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select>
-        </label>
+    <div class="anagrafica-griglia-compatta">
+      <label class="campo-modale">Anni di servizio
+        <input type="number" id="campoAnni" min="0" step="1">
+      </label>
+      <label class="campo-modale">Regione
+        <select id="campoRegione">
+          <option>Abruzzo</option><option>Basilicata</option><option>Calabria</option><option>Campania</option>
+          <option>Emilia-Romagna</option><option>Friuli Venezia Giulia</option><option>Lazio</option><option>Liguria</option>
+          <option>Lombardia</option><option>Marche</option><option>Molise</option><option>Piemonte</option>
+          <option>Provincia di Trento</option><option>Provincia di Bolzano</option>
+          <option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option>
+          <option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
+        </select>
+      </label>
+      <label class="campo-modale">Coniuge a carico
+        <select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select>
+      </label>
+      <label class="campo-modale">Figli over 21 a carico (numero)
+        <input type="number" id="campoFigliOver21" min="0" step="1" value="0">
+      </label>
+      <label class="campo-modale">Iscrizione sindacale
+        <select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select>
+      </label>
+    </div>
+
+    <div class="info-richiudibile">
+      <button type="button" class="info-richiudibile-toggle" id="toggleInfoFigliUnder21" aria-expanded="false">ℹ️ Figli under 21 a carico? <span class="info-richiudibile-freccia" aria-hidden="true">▾</span></button>
+      <div class="info-richiudibile-corpo" id="corpoInfoFigliUnder21" hidden>
+        <p>Dal marzo 2022 la detrazione fiscale per i figli under 21 è sostituita dall'<strong>Assegno Unico e Universale</strong> (INPS), che questa app non gestisce. Non c'è quindi un campo da compilare qui: verifica l'importo dell'Assegno Unico direttamente sul cedolino ufficiale o sull'app INPS.</p>
       </div>
-    </details>
+    </div>
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+    <p class="sotto-titolo" style="margin:2px 0 0;">🏛️ L'addizionale comunale si imposta ora in Impostazioni → Tabelle, vicino a quella regionale.</p>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
       <button class="btn-primario" id="btnSalvaAnagrafica" type="button">Salva</button>
       <button class="btn-secondario" id="btnCancellaAnagrafica" type="button">🗑️ Cancella Anagrafica</button>
     </div>

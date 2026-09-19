@@ -626,6 +626,11 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .anagrafica-altri-dati>summary::-webkit-details-marker{display:none}
 .anagrafica-altri-dati-corpo{padding:0 14px 14px;display:flex;flex-direction:column;gap:4px}
 
+/* Anagrafica compatta: tutta aperta, campi secondari a 2 colonne invece che impilati uno sotto l'altro */
+.anagrafica-griglia-compatta{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin:4px 0 10px}
+.anagrafica-griglia-compatta .campo-modale{margin-bottom:0}
+@media(max-width:480px){.anagrafica-griglia-compatta{grid-template-columns:1fr}}
+
 /* V56 — Assenze: note informative raggruppate in un unico richiudibile */
 .info-richiudibile-assenze{margin:6px 0 12px;border:1px solid var(--bordo);border-radius:14px;background:var(--carta);overflow:hidden}
 .info-richiudibile-assenze>summary{cursor:pointer;padding:11px 13px;font-weight:700;font-size:.78rem;color:var(--testo-tenue);list-style:none}
@@ -1439,6 +1444,12 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .riga-modello-selettore:hover{background:var(--carta)}
 .cerchio-modello{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 .68rem var(--font-corpo);color:var(--inchiostro)}
 .cerchio-modello-assenza{background:var(--bordo);width:auto;min-width:34px;height:26px;border-radius:13px;padding:0 8px;font-size:.62rem;white-space:nowrap}
+
+/* Cedolino: sezioni secondarie richiudibili (Cosa arriva sul conto, Storico, Riepilogo Annuale) */
+.cedolino-sezione-secondaria{margin:0 0 16px;border:1px solid var(--bordo);border-radius:14px;background:var(--pannello);overflow:hidden}
+.cedolino-sezione-secondaria>summary{cursor:pointer;padding:14px 18px;font-weight:700;font-size:.95rem;color:var(--inchiostro);list-style:none}
+.cedolino-sezione-secondaria>summary::-webkit-details-marker{display:none}
+.cedolino-sezione-secondaria .scheda{border:0;box-shadow:none;margin:0;padding:0 18px 18px}
 .riga-modello-testo{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .riga-modello-testo strong{font-size:.86rem}
 .riga-modello-testo small{font-size:.72rem;color:var(--testo-tenue)}

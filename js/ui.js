@@ -10,8 +10,20 @@ function stampaSezione(idDaMostrare){
     .map(id => el(id))
     .filter(elemento => elemento && !elemento.hidden);
   nascostiTemporaneamente.forEach(elemento => { elemento.hidden = true; });
+  // Se la sezione da stampare vive dentro un <details> richiudibile (es. Riepilogo Annuale,
+  // reso richiudibile per semplificare il Cedolino), un <details> chiuso non stampa il proprio
+  // contenuto: "visibility:visible" da CSS non basta a superare il display:none che il browser
+  // applica al contenuto nascosto. Lo apriamo qui, e lo richiudiamo dopo la stampa se non lo era già.
+  const dettagliDaRichiudere = [];
+  const elementoDaMostrare = el(idDaMostrare);
+  let antenato = elementoDaMostrare ? elementoDaMostrare.closest('details') : null;
+  while(antenato){
+    if(!antenato.open){ antenato.open = true; dettagliDaRichiudere.push(antenato); }
+    antenato = antenato.parentElement ? antenato.parentElement.closest('details') : null;
+  }
   const ripristina = () => {
     nascostiTemporaneamente.forEach(elemento => { elemento.hidden = false; });
+    dettagliDaRichiudere.forEach(d => { d.open = false; });
     window.removeEventListener('afterprint', ripristina);
   };
   window.addEventListener('afterprint', ripristina);

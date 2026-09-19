@@ -51,7 +51,6 @@ function popolaFormAnagrafica(){
     el('campoQualifica').value = AppState.anagrafica.qualifica || 'Agente';
     el('campoAnni').value = AppState.anagrafica.anni || '';
     el('campoRegione').value = AppState.anagrafica.regione || 'Lombardia';
-    el('campoAddComunale').value = AppState.anagrafica.addComunale ?? 0.8;
     el('campoConiugeACarico').value = AppState.anagrafica.coniugeACarico || 'no';
     el('campoFigliOver21').value = AppState.anagrafica.figliOver21 ?? 0;
     el('campoSindacato').value = normalizzaSindacato(AppState.anagrafica.sindacato);
@@ -101,7 +100,6 @@ function cancellaAnagrafica(){
   el('campoQualifica').value = 'Agente';
   el('campoAnni').value = '';
   el('campoRegione').value = 'Lombardia';
-  el('campoAddComunale').value = 0.8;
   el('campoConiugeACarico').value = 'no';
   el('campoFigliOver21').value = 0;
   el('campoSindacato').value = 'no';
@@ -115,7 +113,9 @@ function salvaAnagraficaDaModale(){
     qualifica: el('campoQualifica').value,
     anni: el('campoAnni').value,
     regione: el('campoRegione').value,
-    addComunale: Number(el('campoAddComunale').value) || 0,
+    // L'addizionale comunale ora si modifica solo da Tabelle: qui ne preserviamo il valore
+    // già salvato, per non azzerarlo ogni volta che si salva il resto dell'anagrafica.
+    addComunale: (AppState.anagrafica && AppState.anagrafica.addComunale) ?? 0.8,
     coniugeACarico: el('campoConiugeACarico').value,
     figliOver21: Number(el('campoFigliOver21').value) || 0,
     sindacato: el('campoSindacato').value
