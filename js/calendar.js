@@ -645,6 +645,7 @@ function renderCalendario(){
   aggiornaProssimoTurno();
   if(typeof aggiornaDashboard === 'function') aggiornaDashboard();
   if(typeof aggiornaRiepilogoVisualeMese === 'function') aggiornaRiepilogoVisualeMese();
+  if(typeof aggiornaRiepilogoGiornoSelezionatoV2 === 'function') aggiornaRiepilogoGiornoSelezionatoV2();
 }
 
 function selezionaGiorno(iso){
@@ -654,6 +655,7 @@ function selezionaGiorno(iso){
   const cellaTrovata = document.querySelector(`#calendarioGriglia .giorno-cella[data-data="${iso}"]`);
   if(cellaTrovata) cellaTrovata.classList.add('selezionata');
   aggiornaDettaglioGiorno();
+  if(typeof aggiornaRiepilogoGiornoSelezionatoV2 === 'function') aggiornaRiepilogoGiornoSelezionatoV2();
 }
 
 function formatOreMinuti(valore){

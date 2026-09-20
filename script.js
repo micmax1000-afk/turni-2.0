@@ -419,8 +419,10 @@ function inizializza(){
   });
   on('btnApriAssenzeV64','click', () => {
     const p = el('sezioneAssenze');
+    const pp = el('sezioneAssenzePersonalizzate');
     if(!p) return;
     p.hidden = !p.hidden;
+    if(pp) pp.hidden = p.hidden; // le due sezioni si aprono e chiudono sempre insieme
     if(!p.hidden) p.scrollIntoView({behavior:'smooth',block:'start'});
   });
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
@@ -459,6 +461,7 @@ function inizializza(){
   });
 
   on('filtroCalendarioSelect','change', e => impostaFiltroCalendario(e.target.value));
+  on('btnModificaGiornoSelezionatoV2','click', () => { if(giornoSelezionato) apriModaleTurno(giornoSelezionato); });
 
   on('settingsSequenza','click', () => {
     mostraScheda('sequenza');
@@ -800,12 +803,15 @@ function inizializza(){
 
   // ===================== V60 — Popup rapido + selettore Modelli/Assenze =====================
   on('btnFabAggiungiV2','click', () => {
-    if(!giornoSelezionato) return;
+    // Se nessun giorno è selezionato (es. appena aperta l'app, prima di toccare una cella), la
+    // matita non deve restare silenziosamente inerte: usiamo oggi come giorno predefinito.
+    if(!giornoSelezionato) giornoSelezionato = dataISO(new Date());
     giornoPerPopupV2 = giornoSelezionato;
     apriPopupRapidoGiornoV2();
   });
   on('btnPopupAggiungiTurno','click', () => { chiudiPopupRapidoGiornoV2(); apriSelettoreModelliV2('turni'); });
   on('btnPopupChiudi','click', () => chiudiPopupRapidoGiornoV2());
+  on('btnPopupModifica','click', () => { chiudiPopupRapidoGiornoV2(); if(giornoPerPopupV2) apriModaleTurno(giornoPerPopupV2); });
   on('btnPopupAggiungiEvento','click', () => {
     chiudiPopupRapidoGiornoV2();
     if(!giornoPerPopupV2) return;
@@ -867,19 +873,18 @@ let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifi
 // invece di aprire subito il modulo completo.
 function gestisciTocchGiornoV2(iso){
   selezionaGiorno(iso);
-  const t = AppState.turni[iso];
-  const haGiaQualcosa = !!(t && (t.oraInizio || t.riposo || t.assenzaTipo));
-  if(haGiaQualcosa){
-    apriModaleTurno(iso);
-  } else {
-    giornoPerPopupV2 = iso;
-    apriPopupRapidoGiornoV2();
-  }
+  giornoPerPopupV2 = iso;
+  apriPopupRapidoGiornoV2();
 }
 
 function apriPopupRapidoGiornoV2(){
   const p = el('popupRapidoGiorno');
-  if(p) p.hidden = false;
+  if(!p) return;
+  const t = AppState.turni[giornoPerPopupV2];
+  const haGiaQualcosa = !!(t && (t.oraInizio || t.riposo || t.assenzaTipo));
+  el('btnPopupModifica').hidden = !haGiaQualcosa;
+  el('dividerPopupModifica').hidden = !haGiaQualcosa;
+  p.hidden = false;
   // Il tocco che ha aperto il popup (FAB o cella del calendario) sta ancora "in corso": rimandiamo
   // di un istante l'ascolto dei tocchi fuori dal popup, altrimenti si chiuderebbe da solo appena
   // aperto, scambiando lo stesso tocco per un "tocco fuori".
@@ -1079,6 +1084,8 @@ function apriStraordinarioRapidoV2(){
   }
   el('campoStrRapidoOre').value = '';
   el('campoStrRapidoPosizione').value = 'prima';
+  el('campoStrRapidoOrarioInizio').value = '';
+  el('campoStrRapidoOrarioFine').value = '';
   el('overlayStraordinarioRapido').hidden = false;
 }
 function salvaStraordinarioRapidoV2(){
@@ -1086,10 +1093,17 @@ function salvaStraordinarioRapidoV2(){
   const iso = giornoPerPopupV2;
   const t = AppState.turni[iso];
   if(!t || !t.oraInizio || !t.oraFine) return;
-  const ore = el('campoStrRapidoOre').value;
-  const posizione = el('campoStrRapidoPosizione').value;
-  if(!ore || Number(ore) <= 0){ mostraToast('Inserisci quante ore di straordinario.', 'avviso'); return; }
-  const r = calcolaOrarioStraordinarioDaOre(t.oraInizio, t.oraFine, ore, posizione);
+  const orarioManualeInizio = el('campoStrRapidoOrarioInizio').value;
+  const orarioManualeFine = el('campoStrRapidoOrarioFine').value;
+  let r;
+  if(orarioManualeInizio && orarioManualeFine){
+    r = { inizio: orarioManualeInizio, fine: orarioManualeFine };
+  } else {
+    const ore = el('campoStrRapidoOre').value;
+    const posizione = el('campoStrRapidoPosizione').value;
+    if(!ore || Number(ore) <= 0){ mostraToast('Inserisci quante ore di straordinario (oppure l\'orario esatto qui sotto).', 'avviso'); return; }
+    r = calcolaOrarioStraordinarioDaOre(t.oraInizio, t.oraFine, ore, posizione);
+  }
   // Il primo blocco straordinario libero va nella coppia "Prima"; se è già occupata (raro, da
   // un'aggiunta precedente) usiamo la coppia "Dopo" — le stesse due coppie usate dal pannello
   // completo, quindi tutto resta coerente comunque poi si riapra il turno.
@@ -1142,6 +1156,26 @@ function gestisciPressioneLungaGiornoV2(iso){
 // "Prossimo turno" e "Riepilogo mese" restano dentro sezioneReportTop indipendentemente dal fatto
 // che siano nascosti: nascondiamo solo i LORO elementi, non l'intera sezione (che ospita anche il
 // titolo "Report" e il pulsante ⚙️, sempre visibili).
+// Riepilogo di sola lettura del giorno selezionato, mostrato dentro "Il giorno e altri strumenti"
+// sotto il calendario — così si vede cosa c'è quel giorno senza doverlo aprire, e da lì un
+// pulsante porta dritto alla modifica se serve.
+function aggiornaRiepilogoGiornoSelezionatoV2(){
+  const box = el('riepilogoGiornoSelezionatoV2');
+  if(!box || !giornoSelezionato) return;
+  const d = new Date(giornoSelezionato + 'T00:00:00');
+  const dataLeggibile = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const t = AppState.turni[giornoSelezionato];
+  let testo;
+  if(!t) testo = `${dataLeggibile} — nessun turno`;
+  else if(t.riposo) testo = `${dataLeggibile} — Riposo`;
+  else if(t.assenzaTipo){
+    const voce = (AppState.assenze || []).find(a => a.id === t.assenzaTipo);
+    testo = `${dataLeggibile} — ${voce ? voce.nome : 'Assenza'}`;
+  } else if(t.oraInizio && t.oraFine) testo = `${dataLeggibile} — ${t.oraInizio} - ${t.oraFine}`;
+  else testo = `${dataLeggibile} — turno incompleto`;
+  box.textContent = testo;
+}
+
 function applicaVisibilitaReportBlocchi(){
   const b = AppState.reportBlocchi || {};
   const mappa = {

@@ -95,15 +95,25 @@ function aggiornaVisibilitaCampiOrario(){
 function sincronizzaCampiStraordinarioDaOre(){
   const oraInizioTurno = el('campoOraInizio')?.value;
   const oraFineTurno = el('campoOraFine')?.value;
-  const applica = (campoOre, campoPosizione, campoInizioNascosto, campoFineNascosto) => {
+  const applica = (campoOre, campoPosizione, campoOrarioManualeInizio, campoOrarioManualeFine, campoInizioNascosto, campoFineNascosto) => {
+    // Se l'utente ha compilato l'orario esatto facoltativo, ha sempre la precedenza sul calcolo
+    // automatico da "ore + prima/dopo" — utile quando c'è un intervallo che il calcolo automatico
+    // non indovinerebbe (es. lo straordinario non parte esattamente alla fine del turno).
+    const orarioManualeInizio = el(campoOrarioManualeInizio)?.value;
+    const orarioManualeFine = el(campoOrarioManualeFine)?.value;
+    if(orarioManualeInizio && orarioManualeFine){
+      if(el(campoInizioNascosto)) el(campoInizioNascosto).value = orarioManualeInizio;
+      if(el(campoFineNascosto)) el(campoFineNascosto).value = orarioManualeFine;
+      return;
+    }
     const ore = el(campoOre)?.value;
     const posizione = el(campoPosizione)?.value || 'prima';
     const r = calcolaOrarioStraordinarioDaOre(oraInizioTurno, oraFineTurno, ore, posizione);
     if(el(campoInizioNascosto)) el(campoInizioNascosto).value = r.inizio;
     if(el(campoFineNascosto)) el(campoFineNascosto).value = r.fine;
   };
-  applica('campoStrOre1', 'campoStrPosizione1', 'campoStrPrimaInizio', 'campoStrPrimaFine');
-  applica('campoStrOre2', 'campoStrPosizione2', 'campoStrDopoInizio', 'campoStrDopoFine');
+  applica('campoStrOre1', 'campoStrPosizione1', 'campoStrOrarioInizio1', 'campoStrOrarioFine1', 'campoStrPrimaInizio', 'campoStrPrimaFine');
+  applica('campoStrOre2', 'campoStrPosizione2', 'campoStrOrarioInizio2', 'campoStrOrarioFine2', 'campoStrDopoInizio', 'campoStrDopoFine');
 }
 
 // Operazione inversa: quando riapri un turno che ha già uno straordinario salvato, ricostruisce
@@ -261,6 +271,10 @@ function apriModaleTurno(iso){
   el('campoStrPrimaFine').value = t.straordinarioPrimaFine || '';
   el('campoStrDopoInizio').value = t.straordinarioDopoInizio || '';
   el('campoStrDopoFine').value = t.straordinarioDopoFine || '';
+  // Azzeriamo i campi "orario esatto" facoltativi prima di ripopolare: altrimenti un valore
+  // inserito per un giorno precedente resterebbe visibile (e verrebbe riapplicato per sbaglio,
+  // avendo la precedenza) quando si apre un giorno diverso nella stessa sessione.
+  ['campoStrOrarioInizio1','campoStrOrarioFine1','campoStrOrarioInizio2','campoStrOrarioFine2'].forEach(id => { if(el(id)) el(id).value = ''; });
   popolaCampiOreStraordinarioDaOrario(t);
   // Il secondo blocco straordinario resta nascosto finché non serve: lo mostriamo di default
   // solo se il turno ha già dati salvati lì (riapertura di un turno con due finestre distinte).
