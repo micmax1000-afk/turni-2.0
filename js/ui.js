@@ -67,11 +67,6 @@ function mostraConferma(messaggio, alConfermare, titolo){
 }
 
 function mostraScheda(nome){
-  // Chiusura di sicurezza: qualsiasi popup/overlay rimasto aperto per errore (dal selettore
-  // Modelli, dallo straordinario rapido, da un avviso di conferma non chiuso correttamente...)
-  // non deve mai poter bloccare la navigazione principale — lo chiudiamo sempre, ad ogni cambio
-  // di scheda, anche se probabilmente era già chiuso (innocuo in quel caso).
-  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayAvviso','popupRapidoGiorno'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
   // V60 — Ristrutturazione a 4 schede (Calendario/Report/Turni/Altro). Le vecchie viste interne
   // (vistaCedolino, vistaStatistiche, vistaAssenze, ecc.) restano fisicamente invariate — cambia
   // solo QUALI vengono mostrate insieme sotto ciascuna delle 4 nuove schede della barra in basso.
@@ -165,9 +160,8 @@ function aggiornaAvvisiApp(){
         ? `La tua turnazione automatica è terminata il ${dataLeggibile}.`
         : `La tua turnazione automatica finisce il ${dataLeggibile}.`;
       out.push({ tipo:'info', testo: testoAvviso, azione:{ label:'🔁 Continua per un altro mese', onClick: () => {
-        // continuaSequenzaTurni() imposta già da sola "1 mese" internamente: non serve più
-        // toccare qui il campo dei giorni (che oggi si chiama campoPatternGiorni, non più
-        // campoSequenzaGiorni, dal passaggio al sistema unico dei Pattern).
+        const campoGiorni = el('campoSequenzaGiorni');
+        if(campoGiorni) campoGiorni.value = '30';
         if(typeof continuaSequenzaTurni === 'function') continuaSequenzaTurni();
         if(typeof renderCalendario === 'function') renderCalendario();
         if(typeof mostraToast === 'function') mostraToast('Turnazione continuata: la rotazione prosegue per un altro mese, senza sfasare i turni già inseriti.', 'successo');

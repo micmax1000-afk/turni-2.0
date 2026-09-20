@@ -24,8 +24,6 @@ window.TurniPSConfig = Object.freeze({
     CHIAVE_ULTIMO_MODELLO_USATO: 'simCedolino_ultimoModelloUsato_v1',
     CHIAVE_MODELLI_TURNO: 'simCedolino_modelliTurno_v1',
     CHIAVE_EVENTI_GIORNO: 'simCedolino_eventiGiorno_v1',
-    CHIAVE_PATTERN_TURNI: 'simCedolino_patternTurni_v1',
-    CHIAVE_SEQUENZA_ULTIMO_PATTERN_ID: 'simCedolino_sequenzaUltimoPatternId_v1',
     CHIAVE_INDENNITA_PERSONALIZZATE: 'simCedolino_indennitaPersonalizzate_v1'
   })
 });
