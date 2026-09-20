@@ -35,6 +35,9 @@ function esportaBackup(){
     assenze: AppState.assenze,
     sequenzaTurni: AppState.sequenzaTurni,
     noteGiorni: AppState.noteGiorni,
+    modelliTurno: AppState.modelliTurno,
+    pattern: AppState.pattern,
+    eventiGiorno: AppState.eventiGiorno,
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
   };
   // coloriTurni: solo nel backup Drive a pagamento (costruisciDatiBackup) e export colori dedicato
@@ -62,6 +65,9 @@ function costruisciDatiBackup(){
     assenze: AppState.assenze,
     sequenzaTurni: AppState.sequenzaTurni,
     noteGiorni: AppState.noteGiorni,
+    modelliTurno: AppState.modelliTurno,
+    pattern: AppState.pattern,
+    eventiGiorno: AppState.eventiGiorno,
     coloriTurni: AppState.coloriTurni || {},
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
   };
@@ -462,6 +468,9 @@ function creaSnapshotPreRipristino(){
       assenze: AppState.assenze,
       sequenzaTurni: AppState.sequenzaTurni,
       noteGiorni: AppState.noteGiorni,
+      modelliTurno: AppState.modelliTurno,
+      pattern: AppState.pattern,
+      eventiGiorno: AppState.eventiGiorno,
       coloriTurni: AppState.coloriTurni || {},
       sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
     };
@@ -485,10 +494,14 @@ function ripristinaSnapshotPreRipristino(){
     AppState.assenze = Array.isArray(dati.assenze) ? dati.assenze : [];
     AppState.sequenzaTurni = Array.isArray(dati.sequenzaTurni) ? dati.sequenzaTurni : [];
     AppState.noteGiorni = dati.noteGiorni && typeof dati.noteGiorni === 'object' ? dati.noteGiorni : {};
+    AppState.modelliTurno = Array.isArray(dati.modelliTurno) ? dati.modelliTurno : AppState.modelliTurno;
+    AppState.pattern = Array.isArray(dati.pattern) ? dati.pattern : AppState.pattern;
+    AppState.eventiGiorno = dati.eventiGiorno && typeof dati.eventiGiorno === 'object' ? dati.eventiGiorno : {};
     AppState.coloriTurni = dati.coloriTurni && typeof dati.coloriTurni === 'object' ? dati.coloriTurni : {};
     salvaAnagraficaStorage(); salvaTurniStorage(); salvaTabelleStorage();
     salvaConguagliStorage(); salvaStoricoStorage(); salvaAssenzeStorage(); salvaSequenzaStorage();
     salvaNoteGiorniStorage(); salvaColoriTurniStorage();
+    salvaModelliTurnoStorage(); salvaPatternStorage(); salvaEventiGiornoStorage();
     if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
     else TurniPSStorage.removeItem(CHIAVE_SEQUENZA_ANCORA);
     if(typeof applicaColoriTurni === 'function') applicaColoriTurni();
@@ -524,6 +537,9 @@ function importaBackup(file, datiGiaLetti){
       if(dati.assenze) AppState.assenze = dati.assenze;
       if(dati.sequenzaTurni) AppState.sequenzaTurni = dati.sequenzaTurni;
       if(dati.noteGiorni){ AppState.noteGiorni = dati.noteGiorni; salvaNoteGiorniStorage(); }
+      if(Array.isArray(dati.modelliTurno)){ AppState.modelliTurno = dati.modelliTurno; salvaModelliTurnoStorage(); }
+      if(Array.isArray(dati.pattern)){ AppState.pattern = dati.pattern; salvaPatternStorage(); }
+      if(dati.eventiGiorno && typeof dati.eventiGiorno === 'object'){ AppState.eventiGiorno = dati.eventiGiorno; salvaEventiGiornoStorage(); }
       if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
       if(dati.coloriTurni && typeof dati.coloriTurni === 'object'){
         AppState.coloriTurni = Object.assign({}, dati.coloriTurni);

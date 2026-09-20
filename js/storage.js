@@ -141,6 +141,27 @@ function caricaEventiGiorno(){
 }
 function salvaEventiGiornoStorage(){ TurniPSStorage.setItem(CHIAVE_EVENTI_GIORNO, JSON.stringify(AppState.eventiGiorno)); }
 
+// Pattern (turnazioni ricorrenti): partono da questi 2 pronti (gli stessi di prima, "Turno in
+// quinta" 5 e 10 giorni), ma sono modificabili ed espandibili — un solo sistema al posto del
+// vecchio menu con preset fissi + Opzioni avanzate separate.
+const PATTERN_BASE_V2 = [
+  { id:'pattern_quinta5', nome:'Turno in quinta', giorni:[
+    {modelloId:'sera',indennita:[]},{modelloId:'pomeriggio',indennita:[]},{modelloId:'mattina',indennita:[]},{modelloId:'notte',indennita:[]},{modelloId:'riposo',indennita:[]}
+  ]},
+  { id:'pattern_quinta10', nome:'Turno in quinta 10 giorni', giorni:[
+    {modelloId:'sera',indennita:[]},{modelloId:'pomeriggio',indennita:[]},{modelloId:'mattina',indennita:[]},{modelloId:'notte',indennita:[]},{modelloId:'riposo',indennita:[]},
+    {modelloId:'sera',indennita:[]},{modelloId:'pomeriggio',indennita:[]},{modelloId:'mattina',indennita:[]},{modelloId:'mattina',indennita:[]},{modelloId:'riposo',indennita:[]}
+  ]}
+];
+function caricaPattern(){
+  try{
+    const salvati = JSON.parse(TurniPSStorage.getItem(CHIAVE_PATTERN_TURNI));
+    if(Array.isArray(salvati) && salvati.length) return salvati;
+  }catch{}
+  return PATTERN_BASE_V2.map(p => ({ id:p.id, nome:p.nome, giorni: p.giorni.map(g => ({ modelloId:g.modelloId, indennita:[...g.indennita] })) }));
+}
+function salvaPatternStorage(){ TurniPSStorage.setItem(CHIAVE_PATTERN_TURNI, JSON.stringify(AppState.pattern)); }
+
 function caricaNoteGiorni(){
   try{ return JSON.parse(TurniPSStorage.getItem(CHIAVE_NOTE_GIORNI)) || {}; }catch{ return {}; }
 }

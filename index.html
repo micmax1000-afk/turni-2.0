@@ -159,9 +159,6 @@
             <label class="campo-modale">Inizio<input type="time" id="campoEventoOraInizio"></label>
             <label class="campo-modale">Fine<input type="time" id="campoEventoOraFine"></label>
           </div>
-          <label class="campo-modale campo-riga">
-            <input type="checkbox" id="campoEventoPromemoria"> Promemoria (solo se l'app è aperta a quell'ora)
-          </label>
           <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
           <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
         </div>
@@ -620,95 +617,55 @@
       </div>
   <section class="scheda" id="sezioneSequenza">
     <div class="intestazione-scheda">
-      <h2>🔁 Genera turni automaticamente</h2>
+      <h2 id="titoloSezioneSequenza">🔁 Pattern turno</h2>
       <button class="btn-mini-icona" id="btnChiudiSequenza" title="Torna alle impostazioni" aria-label="Torna alle impostazioni">✕</button>
     </div>
-    <p class="sotto-titolo">Imposta data, modello e periodo. Gli orari dei turni si scelgono con menu semplici. Le funzioni più avanzate restano disponibili sotto.</p>
 
-    <div class="generatore-semplice">
-      <div class="generatore-step">
-        <span class="generatore-numero">1</span>
-        <div class="generatore-campo">
-          <label class="campo-modale">📅 Da quando?
-            <input type="date" id="campoSequenzaDataInizio">
-          </label>
-        </div>
+    <div id="vistaListaPattern">
+      <p class="sotto-titolo">Un pattern è un ciclo di turni che si ripete. Toccane uno per modificarlo o generarlo sul calendario.</p>
+      <div id="listaPatternV2" class="lista-modelli-selettore"></div>
+    </div>
+
+    <div id="vistaEditorPattern" hidden>
+      <button type="button" class="link-torna-lista-pattern" id="btnTornaListaPattern">‹ Tutti i pattern</button>
+      <label class="campo-modale">Nome<input type="text" id="campoPatternNome" placeholder="es. Turno in quinta"></label>
+
+      <p class="sotto-titolo" style="margin:10px 0 4px;">Il ciclo</p>
+      <div class="ciclo-pattern-v2" id="cicloPatternV2"></div>
+      <p class="sotto-titolo" id="hintGiornoPatternV2" style="margin:6px 0 0;">Tocca un giorno per cambiarlo, poi scegli qui sotto:</p>
+
+      <div class="tavolozza-pattern-v2" id="tavolozzaPatternV2"></div>
+
+      <div id="indennitaGiornoPatternV2" class="indennita-giorno-pattern-v2" hidden>
+        <p class="sotto-titolo" style="margin:0 0 4px;font-weight:700;">Indennità fisse per questo giorno del pattern</p>
+        <div id="corpoIndennitaGiornoPatternV2"></div>
+        <p class="sotto-titolo" style="margin:6px 0 0;">⏱️ Lo straordinario non si imposta qui: varia ogni volta, si aggiunge sul calendario quando serve.</p>
       </div>
 
-      <div class="generatore-step">
-        <span class="generatore-numero">2</span>
-        <div class="generatore-campo">
-          <label class="campo-modale">🔄 Quale turnazione?
-            <select id="selettoreModelloSemplice">
-              <optgroup label="Turno in quinta (a rotazione)">
-                <option value="quinta">Turno in quinta — Sera · Pomeriggio · Mattina · Notte · Riposo</option>
-                <option value="quinta10">Turno in quinta 10 giorni — Sera · Pomeriggio · Mattina · Notte · Riposo · Sera · Pomeriggio · Mattina · Mattina · Riposo</option>
-              </optgroup>
-              <optgroup label="Settimana fissa (ufficio)">
-                <option value="corta">Settimana corta — Lun–Ven 08:00–14:00</option>
-                <option value="lunga">Settimana lunga — Lun–Sab 08:00–14:00</option>
-              </optgroup>
-              <option value="personalizzata">Personalizzata — la imposto io</option>
-            </select>
-          </label>
-          <label class="campo-modale" id="contenitoreFasciaOrariaSemplice">🕐 Fascia oraria (solo per settimana corta/lunga)
-            <select id="selettoreOrarioSemplice">
-              <option value="0713">07:00–13:00</option>
-              <option value="0814" selected>08:00–14:00</option>
-              <option value="personalizzato">Personalizzata</option>
-            </select>
-          </label>
-          <button class="btn-secondario btn-modello-applica" id="btnApplicaModelloSemplice" type="button">✓ Applica modello</button>
-        </div>
+      <div style="display:flex;gap:10px;margin:12px 0;">
+        <button class="btn-secondario" id="btnEliminaPatternV2" type="button">🗑️ Elimina pattern</button>
       </div>
 
-      <div class="generatore-step">
-        <span class="generatore-numero">3</span>
-        <div class="generatore-campo">
-          <label class="campo-modale">📆 Per quanto tempo?
-            <select id="campoSequenzaDurataPreset">
-              <option value="settimana">1 settimana</option>
-              <option value="mese" selected>1 mese</option>
-              <option value="mese3">3 mesi</option>
-              <option value="mese6">6 mesi</option>
-              <option value="anno">1 anno</option>
-              <option value="personalizzato">Numero di giorni personalizzato</option>
-            </select>
-          </label>
-          <label class="campo-modale durata-personalizzata" id="contenitoreGiorniPersonalizzati" hidden>Numero di giorni
-            <input type="number" id="campoSequenzaGiorni" min="1" max="366" value="30" inputmode="numeric">
-          </label>
-        </div>
+      <p class="sotto-titolo" style="margin:14px 0 4px;font-weight:700;">Genera sul calendario</p>
+      <div class="riga-straordinario-ore">
+        <label class="campo-modale">Da quando<input type="date" id="campoPatternDataInizio"></label>
+        <label class="campo-modale">Per quanto
+          <select id="campoPatternDurataPreset">
+            <option value="settimana">1 settimana</option>
+            <option value="mese" selected>1 mese</option>
+            <option value="mese3">3 mesi</option>
+            <option value="mese6">6 mesi</option>
+            <option value="anno">1 anno</option>
+            <option value="personalizzato">Personalizzato</option>
+          </select>
+        </label>
       </div>
-
-      <div class="anteprima-turnazione-semplice">
-        <div class="anteprima-turnazione-titolo">👀 Come verranno generati i giorni</div>
-        <div id="anteprimaSequenzaSemplice" class="anteprima-turnazione-lista"></div>
-      </div>
-
-      <details class="opzioni-avanzate-sequenza">
-        <summary>⚙️ Opzioni avanzate — personalizza ogni singolo giorno</summary>
-        <div class="opzioni-avanzate-corpo">
-          <p class="sotto-titolo">Carica uno schema già pronto qui sotto per modificarlo giorno per giorno (orari, straordinario, rientro, missione, reperibilità...), oppure costruiscine uno da zero con "Aggiungi giorno".</p>
-          <div class="modelli-nascosti">
-            <button class="btn-secondario" id="btnModelloTurnoInQuinta" type="button">Carica: turno in quinta</button>
-            <button class="btn-secondario" id="btnModelloSettimanaCorta" type="button">Carica: settimana corta</button>
-            <button class="btn-secondario" id="btnModelloSettimanaLunga" type="button">Carica: settimana lunga</button>
-          </div>
-          <div class="campo-modale">
-            <span>Sequenza giorno per giorno</span>
-            <div id="listaSequenza" class="lista-sequenza"></div>
-            <button class="btn-secondario" id="btnAggiungiStepSequenza" type="button">＋ Aggiungi giorno</button>
-          </div>
-        </div>
-        <div class="azioni-avanzate-fondo">
-          <button type="button" class="btn-secondario" id="btnRitornaGeneratoreV44">← Torna al generatore</button>
-        </div>
-      </details>
-
+      <label class="campo-modale durata-personalizzata" id="contenitoreGiorniPersonalizzatiV2" hidden>Numero di giorni
+        <input type="number" id="campoPatternGiorni" min="1" max="366" value="30" inputmode="numeric">
+      </label>
       <div class="generatore-azioni">
-        <button class="btn-primario btn-genera-grande" id="btnGeneraSequenza" type="button">🚀 Genera turni</button>
-        <button class="btn-secondario" id="btnContinuaSequenza" type="button">▶️ Continua da dove sei arrivato</button>
+        <button class="btn-primario btn-genera-grande" id="btnGeneraPatternV2" type="button">🚀 Genera turni</button>
+        <button class="btn-secondario" id="btnContinuaPatternV2" type="button">▶️ Continua da dove sei arrivato</button>
       </div>
       <p class="avviso-tabelle">⚠ Se nei giorni scelti esistono già turni, l'app ti chiederà conferma prima di sovrascriverli.</p>
     </div>

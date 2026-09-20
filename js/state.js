@@ -17,7 +17,8 @@ window.AppState = window.AppState || {
   coloriTurni: {},
   reportBlocchi: { prossimoTurno: true, riepilogoMese: true, riepilogoOre: true, statistiche: true, cedolino: true },
   modelliTurno: null, // null = non ancora caricato da storage (vedi caricaModelliTurno)
-  eventiGiorno: {} // { iso: [{ id, titolo, tuttoIlGiorno, oraInizio, oraFine, note, luogo, promemoria }] }
+  eventiGiorno: {}, // { iso: [{ id, titolo, tuttoIlGiorno, oraInizio, oraFine, note, luogo }] }
+  pattern: null // null = non ancora caricato da storage (vedi caricaPattern)
 };
 
 window.AppStateMeta = Object.freeze({

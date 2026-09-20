@@ -160,8 +160,9 @@ function aggiornaAvvisiApp(){
         ? `La tua turnazione automatica è terminata il ${dataLeggibile}.`
         : `La tua turnazione automatica finisce il ${dataLeggibile}.`;
       out.push({ tipo:'info', testo: testoAvviso, azione:{ label:'🔁 Continua per un altro mese', onClick: () => {
-        const campoGiorni = el('campoSequenzaGiorni');
-        if(campoGiorni) campoGiorni.value = '30';
+        // continuaSequenzaTurni() imposta già da sola "1 mese" internamente: non serve più
+        // toccare qui il campo dei giorni (che oggi si chiama campoPatternGiorni, non più
+        // campoSequenzaGiorni, dal passaggio al sistema unico dei Pattern).
         if(typeof continuaSequenzaTurni === 'function') continuaSequenzaTurni();
         if(typeof renderCalendario === 'function') renderCalendario();
         if(typeof mostraToast === 'function') mostraToast('Turnazione continuata: la rotazione prosegue per un altro mese, senza sfasare i turni già inseriti.', 'successo');

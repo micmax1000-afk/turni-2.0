@@ -94,7 +94,8 @@ AppState.assenze = caricaAssenze(); // array [{ id, nome, valore, unita, persona
 AppState.indennitaPersonalizzate = caricaIndennitaPersonalizzate(); // array [{ id, nome, valore, unita: 'mese'|'turno' }]
 AppState.reportBlocchi = caricaReportBlocchi(); // { prossimoTurno, riepilogoMese, riepilogoOre, statistiche, cedolino }
 AppState.modelliTurno = caricaModelliTurno(); // array di modelli turno (5 di base + eventuali personalizzati)
-AppState.eventiGiorno = caricaEventiGiorno(); // { iso: [{ id, titolo, tuttoIlGiorno, oraInizio, oraFine, note, luogo, promemoria }] }
+AppState.eventiGiorno = caricaEventiGiorno(); // { iso: [{ id, titolo, tuttoIlGiorno, oraInizio, oraFine, note, luogo }] }
+AppState.pattern = caricaPattern(); // array di pattern turno (2 pronti + eventuali tuoi)
 TurniPSStorage.setItem(CHIAVE_ASSENZE, JSON.stringify(AppState.assenze)); // persiste subito l'eventuale merge di nuove voci predefinite
 
 AppState.noteGiorni = caricaNoteGiorni(); // { 'AAAA-MM-GG': 'testo nota' }
@@ -472,94 +473,35 @@ function inizializza(){
     const seq = el('sezioneSequenza');
     if(seq) seq.hidden = true;
   });
-  on('btnRitornaGeneratoreV44','click', () => {
-    const dettagli = el('sezioneSequenza')?.querySelector('.opzioni-avanzate-sequenza');
-    if(dettagli) dettagli.open = false;
-    el('sezioneSequenza')?.scrollIntoView({behavior:'smooth', block:'start'});
+  const listaPatternHost = el('listaPatternV2');
+  if(listaPatternHost) listaPatternHost.addEventListener('click', (e) => {
+    if(e.target.closest('#btnNuovoPatternV2')){ nuovoPatternV2(); return; }
+    const btn = e.target.closest('[data-pattern-id]');
+    if(btn) apriEditorPatternV2(btn.dataset.patternId);
   });
-  el('btnAggiungiStepSequenza').addEventListener('click', () => {
-    AppState.sequenzaTurni.push({ tipo:'riposo' });
-    renderSequenza();
+  on('btnTornaListaPattern','click', mostraListaPatternV2);
+  on('campoPatternNome','change', rinominaPatternV2);
+  const cicloPatternHost = el('cicloPatternV2');
+  if(cicloPatternHost) cicloPatternHost.addEventListener('click', (e) => {
+    if(e.target.closest('#btnAggiungiGiornoPatternV2')){ aggiungiGiornoPatternV2(); return; }
+    const btn = e.target.closest('[data-giorno-index]');
+    if(btn) selezionaGiornoPatternV2(Number(btn.dataset.giornoIndex));
   });
-  el('btnGeneraSequenza').addEventListener('click', () => generaSequenzaTurni());
-  el('btnContinuaSequenza').addEventListener('click', continuaSequenzaTurni);
-
-  function aggiornaInterfacciaGeneratoreSemplice(){
-    const preset=el('campoSequenzaDurataPreset');
-    const custom=el('contenitoreGiorniPersonalizzati');
-    if(preset && custom) custom.hidden = preset.value !== 'personalizzato';
-    aggiornaAnteprimaSequenzaSemplice();
-  }
-
-  on('btnApplicaModelloSemplice','click',()=>{
-    const scelta=el('selettoreModelloSemplice')?.value;
-    if(scelta==='quinta') el('btnModelloTurnoInQuinta')?.click();
-    else if(scelta==='quinta10') mostraConferma('Questo sostituirà la sequenza con il modello in quinta di 10 giorni. Continuare?', applicaModelloTurnoInQuinta10);
-    else if(scelta==='corta') el('btnModelloSettimanaCorta')?.click();
-    else if(scelta==='lunga') el('btnModelloSettimanaLunga')?.click();
-    else {
-      const dettagli=el('sezioneSequenza')?.querySelector('.opzioni-avanzate-sequenza');
-      if(dettagli) dettagli.open=true;
-      mostraAvviso('Modalità personalizzata: apri le Opzioni avanzate e imposta i turni giorno per giorno.');
-    }
+  const tavolozzaPatternHost = el('tavolozzaPatternV2');
+  if(tavolozzaPatternHost) tavolozzaPatternHost.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-modello-id]');
+    if(btn) assegnaModelloAGiornoPatternV2(btn.dataset.modelloId);
   });
-
-  function aggiornaVisibilitaFasciaOrariaSemplice(){
-    const scelta = el('selettoreModelloSemplice')?.value;
-    const contenitore = el('contenitoreFasciaOrariaSemplice');
-    if(!contenitore) return;
-    // La fascia oraria si applica solo ai modelli a orario fisso (settimana corta/lunga):
-    // il turno in quinta ha orari propri già fissi (Sera/Pomeriggio/Mattina/Notte) e la
-    // modalità personalizzata si gestisce dalle Opzioni avanzate — in entrambi i casi il
-    // selettore non avrebbe alcun effetto, quindi lo nascondiamo per non creare confusione.
-    contenitore.hidden = (scelta !== 'corta' && scelta !== 'lunga');
-  }
-
-  on('selettoreModelloSemplice','change',()=>{
-    const scelta=el('selettoreModelloSemplice')?.value;
-    aggiornaVisibilitaFasciaOrariaSemplice();
-    if(scelta!=='personalizzata') aggiornaAnteprimaSequenzaSemplice();
-  });
-  aggiornaVisibilitaFasciaOrariaSemplice();
-
-  function aggiornaGiorniDaPreset(){
-    const preset = el('campoSequenzaDurataPreset').value;
-    if(preset === 'personalizzato') return; // il numero resta quello digitato dall'utente
-    const dataInizioStr = el('campoSequenzaDataInizio').value || dataISO(new Date());
-    const inizio = new Date(dataInizioStr + 'T00:00:00');
-    const fine = new Date(inizio);
-    if(preset === 'settimana') fine.setDate(fine.getDate() + 7);
-    else if(preset === 'mese') fine.setMonth(fine.getMonth() + 1);
-    else if(preset === 'mese3') fine.setMonth(fine.getMonth() + 3);
-    else if(preset === 'mese6') fine.setMonth(fine.getMonth() + 6);
-    else if(preset === 'mese9') fine.setMonth(fine.getMonth() + 9);
-    else if(preset === 'anno') fine.setFullYear(fine.getFullYear() + 1);
-    const giorni = Math.round((fine - inizio) / 86400000);
-    el('campoSequenzaGiorni').value = Math.min(giorni, 366);
-  }
-  el('campoSequenzaDurataPreset').addEventListener('change', () => { aggiornaGiorniDaPreset(); aggiornaInterfacciaGeneratoreSemplice(); });
-  el('campoSequenzaDataInizio').addEventListener('change', () => { aggiornaGiorniDaPreset(); aggiornaAnteprimaSequenzaSemplice(); });
-  el('campoSequenzaGiorni').addEventListener('input', () => { el('campoSequenzaDurataPreset').value = 'personalizzato'; aggiornaInterfacciaGeneratoreSemplice(); });
-  aggiornaInterfacciaGeneratoreSemplice();
-
-  el('btnModelloTurnoInQuinta').addEventListener('click', () => {
-    mostraConferma(
-      'Questo sostituirà tutti i passaggi attuali della sequenza con il turno in quinta predefinito (Sera, Pomeriggio, Mattina, Notte, Riposo). Continuare?',
-      applicaModelloTurnoInQuinta
-    );
-  });
-  el('btnModelloSettimanaCorta').addEventListener('click', () => {
-    mostraConferma(
-      'Questo sostituirà tutti i passaggi attuali della sequenza con il modello settimana corta (7 righe). Continuare?',
-      applicaModelloSettimanaCorta
-    );
-  });
-  el('btnModelloSettimanaLunga').addEventListener('click', () => {
-    mostraConferma(
-      'Questo sostituirà tutti i passaggi attuali della sequenza con il modello settimana lunga (7 righe). Continuare?',
-      applicaModelloSettimanaLunga
-    );
-  });
+  const indennitaPatternHost = el('corpoIndennitaGiornoPatternV2');
+  if(indennitaPatternHost) indennitaPatternHost.addEventListener('change', aggiornaIndennitaGiornoPatternV2);
+  on('btnEliminaPatternV2','click', eliminaPatternV2);
+  on('btnGeneraPatternV2','click', () => generaDaPatternV2());
+  on('btnContinuaPatternV2','click', continuaSequenzaTurni);
+  on('campoPatternDurataPreset','change', aggiornaGiorniDaPresetV2);
+  on('campoPatternDataInizio','change', aggiornaGiorniDaPresetV2);
+  on('campoPatternGiorni','input', () => { el('campoPatternDurataPreset').value = 'personalizzato'; });
+  const contenitoreGiorniPersV2 = () => { const c = el('contenitoreGiorniPersonalizzatiV2'); if(c) c.hidden = el('campoPatternDurataPreset').value !== 'personalizzato'; };
+  on('campoPatternDurataPreset','change', contenitoreGiorniPersV2);
 
   el('btnCancellaTurniMese').addEventListener('click', cancellaTurniMese);
   el('btnCancellaStorico').addEventListener('click', cancellaStorico);
@@ -1125,7 +1067,6 @@ function apriModificaEventoV2(id){
   el('campoEventoTuttoIlGiorno').checked = !!(ev && ev.tuttoIlGiorno);
   el('campoEventoOraInizio').value = ev ? (ev.oraInizio || '') : '';
   el('campoEventoOraFine').value = ev ? (ev.oraFine || '') : '';
-  el('campoEventoPromemoria').checked = !!(ev && ev.promemoria);
   el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
   el('campoEventoNote').value = ev ? (ev.note || '') : '';
   el('campiEventoOrario').hidden = el('campoEventoTuttoIlGiorno').checked;
@@ -1143,7 +1084,6 @@ function salvaEventoV2(){
     tuttoIlGiorno,
     oraInizio: tuttoIlGiorno ? '' : el('campoEventoOraInizio').value,
     oraFine: tuttoIlGiorno ? '' : el('campoEventoOraFine').value,
-    promemoria: el('campoEventoPromemoria').checked,
     luogo: el('campoEventoLuogo').value.trim(),
     note: el('campoEventoNote').value.trim()
   };
@@ -1175,26 +1115,6 @@ function eliminaEventoV2(){
   renderCalendario();
   mostraToast('Evento eliminato', 'successo');
 }
-
-// Promemoria "solo se l'app è aperta": ogni 30 secondi controlliamo se un evento con promemoria
-// attivo inizia proprio ora. Non è un vero promemoria in background (limite reale delle PWA — vedi
-// la spiegazione data all'utente): funziona solo mentre questa scheda è effettivamente aperta.
-const EVENTI_GIA_AVVISATI_V2 = new Set();
-function controllaPromemoriaEventiV2(){
-  const adesso = new Date();
-  const isoOggi = dataISO(adesso);
-  const oraOraMinuti = `${String(adesso.getHours()).padStart(2,'0')}:${String(adesso.getMinutes()).padStart(2,'0')}`;
-  const eventiOggi = AppState.eventiGiorno[isoOggi] || [];
-  eventiOggi.forEach(ev => {
-    if(!ev.promemoria || ev.tuttoIlGiorno || !ev.oraInizio) return;
-    const chiave = isoOggi + '_' + ev.id;
-    if(ev.oraInizio === oraOraMinuti && !EVENTI_GIA_AVVISATI_V2.has(chiave)){
-      EVENTI_GIA_AVVISATI_V2.add(chiave);
-      mostraToast(`📅 ${ev.titolo}${ev.luogo ? ' — ' + ev.luogo : ''}`, 'info');
-    }
-  });
-}
-setInterval(controllaPromemoriaEventiV2, 30000);
 
 // ===================== Straordinario rapido dalla scheda Indennità =====================
 function apriStraordinarioRapidoV2(){
