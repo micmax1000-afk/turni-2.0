@@ -283,6 +283,13 @@ let tokenAccessoDriveCorrente = null;
 function inizializza(){
   if(window.TurniPSDataGuard && !TurniPSDataGuard.validate(AppState)) Object.assign(AppState, TurniPSDataGuard.normalize(AppState));
   applicaColoriTurni();
+  if(!TurniPSStorage.getItem(CHIAVE_DISCLAIMER_MOSTRATO)){
+    mostraAvviso(
+      'Questa è un\'app indipendente, non ufficiale e non affiliata alla Polizia di Stato né ad alcun ente pubblico. I valori delle AppState.tabelle sono presi da fonti pubbliche online (siti sindacali, normativa pubblicata) e possono contenere errori o non essere aggiornati. L\'autore declina ogni responsabilità per incongruenze, errori o danni derivanti dall\'uso dell\'app: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni.',
+      'Prima di iniziare'
+    );
+    TurniPSStorage.setItem(CHIAVE_DISCLAIMER_MOSTRATO, '1');
+  }
   aggiornaRiassuntoAnagrafica();
   renderCalendario();
   renderAvvisiApp();
@@ -1250,19 +1257,23 @@ if('serviceWorker' in navigator){
         });
       });
     }).catch((e) => console.warn('Service worker non registrato:', e));
-    // NOTA: qui prima c'era anche una ricarica automatica quando il nuovo service worker
-    // prendeva il controllo ("controllerchange"). Rimossa: con aggiornamenti ravvicinati come
-    // in questa fase di lavoro, poteva scattare ad ogni apertura dell'app invece che una sola
-    // volta, causando un ciclo di ricariche continue che impediva di usare l'app. Ora la
-    // ricarica avviene solo al tocco esplicito di "Aggiorna ora" qui sotto, mai da sola.
+
+    // Quando il nuovo service worker prende davvero il controllo (dopo skipWaiting), la pagina
+    // corrente è rimasta con i file vecchi già caricati: un'unica ricarica automatica la porta
+    // alla versione nuova. La guardia evita ricariche multiple se l'evento scattasse più volte.
+    let giaRicaricato = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(giaRicaricato) return;
+      giaRicaricato = true;
+      window.location.reload();
+    });
   });
 }
 
 // Avviso "nuova versione disponibile": invece di ricaricare subito da soli (interromperebbe
 // l'utente a metà di qualcosa, es. mentre sta scrivendo un turno), mostriamo un invito esplicito;
-// al tocco, diciamo al nuovo service worker di attivarsi e ricarichiamo noi stessi la pagina
-// dopo una breve pausa — non dipendiamo più dall'evento "controllerchange" del browser, che si
-// è dimostrato inaffidabile con aggiornamenti così ravvicinati.
+// al tocco, diciamo al nuovo service worker di attivarsi — questo farà scattare 'controllerchange'
+// sopra, che si occupa della ricarica.
 function mostraAvvisoNuovaVersione(worker){
   if(document.getElementById('avvisoNuovaVersioneV65')) return; // non duplicare l'avviso
   const banner = document.createElement('div');
@@ -1272,7 +1283,6 @@ function mostraAvvisoNuovaVersione(worker){
   banner.querySelector('button').addEventListener('click', () => {
     worker.postMessage({ tipo: 'skipWaiting' });
     banner.remove();
-    setTimeout(() => window.location.reload(), 300);
   });
   document.body.appendChild(banner);
 }

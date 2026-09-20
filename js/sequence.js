@@ -237,18 +237,13 @@ function generaDaPatternV2(indiceInizialeForzato){
     giornoSelezionato = dataInizioStr;
     mostraScheda('turni');
     renderCalendario();
-    mostraToast('Turni generati', 'successo');
+    mostraToast(
+      giorniEsistenti > 0 ? `Turni generati (${giorniEsistenti} giorno/i con un turno precedente sono stati sovrascritti)` : 'Turni generati',
+      'successo'
+    );
   };
 
-  if(giorniEsistenti > 0){
-    mostraConferma(
-      `Attenzione: ${giorniEsistenti} giorno/i nell'intervallo scelto ${giorniEsistenti === 1 ? 'ha' : 'hanno'} già un turno inserito.\n` +
-      `Generando, ${giorniEsistenti === 1 ? 'verrà sovrascritto' : 'verranno sovrascritti'} e persi.\n\nContinuare comunque?`,
-      eseguiGenerazione
-    );
-  } else {
-    eseguiGenerazione();
-  }
+  eseguiGenerazione();
 }
 
 // "Continua turnazione": riparte dal giorno dopo l'ultimo generato, con lo stesso pattern usato
