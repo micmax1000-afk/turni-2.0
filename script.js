@@ -1136,6 +1136,7 @@ function salvaStraordinarioRapidoV2(){
 // pulsante porta dritto alla modifica se serve.
 function aggiornaRiepilogoGiornoSelezionatoV2(){
   const box = el('riepilogoGiornoSelezionatoV2');
+  const boxIndennita = el('indennitaGiornoSelezionatoV2');
   if(!box || !giornoSelezionato) return;
   const d = new Date(giornoSelezionato + 'T00:00:00');
   const dataLeggibile = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -1149,6 +1150,20 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   } else if(t.oraInizio && t.oraFine) testo = `${dataLeggibile} — ${t.oraInizio} - ${t.oraFine}`;
   else testo = `${dataLeggibile} — turno incompleto`;
   box.textContent = testo;
+
+  // Icone delle indennità attive quel giorno + ore di straordinario giornaliero, se presenti.
+  if(!boxIndennita) return;
+  if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
+  const pezzi = [];
+  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge" title="${escapeHtml(x.nome)}">${x.sigla}</span>`); });
+  if(typeof classificaTurno === 'function' && typeof totaleStraordinario === 'function'){
+    const c = classificaTurno(t);
+    const oreStr = totaleStraordinario(c);
+    if(oreStr > 0) pezzi.push(`<span class="indennita-giorno-badge indennita-giorno-badge-str" title="Straordinario">⏱️ ${formatOreMinuti(oreStr)}</span>`);
+  }
+  if(!pezzi.length){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
+  boxIndennita.hidden = false;
+  boxIndennita.innerHTML = pezzi.join('');
 }
 
 function applicaVisibilitaReportBlocchi(){

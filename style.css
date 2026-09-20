@@ -1431,6 +1431,12 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .azioni-calendario-rapide-v2-corpo{padding:2px 12px 12px;display:flex;flex-direction:column;gap:10px}
 .riepilogo-giorno-selezionato-v2{font-size:.82rem;font-weight:600;color:var(--testo);padding:2px 0}
 
+/* Icone indennità + ore straordinario del giorno selezionato */
+.indennita-giorno-selezionato-v2{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 2px}
+.indennita-giorno-selezionato-v2[hidden]{display:none}
+.indennita-giorno-badge{display:inline-flex;align-items:center;gap:3px;background:var(--bordo);border-radius:8px;padding:3px 7px;font-size:.68rem;font-weight:700;color:var(--inchiostro)}
+.indennita-giorno-badge-str{background:var(--carta);border:1px solid var(--bordo)}
+
 /* Banner "Nuova versione disponibile" */
 .avviso-nuova-versione-v65{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:12px;background:var(--inchiostro);color:#fff;padding:12px 14px;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);font-size:.82rem;max-width:min(360px,92vw)}
 .avviso-nuova-versione-v65 button{flex-shrink:0;background:#fff;color:var(--inchiostro);border:0;border-radius:9px;padding:8px 12px;font:700 .78rem var(--font-corpo);cursor:pointer}

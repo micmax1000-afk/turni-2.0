@@ -53,6 +53,13 @@
       <summary>📋 Il giorno e altri strumenti ▾</summary>
       <div class="azioni-calendario-rapide-v2-corpo">
         <div class="riepilogo-giorno-selezionato-v2" id="riepilogoGiornoSelezionatoV2">Seleziona un giorno</div>
+        <div class="indennita-giorno-selezionato-v2" id="indennitaGiornoSelezionatoV2" hidden></div>
+        <label class="campo-modale">📋 Servizio svolto
+          <input type="text" id="campoServizioSvolto" placeholder="es. Pattugliamento, Ufficio denunce, Scorta...">
+        </label>
+        <label class="campo-modale nota-giorno-campo">🗒️ Nota del giorno
+          <textarea id="campoNotaGiorno" rows="2" placeholder="Impegni lavorativi o personali da svolgere nella giornata selezionata..."></textarea>
+        </label>
         <button class="btn-secondario" id="btnModificaGiornoSelezionatoV2" type="button">✏️ Modifica il giorno selezionato</button>
         <label class="campo-modale">🔎 Visualizza
           <select id="filtroCalendarioSelect">
@@ -143,12 +150,6 @@
   <div class="pannello-turno-inline" id="pannelloTurno" hidden>
       <div class="pannello-turno-header"><h2 id="titoloModaleTurno">Turno del giorno</h2><button class="btn-icona" id="btnChiudiTurno" aria-label="Chiudi">✕</button></div>
       <div class="pannello-turno-corpo">
-        <label class="campo-modale">📋 Servizio svolto
-          <input type="text" id="campoServizioSvolto" placeholder="es. Pattugliamento, Ufficio denunce, Scorta...">
-        </label>
-        <label class="campo-modale nota-giorno-campo">🗒️ Nota del giorno
-          <textarea id="campoNotaGiorno" rows="2" placeholder="Impegni lavorativi o personali da svolgere nella giornata selezionata..."></textarea>
-        </label>
         <label class="campo-modale campo-riga">
           <input type="checkbox" id="campoRiposo"> Giorno di riposo
         </label>
