@@ -629,11 +629,7 @@ function renderCalendario(){
       ${orario || oreLabel ? `<span class="giorno-meta">${orario}${oreLabel}</span>` : '<span class="giorno-meta giorno-meta-vuoto">—</span>'}
     `;
 
-    cella.addEventListener('click', (e) => {
-      if(cella.dataset.pressioneLunga === '1'){ delete cella.dataset.pressioneLunga; return; } // evita che il "click" dopo il rilascio riapra anche il popup normale
-      gestisciTocchGiornoV2(iso);
-    });
-    attaccaPressioneLungaV2(cella, iso);
+    cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
     griglia.appendChild(cella);
   }
 

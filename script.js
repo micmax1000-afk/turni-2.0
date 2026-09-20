@@ -809,7 +809,14 @@ function inizializza(){
     giornoPerPopupV2 = giornoSelezionato;
     apriPopupRapidoGiornoV2();
   });
-  on('btnPopupAggiungiTurno','click', () => { chiudiPopupRapidoGiornoV2(); apriSelettoreModelliV2('turni'); });
+  on('btnPopupAggiungiTurno','click', () => {
+    chiudiPopupRapidoGiornoV2();
+    // Se il giorno ha già un turno di lavoro, molto probabilmente stai tornando per aggiungere
+    // indennità/straordinario, non per riassegnare da capo il turno — apriamo direttamente lì.
+    const t = AppState.turni[giornoPerPopupV2];
+    const haGiaTurno = !!(t && t.oraInizio && t.oraFine);
+    apriSelettoreModelliV2(haGiaTurno ? 'indennita' : 'turni');
+  });
   on('btnPopupChiudi','click', () => chiudiPopupRapidoGiornoV2());
   on('btnPopupModifica','click', () => { chiudiPopupRapidoGiornoV2(); if(giornoPerPopupV2) apriModaleTurno(giornoPerPopupV2); });
   on('btnPopupAggiungiEvento','click', () => {
@@ -993,10 +1000,14 @@ function applicaModelloV2(idModello){
   AppState.turni[iso] = m.riposo ? { data: iso, riposo: true } : { data: iso, oraInizio: m.oraInizio, oraFine: m.oraFine };
   salvaTurniStorage();
   salvaUltimoModelloUsato('modello', m.id);
-  el('overlaySelettoreModelli').hidden = true;
   renderCalendario();
   selezionaGiorno(iso);
   mostraToast(`${m.nome} aggiunto`, 'successo');
+  // Invece di chiudere qui, passiamo subito alla scheda Indennità (resta lo stesso popup aperto):
+  // così indennità/straordinario si aggiungono nello stesso momento, senza dover ritoccare il
+  // giorno una seconda volta. Non ha senso per "Riposo" (nessun orario a cui agganciarsi).
+  if(!m.riposo) apriSelettoreModelliV2('indennita');
+  else el('overlaySelettoreModelli').hidden = true;
 }
 
 function applicaAssenzaV2(idAssenza){
@@ -1113,42 +1124,6 @@ function salvaStraordinarioRapidoV2(){
   el('overlayStraordinarioRapido').hidden = true;
   renderCalendario();
   mostraToast('Straordinario aggiunto', 'successo');
-}
-
-// ===================== Pressione lunga su giorno vuoto: ripete l'ultimo turno/assenza usato =====================
-// 500ms di pressione tengono conto sia del tocco (touch) sia del mouse (per i test su desktop).
-// Il flag su cella.dataset serve a impedire che il "click" generato dal rilascio del dito, subito
-// dopo una pressione lunga già gestita, riapra anche il popup normale "+ Turno / + Evento".
-function attaccaPressioneLungaV2(cella, iso){
-  let timer = null;
-  const inizia = () => {
-    timer = setTimeout(() => {
-      cella.dataset.pressioneLunga = '1';
-      gestisciPressioneLungaGiornoV2(iso);
-    }, 500);
-  };
-  const annulla = () => clearTimeout(timer);
-  cella.addEventListener('touchstart', inizia, { passive: true });
-  cella.addEventListener('touchend', annulla);
-  cella.addEventListener('touchmove', annulla);
-  cella.addEventListener('touchcancel', annulla);
-  cella.addEventListener('mousedown', inizia);
-  cella.addEventListener('mouseup', annulla);
-  cella.addEventListener('mouseleave', annulla);
-}
-function gestisciPressioneLungaGiornoV2(iso){
-  const t = AppState.turni[iso];
-  const haGiaQualcosa = !!(t && (t.oraInizio || t.riposo || t.assenzaTipo));
-  if(haGiaQualcosa) return; // ha senso solo su un giorno ancora vuoto
-  const ultimo = caricaUltimoModelloUsato();
-  if(!ultimo){
-    mostraToast('Nessun turno recente da ripetere: usa "+ Turno" per scegliere.', 'info');
-    return;
-  }
-  if(navigator.vibrate) navigator.vibrate(15);
-  giornoPerPopupV2 = iso;
-  if(ultimo.tipo === 'modello') applicaModelloV2(ultimo.id);
-  else if(ultimo.tipo === 'assenza') applicaAssenzaV2(ultimo.id);
 }
 
 // ===================== Personalizza Report: mostra/nascondi blocchi a scelta =====================
