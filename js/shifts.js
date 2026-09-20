@@ -315,14 +315,10 @@ function apriModaleTurno(iso){
   el('campoAddestramentoTiro').checked = !!t.addestramentoTiro;
   aggiornaVisibilitaCampiOrario();
   aggiornaAnteprima();
-  // Se questo turno ha già indennità, straordinario o un secondo segmento impostati, apriamo
-  // subito il pannello richiudibile: altrimenti l'utente non saprebbe che c'è qualcosa da vedere lì.
-  const haGiaIndennitaOStraordinario = !!(t.secondoAttivo || t.straordinarioPrimaInizio || t.straordinarioDopoInizio ||
-    t.permessoBreveAttivo || t.recuperoPermessoBreveAttivo || t.reperibilita || t.missione || t.servizioEsterno ||
-    t.ordinePubblico || t.controlloTerritorio || t.cambioTurno || t.compensazioneRiposo || t.recuperoFestivoLavorato ||
-    t.buonoPasto || t.aggiornamentoProfessionale || t.addestramentoTiro);
+  // Il pannello "+ Aggiungi indennità o straordinario" resta sempre aperto (richiesto esplicitamente):
+  // niente più logica condizionale che lo apriva solo se c'erano già dati dentro.
   const pannelloIndennita = el('pannelloTurno').querySelector('.pannello-indennita-straordinario');
-  if(pannelloIndennita) pannelloIndennita.open = haGiaIndennitaOStraordinario;
+  if(pannelloIndennita) pannelloIndennita.open = true;
   const sezioniEditor = el('pannelloTurno').querySelectorAll('.editor-sezione');
   sezioniEditor.forEach((sezione, i) => { sezione.open = i < 2; });
   el('pannelloTurno').hidden = false;
