@@ -133,6 +133,14 @@ function caricaModelliTurno(){
 }
 function salvaModelliTurnoStorage(){ TurniPSStorage.setItem(CHIAVE_MODELLI_TURNO, JSON.stringify(AppState.modelliTurno)); }
 
+function caricaEventiGiorno(){
+  try{
+    const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_EVENTI_GIORNO));
+    return (v && typeof v === 'object') ? v : {};
+  }catch{ return {}; }
+}
+function salvaEventiGiornoStorage(){ TurniPSStorage.setItem(CHIAVE_EVENTI_GIORNO, JSON.stringify(AppState.eventiGiorno)); }
+
 function caricaNoteGiorni(){
   try{ return JSON.parse(TurniPSStorage.getItem(CHIAVE_NOTE_GIORNI)) || {}; }catch{ return {}; }
 }

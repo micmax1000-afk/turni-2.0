@@ -94,6 +94,7 @@ AppState.assenze = caricaAssenze(); // array [{ id, nome, valore, unita, persona
 AppState.indennitaPersonalizzate = caricaIndennitaPersonalizzate(); // array [{ id, nome, valore, unita: 'mese'|'turno' }]
 AppState.reportBlocchi = caricaReportBlocchi(); // { prossimoTurno, riepilogoMese, riepilogoOre, statistiche, cedolino }
 AppState.modelliTurno = caricaModelliTurno(); // array di modelli turno (5 di base + eventuali personalizzati)
+AppState.eventiGiorno = caricaEventiGiorno(); // { iso: [{ id, titolo, tuttoIlGiorno, oraInizio, oraFine, note, luogo, promemoria }] }
 TurniPSStorage.setItem(CHIAVE_ASSENZE, JSON.stringify(AppState.assenze)); // persiste subito l'eventuale merge di nuove voci predefinite
 
 AppState.noteGiorni = caricaNoteGiorni(); // { 'AAAA-MM-GG': 'testo nota' }
@@ -803,8 +804,11 @@ function inizializza(){
 
   // ===================== V60 — Popup rapido + selettore Modelli/Assenze =====================
   on('btnFabAggiungiV2','click', () => {
-    // Se nessun giorno è selezionato (es. appena aperta l'app, prima di toccare una cella), la
-    // matita non deve restare silenziosamente inerte: usiamo oggi come giorno predefinito.
+    // Chiusura di sicurezza: se un overlay precedente (selettore Modelli, straordinario rapido,
+    // modifica modello) fosse rimasto aperto per qualche motivo, coprirebbe la matita in modo
+    // invisibile — sembrerebbe che il tocco non faccia nulla. Li chiudiamo sempre prima di aprire
+    // il popup, anche se erano già chiusi (innocuo in quel caso).
+    ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
     if(!giornoSelezionato) giornoSelezionato = dataISO(new Date());
     giornoPerPopupV2 = giornoSelezionato;
     apriPopupRapidoGiornoV2();
@@ -822,10 +826,8 @@ function inizializza(){
   on('btnPopupAggiungiEvento','click', () => {
     chiudiPopupRapidoGiornoV2();
     if(!giornoPerPopupV2) return;
-    apriModaleTurno(giornoPerPopupV2);
-    // "+ Evento" serve per una nota/promemoria, non per assegnare un turno: portiamo subito
-    // l'attenzione lì invece di lasciare aperto lo stesso modulo di "+ Turno" senza differenza.
-    setTimeout(() => el('campoNotaGiorno')?.focus(), 60);
+    selezionaGiorno(giornoPerPopupV2);
+    apriModificaEventoV2(null);
   });
   on('btnChiudiSelettoreModelli','click', () => { el('overlaySelettoreModelli').hidden = true; });
   on('tabSelettoreModelliTurni','click', () => apriSelettoreModelliV2('turni'));
@@ -855,6 +857,16 @@ function inizializza(){
   on('btnChiudiModificaModello','click', () => { el('overlayModificaModello').hidden = true; });
   on('btnSalvaModello','click', salvaModificaModelloV2);
   on('btnEliminaModello','click', eliminaModelloV2);
+  on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
+  on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
+  on('btnSalvaEvento','click', salvaEventoV2);
+  on('btnEliminaEvento','click', eliminaEventoV2);
+  on('campoEventoTuttoIlGiorno','change', () => { el('campiEventoOrario').hidden = el('campoEventoTuttoIlGiorno').checked; });
+  const listaEventiGiornoHost = el('listaEventiGiornoV2');
+  if(listaEventiGiornoHost) listaEventiGiornoHost.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-evento-id]');
+    if(btn) apriModificaEventoV2(btn.dataset.eventoId);
+  });
   on('btnChiudiStraordinarioRapido','click', () => { el('overlayStraordinarioRapido').hidden = true; });
   on('btnSalvaStraordinarioRapido','click', salvaStraordinarioRapidoV2);
   on('btnStatistiche','click', () => mostraScheda('statistiche'));
@@ -879,6 +891,7 @@ let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifi
 // apre direttamente il dettaglio/modifica; se è vuoto, propone il popup rapido "+ Turno / + Evento"
 // invece di aprire subito il modulo completo.
 function gestisciTocchGiornoV2(iso){
+  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
   selezionaGiorno(iso);
   giornoPerPopupV2 = iso;
   apriPopupRapidoGiornoV2();
@@ -1085,6 +1098,104 @@ function eliminaModelloV2(){
   mostraToast('Turno eliminato', 'successo');
 }
 
+// ===================== Eventi del giorno (separati dal turno, più di uno per giorno) =====================
+let eventoInModificaV2 = null; // { iso, id } dell'evento aperto nel mini-form, null = nuovo
+
+function renderListaEventiGiornoV2(){
+  const host = el('listaEventiGiornoV2');
+  if(!host || !giornoSelezionato) return;
+  const eventi = AppState.eventiGiorno[giornoSelezionato] || [];
+  if(!eventi.length){ host.innerHTML = ''; return; }
+  host.innerHTML = eventi.map(ev => {
+    const quando = ev.tuttoIlGiorno ? 'Tutto il giorno' : `${ev.oraInizio || '—'} - ${ev.oraFine || '—'}`;
+    return `<button type="button" class="riga-evento-giorno-v2" data-evento-id="${escapeHtml(ev.id)}">
+      <span class="riga-evento-giorno-pallino" aria-hidden="true">●</span>
+      <span class="riga-evento-giorno-testo"><strong>${escapeHtml(ev.titolo || 'Senza titolo')}</strong><small>${escapeHtml(quando)}</small></span>
+      <span class="riga-modello-freccia" aria-hidden="true">›</span>
+    </button>`;
+  }).join('');
+}
+
+function apriModificaEventoV2(id){
+  if(!giornoSelezionato) return;
+  eventoInModificaV2 = id ? { iso: giornoSelezionato, id } : null;
+  const ev = id ? (AppState.eventiGiorno[giornoSelezionato] || []).find(e => e.id === id) : null;
+  el('titoloModaleEvento').textContent = ev ? 'Modifica evento' : 'Nuovo evento';
+  el('campoEventoTitolo').value = ev ? (ev.titolo || '') : '';
+  el('campoEventoTuttoIlGiorno').checked = !!(ev && ev.tuttoIlGiorno);
+  el('campoEventoOraInizio').value = ev ? (ev.oraInizio || '') : '';
+  el('campoEventoOraFine').value = ev ? (ev.oraFine || '') : '';
+  el('campoEventoPromemoria').checked = !!(ev && ev.promemoria);
+  el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
+  el('campoEventoNote').value = ev ? (ev.note || '') : '';
+  el('campiEventoOrario').hidden = el('campoEventoTuttoIlGiorno').checked;
+  el('btnEliminaEvento').hidden = !ev;
+  el('overlayEvento').hidden = false;
+}
+
+function salvaEventoV2(){
+  if(!giornoSelezionato) return;
+  const titolo = el('campoEventoTitolo').value.trim();
+  if(!titolo){ mostraToast('Dai un titolo all\'evento prima di salvare.', 'avviso'); return; }
+  const tuttoIlGiorno = el('campoEventoTuttoIlGiorno').checked;
+  const dati = {
+    titolo,
+    tuttoIlGiorno,
+    oraInizio: tuttoIlGiorno ? '' : el('campoEventoOraInizio').value,
+    oraFine: tuttoIlGiorno ? '' : el('campoEventoOraFine').value,
+    promemoria: el('campoEventoPromemoria').checked,
+    luogo: el('campoEventoLuogo').value.trim(),
+    note: el('campoEventoNote').value.trim()
+  };
+  if(!AppState.eventiGiorno[giornoSelezionato]) AppState.eventiGiorno[giornoSelezionato] = [];
+  const lista = AppState.eventiGiorno[giornoSelezionato];
+  if(eventoInModificaV2){
+    const esistente = lista.find(e => e.id === eventoInModificaV2.id);
+    if(esistente) Object.assign(esistente, dati);
+  } else {
+    lista.push({ id: 'evento_' + Date.now(), ...dati });
+  }
+  salvaEventiGiornoStorage();
+  el('overlayEvento').hidden = true;
+  renderListaEventiGiornoV2();
+  renderCalendario();
+  mostraToast('Evento salvato', 'successo');
+}
+
+function eliminaEventoV2(){
+  if(!eventoInModificaV2) return;
+  const lista = AppState.eventiGiorno[eventoInModificaV2.iso];
+  if(lista){
+    AppState.eventiGiorno[eventoInModificaV2.iso] = lista.filter(e => e.id !== eventoInModificaV2.id);
+    if(!AppState.eventiGiorno[eventoInModificaV2.iso].length) delete AppState.eventiGiorno[eventoInModificaV2.iso];
+  }
+  salvaEventiGiornoStorage();
+  el('overlayEvento').hidden = true;
+  renderListaEventiGiornoV2();
+  renderCalendario();
+  mostraToast('Evento eliminato', 'successo');
+}
+
+// Promemoria "solo se l'app è aperta": ogni 30 secondi controlliamo se un evento con promemoria
+// attivo inizia proprio ora. Non è un vero promemoria in background (limite reale delle PWA — vedi
+// la spiegazione data all'utente): funziona solo mentre questa scheda è effettivamente aperta.
+const EVENTI_GIA_AVVISATI_V2 = new Set();
+function controllaPromemoriaEventiV2(){
+  const adesso = new Date();
+  const isoOggi = dataISO(adesso);
+  const oraOraMinuti = `${String(adesso.getHours()).padStart(2,'0')}:${String(adesso.getMinutes()).padStart(2,'0')}`;
+  const eventiOggi = AppState.eventiGiorno[isoOggi] || [];
+  eventiOggi.forEach(ev => {
+    if(!ev.promemoria || ev.tuttoIlGiorno || !ev.oraInizio) return;
+    const chiave = isoOggi + '_' + ev.id;
+    if(ev.oraInizio === oraOraMinuti && !EVENTI_GIA_AVVISATI_V2.has(chiave)){
+      EVENTI_GIA_AVVISATI_V2.add(chiave);
+      mostraToast(`📅 ${ev.titolo}${ev.luogo ? ' — ' + ev.luogo : ''}`, 'info');
+    }
+  });
+}
+setInterval(controllaPromemoriaEventiV2, 30000);
+
 // ===================== Straordinario rapido dalla scheda Indennità =====================
 function apriStraordinarioRapidoV2(){
   if(!giornoPerPopupV2) return;
@@ -1150,8 +1261,7 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   } else if(t.oraInizio && t.oraFine) testo = `${dataLeggibile} — ${t.oraInizio} - ${t.oraFine}`;
   else testo = `${dataLeggibile} — turno incompleto`;
   box.textContent = testo;
-
-  // Icone delle indennità attive quel giorno + ore di straordinario giornaliero, se presenti.
+  renderListaEventiGiornoV2();
   if(!boxIndennita) return;
   if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
   const pezzi = [];

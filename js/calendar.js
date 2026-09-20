@@ -623,6 +623,7 @@ function renderCalendario(){
     cella.innerHTML = `
       <span class="giorno-topline">
         <span class="giorno-numero">${g}</span>
+        ${(AppState.eventiGiorno[iso] || []).length ? '<span class="giorno-pallino-evento" title="Hai un evento questo giorno" aria-hidden="true">●</span>' : ''}
         <span class="giorno-badge-list">${badgeVisibili.join('')}</span>
       </span>
       <span class="giorno-turno-badge" title="${escapeHtml(nomeCategoria)}"><span class="giorno-turno-codice">${escapeHtml(codiceCategoria)}</span><span class="giorno-turno-nome">${escapeHtml(tipoLabel)}</span></span>
