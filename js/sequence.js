@@ -54,6 +54,7 @@ function renderSequenza(){
   // La data di inizio della generazione è indipendente dal giorno selezionato
   // nel calendario. Durante il render dei modelli non deve essere sovrascritta.
   if(data && !data.value) data.value = dataISO(new Date());
+  renderListaPatternSempliceV2();
   const lista = el('listaSequenza');
   if(!lista) return;
   lista.innerHTML = AppState.sequenzaTurni.map((passo, i) => {

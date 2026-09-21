@@ -635,8 +635,9 @@
       <div class="generatore-step">
         <span class="generatore-numero">2</span>
         <div class="generatore-campo">
-          <label class="campo-modale">🔄 Quale turnazione?
-            <select id="selettoreModelloSemplice">
+          <p class="sotto-titolo" style="margin:0 0 6px;">🔄 Quale turnazione?</p>
+          <div id="listaPatternSempliceV2" class="lista-modelli-selettore" style="border:1px solid var(--bordo);border-radius:12px;"></div>
+          <select id="selettoreModelloSemplice" hidden>
               <optgroup label="Turno in quinta (a rotazione)">
                 <option value="quinta">Turno in quinta — Sera · Pomeriggio · Mattina · Notte · Riposo</option>
                 <option value="quinta10">Turno in quinta 10 giorni — Sera · Pomeriggio · Mattina · Notte · Riposo · Sera · Pomeriggio · Mattina · Mattina · Riposo</option>
@@ -646,8 +647,7 @@
                 <option value="lunga">Settimana lunga — Lun–Sab 08:00–14:00</option>
               </optgroup>
               <option value="personalizzata">Personalizzata — la imposto io</option>
-            </select>
-          </label>
+          </select>
           <label class="campo-modale" id="contenitoreFasciaOrariaSemplice">🕐 Fascia oraria (solo per settimana corta/lunga)
             <select id="selettoreOrarioSemplice">
               <option value="0713">07:00–13:00</option>

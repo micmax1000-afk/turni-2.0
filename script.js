@@ -512,8 +512,17 @@ function inizializza(){
     const scelta=el('selettoreModelloSemplice')?.value;
     aggiornaVisibilitaFasciaOrariaSemplice();
     if(scelta!=='personalizzata') aggiornaAnteprimaSequenzaSemplice();
+    renderListaPatternSempliceV2(); // aggiorna il segno di spunta sulla riga scelta
   });
   aggiornaVisibilitaFasciaOrariaSemplice();
+  const listaPatternSempliceHost = el('listaPatternSempliceV2');
+  if(listaPatternSempliceHost) listaPatternSempliceHost.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-pattern-semplice]');
+    if(!btn) return;
+    const selettore = el('selettoreModelloSemplice');
+    selettore.value = btn.dataset.patternSemplice;
+    selettore.dispatchEvent(new Event('change'));
+  });
 
   function aggiornaGiorniDaPreset(){
     const preset = el('campoSequenzaDurataPreset').value;
@@ -934,6 +943,39 @@ function coloreModelloV2(m){
   if(m.riposo) return coloreCategoria('riposo');
   const categoria = (typeof categoriaTurno === 'function' && m.oraInizio && m.oraFine) ? categoriaTurno(m.oraInizio, m.oraFine) : null;
   return coloreCategoria(categoria || 'mattina');
+}
+
+// Lista visiva al posto del vecchio menu a tendina per "Quale turnazione?": stessa scelta di
+// prima (quinta/quinta10/corta/lunga/personalizzata), ma con anteprima colorata. Il menu vero
+// (selettoreModelloSemplice) resta nel DOM, solo nascosto: tutta la logica di applicazione e
+// generazione sotto resta quella originale, invariata — qui cambia solo la scelta visiva.
+function renderListaPatternSempliceV2(){
+  const host = el('listaPatternSempliceV2');
+  const selettore = el('selettoreModelloSemplice');
+  if(!host || !selettore) return;
+  const trovaModello = id => (AppState.modelliTurno || []).find(m => m.id === id);
+  const pallini = ids => ids.map(id => {
+    const m = trovaModello(id);
+    const colore = m ? coloreModelloV2(m) : '#E8ECF0';
+    return `<span style="width:16px;height:16px;border-radius:50%;background:${colore};margin-right:-5px;border:2px solid var(--pannello);display:inline-block;"></span>`;
+  }).join('');
+  const voci = [
+    { value:'quinta', nome:'Turno in quinta', sotto:'5 giorni a rotazione', giorni:['sera','pomeriggio','mattina','notte','riposo'] },
+    { value:'quinta10', nome:'Turno in quinta 10 giorni', sotto:'10 giorni a rotazione', giorni:['sera','pomeriggio','mattina','notte','riposo'] },
+    { value:'corta', nome:'Settimana corta', sotto:'Lun–Ven, orario fisso', icona:'📅' },
+    { value:'lunga', nome:'Settimana lunga', sotto:'Lun–Sab, orario fisso', icona:'📅' },
+    { value:'personalizzata', nome:'Personalizzata', sotto:'la imposto tu', icona:'⚙️' }
+  ];
+  const selezionato = selettore.value;
+  host.innerHTML = voci.map(v => {
+    const attivo = v.value === selezionato;
+    const anteprima = v.giorni ? `<span style="display:flex;flex-shrink:0;">${pallini(v.giorni)}</span>` : `<span style="font-size:1.1rem;flex-shrink:0;">${v.icona}</span>`;
+    return `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-pattern-semplice="${v.value}" style="${attivo ? 'background:var(--carta);' : ''}">
+      ${anteprima}
+      <span class="riga-modello-testo"><strong>${escapeHtml(v.nome)}</strong><small>${escapeHtml(v.sotto)}</small></span>
+      ${attivo ? '<span aria-hidden="true">✓</span>' : ''}
+    </button>`;
+  }).join('');
 }
 
 function renderListaModelliTurniV2(){
