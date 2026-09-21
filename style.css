@@ -1426,6 +1426,7 @@ h3{ font-family: var(--font-display); font-weight:600; }
 
 /* "Filtra o svuota il mese" — menu compatto sotto la griglia, richiudibile, chiuso di default */
 .azioni-calendario-rapide-v2{margin-top:10px;border:1px solid var(--bordo);border-radius:12px;background:var(--carta);overflow:hidden}
+.riepilogo-giorno-selezionato-box-v2{margin-top:10px;border:1px solid var(--bordo);border-radius:12px;background:var(--carta);padding:10px 12px}
 .azioni-calendario-rapide-v2>summary{cursor:pointer;padding:10px 12px;font-size:.78rem;font-weight:700;color:var(--testo-tenue);list-style:none}
 .azioni-calendario-rapide-v2>summary::-webkit-details-marker{display:none}
 .azioni-calendario-rapide-v2-corpo{padding:2px 12px 12px;display:flex;flex-direction:column;gap:10px}

@@ -211,6 +211,11 @@ function sequenzaDaPatternV2(patternId){
     if(!m || m.riposo) return { tipo:'riposo' };
     const extra = {};
     (g.indennita || []).forEach(chiave => { extra[chiave] = true; });
+    if(g.secondoTurno && g.secondoTurno.oraInizio && g.secondoTurno.oraFine){
+      extra.secondoAttivo = true;
+      extra.secondoOraInizio = g.secondoTurno.oraInizio;
+      extra.secondoOraFine = g.secondoTurno.oraFine;
+    }
     return { tipo:'personalizzato', oraInizio: m.oraInizio || '', oraFine: m.oraFine || '', extra };
   });
 }
@@ -232,6 +237,8 @@ function applicaModelloTurnoInQuinta10(){
 }
 
 function applicaModelloSettimanaCorta(){
+  const daPattern = sequenzaDaPatternV2('pattern_settimana_corta');
+  if(daPattern){ AppState.sequenzaTurni = daPattern; salvaSequenzaStorage(); renderSequenza(); return; }
   const orari = orariSemplici();
   if(!orari){
     mostraAvviso('Per la settimana corta scegli 07:00–13:00 o 08:00–14:00. Per un orario diverso usa le Opzioni avanzate.');
@@ -246,6 +253,8 @@ function applicaModelloSettimanaCorta(){
 }
 
 function applicaModelloSettimanaLunga(){
+  const daPattern = sequenzaDaPatternV2('pattern_settimana_lunga');
+  if(daPattern){ AppState.sequenzaTurni = daPattern; salvaSequenzaStorage(); renderSequenza(); return; }
   const orari = orariSemplici();
   if(!orari){
     mostraAvviso('Per la settimana lunga scegli 07:00–13:00 o 08:00–14:00. Per un orario diverso usa le Opzioni avanzate.');

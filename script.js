@@ -982,7 +982,7 @@ function renderListaPatternSempliceV2(){
     { value:'personalizzata', nome:'Personalizzata', sotto:'la imposto tu', icona:'⚙️' }
   ];
   const selezionato = selettore.value;
-  const mappaPatternId = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10' };
+  const mappaPatternId = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10', corta:'pattern_settimana_corta', lunga:'pattern_settimana_lunga' };
   host.innerHTML = voci.map(v => {
     const attivo = v.value === selezionato;
     const anteprima = v.giorni ? `<span style="display:flex;flex-shrink:0;">${pallini(v.giorni)}</span>` : `<span style="font-size:1.1rem;flex-shrink:0;">${v.icona}</span>`;

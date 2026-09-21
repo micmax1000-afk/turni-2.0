@@ -124,14 +124,16 @@ const MODELLI_TURNO_BASE_V2 = [
   { id:'notte', nome:'Notte', oraInizio:'01:00', oraFine:'07:00', sigla:'NO' },
   { id:'riposo', nome:'Riposo', riposo:true, sigla:'RI' },
   { id:'aggiornamentoProfessionale', nome:'Aggiornamento professionale', oraInizio:'08:00', oraFine:'14:00', sigla:'AG' },
-  { id:'addestramentoTiro', nome:'Addestramento tiro', oraInizio:'08:00', oraFine:'14:00', sigla:'AT' }
+  { id:'addestramentoTiro', nome:'Addestramento tiro', oraInizio:'08:00', oraFine:'14:00', sigla:'AT' },
+  { id:'ufficio', nome:'Ufficio', oraInizio:'08:00', oraFine:'14:00', sigla:'UF' }
 ];
 // Turni aggiunti dopo il primo rilascio dei Modelli: chi ha già l'app installata ha un elenco
 // salvato che non li contiene. Li aggiungiamo qui, una volta sola, senza toccare nulla che
 // l'utente abbia già personalizzato (nome, orario) sugli altri turni.
 function aggiungiModelliMancantiV2(elenco){
   const idPresenti = new Set(elenco.map(m => m.id));
-  const daAggiungere = MODELLI_TURNO_BASE_V2.filter(base => (base.id === 'aggiornamentoProfessionale' || base.id === 'addestramentoTiro') && !idPresenti.has(base.id));
+  const idNuovi = ['aggiornamentoProfessionale', 'addestramentoTiro', 'ufficio'];
+  const daAggiungere = MODELLI_TURNO_BASE_V2.filter(base => idNuovi.includes(base.id) && !idPresenti.has(base.id));
   return daAggiungere.length ? [...elenco, ...daAggiungere.map(m => ({...m}))] : elenco;
 }
 function caricaModelliTurno(){
@@ -157,14 +159,40 @@ const PATTERN_BASE_V2 = [
   { id:'pattern_quinta10', nome:'Turno in quinta 10 giorni', giorni:[
     {modelloId:'sera'},{modelloId:'pomeriggio'},{modelloId:'mattina'},{modelloId:'notte'},{modelloId:'riposo'},
     {modelloId:'sera'},{modelloId:'pomeriggio'},{modelloId:'mattina'},{modelloId:'mattina'},{modelloId:'riposo'}
+  ]},
+  { id:'pattern_settimana_corta', nome:'Settimana corta', giorni:[
+    {modelloId:'ufficio'},
+    {modelloId:'ufficio', secondoTurno:{oraInizio:'15:00', oraFine:'18:00'}},
+    {modelloId:'ufficio'},
+    {modelloId:'ufficio', secondoTurno:{oraInizio:'15:00', oraFine:'18:00'}},
+    {modelloId:'ufficio'},
+    {modelloId:'riposo'},{modelloId:'riposo'}
+  ]},
+  { id:'pattern_settimana_lunga', nome:'Settimana lunga', giorni:[
+    {modelloId:'ufficio'},{modelloId:'ufficio'},{modelloId:'ufficio'},{modelloId:'ufficio'},{modelloId:'ufficio'},{modelloId:'ufficio'},
+    {modelloId:'riposo'}
   ]}
 ];
+// Come aggiungiModelliMancantiV2: chi ha già i pattern salvati (senza le due Settimane, aggiunte
+// dopo) le riceve qui una volta sola, senza toccare i pattern che l'utente ha già modificato.
+function aggiungiPatternMancantiV2(elenco){
+  const idPresenti = new Set(elenco.map(p => p.id));
+  const idNuovi = ['pattern_settimana_corta', 'pattern_settimana_lunga'];
+  const daAggiungere = PATTERN_BASE_V2.filter(base => idNuovi.includes(base.id) && !idPresenti.has(base.id));
+  return daAggiungere.length
+    ? [...elenco, ...daAggiungere.map(p => ({ id:p.id, nome:p.nome, giorni: p.giorni.map(g => ({...g})) }))]
+    : elenco;
+}
 function caricaPattern(){
   try{
     const salvati = JSON.parse(TurniPSStorage.getItem(CHIAVE_PATTERN_TURNI));
-    if(Array.isArray(salvati) && salvati.length) return salvati;
+    if(Array.isArray(salvati) && salvati.length){
+      const aggiornato = aggiungiPatternMancantiV2(salvati);
+      if(aggiornato !== salvati) TurniPSStorage.setItem(CHIAVE_PATTERN_TURNI, JSON.stringify(aggiornato));
+      return aggiornato;
+    }
   }catch{}
-  return PATTERN_BASE_V2.map(p => ({ id:p.id, nome:p.nome, giorni: p.giorni.map(g => ({ modelloId:g.modelloId, indennita: g.indennita || [] })) }));
+  return PATTERN_BASE_V2.map(p => ({ id:p.id, nome:p.nome, giorni: p.giorni.map(g => ({ modelloId:g.modelloId, indennita: g.indennita || [], secondoTurno: g.secondoTurno || null })) }));
 }
 function salvaPatternStorage(){ TurniPSStorage.setItem(CHIAVE_PATTERN_TURNI, JSON.stringify(AppState.pattern)); }
 
