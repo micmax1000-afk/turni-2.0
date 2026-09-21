@@ -199,14 +199,31 @@ function passoPersonalizzatoConOrario(extra={}, orari=null){
   return {tipo:'personalizzato', oraInizio:o.inizio, oraFine:o.fine, extra:{...extra}};
 }
 
+// Converte un pattern (definito nell'editor visivo, con eventuali indennità fisse per giorno)
+// nel formato che generaSequenzaTurni() già sa leggere — così la generazione vera riusa la
+// stessa funzione, collaudata, invece di duplicarne la logica in un secondo sistema parallelo.
+function sequenzaDaPatternV2(patternId){
+  const p = (AppState.pattern || []).find(x => x.id === patternId);
+  if(!p) return null;
+  const modelli = AppState.modelliTurno || [];
+  return p.giorni.map(g => {
+    const m = modelli.find(x => x.id === g.modelloId);
+    if(!m || m.riposo) return { tipo:'riposo' };
+    const extra = {};
+    (g.indennita || []).forEach(chiave => { extra[chiave] = true; });
+    return { tipo:'personalizzato', oraInizio: m.oraInizio || '', oraFine: m.oraFine || '', extra };
+  });
+}
+
 function applicaModelloTurnoInQuinta(){
-  AppState.sequenzaTurni = [{tipo:'sera01'}, {tipo:'pomeriggio'}, {tipo:'mattina'}, {tipo:'notte01'}, {tipo:'riposo'}];
+  AppState.sequenzaTurni = sequenzaDaPatternV2('pattern_quinta5')
+    || [{tipo:'sera01'}, {tipo:'pomeriggio'}, {tipo:'mattina'}, {tipo:'notte01'}, {tipo:'riposo'}];
   salvaSequenzaStorage();
   renderSequenza();
 }
 
 function applicaModelloTurnoInQuinta10(){
-  AppState.sequenzaTurni = [
+  AppState.sequenzaTurni = sequenzaDaPatternV2('pattern_quinta10') || [
     {tipo:'sera01'}, {tipo:'pomeriggio'}, {tipo:'mattina'}, {tipo:'notte01'}, {tipo:'riposo'},
     {tipo:'sera01'}, {tipo:'pomeriggio'}, {tipo:'mattina'}, {tipo:'mattina'}, {tipo:'riposo'}
   ];
@@ -279,8 +296,10 @@ function generaSequenzaTurni(indiceInizialeForzato){
           straordinarioDopoFine: extra.straordinarioProgrammato ? (extra.strDopoFine || '') : '',
           secondoAttivo: !!extra.secondoAttivo, secondoOraInizio: extra.secondoOraInizio || '', secondoOraFine: extra.secondoOraFine || '',
           reperibilita: !!extra.reperibilita, missione: !!extra.missione, servizioEsterno: !!extra.servizioEsterno,
-          ordinePubblico: !!extra.ordinePubblico, controlloTerritorio: !!extra.controlloTerritorio, cambioTurno: false,
-          buonoPasto: !!extra.buonoPasto
+          ordinePubblico: !!extra.ordinePubblico, controlloTerritorio: !!extra.controlloTerritorio, cambioTurno: !!extra.cambioTurno,
+          buonoPasto: !!extra.buonoPasto,
+          compensazioneRiposo: !!extra.compensazioneRiposo, recuperoFestivoLavorato: !!extra.recuperoFestivoLavorato,
+          aggiornamentoProfessionale: !!extra.aggiornamentoProfessionale, addestramentoTiro: !!extra.addestramentoTiro
         };
       }
     }
