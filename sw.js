@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V78 (v2.13.0 — Modelli/Assenze/Indennità personalizzabili) */
+/* Turni & Accessorio PS — Service Worker V81 (v2.17.2 — ripristino da v2.17.1, cache rinominata per eliminare ogni residuo) */
 'use strict';
-const CACHE='turni-ps-v78';
+const CACHE='turni-ps-v81';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

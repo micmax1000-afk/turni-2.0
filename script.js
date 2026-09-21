@@ -282,13 +282,6 @@ let tokenAccessoDriveCorrente = null;
 function inizializza(){
   if(window.TurniPSDataGuard && !TurniPSDataGuard.validate(AppState)) Object.assign(AppState, TurniPSDataGuard.normalize(AppState));
   applicaColoriTurni();
-  if(!TurniPSStorage.getItem(CHIAVE_DISCLAIMER_MOSTRATO)){
-    mostraAvviso(
-      'Questa è un\'app indipendente, non ufficiale e non affiliata alla Polizia di Stato né ad alcun ente pubblico. I valori delle AppState.tabelle sono presi da fonti pubbliche online (siti sindacali, normativa pubblicata) e possono contenere errori o non essere aggiornati. L\'autore declina ogni responsabilità per incongruenze, errori o danni derivanti dall\'uso dell\'app: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni.',
-      'Prima di iniziare'
-    );
-    TurniPSStorage.setItem(CHIAVE_DISCLAIMER_MOSTRATO, '1');
-  }
   aggiornaRiassuntoAnagrafica();
   renderCalendario();
   renderAvvisiApp();
