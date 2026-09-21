@@ -936,7 +936,15 @@ function chiudiPopupRapidoGiornoV2(){
 }
 function chiudiPopupSeTocchiFuori(e){
   const p = el('popupRapidoGiorno');
-  if(p && !p.hidden && !p.contains(e.target)) chiudiPopupRapidoGiornoV2();
+  if(!p || p.hidden) return;
+  if(p.contains(e.target)) return; // tocco dentro il popup stesso
+  // La matita e le celle del calendario gestiscono da sole l'apertura/riapertura del popup per
+  // il NUOVO giorno o contesto: se li escludessimo qui, questo stesso "tocco fuori" (che risale
+  // fino a qui dopo aver già riaperto correttamente il popup un istante prima) lo richiuderebbe
+  // subito di nuovo — esattamente il bug per cui il secondo giorno toccato sembrava non aprire nulla.
+  if(e.target.closest('#btnFabAggiungiV2')) return;
+  if(e.target.closest('.giorno-cella')) return;
+  chiudiPopupRapidoGiornoV2();
 }
 
 function apriSelettoreModelliV2(scheda){
