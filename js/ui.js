@@ -71,7 +71,7 @@ function mostraScheda(nome){
   // Modelli, dallo straordinario rapido, da un avviso di conferma non chiuso correttamente...)
   // non deve mai poter bloccare la navigazione principale — lo chiudiamo sempre, ad ogni cambio
   // di scheda, anche se probabilmente era già chiuso (innocuo in quel caso).
-  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayAvviso','popupRapidoGiorno'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
+  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayAvviso','popupRapidoGiorno','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
   // V60 — Ristrutturazione a 4 schede (Calendario/Report/Turni/Altro). Le vecchie viste interne
   // (vistaCedolino, vistaStatistiche, vistaAssenze, ecc.) restano fisicamente invariate — cambia
   // solo QUALI vengono mostrate insieme sotto ciascuna delle 4 nuove schede della barra in basso.

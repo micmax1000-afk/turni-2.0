@@ -827,7 +827,7 @@ function inizializza(){
     // modifica modello) fosse rimasto aperto per qualche motivo, coprirebbe la matita in modo
     // invisibile — sembrerebbe che il tocco non faccia nulla. Li chiudiamo sempre prima di aprire
     // il popup, anche se erano già chiusi (innocuo in quel caso).
-    ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
+    ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
     if(!giornoSelezionato) giornoSelezionato = dataISO(new Date());
     giornoPerPopupV2 = giornoSelezionato;
     apriPopupRapidoGiornoV2();
@@ -910,7 +910,7 @@ let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifi
 // apre direttamente il dettaglio/modifica; se è vuoto, propone il popup rapido "+ Turno / + Evento"
 // invece di aprire subito il modulo completo.
 function gestisciTocchGiornoV2(iso){
-  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
+  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
   selezionaGiorno(iso);
   giornoPerPopupV2 = iso;
   apriPopupRapidoGiornoV2();
@@ -1008,6 +1008,11 @@ let giornoPatternSelezionatoSemplcieV2 = 0;
 function apriEditorPatternSempliceV2(patternId){
   const p = (AppState.pattern || []).find(x => x.id === patternId);
   if(!p) return;
+  // Forziamo sempre la scheda Turni (con "Genera turni automaticamente" visibile) dietro
+  // all'editor: se per qualche motivo era rimasta attiva Calendario (es. la matita del
+  // calendario toccata per errore, o un'altra sequenza di navigazione), l'editor del ciclo
+  // non deve mai aprirsi sopra la schermata sbagliata.
+  mostraScheda('sequenza');
   patternInModificaSemplcieV2 = patternId;
   giornoPatternSelezionatoSemplcieV2 = 0;
   el('titoloEditorPatternV2').textContent = 'Ciclo — ' + p.nome;
