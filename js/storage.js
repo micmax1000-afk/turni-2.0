@@ -150,7 +150,7 @@ function caricaPattern(){
     const salvati = JSON.parse(TurniPSStorage.getItem(CHIAVE_PATTERN_TURNI));
     if(Array.isArray(salvati) && salvati.length) return salvati;
   }catch{}
-  return PATTERN_BASE_V2.map(p => ({ id:p.id, nome:p.nome, giorni: p.giorni.map(g => ({ modelloId:g.modelloId })) }));
+  return PATTERN_BASE_V2.map(p => ({ id:p.id, nome:p.nome, giorni: p.giorni.map(g => ({ modelloId:g.modelloId, indennita: g.indennita || [] })) }));
 }
 function salvaPatternStorage(){ TurniPSStorage.setItem(CHIAVE_PATTERN_TURNI, JSON.stringify(AppState.pattern)); }
 

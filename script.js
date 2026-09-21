@@ -534,12 +534,15 @@ function inizializza(){
     if(!btn) return;
     giornoPatternSelezionatoSemplcieV2 = Number(btn.dataset.giornoIndex);
     renderCicloPatternSempliceV2();
+    renderIndennitaGiornoPatternSempliceV2();
   });
   const tavolozzaPatternHostSemplice = el('tavolozzaPatternV2');
   if(tavolozzaPatternHostSemplice) tavolozzaPatternHostSemplice.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-modello-id-pattern]');
-    if(btn) assegnaModelloAGiornoPatternSempliceV2(btn.dataset.modelloIdPattern);
+    if(btn){ assegnaModelloAGiornoPatternSempliceV2(btn.dataset.modelloIdPattern); renderIndennitaGiornoPatternSempliceV2(); }
   });
+  const indennitaPatternHostSemplice = el('corpoIndennitaGiornoPatternV2');
+  if(indennitaPatternHostSemplice) indennitaPatternHostSemplice.addEventListener('change', aggiornaIndennitaGiornoPatternSempliceV2);
 
   function aggiornaGiorniDaPreset(){
     const preset = el('campoSequenzaDurataPreset').value;
@@ -1026,6 +1029,7 @@ function apriEditorPatternSempliceV2(patternId){
   el('titoloEditorPatternV2').textContent = 'Ciclo — ' + p.nome;
   renderCicloPatternSempliceV2();
   renderTavolozzaPatternSempliceV2();
+  renderIndennitaGiornoPatternSempliceV2();
   el('overlayEditorPatternV2').hidden = false;
 }
 
@@ -1040,10 +1044,40 @@ function renderCicloPatternSempliceV2(){
     const sigla = m ? (m.sigla || '?') : '?';
     const selezionato = i === giornoPatternSelezionatoSemplcieV2;
     const bordo = selezionato ? 'border:2px solid var(--inchiostro);' : 'border:2px solid transparent;';
+    const badge = (g.indennita && g.indennita.length) ? '<span style="font-size:.5rem;">🛡️</span>' : '';
     return `<button type="button" class="ciclo-pattern-giorno-v2" data-giorno-index="${i}" style="background:${colore};${bordo}">
-      <span style="font-size:.6rem;font-weight:800;">${escapeHtml(sigla)}</span>
+      <span style="font-size:.6rem;font-weight:800;">${escapeHtml(sigla)}</span>${badge}
     </button>`;
   }).join('');
+}
+
+// Mostra la lista delle indennità fisse per il giorno del ciclo ATTUALMENTE selezionato — nascosta
+// del tutto se quel giorno è un Riposo (non ha senso spuntare indennità su un giorno libero).
+function renderIndennitaGiornoPatternSempliceV2(){
+  const box = el('indennitaGiornoPatternV2');
+  const corpo = el('corpoIndennitaGiornoPatternV2');
+  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  if(!box || !corpo || !p) return;
+  const giorno = p.giorni[giornoPatternSelezionatoSemplcieV2];
+  if(!giorno){ box.hidden = true; return; }
+  const modello = (AppState.modelliTurno || []).find(m => m.id === giorno.modelloId);
+  if(!modello || modello.riposo){ box.hidden = true; return; }
+  box.hidden = false;
+  const attive = giorno.indennita || [];
+  corpo.innerHTML = INDENNITA_RAPIDE_V2.map(x => `<label class="campo-modale campo-riga">
+    <input type="checkbox" data-indennita-pattern="${x.chiave}" ${attive.includes(x.chiave) ? 'checked' : ''}> ${escapeHtml(x.nome)}
+  </label>`).join('');
+}
+
+function aggiornaIndennitaGiornoPatternSempliceV2(){
+  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  if(!p) return;
+  const giorno = p.giorni[giornoPatternSelezionatoSemplcieV2];
+  if(!giorno) return;
+  const spuntate = Array.from(el('corpoIndennitaGiornoPatternV2').querySelectorAll('[data-indennita-pattern]:checked')).map(c => c.dataset.indennitaPattern);
+  giorno.indennita = spuntate;
+  salvaPatternStorage();
+  renderCicloPatternSempliceV2(); // aggiorna il 🛡️ sul giorno nel ciclo
 }
 
 function renderTavolozzaPatternSempliceV2(){
