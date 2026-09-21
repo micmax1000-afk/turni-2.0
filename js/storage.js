@@ -122,12 +122,26 @@ const MODELLI_TURNO_BASE_V2 = [
   { id:'pomeriggio', nome:'Pomeriggio', oraInizio:'13:00', oraFine:'19:00', sigla:'PO' },
   { id:'mattina', nome:'Mattino', oraInizio:'07:00', oraFine:'13:00', sigla:'MA' },
   { id:'notte', nome:'Notte', oraInizio:'01:00', oraFine:'07:00', sigla:'NO' },
-  { id:'riposo', nome:'Riposo', riposo:true, sigla:'RI' }
+  { id:'riposo', nome:'Riposo', riposo:true, sigla:'RI' },
+  { id:'aggiornamentoProfessionale', nome:'Aggiornamento professionale', oraInizio:'08:00', oraFine:'14:00', sigla:'AG' },
+  { id:'addestramentoTiro', nome:'Addestramento tiro', oraInizio:'08:00', oraFine:'14:00', sigla:'AT' }
 ];
+// Turni aggiunti dopo il primo rilascio dei Modelli: chi ha già l'app installata ha un elenco
+// salvato che non li contiene. Li aggiungiamo qui, una volta sola, senza toccare nulla che
+// l'utente abbia già personalizzato (nome, orario) sugli altri turni.
+function aggiungiModelliMancantiV2(elenco){
+  const idPresenti = new Set(elenco.map(m => m.id));
+  const daAggiungere = MODELLI_TURNO_BASE_V2.filter(base => (base.id === 'aggiornamentoProfessionale' || base.id === 'addestramentoTiro') && !idPresenti.has(base.id));
+  return daAggiungere.length ? [...elenco, ...daAggiungere.map(m => ({...m}))] : elenco;
+}
 function caricaModelliTurno(){
   try{
     const salvati = JSON.parse(TurniPSStorage.getItem(CHIAVE_MODELLI_TURNO));
-    if(Array.isArray(salvati) && salvati.length) return salvati;
+    if(Array.isArray(salvati) && salvati.length){
+      const aggiornato = aggiungiModelliMancantiV2(salvati);
+      if(aggiornato !== salvati) TurniPSStorage.setItem(CHIAVE_MODELLI_TURNO, JSON.stringify(aggiornato));
+      return aggiornato;
+    }
   }catch{}
   return MODELLI_TURNO_BASE_V2.map(m => ({ ...m }));
 }

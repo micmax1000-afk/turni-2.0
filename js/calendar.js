@@ -677,8 +677,6 @@ function totaleStraordinario(c){
 function aggiornaDettaglioGiorno(){
   if(!giornoSelezionato) return;
   const t = AppState.turni[giornoSelezionato];
-  const campoNota = el('campoNotaGiorno');
-  if(campoNota) campoNota.value = AppState.noteGiorni[giornoSelezionato] || '';
   const campoServizio = el('campoServizioSvolto');
   if(campoServizio) campoServizio.value = (t && t.servizioSvolto) || '';
 }

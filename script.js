@@ -305,19 +305,6 @@ function inizializza(){
     }
   }
 
-  let timeoutNotaGiorno;
-  const _campoNota = el('campoNotaGiorno');
-  if(_campoNota) _campoNota.addEventListener('input', () => {
-    if(!giornoSelezionato) return;
-    clearTimeout(timeoutNotaGiorno);
-    timeoutNotaGiorno = setTimeout(() => {
-      const testo = el('campoNotaGiorno').value;
-      if(testo) AppState.noteGiorni[giornoSelezionato] = testo;
-      else delete AppState.noteGiorni[giornoSelezionato];
-      salvaNoteGiorniStorage();
-    }, 400);
-  });
-
   // "Servizio svolto" in Azioni rapide: salvataggio indipendente (come la nota del giorno),
   // così si può compilare senza dover aprire il pannello completo di modifica turno.
   // Si applica solo a un giorno che ha già un turno: creare un turno "vuoto" solo per questo
@@ -1143,9 +1130,7 @@ const INDENNITA_RAPIDE_V2 = [
   { chiave:'controlloTerritorio', sigla:'CT', nome:'Controllo territorio' },
   { chiave:'cambioTurno', sigla:'CA', nome:'Cambio turno' },
   { chiave:'compensazioneRiposo', sigla:'CR', nome:'Recupero riposo' },
-  { chiave:'recuperoFestivoLavorato', sigla:'RF', nome:'Recupero festivo' },
-  { chiave:'aggiornamentoProfessionale', sigla:'AG', nome:'Aggiornamento professionale' },
-  { chiave:'addestramentoTiro', sigla:'AT', nome:'Addestramento tiro' }
+  { chiave:'recuperoFestivoLavorato', sigla:'RF', nome:'Recupero festivo' }
 ];
 function renderListaModelliIndennitaV2(){
   const host = el('listaModelliIndennita');
