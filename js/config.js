@@ -23,6 +23,7 @@ window.TurniPSConfig = Object.freeze({
     CHIAVE_REPORT_BLOCCHI: 'simCedolino_reportBlocchi_v1',
     CHIAVE_ULTIMO_MODELLO_USATO: 'simCedolino_ultimoModelloUsato_v1',
     CHIAVE_MODELLI_TURNO: 'simCedolino_modelliTurno_v1',
+    CHIAVE_PATTERN_TURNI: 'simCedolino_patternTurni_v1',
     CHIAVE_EVENTI_GIORNO: 'simCedolino_eventiGiorno_v1',
     CHIAVE_INDENNITA_PERSONALIZZATE: 'simCedolino_indennitaPersonalizzate_v1'
   })

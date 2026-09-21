@@ -133,6 +133,27 @@ function caricaModelliTurno(){
 }
 function salvaModelliTurnoStorage(){ TurniPSStorage.setItem(CHIAVE_MODELLI_TURNO, JSON.stringify(AppState.modelliTurno)); }
 
+// Pattern (V2, solo visualizzazione/modifica del ciclo per ora — la generazione vera usa ancora
+// la logica originale in sequence.js). Seme iniziale: gli stessi due "Turno in quinta" di sempre,
+// così l'editor mostra da subito qualcosa di riconoscibile.
+const PATTERN_BASE_V2 = [
+  { id:'pattern_quinta5', nome:'Turno in quinta', giorni:[
+    {modelloId:'sera'},{modelloId:'pomeriggio'},{modelloId:'mattina'},{modelloId:'notte'},{modelloId:'riposo'}
+  ]},
+  { id:'pattern_quinta10', nome:'Turno in quinta 10 giorni', giorni:[
+    {modelloId:'sera'},{modelloId:'pomeriggio'},{modelloId:'mattina'},{modelloId:'notte'},{modelloId:'riposo'},
+    {modelloId:'sera'},{modelloId:'pomeriggio'},{modelloId:'mattina'},{modelloId:'mattina'},{modelloId:'riposo'}
+  ]}
+];
+function caricaPattern(){
+  try{
+    const salvati = JSON.parse(TurniPSStorage.getItem(CHIAVE_PATTERN_TURNI));
+    if(Array.isArray(salvati) && salvati.length) return salvati;
+  }catch{}
+  return PATTERN_BASE_V2.map(p => ({ id:p.id, nome:p.nome, giorni: p.giorni.map(g => ({ modelloId:g.modelloId })) }));
+}
+function salvaPatternStorage(){ TurniPSStorage.setItem(CHIAVE_PATTERN_TURNI, JSON.stringify(AppState.pattern)); }
+
 function caricaEventiGiorno(){
   try{
     const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_EVENTI_GIORNO));

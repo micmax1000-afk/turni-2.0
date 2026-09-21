@@ -1477,6 +1477,12 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .riga-modello-matita{flex-shrink:0;background:transparent;border:0;font-size:1rem;padding:8px;cursor:pointer;opacity:.55}
 .riga-modello-matita:hover{opacity:1}
 .riga-modello-nuovo{display:block;width:100%;background:transparent;border:0;border-top:1px dashed var(--bordo);margin-top:4px;padding:13px 4px 4px;text-align:center;color:var(--inchiostro);font:700 .84rem var(--font-corpo);cursor:pointer}
+
+/* Editor del ciclo pattern (solo visualizzazione/modifica per ora) */
+.ciclo-pattern-v2{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ciclo-pattern-giorno-v2{width:44px;height:52px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--inchiostro)}
+.tavolozza-pattern-v2{display:flex;gap:8px;flex-wrap:wrap}
+.tavolozza-pattern-cerchio-v2{width:36px;height:36px;border-radius:50%;border:0;font-size:.62rem;font-weight:800;color:var(--inchiostro);cursor:pointer}
 .riga-modello-nuovo:hover{text-decoration:underline}
 .riga-modello-selettore:last-child{border-bottom:0}
 .riga-modello-selettore:hover{background:var(--carta)}

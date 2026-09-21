@@ -94,6 +94,7 @@ AppState.assenze = caricaAssenze(); // array [{ id, nome, valore, unita, persona
 AppState.indennitaPersonalizzate = caricaIndennitaPersonalizzate(); // array [{ id, nome, valore, unita: 'mese'|'turno' }]
 AppState.reportBlocchi = caricaReportBlocchi(); // { prossimoTurno, riepilogoMese, riepilogoOre, statistiche, cedolino }
 AppState.modelliTurno = caricaModelliTurno(); // array di modelli turno (5 di base + eventuali personalizzati)
+AppState.pattern = caricaPattern(); // V2 — solo visualizzazione/modifica del ciclo per ora
 AppState.eventiGiorno = caricaEventiGiorno(); // { iso: [{ id, titolo, tuttoIlGiorno, oraInizio, oraFine, note, luogo }] }
 TurniPSStorage.setItem(CHIAVE_ASSENZE, JSON.stringify(AppState.assenze)); // persiste subito l'eventuale merge di nuove voci predefinite
 
@@ -517,11 +518,27 @@ function inizializza(){
   aggiornaVisibilitaFasciaOrariaSemplice();
   const listaPatternSempliceHost = el('listaPatternSempliceV2');
   if(listaPatternSempliceHost) listaPatternSempliceHost.addEventListener('click', (e) => {
+    const matita = e.target.closest('[data-modifica-pattern]');
+    if(matita){ apriEditorPatternSempliceV2(matita.dataset.modificaPattern); return; }
     const btn = e.target.closest('[data-pattern-semplice]');
     if(!btn) return;
     const selettore = el('selettoreModelloSemplice');
     selettore.value = btn.dataset.patternSemplice;
     selettore.dispatchEvent(new Event('change'));
+  });
+  on('btnChiudiEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
+  on('btnFattoEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
+  const cicloPatternHostSemplice = el('cicloPatternV2');
+  if(cicloPatternHostSemplice) cicloPatternHostSemplice.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-giorno-index]');
+    if(!btn) return;
+    giornoPatternSelezionatoSemplcieV2 = Number(btn.dataset.giornoIndex);
+    renderCicloPatternSempliceV2();
+  });
+  const tavolozzaPatternHostSemplice = el('tavolozzaPatternV2');
+  if(tavolozzaPatternHostSemplice) tavolozzaPatternHostSemplice.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-modello-id-pattern]');
+    if(btn) assegnaModelloAGiornoPatternSempliceV2(btn.dataset.modelloIdPattern);
   });
 
   function aggiornaGiorniDaPreset(){
@@ -967,16 +984,74 @@ function renderListaPatternSempliceV2(){
     { value:'personalizzata', nome:'Personalizzata', sotto:'la imposto tu', icona:'⚙️' }
   ];
   const selezionato = selettore.value;
+  const mappaPatternId = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10' };
   host.innerHTML = voci.map(v => {
     const attivo = v.value === selezionato;
     const anteprima = v.giorni ? `<span style="display:flex;flex-shrink:0;">${pallini(v.giorni)}</span>` : `<span style="font-size:1.1rem;flex-shrink:0;">${v.icona}</span>`;
-    return `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-pattern-semplice="${v.value}" style="${attivo ? 'background:var(--carta);' : ''}">
-      ${anteprima}
-      <span class="riga-modello-testo"><strong>${escapeHtml(v.nome)}</strong><small>${escapeHtml(v.sotto)}</small></span>
-      ${attivo ? '<span aria-hidden="true">✓</span>' : ''}
+    const patternId = mappaPatternId[v.value];
+    const matita = patternId ? `<button type="button" class="riga-modello-matita" data-modifica-pattern="${patternId}" aria-label="Modifica ciclo di ${escapeHtml(v.nome)}">✏️</button>` : '';
+    return `<div class="riga-modello-selettore">
+      <button type="button" class="riga-modello-selettore-corpo" data-pattern-semplice="${v.value}" style="${attivo ? 'background:var(--carta);' : ''}">
+        ${anteprima}
+        <span class="riga-modello-testo"><strong>${escapeHtml(v.nome)}</strong><small>${escapeHtml(v.sotto)}</small></span>
+        ${attivo ? '<span aria-hidden="true">✓</span>' : ''}
+      </button>
+      ${matita}
+    </div>`;
+  }).join('');
+}
+
+// ===================== Editor del ciclo (solo visualizzazione/modifica, non genera nulla) =====================
+let patternInModificaSemplcieV2 = null;
+let giornoPatternSelezionatoSemplcieV2 = 0;
+
+function apriEditorPatternSempliceV2(patternId){
+  const p = (AppState.pattern || []).find(x => x.id === patternId);
+  if(!p) return;
+  patternInModificaSemplcieV2 = patternId;
+  giornoPatternSelezionatoSemplcieV2 = 0;
+  el('titoloEditorPatternV2').textContent = 'Ciclo — ' + p.nome;
+  renderCicloPatternSempliceV2();
+  renderTavolozzaPatternSempliceV2();
+  el('overlayEditorPatternV2').hidden = false;
+}
+
+function renderCicloPatternSempliceV2(){
+  const host = el('cicloPatternV2');
+  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  if(!host || !p) return;
+  const modelli = AppState.modelliTurno || [];
+  host.innerHTML = p.giorni.map((g, i) => {
+    const m = modelli.find(x => x.id === g.modelloId);
+    const colore = m ? coloreModelloV2(m) : '#E8ECF0';
+    const sigla = m ? (m.sigla || '?') : '?';
+    const selezionato = i === giornoPatternSelezionatoSemplcieV2;
+    const bordo = selezionato ? 'border:2px solid var(--inchiostro);' : 'border:2px solid transparent;';
+    return `<button type="button" class="ciclo-pattern-giorno-v2" data-giorno-index="${i}" style="background:${colore};${bordo}">
+      <span style="font-size:.6rem;font-weight:800;">${escapeHtml(sigla)}</span>
     </button>`;
   }).join('');
 }
+
+function renderTavolozzaPatternSempliceV2(){
+  const host = el('tavolozzaPatternV2');
+  if(!host) return;
+  host.innerHTML = (AppState.modelliTurno || []).map(m => {
+    const colore = coloreModelloV2(m);
+    return `<button type="button" class="tavolozza-pattern-cerchio-v2" data-modello-id-pattern="${escapeHtml(m.id)}" style="background:${colore}" title="${escapeHtml(m.nome)}">${escapeHtml(m.sigla || '?')}</button>`;
+  }).join('');
+}
+
+function assegnaModelloAGiornoPatternSempliceV2(modelloId){
+  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  if(!p) return;
+  const giorno = p.giorni[giornoPatternSelezionatoSemplcieV2];
+  if(!giorno) return;
+  giorno.modelloId = modelloId;
+  salvaPatternStorage();
+  renderCicloPatternSempliceV2();
+}
+
 
 function renderListaModelliTurniV2(){
   const host = el('listaModelliTurni');

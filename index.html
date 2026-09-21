@@ -124,6 +124,22 @@
       </div>
     </div>
 
+    <!-- Anteprima/modifica del ciclo di un pattern (per ora solo Turno in quinta/10gg): tocchi un
+         giorno, scegli un modello dalla tavolozza. Non genera nulla da qui — solo la definizione. -->
+    <div class="overlay" id="overlayEditorPatternV2" hidden>
+      <div class="modale">
+        <div class="modale-header"><h2 id="titoloEditorPatternV2">Ciclo del pattern</h2><button class="btn-icona" id="btnChiudiEditorPatternV2" aria-label="Chiudi">✕</button></div>
+        <div class="modale-corpo">
+          <p class="sotto-titolo" style="margin-top:0;">Tocca un giorno per selezionarlo, poi scegli un turno dalla tavolozza qui sotto.</p>
+          <div class="ciclo-pattern-v2" id="cicloPatternV2"></div>
+          <div class="tavolozza-pattern-v2" id="tavolozzaPatternV2"></div>
+        </div>
+        <div class="modale-footer">
+          <button class="btn-primario" id="btnFattoEditorPatternV2" type="button">Fatto</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Straordinario rapido dalla scheda Indennità: sole ore + prima/dopo, come nel pannello del turno -->
     <div class="overlay" id="overlayStraordinarioRapido" hidden>
       <div class="modale">
