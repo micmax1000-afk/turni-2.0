@@ -559,8 +559,10 @@
   <div class="modale">
     <div class="modale-header"><h2 id="titoloEditorPatternV2">Ciclo del pattern</h2><button class="btn-icona" id="btnChiudiEditorPatternV2" aria-label="Chiudi">✕</button></div>
     <div class="modale-corpo">
+      <label class="campo-modale">Nome<input type="text" id="campoEditorPatternNome" placeholder="es. Turno in quinta"></label>
       <p class="sotto-titolo" style="margin-top:0;">Tocca un giorno per selezionarlo, poi scegli un turno dalla tavolozza qui sotto.</p>
       <div class="ciclo-pattern-v2" id="cicloPatternV2"></div>
+      <button type="button" class="riga-modello-nuovo" id="btnAggiungiGiornoEditorPatternV2" style="margin:-6px 0 8px;">＋ Aggiungi giorno al ciclo</button>
       <div class="tavolozza-pattern-v2" id="tavolozzaPatternV2"></div>
       <div id="indennitaGiornoPatternV2" class="indennita-giorno-pattern-v2" hidden>
         <p class="sotto-titolo" style="margin:0 0 4px;font-weight:700;">Indennità fisse per questo giorno del ciclo</p>
@@ -592,7 +594,8 @@
       </div>
       <p class="avviso-tabelle">⚠ Se nei giorni scelti esistono già turni, l'app ti chiederà conferma prima di sovrascriverli.</p>
     </div>
-    <div class="modale-footer">
+    <div class="modale-footer" style="justify-content:space-between;">
+      <button class="btn-secondario" id="btnEliminaPatternV2" type="button">🗑️ Elimina</button>
       <button class="btn-primario" id="btnFattoEditorPatternV2" type="button">Fatto</button>
     </div>
   </div>

@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V92 (v2.25.0 — Editor e generazione uniti in un solo schermo) */
+/* Turni & Accessorio PS — Service Worker V93 (v2.26.0 — Nuovo pattern, rinomina, aggiungi giorno, elimina) */
 'use strict';
-const CACHE='turni-ps-v92';
+const CACHE='turni-ps-v93';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

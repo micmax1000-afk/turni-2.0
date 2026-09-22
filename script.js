@@ -505,6 +505,7 @@ function inizializza(){
   aggiornaVisibilitaFasciaOrariaSemplice();
   const listaPatternSempliceHost = el('listaPatternSempliceV2');
   if(listaPatternSempliceHost) listaPatternSempliceHost.addEventListener('click', (e) => {
+    if(e.target.closest('#btnNuovoPatternV2')){ nuovoPatternV2(); return; }
     const matita = e.target.closest('[data-modifica-pattern]');
     if(matita){ apriEditorPatternSempliceV2(matita.dataset.modificaPattern); return; }
     const btn = e.target.closest('[data-pattern-semplice]');
@@ -516,6 +517,9 @@ function inizializza(){
     selettore.value = btn.dataset.patternSemplice;
     selettore.dispatchEvent(new Event('change'));
   });
+  on('campoEditorPatternNome','change', rinominaPatternSempliceV2);
+  on('btnAggiungiGiornoEditorPatternV2','click', aggiungiGiornoPatternSempliceV2);
+  on('btnEliminaPatternV2','click', eliminaPatternSempliceV2);
   on('btnChiudiEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
   on('btnFattoEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
   on('campoEditorPatternDurataPreset','change', () => {
@@ -995,7 +999,8 @@ function renderListaPatternSempliceV2(){
   ];
   const selezionato = selettore.value;
   const mappaPatternId = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10', corta:'pattern_settimana_corta', lunga:'pattern_settimana_lunga' };
-  host.innerHTML = voci.map(v => {
+  const idPatternNoti = new Set(Object.values(mappaPatternId));
+  const righeNote = voci.map(v => {
     const attivo = v.value === selezionato;
     const anteprima = v.giorni ? `<span style="display:flex;flex-shrink:0;">${pallini(v.giorni)}</span>` : `<span style="font-size:1.1rem;flex-shrink:0;">${v.icona}</span>`;
     const patternId = mappaPatternId[v.value];
@@ -1009,6 +1014,19 @@ function renderListaPatternSempliceV2(){
       ${matita}
     </div>`;
   }).join('');
+  // Pattern creati da te con "+ Nuovo pattern": non rientrano nei 4 noti sopra, li aggiungiamo
+  // qui con la stessa struttura (anteprima colorata + matita), toccabili per aprire l'editor.
+  const righePersonali = (AppState.pattern || []).filter(p => !idPatternNoti.has(p.id)).map(p => {
+    const idsGiorni = p.giorni.slice(0, 6).map(g => g.modelloId);
+    return `<div class="riga-modello-selettore">
+      <button type="button" class="riga-modello-selettore-corpo" data-modifica-pattern="${escapeHtml(p.id)}">
+        <span style="display:flex;flex-shrink:0;">${pallini(idsGiorni)}</span>
+        <span class="riga-modello-testo"><strong>${escapeHtml(p.nome)}</strong><small>${p.giorni.length} giorni</small></span>
+      </button>
+      <button type="button" class="riga-modello-matita" data-modifica-pattern="${escapeHtml(p.id)}" aria-label="Modifica ${escapeHtml(p.nome)}">✏️</button>
+    </div>`;
+  }).join('');
+  host.innerHTML = righeNote + righePersonali + `<button type="button" class="riga-modello-nuovo" id="btnNuovoPatternV2">＋ Nuovo pattern</button>`;
 }
 
 // ===================== Editor del ciclo (solo visualizzazione/modifica, non genera nulla) =====================
@@ -1026,6 +1044,7 @@ function apriEditorPatternSempliceV2(patternId){
   patternInModificaSemplcieV2 = patternId;
   giornoPatternSelezionatoSemplcieV2 = 0;
   el('titoloEditorPatternV2').textContent = 'Ciclo — ' + p.nome;
+  el('campoEditorPatternNome').value = p.nome;
   renderCicloPatternSempliceV2();
   renderTavolozzaPatternSempliceV2();
   renderIndennitaGiornoPatternSempliceV2();
@@ -1136,6 +1155,47 @@ function assegnaModelloAGiornoPatternSempliceV2(modelloId){
   giorno.modelloId = modelloId;
   salvaPatternStorage();
   renderCicloPatternSempliceV2();
+}
+
+function rinominaPatternSempliceV2(){
+  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  if(!p) return;
+  const nome = el('campoEditorPatternNome').value.trim();
+  if(!nome) return;
+  p.nome = nome;
+  salvaPatternStorage();
+  el('titoloEditorPatternV2').textContent = 'Ciclo — ' + nome;
+  renderListaPatternSempliceV2();
+}
+
+function aggiungiGiornoPatternSempliceV2(){
+  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  if(!p) return;
+  const primoModello = (AppState.modelliTurno || [])[0];
+  p.giorni.push({ modelloId: primoModello ? primoModello.id : '', indennita: [] });
+  giornoPatternSelezionatoSemplcieV2 = p.giorni.length - 1;
+  salvaPatternStorage();
+  renderCicloPatternSempliceV2();
+  renderIndennitaGiornoPatternSempliceV2();
+  renderListaPatternSempliceV2();
+}
+
+function nuovoPatternV2(){
+  const primoModello = (AppState.modelliTurno || [])[0];
+  const p = { id:'pattern_' + Date.now(), nome:'Nuovo pattern', giorni:[{ modelloId: primoModello ? primoModello.id : '', indennita:[] }] };
+  AppState.pattern.push(p);
+  salvaPatternStorage();
+  apriEditorPatternSempliceV2(p.id);
+}
+
+function eliminaPatternSempliceV2(){
+  if(!patternInModificaSemplcieV2) return;
+  mostraConferma('Eliminare definitivamente questo pattern? I turni già generati sul calendario non verranno toccati.', () => {
+    AppState.pattern = AppState.pattern.filter(p => p.id !== patternInModificaSemplcieV2);
+    salvaPatternStorage();
+    el('overlayEditorPatternV2').hidden = true;
+    renderListaPatternSempliceV2();
+  });
 }
 
 
