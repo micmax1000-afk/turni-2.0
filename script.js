@@ -1238,7 +1238,7 @@ function applicaModelloV2(idModello){
   const m = (AppState.modelliTurno || []).find(x => x.id === idModello);
   if(!m) return;
   const iso = giornoPerPopupV2;
-  AppState.turni[iso] = m.riposo ? { data: iso, riposo: true } : { data: iso, oraInizio: m.oraInizio, oraFine: m.oraFine };
+  AppState.turni[iso] = m.riposo ? { data: iso, riposo: true } : { data: iso, oraInizio: m.oraInizio, oraFine: m.oraFine, modelloId: m.id };
   salvaTurniStorage();
   salvaUltimoModelloUsato('modello', m.id);
   renderCalendario();

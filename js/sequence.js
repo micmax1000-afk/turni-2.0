@@ -226,6 +226,7 @@ function sequenzaDaPatternV2(patternId){
         extra.strDopoFine = g.straordinario.oraFine;
       }
     }
+    extra.modelloId = g.modelloId;
     return { tipo:'personalizzato', oraInizio: m.oraInizio || '', oraFine: m.oraFine || '', extra };
   });
 }
@@ -318,7 +319,8 @@ function generaSequenzaTurni(indiceInizialeForzato){
           ordinePubblico: !!extra.ordinePubblico, controlloTerritorio: !!extra.controlloTerritorio, cambioTurno: !!extra.cambioTurno,
           buonoPasto: !!extra.buonoPasto,
           compensazioneRiposo: !!extra.compensazioneRiposo, recuperoFestivoLavorato: !!extra.recuperoFestivoLavorato,
-          aggiornamentoProfessionale: !!extra.aggiornamentoProfessionale, addestramentoTiro: !!extra.addestramentoTiro
+          aggiornamentoProfessionale: !!extra.aggiornamentoProfessionale, addestramentoTiro: !!extra.addestramentoTiro,
+          modelloId: extra.modelloId || null
         };
       }
     }

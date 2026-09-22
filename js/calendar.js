@@ -544,15 +544,22 @@ function renderCalendario(){
       ? AppState.assenze.find(a => a.id === t.assenzaTipo)
       : null;
 
+    // Se sappiamo quale modello è stato scelto (turno applicato dal popup "+Turno"), mostriamo
+    // il SUO nome/sigla — non solo la categoria oraria generica: due turni con lo stesso orario
+    // (es. "Ufficio" e "Mattina", entrambi 08:00-14:00) altrimenti sarebbero indistinguibili.
+    const modelloUsato = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+
     const nomeCategoria = categoria === 'assenza'
       ? 'Assenza'
       : categoria === 'riposo'
         ? 'Riposo'
+        : modelloUsato ? modelloUsato.nome
         : categoria ? (INIZIALE_CATEGORIA[categoria] || categoria) : 'Libero';
 
     // Codice breve per la cella: il nome completo resta disponibile in aria-label/title.
     const codiceCategoria = categoria === 'assenza' ? 'A'
       : categoria === 'riposo' ? 'R'
+      : modelloUsato ? (modelloUsato.sigla || modelloUsato.nome.slice(0,2).toUpperCase())
       : categoria ? (CODICE_CATEGORIA[categoria] || INIZIALE_CATEGORIA[categoria] || categoria) : '—';
 
     let etichetta = categoria === 'assenza'
