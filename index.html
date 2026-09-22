@@ -562,7 +562,10 @@
       <label class="campo-modale">Nome<input type="text" id="campoEditorPatternNome" placeholder="es. Turno in quinta"></label>
       <p class="sotto-titolo" style="margin-top:0;">Tocca un giorno per selezionarlo, poi scegli un turno dalla tavolozza qui sotto.</p>
       <div class="ciclo-pattern-v2" id="cicloPatternV2"></div>
-      <button type="button" class="riga-modello-nuovo" id="btnAggiungiGiornoEditorPatternV2" style="margin:-6px 0 8px;">＋ Aggiungi giorno al ciclo</button>
+      <div style="display:flex;gap:16px;margin:-6px 0 8px;">
+        <button type="button" class="riga-modello-nuovo" id="btnAggiungiGiornoEditorPatternV2" style="flex:1;border-top:1px dashed var(--bordo);margin-top:0;">＋ Aggiungi giorno</button>
+        <button type="button" class="riga-modello-nuovo" id="btnRimuoviGiornoEditorPatternV2" style="flex:1;border-top:1px dashed var(--bordo);margin-top:0;color:#B3261E;">🗑️ Rimuovi questo giorno</button>
+      </div>
       <div class="tavolozza-pattern-v2" id="tavolozzaPatternV2"></div>
       <div id="indennitaGiornoPatternV2" class="indennita-giorno-pattern-v2" hidden>
         <p class="sotto-titolo" style="margin:0 0 4px;font-weight:700;">Indennità fisse per questo giorno del ciclo</p>

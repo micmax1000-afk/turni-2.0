@@ -466,6 +466,7 @@ function inizializza(){
   });
   on('campoEditorPatternNome','change', rinominaPatternSempliceV2);
   on('btnAggiungiGiornoEditorPatternV2','click', aggiungiGiornoPatternSempliceV2);
+  on('btnRimuoviGiornoEditorPatternV2','click', rimuoviGiornoPatternSempliceV2);
   on('btnEliminaPatternV2','click', eliminaPatternSempliceV2);
   on('btnChiudiEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
   on('btnFattoEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
@@ -936,8 +937,18 @@ let patternInModificaSemplcieV2 = null;
 let giornoPatternSelezionatoSemplcieV2 = 0;
 
 function apriEditorPatternSempliceV2(patternId){
-  const p = (AppState.pattern || []).find(x => x.id === patternId);
-  if(!p) return;
+  let p = (AppState.pattern || []).find(x => x.id === patternId);
+  if(!p){
+    // Una delle 4 righe fisse (Turno in quinta/10gg/Settimana corta/lunga) resta sempre visibile
+    // in elenco anche se l'hai eliminata: qui la ricreiamo da zero, così ritoccarla funziona
+    // sempre come "ricomincia da capo" invece di restare una riga che non apre più nulla.
+    const seme = PATTERN_BASE_V2.find(x => x.id === patternId);
+    if(!seme) return;
+    p = { id:seme.id, nome:seme.nome, giorni: seme.giorni.map(g => ({ modelloId:g.modelloId, indennita: g.indennita || [], secondoTurno: g.secondoTurno || null })) };
+    AppState.pattern.push(p);
+    salvaPatternStorage();
+    mostraToast('Pattern ricreato da zero', 'successo');
+  }
   // Forziamo sempre la scheda Turni (con "Genera turni automaticamente" visibile) dietro
   // all'editor: se per qualche motivo era rimasta attiva Calendario (es. la matita del
   // calendario toccata per errore, o un'altra sequenza di navigazione), l'editor del ciclo
@@ -1076,6 +1087,18 @@ function aggiungiGiornoPatternSempliceV2(){
   const primoModello = (AppState.modelliTurno || [])[0];
   p.giorni.push({ modelloId: primoModello ? primoModello.id : '', indennita: [] });
   giornoPatternSelezionatoSemplcieV2 = p.giorni.length - 1;
+  salvaPatternStorage();
+  renderCicloPatternSempliceV2();
+  renderIndennitaGiornoPatternSempliceV2();
+  renderListaPatternSempliceV2();
+}
+
+function rimuoviGiornoPatternSempliceV2(){
+  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  if(!p) return;
+  if(p.giorni.length <= 1){ mostraAvviso('Il ciclo deve avere almeno un giorno: non puoi togliere l\'ultimo rimasto.'); return; }
+  p.giorni.splice(giornoPatternSelezionatoSemplcieV2, 1);
+  giornoPatternSelezionatoSemplcieV2 = Math.max(0, Math.min(giornoPatternSelezionatoSemplcieV2, p.giorni.length - 1));
   salvaPatternStorage();
   renderCicloPatternSempliceV2();
   renderIndennitaGiornoPatternSempliceV2();
