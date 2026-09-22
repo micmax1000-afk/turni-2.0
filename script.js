@@ -1494,23 +1494,19 @@ if('serviceWorker' in navigator){
         });
       });
     }).catch((e) => console.warn('Service worker non registrato:', e));
-
-    // Quando il nuovo service worker prende davvero il controllo (dopo skipWaiting), la pagina
-    // corrente è rimasta con i file vecchi già caricati: un'unica ricarica automatica la porta
-    // alla versione nuova. La guardia evita ricariche multiple se l'evento scattasse più volte.
-    let giaRicaricato = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if(giaRicaricato) return;
-      giaRicaricato = true;
-      window.location.reload();
-    });
+    // NOTA: qui prima c'era anche una ricarica automatica quando il nuovo service worker
+    // prendeva il controllo ("controllerchange"). Rimossa: con aggiornamenti ravvicinati come
+    // in questa fase di lavoro, poteva scattare ad ogni apertura dell'app invece che una sola
+    // volta, causando un ciclo di ricariche continue che impediva di usare l'app. Ora la
+    // ricarica avviene solo al tocco esplicito di "Aggiorna ora" qui sotto, mai da sola.
   });
 }
 
 // Avviso "nuova versione disponibile": invece di ricaricare subito da soli (interromperebbe
 // l'utente a metà di qualcosa, es. mentre sta scrivendo un turno), mostriamo un invito esplicito;
-// al tocco, diciamo al nuovo service worker di attivarsi — questo farà scattare 'controllerchange'
-// sopra, che si occupa della ricarica.
+// al tocco, diciamo al nuovo service worker di attivarsi e ricarichiamo noi stessi la pagina
+// dopo una breve pausa — non dipendiamo più dall'evento "controllerchange" del browser, che si
+// è dimostrato inaffidabile con aggiornamenti così ravvicinati.
 function mostraAvvisoNuovaVersione(worker){
   if(document.getElementById('avvisoNuovaVersioneV65')) return; // non duplicare l'avviso
   const banner = document.createElement('div');
@@ -1520,6 +1516,7 @@ function mostraAvvisoNuovaVersione(worker){
   banner.querySelector('button').addEventListener('click', () => {
     worker.postMessage({ tipo: 'skipWaiting' });
     banner.remove();
+    setTimeout(() => window.location.reload(), 300);
   });
   document.body.appendChild(banner);
 }

@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V96 (v2.28.0 — Rimuovi giorno, righe fisse eliminate si ricreano) */
+/* Turni & Accessorio PS — Service Worker V97 (v2.28.1 — tolto di nuovo il rischio di ciclo di ricarica) */
 'use strict';
-const CACHE='turni-ps-v96';
+const CACHE='turni-ps-v97';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
