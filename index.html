@@ -567,6 +567,30 @@
         <div id="corpoIndennitaGiornoPatternV2"></div>
         <p class="sotto-titolo" style="margin:6px 0 0;">⏱️ Lo straordinario non si imposta qui: varia ogni volta, si aggiunge sul calendario quando serve.</p>
       </div>
+
+      <div style="height:1px;background:var(--bordo);margin:12px 0;"></div>
+      <p class="sotto-titolo" style="margin:0 0 6px;font-weight:700;">Genera sul calendario</p>
+      <label class="campo-modale">📅 Da quando?
+        <input type="date" id="campoEditorPatternDataInizio">
+      </label>
+      <label class="campo-modale">📆 Per quanto tempo?
+        <select id="campoEditorPatternDurataPreset">
+          <option value="settimana">1 settimana</option>
+          <option value="mese" selected>1 mese</option>
+          <option value="mese3">3 mesi</option>
+          <option value="mese6">6 mesi</option>
+          <option value="anno">1 anno</option>
+          <option value="personalizzato">Numero di giorni personalizzato</option>
+        </select>
+      </label>
+      <label class="campo-modale durata-personalizzata" id="contenitoreEditorPatternGiorniPersonalizzati" hidden>Numero di giorni
+        <input type="number" id="campoEditorPatternGiorni" min="1" max="366" value="30" inputmode="numeric">
+      </label>
+      <div class="generatore-azioni" style="margin-top:8px;">
+        <button class="btn-primario btn-genera-grande" id="btnGeneraEditorPatternV2" type="button">🚀 Genera turni</button>
+        <button class="btn-secondario" id="btnContinuaEditorPatternV2" type="button">▶️ Continua da dove sei arrivato</button>
+      </div>
+      <p class="avviso-tabelle">⚠ Se nei giorni scelti esistono già turni, l'app ti chiederà conferma prima di sovrascriverli.</p>
     </div>
     <div class="modale-footer">
       <button class="btn-primario" id="btnFattoEditorPatternV2" type="button">Fatto</button>

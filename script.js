@@ -509,12 +509,24 @@ function inizializza(){
     if(matita){ apriEditorPatternSempliceV2(matita.dataset.modificaPattern); return; }
     const btn = e.target.closest('[data-pattern-semplice]');
     if(!btn) return;
+    const mappaPatternIdRiga = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10', corta:'pattern_settimana_corta', lunga:'pattern_settimana_lunga' };
+    const patternId = mappaPatternIdRiga[btn.dataset.patternSemplice];
+    if(patternId){ apriEditorPatternSempliceV2(patternId); return; } // un solo tocco: apre subito l'editor, con generazione inclusa
     const selettore = el('selettoreModelloSemplice');
     selettore.value = btn.dataset.patternSemplice;
     selettore.dispatchEvent(new Event('change'));
   });
   on('btnChiudiEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
   on('btnFattoEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
+  on('campoEditorPatternDurataPreset','change', () => {
+    aggiornaGiorniEditorPatternV2();
+    const c = el('contenitoreEditorPatternGiorniPersonalizzati');
+    if(c) c.hidden = el('campoEditorPatternDurataPreset').value !== 'personalizzato';
+  });
+  on('campoEditorPatternDataInizio','change', aggiornaGiorniEditorPatternV2);
+  on('campoEditorPatternGiorni','input', () => { el('campoEditorPatternDurataPreset').value = 'personalizzato'; });
+  on('btnGeneraEditorPatternV2','click', generaDaEditorPatternV2);
+  on('btnContinuaEditorPatternV2','click', continuaDaEditorPatternV2);
   const cicloPatternHostSemplice = el('cicloPatternV2');
   if(cicloPatternHostSemplice) cicloPatternHostSemplice.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-giorno-index]');
@@ -1017,7 +1029,47 @@ function apriEditorPatternSempliceV2(patternId){
   renderCicloPatternSempliceV2();
   renderTavolozzaPatternSempliceV2();
   renderIndennitaGiornoPatternSempliceV2();
+  if(!el('campoEditorPatternDataInizio').value) el('campoEditorPatternDataInizio').value = dataISO(new Date());
+  aggiornaGiorniEditorPatternV2();
   el('overlayEditorPatternV2').hidden = false;
+}
+
+function aggiornaGiorniEditorPatternV2(){
+  const preset = el('campoEditorPatternDurataPreset').value;
+  if(preset === 'personalizzato') return; // il numero resta quello digitato dall'utente
+  const dataInizioStr = el('campoEditorPatternDataInizio').value || dataISO(new Date());
+  const inizio = new Date(dataInizioStr + 'T00:00:00');
+  const fine = new Date(inizio);
+  if(preset === 'settimana') fine.setDate(fine.getDate() + 7);
+  else if(preset === 'mese') fine.setMonth(fine.getMonth() + 1);
+  else if(preset === 'mese3') fine.setMonth(fine.getMonth() + 3);
+  else if(preset === 'mese6') fine.setMonth(fine.getMonth() + 6);
+  else if(preset === 'anno') fine.setFullYear(fine.getFullYear() + 1);
+  const giorni = Math.round((fine - inizio) / 86400000);
+  el('campoEditorPatternGiorni').value = Math.min(giorni, 366);
+}
+
+// Applica il pattern attualmente aperto nell'editor e genera i turni — vale per QUALSIASI
+// pattern (non solo Turno in quinta), usando sequenzaDaPatternV2() come unico traduttore verso
+// la generazione originale, che restiamo a riusare invariata.
+function generaDaEditorPatternV2(){
+  const daPattern = sequenzaDaPatternV2(patternInModificaSemplcieV2);
+  if(!daPattern){ mostraAvviso('Questo pattern non ha giorni da generare.'); return; }
+  AppState.sequenzaTurni = daPattern;
+  salvaSequenzaStorage();
+  // La generazione vera legge dai campi originali (campoSequenzaDataInizio/Giorni): li
+  // allineiamo a quanto scelto qui nell'editor, invece di duplicare la logica di generazione.
+  el('campoSequenzaDataInizio').value = el('campoEditorPatternDataInizio').value;
+  el('campoSequenzaGiorni').value = el('campoEditorPatternGiorni').value;
+  generaSequenzaTurni();
+}
+
+function continuaDaEditorPatternV2(){
+  const daPattern = sequenzaDaPatternV2(patternInModificaSemplcieV2);
+  if(!daPattern){ mostraAvviso('Questo pattern non ha giorni da generare.'); return; }
+  AppState.sequenzaTurni = daPattern;
+  salvaSequenzaStorage();
+  continuaSequenzaTurni();
 }
 
 function renderCicloPatternSempliceV2(){
