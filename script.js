@@ -453,56 +453,6 @@ function inizializza(){
     const seq = el('sezioneSequenza');
     if(seq) seq.hidden = true;
   });
-  on('btnRitornaGeneratoreV44','click', () => {
-    const dettagli = el('sezioneSequenza')?.querySelector('.opzioni-avanzate-sequenza');
-    if(dettagli) dettagli.open = false;
-    el('sezioneSequenza')?.scrollIntoView({behavior:'smooth', block:'start'});
-  });
-  el('btnAggiungiStepSequenza').addEventListener('click', () => {
-    AppState.sequenzaTurni.push({ tipo:'riposo' });
-    renderSequenza();
-  });
-  el('btnGeneraSequenza').addEventListener('click', () => generaSequenzaTurni());
-  el('btnContinuaSequenza').addEventListener('click', continuaSequenzaTurni);
-
-  function aggiornaInterfacciaGeneratoreSemplice(){
-    const preset=el('campoSequenzaDurataPreset');
-    const custom=el('contenitoreGiorniPersonalizzati');
-    if(preset && custom) custom.hidden = preset.value !== 'personalizzato';
-    aggiornaAnteprimaSequenzaSemplice();
-  }
-
-  on('btnApplicaModelloSemplice','click',()=>{
-    const scelta=el('selettoreModelloSemplice')?.value;
-    if(scelta==='quinta') el('btnModelloTurnoInQuinta')?.click();
-    else if(scelta==='quinta10') mostraConferma('Questo sostituirà la sequenza con il modello in quinta di 10 giorni. Continuare?', applicaModelloTurnoInQuinta10);
-    else if(scelta==='corta') el('btnModelloSettimanaCorta')?.click();
-    else if(scelta==='lunga') el('btnModelloSettimanaLunga')?.click();
-    else {
-      const dettagli=el('sezioneSequenza')?.querySelector('.opzioni-avanzate-sequenza');
-      if(dettagli) dettagli.open=true;
-      mostraAvviso('Modalità personalizzata: apri le Opzioni avanzate e imposta i turni giorno per giorno.');
-    }
-  });
-
-  function aggiornaVisibilitaFasciaOrariaSemplice(){
-    const scelta = el('selettoreModelloSemplice')?.value;
-    const contenitore = el('contenitoreFasciaOrariaSemplice');
-    if(!contenitore) return;
-    // La fascia oraria si applica solo ai modelli a orario fisso (settimana corta/lunga):
-    // il turno in quinta ha orari propri già fissi (Sera/Pomeriggio/Mattina/Notte) e la
-    // modalità personalizzata si gestisce dalle Opzioni avanzate — in entrambi i casi il
-    // selettore non avrebbe alcun effetto, quindi lo nascondiamo per non creare confusione.
-    contenitore.hidden = (scelta !== 'corta' && scelta !== 'lunga');
-  }
-
-  on('selettoreModelloSemplice','change',()=>{
-    const scelta=el('selettoreModelloSemplice')?.value;
-    aggiornaVisibilitaFasciaOrariaSemplice();
-    if(scelta!=='personalizzata') aggiornaAnteprimaSequenzaSemplice();
-    renderListaPatternSempliceV2(); // aggiorna il segno di spunta sulla riga scelta
-  });
-  aggiornaVisibilitaFasciaOrariaSemplice();
   const listaPatternSempliceHost = el('listaPatternSempliceV2');
   if(listaPatternSempliceHost) listaPatternSempliceHost.addEventListener('click', (e) => {
     if(e.target.closest('#btnNuovoPatternV2')){ nuovoPatternV2(); return; }
@@ -512,10 +462,7 @@ function inizializza(){
     if(!btn) return;
     const mappaPatternIdRiga = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10', corta:'pattern_settimana_corta', lunga:'pattern_settimana_lunga' };
     const patternId = mappaPatternIdRiga[btn.dataset.patternSemplice];
-    if(patternId){ apriEditorPatternSempliceV2(patternId); return; } // un solo tocco: apre subito l'editor, con generazione inclusa
-    const selettore = el('selettoreModelloSemplice');
-    selettore.value = btn.dataset.patternSemplice;
-    selettore.dispatchEvent(new Event('change'));
+    if(patternId) apriEditorPatternSempliceV2(patternId); // un solo tocco: apre subito l'editor, con generazione inclusa
   });
   on('campoEditorPatternNome','change', rinominaPatternSempliceV2);
   on('btnAggiungiGiornoEditorPatternV2','click', aggiungiGiornoPatternSempliceV2);
@@ -546,45 +493,6 @@ function inizializza(){
   });
   const indennitaPatternHostSemplice = el('corpoIndennitaGiornoPatternV2');
   if(indennitaPatternHostSemplice) indennitaPatternHostSemplice.addEventListener('change', aggiornaIndennitaGiornoPatternSempliceV2);
-
-  function aggiornaGiorniDaPreset(){
-    const preset = el('campoSequenzaDurataPreset').value;
-    if(preset === 'personalizzato') return; // il numero resta quello digitato dall'utente
-    const dataInizioStr = el('campoSequenzaDataInizio').value || dataISO(new Date());
-    const inizio = new Date(dataInizioStr + 'T00:00:00');
-    const fine = new Date(inizio);
-    if(preset === 'settimana') fine.setDate(fine.getDate() + 7);
-    else if(preset === 'mese') fine.setMonth(fine.getMonth() + 1);
-    else if(preset === 'mese3') fine.setMonth(fine.getMonth() + 3);
-    else if(preset === 'mese6') fine.setMonth(fine.getMonth() + 6);
-    else if(preset === 'mese9') fine.setMonth(fine.getMonth() + 9);
-    else if(preset === 'anno') fine.setFullYear(fine.getFullYear() + 1);
-    const giorni = Math.round((fine - inizio) / 86400000);
-    el('campoSequenzaGiorni').value = Math.min(giorni, 366);
-  }
-  el('campoSequenzaDurataPreset').addEventListener('change', () => { aggiornaGiorniDaPreset(); aggiornaInterfacciaGeneratoreSemplice(); });
-  el('campoSequenzaDataInizio').addEventListener('change', () => { aggiornaGiorniDaPreset(); aggiornaAnteprimaSequenzaSemplice(); });
-  el('campoSequenzaGiorni').addEventListener('input', () => { el('campoSequenzaDurataPreset').value = 'personalizzato'; aggiornaInterfacciaGeneratoreSemplice(); });
-  aggiornaInterfacciaGeneratoreSemplice();
-
-  el('btnModelloTurnoInQuinta').addEventListener('click', () => {
-    mostraConferma(
-      'Questo sostituirà tutti i passaggi attuali della sequenza con il turno in quinta predefinito (Sera, Pomeriggio, Mattina, Notte, Riposo). Continuare?',
-      applicaModelloTurnoInQuinta
-    );
-  });
-  el('btnModelloSettimanaCorta').addEventListener('click', () => {
-    mostraConferma(
-      'Questo sostituirà tutti i passaggi attuali della sequenza con il modello settimana corta (7 righe). Continuare?',
-      applicaModelloSettimanaCorta
-    );
-  });
-  el('btnModelloSettimanaLunga').addEventListener('click', () => {
-    mostraConferma(
-      'Questo sostituirà tutti i passaggi attuali della sequenza con il modello settimana lunga (7 righe). Continuare?',
-      applicaModelloSettimanaLunga
-    );
-  });
 
   el('btnCancellaTurniMese').addEventListener('click', cancellaTurniMese);
   el('btnCancellaStorico').addEventListener('click', cancellaStorico);
@@ -994,8 +902,7 @@ function renderListaPatternSempliceV2(){
     { value:'quinta', nome:'Turno in quinta', sotto:'5 giorni a rotazione', giorni:['sera','pomeriggio','mattina','notte','riposo'] },
     { value:'quinta10', nome:'Turno in quinta 10 giorni', sotto:'10 giorni a rotazione', giorni:['sera','pomeriggio','mattina','notte','riposo'] },
     { value:'corta', nome:'Settimana corta', sotto:'Lun–Ven, orario fisso', icona:'📅' },
-    { value:'lunga', nome:'Settimana lunga', sotto:'Lun–Sab, orario fisso', icona:'📅' },
-    { value:'personalizzata', nome:'Personalizzata', sotto:'la imposto tu', icona:'⚙️' }
+    { value:'lunga', nome:'Settimana lunga', sotto:'Lun–Sab, orario fisso', icona:'📅' }
   ];
   const selezionato = selettore.value;
   const mappaPatternId = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10', corta:'pattern_settimana_corta', lunga:'pattern_settimana_lunga' };
