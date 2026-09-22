@@ -52,27 +52,17 @@
     <div class="riepilogo-giorno-selezionato-box-v2">
       <div class="riepilogo-giorno-selezionato-v2" id="riepilogoGiornoSelezionatoV2">Seleziona un giorno</div>
       <div class="indennita-giorno-selezionato-v2" id="indennitaGiornoSelezionatoV2" hidden></div>
+      <label class="campo-modale" style="margin-top:8px;">📋 Servizio svolto
+        <input type="text" id="campoServizioSvolto" placeholder="es. Pattugliamento, Ufficio denunce, Scorta...">
+      </label>
+      <div class="lista-eventi-giorno-v2" id="listaEventiGiornoV2"></div>
     </div>
 
     <details class="azioni-calendario-rapide-v2">
       <summary>📋 Il giorno e altri strumenti ▾</summary>
       <div class="azioni-calendario-rapide-v2-corpo">
-        <label class="campo-modale">📋 Servizio svolto
-          <input type="text" id="campoServizioSvolto" placeholder="es. Pattugliamento, Ufficio denunce, Scorta...">
-        </label>
-        <div class="lista-eventi-giorno-v2" id="listaEventiGiornoV2"></div>
         <button class="btn-secondario" id="btnNuovoEventoGiornoV2" type="button">📅 Nuovo evento</button>
         <button class="btn-secondario" id="btnModificaGiornoSelezionatoV2" type="button">✏️ Modifica il giorno selezionato</button>
-        <label class="campo-modale">🔎 Visualizza
-          <select id="filtroCalendarioSelect">
-            <option value="tutti">Tutti i giorni</option>
-            <option value="turni">Turni</option>
-            <option value="assenze">Assenze</option>
-            <option value="riposi">Riposi</option>
-            <option value="extra">Extra e servizi</option>
-            <option value="vuoto">Giorni liberi</option>
-          </select>
-        </label>
         <button class="btn-secondario btn-cancella-turni" id="btnCancellaTurniMese" type="button">🗑️ Cancella turni del mese</button>
       </div>
     </details>
@@ -440,6 +430,7 @@
   <section class="scheda" id="sezioneAssenze" hidden>
     <div class="intestazione-scheda">
       <h2>Assenze dal Servizio</h2>
+      <button class="btn-mini-icona" id="btnChiudiAssenze" title="Torna alle impostazioni" aria-label="Torna alle impostazioni">✕</button>
     </div>
     <p class="sotto-titolo">Elenco personalizzabile, solo informativo (non incide sul cedolino). Si salva da solo.</p>
     <details class="info-richiudibile-assenze">

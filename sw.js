@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V98 (v2.29.0 — Straordinario programmato e rientro nell'editor pattern) */
+/* Turni & Accessorio PS — Service Worker V100 (v2.30.0 — Servizio svolto/eventi sempre visibili, tolto Visualizza) */
 'use strict';
-const CACHE='turni-ps-v98';
+const CACHE='turni-ps-v100';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

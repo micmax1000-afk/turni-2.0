@@ -453,6 +453,10 @@ function inizializza(){
     const seq = el('sezioneSequenza');
     if(seq) seq.hidden = true;
   });
+  on('btnChiudiAssenze','click', () => {
+    const sez = el('sezioneAssenze');
+    if(sez) sez.hidden = true;
+  });
   const listaPatternSempliceHost = el('listaPatternSempliceV2');
   if(listaPatternSempliceHost) listaPatternSempliceHost.addEventListener('click', (e) => {
     if(e.target.closest('#btnNuovoPatternV2')){ nuovoPatternV2(); return; }
