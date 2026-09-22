@@ -884,14 +884,12 @@ function coloreModelloV2(m){
   return coloreCategoria(categoria || 'mattina');
 }
 
-// Lista visiva al posto del vecchio menu a tendina per "Quale turnazione?": stessa scelta di
-// prima (quinta/quinta10/corta/lunga/personalizzata), ma con anteprima colorata. Il menu vero
-// (selettoreModelloSemplice) resta nel DOM, solo nascosto: tutta la logica di applicazione e
-// generazione sotto resta quella originale, invariata — qui cambia solo la scelta visiva.
+// Lista visiva dei pattern: ogni riga si tocca per aprire subito l'editor (ciclo + indennità +
+// generazione, tutto in un unico posto) — non c'è più un concetto di riga "selezionata" da
+// applicare a parte, dato che il tocco apre già tutto quello che serve.
 function renderListaPatternSempliceV2(){
   const host = el('listaPatternSempliceV2');
-  const selettore = el('selettoreModelloSemplice');
-  if(!host || !selettore) return;
+  if(!host) return;
   const trovaModello = id => (AppState.modelliTurno || []).find(m => m.id === id);
   const pallini = ids => ids.map(id => {
     const m = trovaModello(id);
@@ -904,19 +902,16 @@ function renderListaPatternSempliceV2(){
     { value:'corta', nome:'Settimana corta', sotto:'Lun–Ven, orario fisso', icona:'📅' },
     { value:'lunga', nome:'Settimana lunga', sotto:'Lun–Sab, orario fisso', icona:'📅' }
   ];
-  const selezionato = selettore.value;
   const mappaPatternId = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10', corta:'pattern_settimana_corta', lunga:'pattern_settimana_lunga' };
   const idPatternNoti = new Set(Object.values(mappaPatternId));
   const righeNote = voci.map(v => {
-    const attivo = v.value === selezionato;
     const anteprima = v.giorni ? `<span style="display:flex;flex-shrink:0;">${pallini(v.giorni)}</span>` : `<span style="font-size:1.1rem;flex-shrink:0;">${v.icona}</span>`;
     const patternId = mappaPatternId[v.value];
     const matita = patternId ? `<button type="button" class="riga-modello-matita" data-modifica-pattern="${patternId}" aria-label="Modifica ciclo di ${escapeHtml(v.nome)}">✏️</button>` : '';
     return `<div class="riga-modello-selettore">
-      <button type="button" class="riga-modello-selettore-corpo" data-pattern-semplice="${v.value}" style="${attivo ? 'background:var(--carta);' : ''}">
+      <button type="button" class="riga-modello-selettore-corpo" data-pattern-semplice="${v.value}">
         ${anteprima}
         <span class="riga-modello-testo"><strong>${escapeHtml(v.nome)}</strong><small>${escapeHtml(v.sotto)}</small></span>
-        ${attivo ? '<span aria-hidden="true">✓</span>' : ''}
       </button>
       ${matita}
     </div>`;

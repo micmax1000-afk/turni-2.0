@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V94 (v2.27.0 — Sistema unico: tolte Personalizzata e Opzioni avanzate) */
+/* Turni & Accessorio PS — Service Worker V95 (v2.27.1 — corretta lista pattern vuota) */
 'use strict';
-const CACHE='turni-ps-v94';
+const CACHE='turni-ps-v95';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
