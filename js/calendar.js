@@ -564,6 +564,7 @@ function renderCalendario(){
 
     let etichetta = categoria === 'assenza'
       ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
+      : modelloUsato ? modelloUsato.nome
       : categoria ? INIZIALE_CATEGORIA[categoria] : '';
 
     if(t && t.aggiornamentoProfessionale) etichetta = 'AGG';
