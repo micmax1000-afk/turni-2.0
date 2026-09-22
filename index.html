@@ -176,24 +176,6 @@
           <label class="campo-modale">alle<input type="time" id="campoRCOraFine"></label>
           <p class="sotto-titolo" id="anteprimaRiposoCompensativo" style="margin:-4px 0 6px;"></p>
         </div>
-        <label class="campo-modale">Modello turno rapido
-          <select id="campoModelloTurno">
-            <option value="">— scegli un modello (facoltativo) —</option>
-            <optgroup label="Turno in quinta">
-              <option value="mattina">Mattina (07:00–13:00)</option>
-              <option value="pomeriggio">Pomeriggio (13:00–19:00)</option>
-              <option value="sera24">Sera (19:00–24:00)</option>
-              <option value="sera01">Sera (19:00–01:00)</option>
-              <option value="notte00">Notte (00:00–07:00)</option>
-              <option value="notte01">Notte (01:00–07:00)</option>
-              <option value="riposo">Riposo</option>
-            </optgroup>
-            <optgroup label="Altri turni">
-              <option value="mattutino">Turno 08:00–14:00</option>
-              <option value="pomeridiano">Turno 14:00–20:00</option>
-            </optgroup>
-          </select>
-        </label>
         <div id="campiOrario">
           <label class="campo-modale">Ora inizio<input type="time" id="campoOraInizio"></label>
           <label class="campo-modale">Ora fine<input type="time" id="campoOraFine"></label>
@@ -279,9 +261,6 @@
             <label class="campo-modale campo-riga"><input type="checkbox" id="campoCompensazioneRiposo"> Lavorato sul riposo (diritto a recupero riposo)</label>
             <label class="campo-modale campo-riga"><input type="checkbox" id="campoRecuperoFestivo"> Lavorato in giorno festivo (diritto a recupero festivo)</label>
             <label class="campo-modale campo-riga"><input type="checkbox" id="campoBuonoPasto"> Buono pasto</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoAggiornamentoProfessionale"> Aggiornamento professionale</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoAddestramentoTiro"> Addestramento tiro</label>
-            <p class="sotto-titolo" style="grid-column:1/-1; margin:-4px 0 4px;">Sul calendario mostrano rispettivamente la sigla "AGG" e "TIRI" al posto dell'orario del turno.</p>
           </div>
           <div id="campoDurataMissioneBox" style="display:none; margin-top:6px;">
             <label class="campo-modale">Durata missione (ore)
@@ -453,10 +432,8 @@
     <div class="assenze-search-wrap" role="search"><span aria-hidden="true">🔎</span><input id="cercaAssenza" type="search" autocomplete="off" placeholder="Cerca un tipo di assenza…" aria-label="Cerca assenza"></div>
     <div id="assenzeSummaryGrid" class="assenze-summary-grid" aria-live="polite"></div>
     <div id="corpoAssenze"></div>
-  </section>
 
-  <section class="scheda" id="sezioneAssenzePersonalizzate" hidden>
-    <h2>🎁 Assenze personalizzate</h2>
+    <p class="sotto-titolo" style="margin:14px 0 4px;font-weight:700;text-transform:uppercase;font-size:.72rem;letter-spacing:.04em;">🎁 Tue personalizzate</p>
     <div id="corpoAssenzePersonalizzate"></div>
     <button type="button" class="btn-secondario" id="btnAggiungiAssenzaPersonalizzata" style="margin-top:10px;">+ Aggiungi assenza personalizzata</button>
   </section>
@@ -753,36 +730,45 @@
       <h2>Riepilogo Ore del Mese</h2>
       <p class="sotto-titolo">Ore riconosciute dal motore in base ai turni inseriti (mese visualizzato nel calendario) — nessun importo, solo classificazione.</p>
 
-      <div class="stat-v17">
       <div class="stat-panel-v17 stat-dettagli">
-        <h3>🕐 Ore lavorate</h3>
         <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
-        <div><span>Notturne</span><strong id="rNotturne">0,00</strong></div>
-        <div><span>Festive</span><strong id="rFestive">0,00</strong></div>
-        <div><span>Domenicali</span><strong id="rDomenicali">0,00</strong></div>
-        <div><span>Notturne festive</span><strong id="rNotturneFestive">0,00</strong></div>
-      </div>
-
-      <div class="stat-panel-v17 stat-dettagli">
-        <h3>⏱️ Straordinario</h3>
-        <div><span>Diurno</span><strong id="rStrDiurno">0,00</strong></div>
-        <div><span>Notturno</span><strong id="rStrNotturno">0,00</strong></div>
-        <div><span>Festivo</span><strong id="rStrFestivo">0,00</strong></div>
-        <div><span>Notturno festivo</span><strong id="rStrNotturnoFestivo">0,00</strong></div>
-      </div>
-
-      <div class="stat-panel-v17 stat-dettagli">
-        <h3>📋 Giorni e altro</h3>
+        <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
         <div><span>💤 Riposi</span><strong id="rRiposi">0</strong></div>
-        <div><span>📞 Reperibilità</span><strong id="rReperibilita">0</strong></div>
-        <div><span>🚓 Missioni</span><strong id="rMissioni">0</strong></div>
-        <div><span>🚗 Servizio esterno</span><strong id="rServizioEsterno">0</strong></div>
-        <div><span>🛡️ Ordine pubblico</span><strong id="rOrdinePubblico">0</strong></div>
-        <div><span>🔦 Controllo territorio</span><strong id="rControlloTerritorio">0</strong></div>
-        <div><span>🍽️ Buoni pasto <small>(informativo)</small></span><strong id="rBuoniPasto">0</strong></div>
-        <div><span>🔄 Str. convertito in riposo <small>(escluso dalla paga, saldo in Assenze)</small></span><strong id="rOreCompensate">0,00</strong></div>
       </div>
-      </div>
+
+      <details class="azioni-calendario-rapide-v2">
+        <summary>Mostra tutti i dettagli ▾</summary>
+        <div class="azioni-calendario-rapide-v2-corpo">
+        <div class="stat-v17">
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>🕐 Ore lavorate</h3>
+          <div><span>Notturne</span><strong id="rNotturne">0,00</strong></div>
+          <div><span>Festive</span><strong id="rFestive">0,00</strong></div>
+          <div><span>Domenicali</span><strong id="rDomenicali">0,00</strong></div>
+          <div><span>Notturne festive</span><strong id="rNotturneFestive">0,00</strong></div>
+        </div>
+
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>⏱️ Straordinario, per fascia</h3>
+          <div><span>Diurno</span><strong id="rStrDiurno">0,00</strong></div>
+          <div><span>Notturno</span><strong id="rStrNotturno">0,00</strong></div>
+          <div><span>Festivo</span><strong id="rStrFestivo">0,00</strong></div>
+          <div><span>Notturno festivo</span><strong id="rStrNotturnoFestivo">0,00</strong></div>
+        </div>
+
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>📋 Giorni e altro</h3>
+          <div><span>📞 Reperibilità</span><strong id="rReperibilita">0</strong></div>
+          <div><span>🚓 Missioni</span><strong id="rMissioni">0</strong></div>
+          <div><span>🚗 Servizio esterno</span><strong id="rServizioEsterno">0</strong></div>
+          <div><span>🛡️ Ordine pubblico</span><strong id="rOrdinePubblico">0</strong></div>
+          <div><span>🔦 Controllo territorio</span><strong id="rControlloTerritorio">0</strong></div>
+          <div><span>🍽️ Buoni pasto <small>(informativo)</small></span><strong id="rBuoniPasto">0</strong></div>
+          <div><span>🔄 Str. convertito in riposo <small>(escluso dalla paga, saldo in Assenze)</small></span><strong id="rOreCompensate">0,00</strong></div>
+        </div>
+        </div>
+        </div>
+      </details>
     </section>
 
     <section class="scheda" id="sezioneStatisticheGrafici">

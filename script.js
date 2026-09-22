@@ -401,10 +401,8 @@ function inizializza(){
   });
   on('btnApriAssenzeV64','click', () => {
     const p = el('sezioneAssenze');
-    const pp = el('sezioneAssenzePersonalizzate');
     if(!p) return;
     p.hidden = !p.hidden;
-    if(pp) pp.hidden = p.hidden; // le due sezioni si aprono e chiudono sempre insieme
     if(!p.hidden) p.scrollIntoView({behavior:'smooth',block:'start'});
   });
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
@@ -672,21 +670,6 @@ function inizializza(){
     el('campoOPPernottamentoBox').style.display = el('campoOPSede').value === 'fuori' ? '' : 'none';
   });
 
-  el('campoModelloTurno').addEventListener('change', () => {
-    const scelta = el('campoModelloTurno').value;
-    if(!scelta) return;
-    if(scelta === 'riposo'){
-      el('campoRiposo').checked = true;
-      el('campoAssenzaTipo').value = '';
-    } else {
-      el('campoRiposo').checked = false;
-      el('campoAssenzaTipo').value = '';
-      el('campoOraInizio').value = MODELLI_TURNO[scelta].oraInizio;
-      el('campoOraFine').value = MODELLI_TURNO[scelta].oraFine;
-    }
-    aggiornaVisibilitaCampiOrario();
-    aggiornaAnteprima();
-  });
   ['campoOraInizio','campoOraFine','campoStrPrimaInizio','campoStrPrimaFine','campoStrDopoInizio','campoStrDopoFine','campoSecondoOraInizio','campoSecondoOraFine'].forEach(id => {
     el(id).addEventListener('input', aggiornaAnteprima);
   });

@@ -167,9 +167,7 @@ function leggiTurnoDalModale(){
     cambioTurno: el('campoCambioTurno').checked,
     compensazioneRiposo: el('campoCompensazioneRiposo').checked,
     recuperoFestivoLavorato: el('campoRecuperoFestivo').checked,
-    buonoPasto: el('campoBuonoPasto').checked,
-    aggiornamentoProfessionale: el('campoAggiornamentoProfessionale').checked,
-    addestramentoTiro: el('campoAddestramentoTiro').checked
+    buonoPasto: el('campoBuonoPasto').checked
   };
 }
 
@@ -259,7 +257,6 @@ function apriModaleTurno(iso){
   const t = AppState.turni[iso] || {};
   el('pannelloTurno').dataset.iso = iso;
   el('titoloModaleTurno').textContent = 'Turno del ' + iso.split('-').reverse().join('/');
-  el('campoModelloTurno').value = '';
   el('campoRiposo').checked = !!t.riposo;
   popolaSelectAssenze();
   el('campoAssenzaTipo').value = t.assenzaTipo || '';
@@ -311,8 +308,6 @@ function apriModaleTurno(iso){
   el('campoCompensazioneRiposo').checked = !!t.compensazioneRiposo;
   el('campoRecuperoFestivo').checked = !!t.recuperoFestivoLavorato;
   el('campoBuonoPasto').checked = !!t.buonoPasto;
-  el('campoAggiornamentoProfessionale').checked = !!t.aggiornamentoProfessionale;
-  el('campoAddestramentoTiro').checked = !!t.addestramentoTiro;
   aggiornaVisibilitaCampiOrario();
   aggiornaAnteprima();
   // Il pannello "+ Aggiungi indennità o straordinario" resta sempre aperto (richiesto esplicitamente):

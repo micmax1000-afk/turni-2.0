@@ -339,6 +339,8 @@ function aggiornaRiepilogoMensile(){
   el('rStrNotturno').textContent = round2(tot.strNotturno).toLocaleString('it-IT', {minimumFractionDigits:2});
   el('rStrFestivo').textContent = round2(tot.strFestivo).toLocaleString('it-IT', {minimumFractionDigits:2});
   el('rStrNotturnoFestivo').textContent = round2(tot.strNotturnoFestivo).toLocaleString('it-IT', {minimumFractionDigits:2});
+  const strTotaleBox = el('rStrTotale');
+  if(strTotaleBox) strTotaleBox.textContent = round2(tot.strDiurno + tot.strNotturno + tot.strFestivo + tot.strNotturnoFestivo).toLocaleString('it-IT', {minimumFractionDigits:2});
   el('rRiposi').textContent = riposi;
   el('rReperibilita').textContent = reperibilita;
   el('rMissioni').textContent = missioni;
@@ -564,7 +566,10 @@ function renderCalendario(){
 
     let etichetta = categoria === 'assenza'
       ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
-      : modelloUsato ? modelloUsato.nome
+      // Nomi brevi (Sera, Mattina, Ufficio...) entrano nella cella per intero; quelli lunghi
+      // (Aggiornamento professionale, Addestramento tiro...) userebbero troppo spazio, quindi
+      // per questi mostriamo la sigla — il nome completo resta comunque nel titolo al passaggio.
+      : modelloUsato ? (modelloUsato.nome.length > 10 ? (modelloUsato.sigla || modelloUsato.nome.slice(0,2).toUpperCase()) : modelloUsato.nome)
       : categoria ? INIZIALE_CATEGORIA[categoria] : '';
 
     if(t && t.aggiornamentoProfessionale) etichetta = 'AGG';
