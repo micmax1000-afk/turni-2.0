@@ -494,6 +494,13 @@ function inizializza(){
   });
   const indennitaPatternHostSemplice = el('corpoIndennitaGiornoPatternV2');
   if(indennitaPatternHostSemplice) indennitaPatternHostSemplice.addEventListener('change', aggiornaIndennitaGiornoPatternSempliceV2);
+  on('campoPatternStraordinarioAttivo','change', aggiornaStraordinarioRientroPatternSempliceV2);
+  on('campoPatternStraordinarioQuando','change', aggiornaStraordinarioRientroPatternSempliceV2);
+  on('campoPatternStraordinarioInizio','change', aggiornaStraordinarioRientroPatternSempliceV2);
+  on('campoPatternStraordinarioFine','change', aggiornaStraordinarioRientroPatternSempliceV2);
+  on('campoPatternRientroAttivo','change', aggiornaStraordinarioRientroPatternSempliceV2);
+  on('campoPatternRientroInizio','change', aggiornaStraordinarioRientroPatternSempliceV2);
+  on('campoPatternRientroFine','change', aggiornaStraordinarioRientroPatternSempliceV2);
 
   el('btnCancellaTurniMese').addEventListener('click', cancellaTurniMese);
   el('btnCancellaStorico').addEventListener('click', cancellaStorico);
@@ -1038,6 +1045,44 @@ function renderIndennitaGiornoPatternSempliceV2(){
   corpo.innerHTML = INDENNITA_RAPIDE_V2.map(x => `<label class="campo-modale campo-riga">
     <input type="checkbox" data-indennita-pattern="${x.chiave}" ${attive.includes(x.chiave) ? 'checked' : ''}> ${escapeHtml(x.nome)}
   </label>`).join('');
+
+  const str = giorno.straordinario || null;
+  el('campoPatternStraordinarioAttivo').checked = !!str;
+  el('campiPatternStraordinario').hidden = !str;
+  el('campoPatternStraordinarioQuando').value = str ? (str.quando || 'dopo') : 'dopo';
+  el('campoPatternStraordinarioInizio').value = str ? (str.oraInizio || '') : '';
+  el('campoPatternStraordinarioFine').value = str ? (str.oraFine || '') : '';
+
+  const rientro = giorno.secondoTurno || null;
+  el('campoPatternRientroAttivo').checked = !!rientro;
+  el('campiPatternRientro').hidden = !rientro;
+  el('campoPatternRientroInizio').value = rientro ? (rientro.oraInizio || '') : '';
+  el('campoPatternRientroFine').value = rientro ? (rientro.oraFine || '') : '';
+}
+
+// Legge i campi di straordinario/rientro dal form e li salva sul giorno selezionato del pattern.
+function aggiornaStraordinarioRientroPatternSempliceV2(){
+  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  if(!p) return;
+  const giorno = p.giorni[giornoPatternSelezionatoSemplcieV2];
+  if(!giorno) return;
+
+  const strAttivo = el('campoPatternStraordinarioAttivo').checked;
+  el('campiPatternStraordinario').hidden = !strAttivo;
+  giorno.straordinario = strAttivo ? {
+    quando: el('campoPatternStraordinarioQuando').value,
+    oraInizio: el('campoPatternStraordinarioInizio').value,
+    oraFine: el('campoPatternStraordinarioFine').value
+  } : null;
+
+  const rientroAttivo = el('campoPatternRientroAttivo').checked;
+  el('campiPatternRientro').hidden = !rientroAttivo;
+  giorno.secondoTurno = rientroAttivo ? {
+    oraInizio: el('campoPatternRientroInizio').value,
+    oraFine: el('campoPatternRientroFine').value
+  } : null;
+
+  salvaPatternStorage();
 }
 
 function aggiornaIndennitaGiornoPatternSempliceV2(){

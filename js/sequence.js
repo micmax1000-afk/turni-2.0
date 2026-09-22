@@ -216,6 +216,16 @@ function sequenzaDaPatternV2(patternId){
       extra.secondoOraInizio = g.secondoTurno.oraInizio;
       extra.secondoOraFine = g.secondoTurno.oraFine;
     }
+    if(g.straordinario && g.straordinario.oraInizio && g.straordinario.oraFine){
+      extra.straordinarioProgrammato = true;
+      if(g.straordinario.quando === 'prima'){
+        extra.strPrimaInizio = g.straordinario.oraInizio;
+        extra.strPrimaFine = g.straordinario.oraFine;
+      } else {
+        extra.strDopoInizio = g.straordinario.oraInizio;
+        extra.strDopoFine = g.straordinario.oraFine;
+      }
+    }
     return { tipo:'personalizzato', oraInizio: m.oraInizio || '', oraFine: m.oraFine || '', extra };
   });
 }

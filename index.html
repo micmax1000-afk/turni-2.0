@@ -570,7 +570,32 @@
       <div id="indennitaGiornoPatternV2" class="indennita-giorno-pattern-v2" hidden>
         <p class="sotto-titolo" style="margin:0 0 4px;font-weight:700;">Indennità fisse per questo giorno del ciclo</p>
         <div id="corpoIndennitaGiornoPatternV2"></div>
-        <p class="sotto-titolo" style="margin:6px 0 0;">⏱️ Lo straordinario non si imposta qui: varia ogni volta, si aggiunge sul calendario quando serve.</p>
+
+        <div style="height:1px;background:var(--bordo);margin:10px 0;"></div>
+        <label class="campo-modale campo-riga">
+          <input type="checkbox" id="campoPatternStraordinarioAttivo"> ⏱️ Straordinario programmato
+        </label>
+        <div id="campiPatternStraordinario" hidden>
+          <label class="campo-modale">Quando
+            <select id="campoPatternStraordinarioQuando">
+              <option value="prima">Prima del turno</option>
+              <option value="dopo">Dopo il turno</option>
+            </select>
+          </label>
+          <div class="riga-straordinario-ore">
+            <label class="campo-modale">Dalle<input type="time" id="campoPatternStraordinarioInizio"></label>
+            <label class="campo-modale">Alle<input type="time" id="campoPatternStraordinarioFine"></label>
+          </div>
+        </div>
+
+        <div style="height:1px;background:var(--bordo);margin:10px 0;"></div>
+        <label class="campo-modale campo-riga">
+          <input type="checkbox" id="campoPatternRientroAttivo"> 🔁 Rientro (secondo turno lo stesso giorno)
+        </label>
+        <div id="campiPatternRientro" hidden class="riga-straordinario-ore">
+          <label class="campo-modale">Dalle<input type="time" id="campoPatternRientroInizio"></label>
+          <label class="campo-modale">Alle<input type="time" id="campoPatternRientroFine"></label>
+        </div>
       </div>
 
       <div style="height:1px;background:var(--bordo);margin:12px 0;"></div>
