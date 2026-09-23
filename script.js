@@ -411,7 +411,6 @@ function inizializza(){
 
   el('btnAnagrafica').addEventListener('click', () => mostraScheda('anagrafica'));
   on('btnStatistiche','click', () => mostraScheda('statistiche'));
-  on('btnAggiornaStatistiche','click', renderStatistiche);
   on('campoAnnoStatistiche','change', renderStatistiche);
   el('btnSalvaAnagrafica').addEventListener('click', salvaAnagraficaDaModale);
   el('btnCancellaAnagrafica').addEventListener('click', () => {

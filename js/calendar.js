@@ -535,6 +535,10 @@ function renderCalendario(){
       categoria = 'assenza';
     } else if(t && t.oraInizio && t.oraFine){
       categoria = categoriaTurno(t.oraInizio, t.oraFine, t.data);
+      // Ufficio/Aggiornamento professionale/Addestramento tiro hanno lo stesso orario di
+      // Mattina: senza questo, sarebbero indistinguibili anche nel colore, non solo nel nome.
+      const categorieProprie = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'];
+      if(t.modelloId && categorieProprie.includes(t.modelloId)) categoria = t.modelloId;
       classi += ' ha-turno tipo-' + categoria;
     }
 
@@ -566,14 +570,18 @@ function renderCalendario(){
 
     let etichetta = categoria === 'assenza'
       ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
-      // Nomi brevi (Sera, Mattina, Ufficio...) entrano nella cella per intero; quelli lunghi
-      // (Aggiornamento professionale, Addestramento tiro...) userebbero troppo spazio, quindi
-      // per questi mostriamo la sigla — il nome completo resta comunque nel titolo al passaggio.
-      : modelloUsato ? (modelloUsato.nome.length > 10 ? (modelloUsato.sigla || modelloUsato.nome.slice(0,2).toUpperCase()) : modelloUsato.nome)
-      : categoria ? INIZIALE_CATEGORIA[categoria] : '';
+      // Nomi brevi (Sera, Mattina, Ufficio...) entrano nella cella per intero; quelli da 9
+      // caratteri in su ("Pomeriggio" compreso — esattamente al limite, prima gli sfuggiva) userebbero
+      // troppo spazio, quindi per questi mostriamo la sigla — il nome completo resta comunque
+      // nel titolo al passaggio.
+      : modelloUsato ? (modelloUsato.nome.length >= 9 ? (modelloUsato.sigla || modelloUsato.nome.slice(0,2).toUpperCase()) : modelloUsato.nome)
+      : categoria && INIZIALE_CATEGORIA[categoria] && INIZIALE_CATEGORIA[categoria].length >= 9
+        ? ((AppState.modelliTurno || []).find(m => m.id === categoria)?.sigla || CODICE_CATEGORIA[categoria] || INIZIALE_CATEGORIA[categoria])
+        : categoria ? INIZIALE_CATEGORIA[categoria] : '';
 
     if(t && t.aggiornamentoProfessionale) etichetta = 'AGG';
     else if(t && t.addestramentoTiro) etichetta = 'TIRI';
+    else if(t && t.compensazioneRiposo) etichetta = 'RR';
 
     const ore = t && !t.riposo && !t.assenzaTipo && t.oraInizio && t.oraFine
       ? classificaTurno(t).oreTotali
@@ -622,7 +630,7 @@ function renderCalendario(){
       : '';
     const oreLabel = ore > 0 ? `<span class="giorno-ore">${String(ore).replace('.',',')}h</span>` : '';
     const tipoLabel = categoria === 'assenza'
-      ? escapeHtml(voceAssenza ? voceAssenza.nome : 'Assenza')
+      ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
       : categoria === 'riposo'
         ? 'Riposo'
         : etichetta || 'Libero';

@@ -130,6 +130,9 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .giorno-cella.tipo-notte{ background: var(--tipo-notte); }
 .giorno-cella.tipo-riposo{ background: var(--tipo-riposo); }
 .giorno-cella.tipo-assenza{ background: var(--tipo-assenza); }
+.giorno-cella.tipo-ufficio{ background: var(--tipo-ufficio); }
+.giorno-cella.tipo-aggiornamentoProfessionale{ background: var(--tipo-aggiornamentoProfessionale); }
+.giorno-cella.tipo-addestramentoTiro{ background: var(--tipo-addestramentoTiro); }
 
 .giorno-cella.oggi{ border-color: var(--azzurro-sabato); }
 .giorno-cella.selezionata{ background: var(--inchiostro) !important; }
@@ -537,6 +540,9 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .tipo-sera .giorno-turno-badge{background:var(--badge-sera, var(--tipo-sera));color:#7A1F4D;}
 .tipo-notte .giorno-turno-badge{background:var(--badge-notte, var(--tipo-notte));color:#3D2E6B;}
 .tipo-riposo .giorno-turno-badge{background:var(--badge-riposo, var(--tipo-riposo));color:#155647;}
+.tipo-ufficio .giorno-turno-badge{background:var(--badge-ufficio, var(--tipo-ufficio));color:#1E4A78;}
+.tipo-aggiornamentoProfessionale .giorno-turno-badge{background:var(--badge-aggiornamentoProfessionale, var(--tipo-aggiornamentoProfessionale));color:#2F5A20;}
+.tipo-addestramentoTiro .giorno-turno-badge{background:var(--badge-addestramentoTiro, var(--tipo-addestramentoTiro));color:#7A431D;}
 .tipo-assenza .giorno-turno-badge{background:var(--badge-assenza, var(--tipo-assenza));color:#3D4451;}
 .giorno-meta{display:flex;align-items:center;justify-content:space-between;gap:4px;font:600 .58rem/1 var(--font-cifre);color:var(--testo-tenue);white-space:nowrap;}
 .giorno-meta-vuoto{opacity:.45;}
