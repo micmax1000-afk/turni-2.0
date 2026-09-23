@@ -1271,6 +1271,7 @@ function apriModificaModelloV2(id){
   const m = id ? (AppState.modelliTurno || []).find(x => x.id === id) : null;
   el('titoloModificaModello').textContent = m ? `Modifica "${m.nome}"` : 'Nuovo turno';
   el('campoModModelloNome').value = m ? m.nome : '';
+  el('campoModModelloSigla').value = m ? (m.sigla || '') : '';
   const isRiposo = !!(m && m.riposo);
   el('campiModModelloOrario').hidden = isRiposo;
   el('campoModModelloInizio').value = m ? (m.oraInizio || '') : '';
@@ -1282,17 +1283,22 @@ function apriModificaModelloV2(id){
 function salvaModificaModelloV2(){
   const nome = el('campoModModelloNome').value.trim();
   if(!nome){ mostraToast('Dai un nome al turno prima di salvare.', 'avviso'); return; }
+  // Sigla: quella scritta a mano ha sempre la precedenza; solo se lasci il campo vuoto la
+  // ricaviamo noi dalle prime due lettere del nome, come prima.
+  const siglaScritta = el('campoModModelloSigla').value.trim().toUpperCase();
+  const sigla = siglaScritta || nome.slice(0,2).toUpperCase();
   const esistente = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
   const isRiposo = !!(esistente && esistente.riposo); // il tipo "riposo" non si crea da qui, solo si rinomina se già esistente
   if(!isRiposo){
     const oraInizio = el('campoModModelloInizio').value, oraFine = el('campoModModelloFine').value;
     if(!oraInizio || !oraFine){ mostraToast('Inserisci ora di inizio e fine.', 'avviso'); return; }
-    if(esistente){ esistente.nome = nome; esistente.oraInizio = oraInizio; esistente.oraFine = oraFine; esistente.sigla = nome.slice(0,2).toUpperCase(); }
+    if(esistente){ esistente.nome = nome; esistente.oraInizio = oraInizio; esistente.oraFine = oraFine; esistente.sigla = sigla; }
     else {
-      AppState.modelliTurno.push({ id: 'personalizzato_' + Date.now(), nome, oraInizio, oraFine, sigla: nome.slice(0,2).toUpperCase() });
+      AppState.modelliTurno.push({ id: 'personalizzato_' + Date.now(), nome, oraInizio, oraFine, sigla });
     }
   } else {
     esistente.nome = nome;
+    esistente.sigla = sigla;
   }
   salvaModelliTurnoStorage();
   el('overlayModificaModello').hidden = true;
