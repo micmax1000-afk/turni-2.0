@@ -570,14 +570,11 @@ function renderCalendario(){
 
     let etichetta = categoria === 'assenza'
       ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
-      // Nomi brevi (Sera, Mattina, Ufficio...) entrano nella cella per intero; quelli da 9
-      // caratteri in su ("Pomeriggio" compreso — esattamente al limite, prima gli sfuggiva) userebbero
-      // troppo spazio, quindi per questi mostriamo la sigla — il nome completo resta comunque
-      // nel titolo al passaggio.
-      : modelloUsato ? (modelloUsato.nome.length >= 9 ? (modelloUsato.sigla || modelloUsato.nome.slice(0,2).toUpperCase()) : modelloUsato.nome)
-      : categoria && INIZIALE_CATEGORIA[categoria] && INIZIALE_CATEGORIA[categoria].length >= 9
-        ? ((AppState.modelliTurno || []).find(m => m.id === categoria)?.sigla || CODICE_CATEGORIA[categoria] || INIZIALE_CATEGORIA[categoria])
-        : categoria ? INIZIALE_CATEGORIA[categoria] : '';
+      // Nomi brevi (Sera, Mattina, Ufficio...) entrano nella cella per intero; quelli lunghi
+      // (Aggiornamento professionale, Addestramento tiro...) userebbero troppo spazio, quindi
+      // per questi mostriamo la sigla — il nome completo resta comunque nel titolo al passaggio.
+      : modelloUsato ? (modelloUsato.nome.length > 10 ? (modelloUsato.sigla || modelloUsato.nome.slice(0,2).toUpperCase()) : modelloUsato.nome)
+      : categoria ? INIZIALE_CATEGORIA[categoria] : '';
 
     if(t && t.aggiornamentoProfessionale) etichetta = 'AGG';
     else if(t && t.addestramentoTiro) etichetta = 'TIRI';

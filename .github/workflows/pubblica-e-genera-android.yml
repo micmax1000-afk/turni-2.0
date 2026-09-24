@@ -1,0 +1,98 @@
+name: Pubblica sito e genera pacchetto Android
+
+# Si avvia da solo ad ogni push su main (pubblica sempre il sito su GitHub Pages), e genera
+# anche il pacchetto Android (AAB/APK) — a mano dalla scheda "Actions" (pulsante "Run workflow"),
+# oppure automaticamente ad ogni push se la casella qui sotto è spuntata.
+"on":
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      genera_android:
+        description: 'Genera anche il pacchetto Android in questa esecuzione'
+        type: boolean
+        default: true
+
+jobs:
+  pubblica-sito:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+
+      - name: Prepara GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Carica i file del sito (cartella www)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+
+      - name: Pubblica su GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  genera-android:
+    runs-on: ubuntu-latest
+    # Sulla push automatica genera sempre; su avvio manuale, solo se la casella è spuntata.
+    if: github.event_name == 'push' || github.event.inputs.genera_android == 'true'
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+
+      - name: Imposta Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Imposta Java (serve a Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Installa le dipendenze (Capacitor)
+        run: npm install
+
+      - name: Sincronizza i file del sito nel progetto Android
+        run: npx cap sync android
+
+      - name: Ricrea il file della chiave di firma dal segreto
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/turni-release.keystore"
+
+      - name: Compila l'AAB firmato (per Play Console)
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/turni-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
+
+      - name: Compila anche l'APK firmato (per installarla/provarla direttamente sul telefono)
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/turni-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      - name: Mostra l'impronta SHA-256 della chiave (serve per assetlinks.json, se usato)
+        run: keytool -list -v -keystore "$RUNNER_TEMP/turni-release.keystore" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" | grep -A1 "SHA256:"
+
+      - name: Carica AAB e APK come risultato di questa esecuzione
+        uses: actions/upload-artifact@v4
+        with:
+          name: pacchetto-android-turni-ps
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/release/*.apk
+          retention-days: 90
