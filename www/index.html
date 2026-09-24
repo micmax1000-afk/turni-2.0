@@ -56,16 +56,12 @@
         <input type="text" id="campoServizioSvolto" placeholder="es. Pattugliamento, Ufficio denunce, Scorta...">
       </label>
       <div class="lista-eventi-giorno-v2" id="listaEventiGiornoV2"></div>
-    </div>
-
-    <details class="azioni-calendario-rapide-v2">
-      <summary>📋 Il giorno e altri strumenti ▾</summary>
-      <div class="azioni-calendario-rapide-v2-corpo">
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
         <button class="btn-secondario" id="btnNuovoEventoGiornoV2" type="button">📅 Nuovo evento</button>
         <button class="btn-secondario" id="btnModificaGiornoSelezionatoV2" type="button">✏️ Modifica il giorno selezionato</button>
         <button class="btn-secondario btn-cancella-turni" id="btnCancellaTurniMese" type="button">🗑️ Cancella turni del mese</button>
       </div>
-    </details>
+    </div>
 
     <button class="fab-aggiungi-v2" id="btnFabAggiungiV2" type="button" aria-label="Aggiungi turno o evento">✏️</button>
 
@@ -591,9 +587,8 @@
       </div>
       <p class="avviso-tabelle">⚠ Se nei giorni scelti esistono già turni, l'app ti chiederà conferma prima di sovrascriverli.</p>
     </div>
-    <div class="modale-footer" style="justify-content:space-between;">
+    <div class="modale-footer">
       <button class="btn-secondario" id="btnEliminaPatternV2" type="button">🗑️ Elimina</button>
-      <button class="btn-primario" id="btnFattoEditorPatternV2" type="button">Fatto</button>
     </div>
   </div>
 </div>

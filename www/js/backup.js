@@ -1,5 +1,35 @@
 /* FASE 1 — modulo estratto dal precedente script.js. */
 
+// Salva/condivide un file di testo: dentro l'app Android usa i moduli nativi (Filesystem +
+// finestra di condivisione), perché il download del browser (link con "download") non fa nulla
+// dentro una WebView — non c'è un vero gestore dei download in ascolto. Sul sito normale (o in
+// un browser qualsiasi) resta invece il download classico, invariato.
+async function salvaOCondividiFile(nomeFile, contenutoTesto, tipoMime){
+  const nativo = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  if(nativo && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem){
+    try{
+      const { Filesystem } = window.Capacitor.Plugins;
+      await Filesystem.writeFile({ path: nomeFile, data: contenutoTesto, directory: 'CACHE', encoding: 'utf8' });
+      const risultato = await Filesystem.getUri({ path: nomeFile, directory: 'CACHE' });
+      if(window.Capacitor.Plugins.Share){
+        await window.Capacitor.Plugins.Share.share({ title: nomeFile, url: risultato.uri, dialogTitle: 'Salva o condividi il file' });
+      }
+      return true;
+    }catch(e){
+      console.warn('Salvataggio nativo non riuscito, provo il metodo del browser:', e);
+      // continua sotto con il metodo del browser, come ripiego
+    }
+  }
+  const blob = new Blob([contenutoTesto], { type: tipoMime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nomeFile;
+  a.click();
+  URL.revokeObjectURL(url);
+  return true;
+}
+
 function aggiornaStatoBackup(){
   const box = el('statoBackup');
   if(!box) return;
@@ -23,7 +53,7 @@ function aggiornaStatoBackup(){
   }
 }
 
-function esportaBackup(){
+async function esportaBackup(){
   const dati = {
     versioneBackup: 1,
     dataEsportazione: new Date().toISOString(),
@@ -35,16 +65,13 @@ function esportaBackup(){
     assenze: AppState.assenze,
     sequenzaTurni: AppState.sequenzaTurni,
     noteGiorni: AppState.noteGiorni,
+    modelliTurno: AppState.modelliTurno,
+    pattern: AppState.pattern,
+    eventiGiorno: AppState.eventiGiorno,
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
   };
   // coloriTurni: solo nel backup Drive a pagamento (costruisciDatiBackup) e export colori dedicato
-  const blob = new Blob([JSON.stringify(dati, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `backup-simulatore-cedolino-${dataISO(new Date())}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  await salvaOCondividiFile(`backup-simulatore-cedolino-${dataISO(new Date())}.json`, JSON.stringify(dati, null, 2), 'application/json');
   TurniPSStorage.setItem(CHIAVE_ULTIMO_BACKUP, new Date().toISOString());
   aggiornaStatoBackup();
   if(typeof mostraToast === 'function') mostraToast('Backup esportato correttamente. Conserva il file anche fuori dal telefono.', 'successo');
@@ -102,15 +129,10 @@ function esportaBackupColori(){
     });
     dati.coloriTurni = pre;
   }
-  const blob = new Blob([JSON.stringify(dati, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `colori-turni-${dataISO(new Date())}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  if(typeof mostraToast === 'function') mostraToast('Colori esportati. Conserva il file.', 'successo');
-  else if(typeof mostraAvviso === 'function') mostraAvviso('Colori esportati correttamente.');
+  salvaOCondividiFile(`colori-turni-${dataISO(new Date())}.json`, JSON.stringify(dati, null, 2), 'application/json').then(() => {
+    if(typeof mostraToast === 'function') mostraToast('Colori esportati. Conserva il file.', 'successo');
+    else if(typeof mostraAvviso === 'function') mostraAvviso('Colori esportati correttamente.');
+  });
 }
 
 /** Importa colori — solo con Backup Drive attivo. */

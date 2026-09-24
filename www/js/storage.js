@@ -5,11 +5,14 @@
 'use strict';
 
 // Adapter unico per la persistenza: il resto dell'app non accede mai direttamente a localStorage.
+// Ogni chiamata è protetta: se lo storage del dispositivo desse un errore per qualsiasi motivo
+// (spazio esaurito, restrizioni della WebView dentro l'app Android, ecc.), non deve mai bloccare
+// il resto della schermata che si stava disegnando in quel momento.
 const TurniPSStorage = Object.freeze({
-  getItem: (chiave) => window.localStorage.getItem(chiave),
-  setItem: (chiave, valore) => window.localStorage.setItem(chiave, valore),
-  removeItem: (chiave) => window.localStorage.removeItem(chiave),
-  clear: () => window.localStorage.clear()
+  getItem: (chiave) => { try{ return window.localStorage.getItem(chiave); }catch(e){ console.warn('Storage non disponibile (lettura):', chiave, e); return null; } },
+  setItem: (chiave, valore) => { try{ window.localStorage.setItem(chiave, valore); return true; }catch(e){ console.warn('Storage non disponibile (scrittura):', chiave, e); return false; } },
+  removeItem: (chiave) => { try{ window.localStorage.removeItem(chiave); }catch(e){ console.warn('Storage non disponibile (rimozione):', chiave, e); } },
+  clear: () => { try{ window.localStorage.clear(); }catch(e){ console.warn('Storage non disponibile (pulizia):', e); } }
 });
 
 function caricaColoriTurni(){

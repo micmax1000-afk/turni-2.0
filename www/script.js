@@ -470,7 +470,6 @@ function inizializza(){
   on('btnRimuoviGiornoEditorPatternV2','click', rimuoviGiornoPatternSempliceV2);
   on('btnEliminaPatternV2','click', eliminaPatternSempliceV2);
   on('btnChiudiEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
-  on('btnFattoEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
   on('campoEditorPatternDurataPreset','change', () => {
     aggiornaGiorniEditorPatternV2();
     const c = el('contenitoreEditorPatternGiorniPersonalizzati');
