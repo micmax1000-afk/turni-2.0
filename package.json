@@ -1,0 +1,13 @@
+{
+  "name": "turni-accessorio-ps",
+  "version": "2.36.0",
+  "description": "Turni & Accessorio PS - app per la gestione turni Polizia di Stato",
+  "scripts": {
+    "sync": "npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  }
+}

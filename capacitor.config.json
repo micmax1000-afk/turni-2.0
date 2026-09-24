@@ -1,0 +1,11 @@
+{
+  "appId": "turniaccessorio.ps",
+  "appName": "Turni & Accessorio PS",
+  "webDir": "www",
+  "android": {
+    "buildOptions": {
+      "keystorePath": null,
+      "keystoreAlias": null
+    }
+  }
+}

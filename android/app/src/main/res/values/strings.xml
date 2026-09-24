@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Turni &amp; Accessorio PS</string>
+    <string name="title_activity_main">Turni &amp; Accessorio PS</string>
+    <string name="package_name">turniaccessorio.ps</string>
+    <string name="custom_url_scheme">turniaccessorio.ps</string>
+</resources>
