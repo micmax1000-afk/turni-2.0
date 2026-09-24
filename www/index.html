@@ -287,24 +287,11 @@
   </div>
 
   <div id="vistaCedolino" hidden>
-  <section class="scheda" id="sezioneCedolino">
-    <h2>Cedolino Simulato</h2>
-    <p class="sotto-titolo">Genera il cedolino del mese visualizzato a partire da anagrafica, turni e tabelle ufficiali. A dicembre la tredicesima viene aggiunta automaticamente.</p>
-    <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
-      <input type="number" id="campoConguagliMese" step="0.01" value="0">
-    </label>
-    <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
-    <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
-      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / Esporta PDF</button>
-      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>🗑️ Cancella Cedolino</button>
-    </div>
-  </section>
 
   <details class="cedolino-sezione-secondaria">
     <summary>💰 Cosa arriva sul conto ▾</summary>
     <section class="scheda" id="sezioneAccreditoConto">
-    <p class="sotto-titolo">Il Cedolino Simulato sopra mostra quanto <strong>maturi</strong> lavorando nel mese selezionato. Questa scheda invece ricostruisce quanto ti <strong>arriva davvero sul conto</strong> in quel mese, tenendo conto dei tempi reali di accredito NoiPA: lo stipendio base del mese lavorato arriva il mese dopo, le indennità accessorie con un mese di ritardo ulteriore. La tredicesima invece non è sfasata, arriva a dicembre.</p>
+    <p class="sotto-titolo">Il Cedolino Simulato più sotto mostra quanto <strong>maturi</strong> lavorando nel mese selezionato. Questa scheda invece ricostruisce quanto ti <strong>arriva davvero sul conto</strong> in quel mese, tenendo conto dei tempi reali di accredito NoiPA: lo stipendio base del mese lavorato arriva il mese dopo, le indennità accessorie con un mese di ritardo ulteriore. La tredicesima invece non è sfasata, arriva a dicembre.</p>
     <p class="avviso-tabelle">⚠ Il calcolo fiscale qui è una stima: nella realtà NoiPA emette due cedolini separati (stipendio e accessorio) con trattamento fiscale proprio; questa scheda somma i due lordi e applica un unico calcolo approssimato — usala per farti un'idea, non come previsione esatta.</p>
     <button class="btn-primario" id="btnGeneraAccreditoConto" type="button">Genera Stima Accredito</button>
     <div id="contenitoreAccreditoConto" class="contenitore-cedolino" hidden></div>
@@ -360,6 +347,19 @@
     <button class="btn-secondario" id="btnCancellaRiepilogoAnnuale" type="button" hidden style="margin-top:12px;">🗑️ Cancella Riepilogo</button>
   </section>
   </details>
+  <section class="scheda" id="sezioneCedolino">
+    <h2>Cedolino Simulato</h2>
+    <p class="sotto-titolo">Genera il cedolino del mese visualizzato a partire da anagrafica, turni e tabelle ufficiali. A dicembre la tredicesima viene aggiunta automaticamente.</p>
+    <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
+      <input type="number" id="campoConguagliMese" step="0.01" value="0">
+    </label>
+    <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
+    <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / Esporta PDF</button>
+      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>🗑️ Cancella Cedolino</button>
+    </div>
+  </section>
   <section class="scheda nota-finale">
     <p class="nota-piede">Cedolino simulato con conguagli manuali, tredicesima automatica a dicembre e storico mensile. Valori delle tabelle ufficiali indicativi: verificali sul tuo cedolino reale prima di usarli per decisioni economiche.</p>
     <p class="nota-piede" style="margin-top:8px;">Progetto indipendente, non ufficiale e non affiliato alla Polizia di Stato né ad alcun ente pubblico. Tutti i valori delle tabelle sono stati reperiti da fonti pubbliche disponibili online (siti sindacali, normativa pubblicata) e possono contenere errori, essere incompleti o non aggiornati. L'autore declina ogni responsabilità per incongruenze, errori o danni derivanti dall'uso di questa app: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni economiche o personali.</p>

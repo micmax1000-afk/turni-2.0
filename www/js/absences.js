@@ -188,6 +188,8 @@ function aggiornaCardAssenza(riga, voce){
   if(boxes[0]) boxes[0].textContent = rimangono;
   if(boxes[1]) boxes[1].textContent = usate;
   if(boxes[2]) boxes[2].textContent = spettanti || 0;
+  const residuoCompatto = riga.querySelector('.card-assenza-compact-residuo');
+  if(residuoCompatto) residuoCompatto.textContent = rimangono;
   const progress = riga.querySelector('.saldo-progress');
   if(progress){ progress.setAttribute('aria-valuenow', String(Math.round(percentuale))); const bar=progress.querySelector('span'); if(bar) bar.style.width=`${percentuale}%`; }
   const meta=riga.querySelector('.card-assenza-meta');
@@ -263,6 +265,12 @@ function renderCardAssenzaItem(a){
     const valoreVisuale = valoreEffettivo || 0;
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
+      <div class="card-assenza-compact" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
+        <span class="card-assenza-icon" aria-hidden="true">${icona}</span>
+        <div class="card-assenza-compact-nome"><strong>${a.personalizzata ? (a.nome || 'Nuova voce') : a.nome}</strong></div>
+        <div><strong class="card-assenza-compact-residuo">${rimangono}</strong><small>${unitaEffettiva}</small></div>
+        <span class="card-assenza-apri" aria-hidden="true">⌄</span>
+      </div>
       <div class="card-assenza-head">
         <div class="card-assenza-title">
           <span class="card-assenza-icon" aria-hidden="true">${icona}</span>
@@ -271,10 +279,6 @@ function renderCardAssenzaItem(a){
         <span class="card-assenza-status">${rimangono < 0 ? '⚠ Esaurito' : rimangono === 0 ? '0 disponibili' : percentuale >= 80 ? 'Quasi esaurito' : 'Disponibile'}</span>
       </div>
       ${a.personalizzata ? `<input class="card-assenza-name" type="text" data-campo="nome" value="${a.nome}">` : ''}
-      <div class="card-assenza-compact" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
-        <div><span>Residuo</span><strong>${rimangono}</strong><small>${unitaEffettiva}</small></div>
-        <span class="card-assenza-apri">Tocca per modificare <span aria-hidden="true">⌄</span></span>
-      </div>
       <div class="card-assenza-main">
         <div class="saldo-box"><span>Disponibili</span><strong>${rimangono}</strong><small>${unitaEffettiva}</small></div>
         <div class="saldo-box"><span>Utilizzati</span><strong>${usate}</strong><small>${unitaEffettiva}</small></div>
@@ -340,8 +344,12 @@ function wireEventiCardAssenza(box){
         else voce[campo.dataset.campo] = campo.value;
         salvaAssenzeStorage();
         aggiornaCardAssenza(riga, voce);
-        const titolo = riga.querySelector('.card-assenza-title strong');
-        if(titolo && voce.personalizzata) titolo.textContent = voce.nome || 'Nuova voce';
+        if(voce.personalizzata){
+          const titolo = riga.querySelector('.card-assenza-title strong');
+          if(titolo) titolo.textContent = voce.nome || 'Nuova voce';
+          const titoloCompatto = riga.querySelector('.card-assenza-compact-nome strong');
+          if(titoloCompatto) titoloCompatto.textContent = voce.nome || 'Nuova voce';
+        }
         renderDashboardAssenze();
         const indicatore = riga.querySelector('.indicatore-salvato');
         if(indicatore){
@@ -393,7 +401,7 @@ const ASSENZE_PREDEFINITE = [
 
 
 function inizializzaCardAssenzeV45(){
-  document.querySelectorAll('#corpoAssenze .card-assenza').forEach(card=>{
+  document.querySelectorAll('#corpoAssenze .card-assenza, #corpoAssenzePersonalizzate .card-assenza').forEach(card=>{
     const trigger=card.querySelector('.card-assenza-compact');
     if(!trigger || trigger.dataset.v45Bound) return;
     trigger.dataset.v45Bound='1';
