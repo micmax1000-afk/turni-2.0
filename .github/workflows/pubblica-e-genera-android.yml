@@ -50,7 +50,7 @@ jobs:
       - name: Imposta Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Imposta Java (serve a Gradle)
         uses: actions/setup-java@v4
