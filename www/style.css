@@ -135,10 +135,6 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .giorno-cella.tipo-addestramentoTiro{ background: var(--tipo-addestramentoTiro); }
 
 .giorno-cella.oggi{ border-color: var(--azzurro-sabato); }
-.giorno-cella.selezionata{ background: var(--inchiostro) !important; }
-.giorno-cella.selezionata .giorno-numero{ color:#fff; }
-.giorno-cella.selezionata.sabato .giorno-numero,
-.giorno-cella.selezionata.festivo .giorno-numero{ color:#fff; }
 
 .dettaglio-giorno{ margin-top:18px; padding-top:14px; border-top:1px solid var(--bordo); }
 .dettaglio-giorno-riga{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
