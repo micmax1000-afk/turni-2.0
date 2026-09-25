@@ -171,7 +171,44 @@ function importaBackupColori(file){
   reader.readAsText(file);
 }
 
+// Modulo di acquisto per Capacitor (Google Play Billing diretto, senza bundler — vedi
+// capacitor-plugin-cdv-purchase, usato tramite il ponte nativo di Capacitor come già facciamo
+// per Filesystem/Share, non tramite il suo pacchetto JS che richiederebbe un bundler che questo
+// progetto non ha). Il vecchio meccanismo (Digital Goods API / PaymentRequest) restava pensato
+// per Bubblewrap/TWA e non esiste dentro una WebView Capacitor: qui sotto proviamo prima quello
+// nuovo, e se non c'è (es. vecchia build Bubblewrap ancora in giro) ripieghiamo sul vecchio.
+let listenerAcquistiCollegato = false;
+
+function pluginAcquistiNativo(){
+  return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PurchasePlugin) || null;
+}
+
 async function inizializzaPlayBilling(){
+  const plugin = pluginAcquistiNativo();
+  if(plugin){
+    try{
+      await plugin.init();
+      if(!listenerAcquistiCollegato){
+        listenerAcquistiCollegato = true;
+        await plugin.addListener('purchasesUpdated', (dati) => {
+          const acquisti = dati.purchases || [];
+          const trovato = acquisti.find(p => p.productId === PLAY_PRODUCT_ID_BACKUP_DRIVE || (p.productIds || []).includes(PLAY_PRODUCT_ID_BACKUP_DRIVE));
+          if(!trovato) return;
+          TurniPSStorage.setItem(CHIAVE_BACKUP_DRIVE_ATTIVO, '1');
+          if(!trovato.acknowledged && trovato.purchaseToken){
+            plugin.acknowledgePurchase({ purchaseToken: trovato.purchaseToken }).catch(() => {});
+          }
+          if(typeof renderSezioneBackupDrive === 'function') renderSezioneBackupDrive();
+          if(typeof mostraAvviso === 'function') mostraAvviso('Acquisto completato! Ora collega il tuo account Google Drive per attivare il backup automatico.');
+        });
+      }
+      await verificaAcquistoBackupDrive();
+      return;
+    }catch(e){
+      console.warn('Play Billing (Capacitor) non disponibile:', e);
+      // continua sotto con il vecchio meccanismo, come ripiego
+    }
+  }
   if(!('getDigitalGoodsService' in window)) return; // non siamo dentro una TWA/Play Store, niente da fare
   try{
     servizioPlayBilling = await window.getDigitalGoodsService('https://play.google.com/billing');
@@ -182,6 +219,29 @@ async function inizializzaPlayBilling(){
 }
 
 async function verificaAcquistoBackupDrive(){
+  const plugin = pluginAcquistiNativo();
+  if(plugin){
+    try{
+      return await new Promise(async (resolve) => {
+        let risolto = false;
+        const concludi = (haAcquistato) => {
+          if(risolto) return;
+          risolto = true;
+          TurniPSStorage.setItem(CHIAVE_BACKUP_DRIVE_ATTIVO, haAcquistato ? '1' : '0');
+          resolve(haAcquistato);
+        };
+        const handle = await plugin.addListener('setPurchases', (dati) => {
+          handle.remove();
+          const acquisti = dati.purchases || [];
+          concludi(acquisti.some(p => p.productId === PLAY_PRODUCT_ID_BACKUP_DRIVE || (p.productIds || []).includes(PLAY_PRODUCT_ID_BACKUP_DRIVE)));
+        });
+        plugin.getPurchases().catch(() => { handle.remove(); concludi(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1'); });
+        setTimeout(() => { handle.remove(); concludi(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1'); }, 5000); // tetto di sicurezza
+      });
+    }catch(e){
+      return TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1';
+    }
+  }
   if(!servizioPlayBilling) return false;
   try{
     const acquisti = await servizioPlayBilling.listPurchases();
@@ -195,6 +255,16 @@ async function verificaAcquistoBackupDrive(){
 }
 
 async function acquistaBackupDrive(){
+  const plugin = pluginAcquistiNativo();
+  if(plugin){
+    try{
+      await plugin.buy({ productId: PLAY_PRODUCT_ID_BACKUP_DRIVE });
+      // L'esito vero arriva dall'evento 'purchasesUpdated' già collegato in inizializzaPlayBilling()
+    }catch(e){
+      if(e && e.message !== 'USER_CANCELED') mostraAvviso('Acquisto non riuscito. Riprova più tardi.');
+    }
+    return;
+  }
   if(!servizioPlayBilling){
     mostraAvviso('Questa funzione è disponibile solo nella versione installata dal Play Store, non nel browser.');
     return;

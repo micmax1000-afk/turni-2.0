@@ -151,7 +151,7 @@ function inizializzaFiltriAssenze(){
   let unita = 'tutte';
   const applica = () => {
     const q = (search?.value || '').trim().toLowerCase();
-    document.querySelectorAll('#corpoAssenze .card-assenza').forEach(r => {
+    document.querySelectorAll('#corpoAssenze .card-assenza, #corpoAssenzePersonalizzate .card-assenza').forEach(r => {
       const voce = AppState.assenze.find(a => a.id === r.dataset.id);
       const okTesto = !q || (voce?.nome || '').toLowerCase().includes(q);
       const okUnita = unita === 'tutte' || voce?.unita === unita;

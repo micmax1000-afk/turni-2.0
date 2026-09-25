@@ -65,6 +65,25 @@ Con Capacitor questo file non è più necessario (era specifico di Bubblewrap/TW
 non ne ha bisogno. Se un domani lo tenessi comunque per qualche motivo, l'impronta è stampata nei
 log del workflow, nello step "Mostra l'impronta SHA-256...".
 
+## Il prodotto in-app per il Backup Drive (1,99€)
+
+Il codice usa già il modulo giusto per Capacitor (Google Play Billing diretto). Perché funzioni
+davvero, su Play Console devi creare un **prodotto in-app** con **esattamente** questo ID
+(deve corrispondere carattere per carattere, altrimenti l'app non lo troverà):
+
+```
+backup_drive_automatico
+```
+
+Repository app su Play Console → **Monetizzazione** → **Prodotti** → **Prodotti in-app** →
+**Crea prodotto** → incolla l'ID qui sopra → imposta il prezzo (1,99€) → **Attiva**. Serve anche
+un account di pagamento commerciante collegato, se non l'hai già (Play Console te lo segnala se
+manca).
+
+⚠️ Un acquisto in-app **si può testare solo nella versione caricata su Play Console** (almeno in
+"Test interni") — non funziona provando l'APK installato a mano (sideload), perché la verifica
+dell'acquisto passa dai server di Google Play legati a quella build specifica.
+
 ## ⚠️ Se attivi "Play App Signing" al primo caricamento
 
 Play Console propone di default di far gestire a Google la firma finale di distribuzione

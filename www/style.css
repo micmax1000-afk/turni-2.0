@@ -1344,16 +1344,13 @@ h3{ font-family: var(--font-display); font-weight:600; }
 /* V44.1 — selezione calendario più chiara e data dei riposi in grassetto */
 .giorno-cella.riposo-giorno .giorno-numero{font-weight:800!important;}
 .giorno-cella.selezionata{
-  background:#1B2440!important;
   border-color:#1B2440!important;
-  box-shadow:0 3px 10px rgba(27,36,64,.28);
+  box-shadow:inset 0 0 0 2px #1B2440,0 3px 10px rgba(27,36,64,.28);
   transform:translateY(-1px);
   z-index:3;
 }
-.giorno-cella.selezionata .giorno-numero{color:#fff!important;font-weight:800!important;}
-.giorno-cella.selezionata.sabato .giorno-numero,
-.giorno-cella.selezionata.festivo .giorno-numero{color:#fff!important;}
-.giorno-cella.selezionata .giorno-turno-badge{background:rgba(255,255,255,.92);color:var(--inchiostro);}
+.giorno-cella.selezionata .giorno-numero{font-weight:800!important;}
+.giorno-cella.selezionata .giorno-turno-badge{box-shadow:inset 0 0 0 1px rgba(27,36,64,.2);}
 
 
 /* V46 — miglioramenti Turni e Assenze */
