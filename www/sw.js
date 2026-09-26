@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V117 (v2.41.1 — corretta davvero: rimossa una seconda regola dimenticata) */
+/* Turni & Accessorio PS — Service Worker V118 (v2.41.2 — tolto anche il riquadro bianco del turno da selezionato) */
 'use strict';
-const CACHE='turni-ps-v117';
+const CACHE='turni-ps-v118';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
