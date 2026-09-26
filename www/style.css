@@ -1422,12 +1422,12 @@ h3{ font-family: var(--font-display); font-weight:600; }
 @media(max-width:390px){.scheda-calendario-v2 .giorno-cella{min-height:64px}.scheda-calendario-v2 .giorno-turno-nome{font-size:.6rem!important}}
 .scheda-calendario-v2 .giorno-cella.vuota{background:var(--carta)!important;border-radius:14px!important;box-shadow:none!important}
 
-/* Numero del giorno più piccolo e sbiadito, in alto a sinistra — lascia il chip colorato come
-   vero protagonista della cella, invece di competere con un numero grande e in grassetto. */
+/* Numero del giorno ben leggibile su qualsiasi colore di sfondo — il chip colorato del turno
+   resta comunque il punto di maggiore attenzione della cella, ma il numero non deve sparire. */
 .scheda-calendario-v2 .giorno-topline{justify-content:flex-start!important}
-.scheda-calendario-v2 .giorno-numero{font-size:.72rem!important;font-weight:600!important;opacity:.55}
-.scheda-calendario-v2 .giorno-cella.oggi .giorno-numero{opacity:.9;font-weight:800!important}
-.scheda-calendario-v2 .giorno-cella.selezionata .giorno-numero{opacity:.9!important}
+.scheda-calendario-v2 .giorno-numero{font-size:.76rem!important;font-weight:800!important;opacity:1}
+.scheda-calendario-v2 .giorno-cella.oggi .giorno-numero{font-weight:800!important}
+.scheda-calendario-v2 .giorno-cella.selezionata .giorno-numero{opacity:1!important}
 
 /* "Filtra o svuota il mese" — menu compatto sotto la griglia, richiudibile, chiuso di default */
 .azioni-calendario-rapide-v2{margin-top:10px;border:1px solid var(--bordo);border-radius:12px;background:var(--carta);overflow:hidden}

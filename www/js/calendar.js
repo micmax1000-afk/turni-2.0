@@ -542,6 +542,14 @@ function renderCalendario(){
       classi += ' ha-turno tipo-' + categoria;
     }
 
+    // Il colore di sfondo viene scritto qui direttamente dal JS (non lasciato alla sola cascata
+    // CSS delle classi "tipo-X"): su alcune WebView Android le regole CSS per colore di sfondo
+    // si sono dimostrate inaffidabili nella pratica (nonostante risultassero corrette calcolando
+    // la cascata a mano) — uno stile scritto in riga qui ha sempre l'ultima parola, senza
+    // eccezioni, e risolve il problema alla radice invece di rincorrere l'ennesima regola CSS
+    // dimenticata da qualche versione precedente.
+    if(categoria) cella.style.background = coloreCategoria(categoria);
+
     if(t && t.generatoAutomaticamente) classi += ' auto-generato';
     if(iso === isoOggi) classi += ' oggi';
     if(iso === giornoSelezionato) classi += ' selezionata';
@@ -647,7 +655,7 @@ function renderCalendario(){
         ${(AppState.eventiGiorno[iso] || []).length ? '<span class="giorno-pallino-evento" title="Hai un evento questo giorno" aria-hidden="true">●</span>' : ''}
         <span class="giorno-badge-list">${badgeVisibili.join('')}</span>
       </span>
-      <span class="giorno-turno-badge" title="${escapeHtml(nomeCategoria)}"><span class="giorno-turno-codice">${escapeHtml(codiceCategoria)}</span><span class="giorno-turno-nome">${escapeHtml(tipoLabel)}</span></span>
+      <span class="giorno-turno-badge" style="background:transparent" title="${escapeHtml(nomeCategoria)}"><span class="giorno-turno-codice">${escapeHtml(codiceCategoria)}</span><span class="giorno-turno-nome">${escapeHtml(tipoLabel)}</span></span>
       ${orario || oreLabel ? `<span class="giorno-meta">${orario}${oreLabel}</span>` : '<span class="giorno-meta giorno-meta-vuoto">—</span>'}
     `;
 
