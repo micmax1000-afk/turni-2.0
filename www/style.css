@@ -1200,7 +1200,7 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .giorno-topline{width:100%;display:flex;align-items:center;justify-content:space-between;gap:3px;min-height:20px}
 .giorno-badge-list{display:flex;justify-content:flex-end;gap:2px;min-width:0;overflow:hidden}
 .giorno-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 3px;border-radius:999px;font-size:.58rem;font-weight:800;line-height:1;border:1px solid rgba(0,0,0,.08)}
-.giorno-turno-badge{display:flex;align-items:center;justify-content:center;gap:4px;width:calc(100% - 4px);min-height:22px;padding:2px 4px;border-radius:6px;background:rgba(255,255,255,.58);box-sizing:border-box;font-size:.64rem;font-weight:800;line-height:1.05;text-align:center;overflow:hidden}
+.giorno-turno-badge{display:flex;align-items:center;justify-content:center;gap:4px;width:calc(100% - 4px);min-height:22px;padding:2px 4px;border-radius:6px;box-sizing:border-box;font-size:.64rem;font-weight:800;line-height:1.05;text-align:center;overflow:hidden}
 .giorno-turno-codice{font-family:var(--font-cifre);font-size:.72rem;font-weight:800;flex:none}
 .giorno-turno-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .giorno-meta{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;font-family:var(--font-cifre);font-size:.62rem;line-height:1;white-space:nowrap;overflow:hidden}

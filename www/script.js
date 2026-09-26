@@ -280,6 +280,17 @@ let tokenAccessoDriveCorrente = null;
    --------------------------------------------------------- */
 
 
+// Numero di versione mostrato in Impostazioni — letto da manifest.json, la stessa fonte
+// aggiornata ad ogni rilascio, così sul telefono si vede sempre quella davvero installata,
+// senza doverla dedurre indirettamente da GitHub o dai file scaricati.
+function mostraVersioneApp(){
+  const box = document.getElementById('versioneAppTesto');
+  if(!box) return;
+  fetch('manifest.json').then(r => r.json()).then(m => {
+    if(m && m.version) box.textContent = `Versione ${m.version}`;
+  }).catch(() => {});
+}
+
 function inizializza(){
   if(window.TurniPSDataGuard && !TurniPSDataGuard.validate(AppState)) Object.assign(AppState, TurniPSDataGuard.normalize(AppState));
   applicaColoriTurni();
@@ -290,6 +301,7 @@ function inizializza(){
   renderSezioneBackupDrive();
   if(typeof inizializzaOffline==='function') inizializzaOffline();
   inizializzaPlayBilling().then(() => renderSezioneBackupDrive());
+  mostraVersioneApp();
   // Piccolo ritardo perché la libreria Google (caricata con "defer") abbia il tempo di essere pronta
   setTimeout(() => {
     inizializzaGoogleIdentity();
