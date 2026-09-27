@@ -341,6 +341,13 @@ function aggiornaRiepilogoMensile(){
   el('rStrNotturnoFestivo').textContent = round2(tot.strNotturnoFestivo).toLocaleString('it-IT', {minimumFractionDigits:2});
   const strTotaleBox = el('rStrTotale');
   if(strTotaleBox) strTotaleBox.textContent = round2(tot.strDiurno + tot.strNotturno + tot.strFestivo + tot.strNotturnoFestivo).toLocaleString('it-IT', {minimumFractionDigits:2});
+  const strNettoBox = el('rStrNetto');
+  if(strNettoBox){
+    try{
+      const effetto = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
+      strNettoBox.textContent = effetto.lordo > 0 ? `+${effetto.netto.toLocaleString('it-IT', {minimumFractionDigits:2})} €` : '—';
+    }catch(e){ strNettoBox.textContent = '—'; }
+  }
   el('rRiposi').textContent = riposi;
   el('rReperibilita').textContent = reperibilita;
   el('rMissioni').textContent = missioni;
@@ -589,7 +596,8 @@ function renderCalendario(){
 
     if(t && t.aggiornamentoProfessionale) etichetta = 'AGG';
     else if(t && t.addestramentoTiro) etichetta = 'TIRI';
-    else if(t && t.compensazioneRiposo) etichetta = 'RR';
+    else if(t && t.compensazioneRiposo) etichetta = 'LR';
+    else if(t && t.recuperoFestivoLavorato) etichetta = 'LF';
 
     const ore = t && !t.riposo && !t.assenzaTipo && t.oraInizio && t.oraFine
       ? classificaTurno(t).oreTotali

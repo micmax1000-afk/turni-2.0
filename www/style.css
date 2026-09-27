@@ -1428,6 +1428,12 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .scheda-calendario-v2 .giorno-numero{font-size:.76rem!important;font-weight:800!important;opacity:1}
 .scheda-calendario-v2 .giorno-cella.oggi .giorno-numero{font-weight:800!important}
 .scheda-calendario-v2 .giorno-cella.selezionata .giorno-numero{opacity:1!important}
+/* Il rosso di domeniche/festivi ha sempre la priorità sul blu di "oggi" o sul colore normale
+   di "selezionata": altrimenti un festivo che cade di oggi, o che selezioni, perdeva il rosso. */
+.giorno-cella.festivo.oggi .giorno-numero,
+.giorno-cella.domenica.oggi .giorno-numero,
+.giorno-cella.festivo.selezionata .giorno-numero,
+.giorno-cella.domenica.selezionata .giorno-numero{color:#C62828!important}
 
 /* "Filtra o svuota il mese" — menu compatto sotto la griglia, richiudibile, chiuso di default */
 .azioni-calendario-rapide-v2{margin-top:10px;border:1px solid var(--bordo);border-radius:12px;background:var(--carta);overflow:hidden}

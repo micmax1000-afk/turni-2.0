@@ -657,6 +657,13 @@ function inizializza(){
     if(el('campoAssenzaTipo').value) el('campoRiposo').checked = false;
     aggiornaVisibilitaCampiOrario(); aggiornaAnteprima();
   });
+  // "Lavorato sul riposo" e "Riposo" sono per definizione incompatibili: se il giorno era di
+  // riposo ma ci hai lavorato, la casella "Riposo" va tolta, altrimenti il turno viene comunque
+  // trattato come un giorno di riposo puro e la maturazione del recupero non viene mai contata.
+  el('campoCompensazioneRiposo').addEventListener('change', () => {
+    if(el('campoCompensazioneRiposo').checked) el('campoRiposo').checked = false;
+    aggiornaVisibilitaCampiOrario(); aggiornaAnteprima();
+  });
   el('campoRCOraInizio').addEventListener('input', aggiornaAnteprima);
   el('campoRCOraFine').addEventListener('input', aggiornaAnteprima);
 
@@ -746,7 +753,7 @@ function inizializza(){
     // modifica modello) fosse rimasto aperto per qualche motivo, coprirebbe la matita in modo
     // invisibile — sembrerebbe che il tocco non faccia nulla. Li chiudiamo sempre prima di aprire
     // il popup, anche se erano già chiusi (innocuo in quel caso).
-    ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
+    ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayRientroRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
     if(!giornoSelezionato) giornoSelezionato = dataISO(new Date());
     giornoPerPopupV2 = giornoSelezionato;
     apriPopupRapidoGiornoV2();
@@ -775,6 +782,7 @@ function inizializza(){
   if(listaModelliTurniHost) listaModelliTurniHost.addEventListener('click', (e) => {
     const btnNuovo = e.target.closest('#btnNuovoModelloV2');
     if(btnNuovo){ apriModificaModelloV2(null); return; }
+    if(e.target.closest('#btnRientroTurniV2')){ apriRientroRapidoV2(); return; }
     const btnMatita = e.target.closest('[data-modifica-modello]');
     if(btnMatita){ apriModificaModelloV2(btnMatita.dataset.modificaModello); return; }
     const btn = e.target.closest('[data-modello]');
@@ -807,6 +815,9 @@ function inizializza(){
   });
   on('btnChiudiStraordinarioRapido','click', () => { el('overlayStraordinarioRapido').hidden = true; });
   on('btnSalvaStraordinarioRapido','click', salvaStraordinarioRapidoV2);
+  on('btnChiudiRientroRapido','click', () => { el('overlayRientroRapido').hidden = true; });
+  on('btnSalvaRientroRapido','click', salvaRientroRapidoV2);
+  on('btnRimuoviRientroRapido','click', rimuoviRientroRapidoV2);
   on('btnStatistiche','click', () => mostraScheda('statistiche'));
 
 
@@ -829,7 +840,7 @@ let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifi
 // apre direttamente il dettaglio/modifica; se è vuoto, propone il popup rapido "+ Turno / + Evento"
 // invece di aprire subito il modulo completo.
 function gestisciTocchGiornoV2(iso){
-  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
+  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayRientroRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
   selezionaGiorno(iso);
   giornoPerPopupV2 = iso;
   apriPopupRapidoGiornoV2();
@@ -1169,6 +1180,10 @@ function eliminaPatternSempliceV2(){
 function renderListaModelliTurniV2(){
   const host = el('listaModelliTurni');
   if(!host) return;
+  const tGiornoCorrente = giornoPerPopupV2 ? (AppState.turni[giornoPerPopupV2] || {}) : {};
+  const rientroSotto = (tGiornoCorrente.secondoAttivo && tGiornoCorrente.secondoOraInizio && tGiornoCorrente.secondoOraFine)
+    ? `${tGiornoCorrente.secondoOraInizio} - ${tGiornoCorrente.secondoOraFine} ✓`
+    : 'aggiungi un secondo turno a oggi';
   const righe = (AppState.modelliTurno || []).map(m => {
     const colore = coloreModelloV2(m);
     const sotto = m.riposo ? 'giornata libera' : `${m.oraInizio} - ${m.oraFine}`;
@@ -1180,7 +1195,10 @@ function renderListaModelliTurniV2(){
       <button type="button" class="riga-modello-matita" data-modifica-modello="${escapeHtml(m.id)}" aria-label="Modifica ${escapeHtml(m.nome)}">✏️</button>
     </div>`;
   }).join('');
-  host.innerHTML = righe + `<button type="button" class="riga-modello-nuovo" id="btnNuovoModelloV2">＋ Nuovo turno personalizzato</button>`;
+  host.innerHTML = righe + `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" id="btnRientroTurniV2" style="border-top:1px dashed var(--bordo);margin-top:4px;">
+    <span class="cerchio-modello" style="background:var(--sfondo-secondario,#f3f5f9);border:1.5px dashed var(--bordo);">🔁</span>
+    <span class="riga-modello-testo"><strong>Rientro</strong><small>${rientroSotto}</small></span>
+  </button>` + `<button type="button" class="riga-modello-nuovo" id="btnNuovoModelloV2">＋ Nuovo turno personalizzato</button>`;
 }
 
 function renderListaModelliAssenzeV2(){
@@ -1208,8 +1226,8 @@ const INDENNITA_RAPIDE_V2 = [
   { chiave:'reperibilita', sigla:'RE', nome:'Reperibilità' },
   { chiave:'controlloTerritorio', sigla:'CT', nome:'Controllo territorio' },
   { chiave:'cambioTurno', sigla:'CA', nome:'Cambio turno' },
-  { chiave:'compensazioneRiposo', sigla:'CR', nome:'Recupero riposo' },
-  { chiave:'recuperoFestivoLavorato', sigla:'RF', nome:'Recupero festivo' }
+  { chiave:'compensazioneRiposo', sigla:'LR', nome:'Lavorato sul riposo' },
+  { chiave:'recuperoFestivoLavorato', sigla:'LF', nome:'Lavorato in festivo' }
 ];
 function renderListaModelliIndennitaV2(){
   const host = el('listaModelliIndennita');
@@ -1442,6 +1460,49 @@ function salvaStraordinarioRapidoV2(){
   mostraToast('Straordinario aggiunto', 'successo');
 }
 
+function apriRientroRapidoV2(){
+  if(!giornoPerPopupV2) return;
+  const t = AppState.turni[giornoPerPopupV2];
+  if(!t || !t.oraInizio || !t.oraFine){
+    mostraToast('Assegna prima un turno di lavoro a questo giorno: il rientro si aggiunge a un turno già presente.', 'avviso');
+    return;
+  }
+  el('campoRientroRapidoInizio').value = t.secondoOraInizio || '';
+  el('campoRientroRapidoFine').value = t.secondoOraFine || '';
+  el('btnRimuoviRientroRapido').hidden = !t.secondoAttivo;
+  el('overlayRientroRapido').hidden = false;
+}
+function salvaRientroRapidoV2(){
+  if(!giornoPerPopupV2) return;
+  const iso = giornoPerPopupV2;
+  const t = AppState.turni[iso];
+  if(!t || !t.oraInizio || !t.oraFine) return;
+  const inizio = el('campoRientroRapidoInizio').value;
+  const fine = el('campoRientroRapidoFine').value;
+  if(!inizio || !fine){ mostraToast('Inserisci sia l\'ora di inizio sia quella di fine del rientro.', 'avviso'); return; }
+  t.secondoAttivo = true;
+  t.secondoOraInizio = inizio;
+  t.secondoOraFine = fine;
+  salvaTurniStorage();
+  el('overlayRientroRapido').hidden = true;
+  renderCalendario();
+  renderListaModelliTurniV2();
+  mostraToast('Rientro aggiunto', 'successo');
+}
+function rimuoviRientroRapidoV2(){
+  if(!giornoPerPopupV2) return;
+  const t = AppState.turni[giornoPerPopupV2];
+  if(!t) return;
+  t.secondoAttivo = false;
+  t.secondoOraInizio = '';
+  t.secondoOraFine = '';
+  salvaTurniStorage();
+  el('overlayRientroRapido').hidden = true;
+  renderCalendario();
+  renderListaModelliTurniV2();
+  mostraToast('Rientro rimosso', 'successo');
+}
+
 // ===================== Personalizza Report: mostra/nascondi blocchi a scelta =====================
 // Applica lo stato attuale di AppState.reportBlocchi ai contenitori reali della pagina.
 // "Prossimo turno" e "Riepilogo mese" restano dentro sezioneReportTop indipendentemente dal fatto
@@ -1463,7 +1524,10 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   else if(t.assenzaTipo){
     const voce = (AppState.assenze || []).find(a => a.id === t.assenzaTipo);
     testo = `${dataLeggibile} — ${voce ? voce.nome : 'Assenza'}`;
-  } else if(t.oraInizio && t.oraFine) testo = `${dataLeggibile} — ${t.oraInizio} - ${t.oraFine}`;
+  } else if(t.oraInizio && t.oraFine){
+    testo = `${dataLeggibile} — ${t.oraInizio} - ${t.oraFine}`;
+    if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine) testo += ` / ${t.secondoOraInizio} - ${t.secondoOraFine}`;
+  }
   else testo = `${dataLeggibile} — turno incompleto`;
   box.textContent = testo;
   renderListaEventiGiornoV2();

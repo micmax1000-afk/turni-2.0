@@ -97,8 +97,31 @@ function calcolaIRPEFAnnua(imponibileAnnuo){
   return imposta;
 }
 
-function generaCedolino(anno, mese){
+// Il "netto dello straordinario" non è una fetta isolabile a priori — le tasse funzionano a
+// scaglioni sul totale del mese, non voce per voce. Il modo esatto è ricalcolare due volte
+// l'intero cedolino: una con le ore di straordinario del mese, una senza (tutto il resto
+// identico) — la differenza tra i due netti è esattamente quanto quelle ore ti portano in tasca,
+// scaglioni e detrazioni già inclusi correttamente, senza bisogno di alcuna ripartizione arbitraria.
+function calcolaEffettoNettoStraordinario(anno, mese){
   const comp = calcolaCompetenze(anno, mese);
+  const lordo = round2(comp.accessorie.strDiurno + comp.accessorie.strNotturno + comp.accessorie.strFestivo + comp.accessorie.strNotturnoFestivo);
+  if(lordo <= 0) return { ore: 0, lordo: 0, netto: 0 };
+  const ore = round2((comp.tot.strDiurno || 0) + (comp.tot.strNotturno || 0) + (comp.tot.strFestivo || 0) + (comp.tot.strNotturnoFestivo || 0));
+  const compSenzaStr = JSON.parse(JSON.stringify(comp));
+  compSenzaStr.accessorie.strDiurno = 0;
+  compSenzaStr.accessorie.strNotturno = 0;
+  compSenzaStr.accessorie.strFestivo = 0;
+  compSenzaStr.accessorie.strNotturnoFestivo = 0;
+  compSenzaStr.totaleAccessorieFisse = round2(Object.values(compSenzaStr.accessorie).reduce((a,b) => a+b, 0));
+  compSenzaStr.totaleAccessorie = round2(compSenzaStr.totaleAccessorieFisse + (compSenzaStr.totalePersonalizzate || 0));
+  compSenzaStr.totaleLordo = round2(compSenzaStr.totaleFisse + compSenzaStr.totaleAccessorie);
+  const nettoCon = generaCedolino(anno, mese, comp).netto;
+  const nettoSenza = generaCedolino(anno, mese, compSenzaStr).netto;
+  return { ore, lordo, netto: round2(nettoCon - nettoSenza) };
+}
+
+function generaCedolino(anno, mese, compForzato){
+  const comp = compForzato || calcolaCompetenze(anno, mese);
 
   // 1. Imponibile previdenziale: solo voci fisse pensionabili
   const imponibilePrevidenziale = comp.totaleFisse;

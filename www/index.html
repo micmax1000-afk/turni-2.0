@@ -135,6 +135,23 @@
       </div>
     </div>
 
+    <div class="overlay" id="overlayRientroRapido" hidden>
+      <div class="modale">
+        <div class="modale-header"><h2>Rientro</h2><button class="btn-icona" id="btnChiudiRientroRapido" aria-label="Chiudi">✕</button></div>
+        <div class="modale-corpo">
+          <p class="sotto-titolo" style="margin-top:0;">Un secondo turno nella stessa giornata, con il suo orario — es. rientri la sera dopo il turno del mattino.</p>
+          <div class="riga-straordinario-ore">
+            <label class="campo-modale">Dalle<input type="time" id="campoRientroRapidoInizio"></label>
+            <label class="campo-modale">Alle<input type="time" id="campoRientroRapidoFine"></label>
+          </div>
+        </div>
+        <div class="modale-footer">
+          <button class="btn-secondario" id="btnRimuoviRientroRapido" type="button" hidden>🗑️ Rimuovi</button>
+          <button class="btn-primario" id="btnSalvaRientroRapido" type="button">Salva</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Nuovo evento / modifica evento — separato dal turno, può essercene più di uno per giorno -->
     <div class="overlay" id="overlayEvento" hidden>
       <div class="modale">
@@ -730,6 +747,7 @@
       <div class="stat-panel-v17 stat-dettagli">
         <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
         <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
+        <div><span>💰 Straordinario netto stimato</span><strong id="rStrNetto">—</strong></div>
         <div><span>💤 Riposi</span><strong id="rRiposi">0</strong></div>
         <div><span>🚗 Servizio esterno</span><strong id="rServizioEsterno">0</strong></div>
         <div><span>🛡️ Ordine pubblico</span><strong id="rOrdinePubblico">0</strong></div>
