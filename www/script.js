@@ -802,6 +802,16 @@ function inizializza(){
   on('btnImpostazioni','click', () => mostraScheda('impostazioni'));
   on('btnChiudiModificaModello','click', () => { el('overlayModificaModello').hidden = true; });
   on('btnSalvaModello','click', salvaModificaModelloV2);
+  el('campoModModelloColore').addEventListener('input', () => {
+    modelloColoreForzatoV2 = el('campoModModelloColore').value;
+    aggiornaStatoColoreModelloV2();
+  });
+  on('btnModModelloColoreAutomatico','click', () => {
+    modelloColoreForzatoV2 = null;
+    const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
+    el('campoModModelloColore').value = coloreAutomaticoPerModello(m);
+    aggiornaStatoColoreModelloV2();
+  });
   on('btnEliminaModello','click', eliminaModelloV2);
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
@@ -1295,6 +1305,25 @@ function applicaIndennitaRapidaV2(chiave){
 }
 
 // ===================== Nuovo/modifica turno personalizzato =====================
+let modelloColoreForzatoV2 = null;
+function coloreAutomaticoPerModello(m){
+  if(!m) return coloreCategoria('mattina');
+  if(m.riposo) return coloreCategoria('riposo');
+  const categorieProprie = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'];
+  if(categorieProprie.includes(m.id)) return coloreCategoria(m.id);
+  if(m.oraInizio && m.oraFine){
+    const cat = categoriaTurno(m.oraInizio, m.oraFine, '2026-01-01');
+    return coloreCategoria(cat);
+  }
+  return coloreCategoria('mattina');
+}
+function aggiornaStatoColoreModelloV2(){
+  const stato = el('modModelloColoreStato');
+  if(!stato) return;
+  stato.textContent = modelloColoreForzatoV2
+    ? 'Colore scelto a mano — resta questo, qualsiasi orario tu imposti.'
+    : 'Colore automatico, in base alla fascia oraria del turno.';
+}
 function apriModificaModelloV2(id){
   modelloInModificaV2 = id;
   const m = id ? (AppState.modelliTurno || []).find(x => x.id === id) : null;
@@ -1305,6 +1334,9 @@ function apriModificaModelloV2(id){
   el('campiModModelloOrario').hidden = isRiposo;
   el('campoModModelloInizio').value = m ? (m.oraInizio || '') : '';
   el('campoModModelloFine').value = m ? (m.oraFine || '') : '';
+  modelloColoreForzatoV2 = (m && m.colore) || null;
+  el('campoModModelloColore').value = modelloColoreForzatoV2 || coloreAutomaticoPerModello(m);
+  aggiornaStatoColoreModelloV2();
   // "Elimina" ha senso solo per un turno che già esiste, non per uno nuovo che stai ancora creando.
   el('btnEliminaModello').hidden = !m;
   el('overlayModificaModello').hidden = false;
@@ -1318,20 +1350,26 @@ function salvaModificaModelloV2(){
   const sigla = siglaScritta || nome.slice(0,2).toUpperCase();
   const esistente = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
   const isRiposo = !!(esistente && esistente.riposo); // il tipo "riposo" non si crea da qui, solo si rinomina se già esistente
+  let modelloSalvato;
   if(!isRiposo){
     const oraInizio = el('campoModModelloInizio').value, oraFine = el('campoModModelloFine').value;
     if(!oraInizio || !oraFine){ mostraToast('Inserisci ora di inizio e fine.', 'avviso'); return; }
-    if(esistente){ esistente.nome = nome; esistente.oraInizio = oraInizio; esistente.oraFine = oraFine; esistente.sigla = sigla; }
+    if(esistente){ esistente.nome = nome; esistente.oraInizio = oraInizio; esistente.oraFine = oraFine; esistente.sigla = sigla; modelloSalvato = esistente; }
     else {
-      AppState.modelliTurno.push({ id: 'personalizzato_' + Date.now(), nome, oraInizio, oraFine, sigla });
+      modelloSalvato = { id: 'personalizzato_' + Date.now(), nome, oraInizio, oraFine, sigla };
+      AppState.modelliTurno.push(modelloSalvato);
     }
   } else {
     esistente.nome = nome;
     esistente.sigla = sigla;
+    modelloSalvato = esistente;
   }
+  if(modelloColoreForzatoV2) modelloSalvato.colore = modelloColoreForzatoV2;
+  else delete modelloSalvato.colore;
   salvaModelliTurnoStorage();
   el('overlayModificaModello').hidden = true;
   renderListaModelliTurniV2();
+  renderCalendario();
   mostraToast(`"${nome}" salvato`, 'successo');
 }
 function eliminaModelloV2(){

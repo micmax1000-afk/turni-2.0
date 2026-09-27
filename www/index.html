@@ -99,6 +99,16 @@
         <div class="modale-corpo">
           <label class="campo-modale">Nome<input type="text" id="campoModModelloNome" placeholder="es. Turno spezzato"></label>
           <label class="campo-modale">Sigla (mostrata sul calendario quando il nome è lungo)<input type="text" id="campoModModelloSigla" placeholder="es. SE" maxlength="4" style="text-transform:uppercase;"></label>
+          <div class="campo-modale">
+            <span>Colore sul calendario</span>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <label class="swatch-colore-libero" title="Scegli un colore">
+                <input type="color" id="campoModModelloColore">
+              </label>
+              <button type="button" class="btn-secondario" id="btnModModelloColoreAutomatico" style="padding:7px 11px;font-size:.78rem;">Usa colore automatico</button>
+            </div>
+            <p class="sotto-titolo" id="modModelloColoreStato" style="margin:6px 0 0;font-size:.72rem;"></p>
+          </div>
           <div id="campiModModelloOrario">
             <label class="campo-modale">Ora inizio<input type="time" id="campoModModelloInizio"></label>
             <label class="campo-modale">Ora fine<input type="time" id="campoModModelloFine"></label>

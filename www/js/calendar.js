@@ -555,7 +555,9 @@ function renderCalendario(){
     // la cascata a mano) — uno stile scritto in riga qui ha sempre l'ultima parola, senza
     // eccezioni, e risolve il problema alla radice invece di rincorrere l'ennesima regola CSS
     // dimenticata da qualche versione precedente.
-    if(categoria) cella.style.background = coloreCategoria(categoria);
+    const modelloColoreCustom = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+    if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
+    else if(categoria) cella.style.background = coloreCategoria(categoria);
 
     if(t && t.generatoAutomaticamente) classi += ' auto-generato';
     if(iso === isoOggi) classi += ' oggi';
