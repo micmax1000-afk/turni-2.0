@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V128 (v2.45.0 — colore personalizzabile per ogni turno) */
+/* Turni & Accessorio PS — Service Worker V130 (v2.45.2 — il quadratino del colore turno ora mostra il colore scelto) */
 'use strict';
-const CACHE='turni-ps-v128';
+const CACHE='turni-ps-v130';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

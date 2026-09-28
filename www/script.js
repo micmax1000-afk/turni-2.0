@@ -804,12 +804,14 @@ function inizializza(){
   on('btnSalvaModello','click', salvaModificaModelloV2);
   el('campoModModelloColore').addEventListener('input', () => {
     modelloColoreForzatoV2 = el('campoModModelloColore').value;
+    dipingiSwatchModelloV2();
     aggiornaStatoColoreModelloV2();
   });
   on('btnModModelloColoreAutomatico','click', () => {
     modelloColoreForzatoV2 = null;
     const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
     el('campoModModelloColore').value = coloreAutomaticoPerModello(m);
+    dipingiSwatchModelloV2();
     aggiornaStatoColoreModelloV2();
   });
   on('btnEliminaModello','click', eliminaModelloV2);
@@ -1317,6 +1319,12 @@ function coloreAutomaticoPerModello(m){
   }
   return coloreCategoria('mattina');
 }
+// Il quadratino viene dipinto direttamente col colore scelto, invece di affidarsi solo a come la
+// WebView disegna il campo colore nativo: così mostra sempre il colore vero, in ogni caso.
+function dipingiSwatchModelloV2(){
+  const campo = el('campoModModelloColore');
+  if(campo && campo.parentElement) campo.parentElement.style.background = campo.value;
+}
 function aggiornaStatoColoreModelloV2(){
   const stato = el('modModelloColoreStato');
   if(!stato) return;
@@ -1336,6 +1344,7 @@ function apriModificaModelloV2(id){
   el('campoModModelloFine').value = m ? (m.oraFine || '') : '';
   modelloColoreForzatoV2 = (m && m.colore) || null;
   el('campoModModelloColore').value = modelloColoreForzatoV2 || coloreAutomaticoPerModello(m);
+  dipingiSwatchModelloV2();
   aggiornaStatoColoreModelloV2();
   // "Elimina" ha senso solo per un turno che già esiste, non per uno nuovo che stai ancora creando.
   el('btnEliminaModello').hidden = !m;

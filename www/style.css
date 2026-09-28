@@ -349,17 +349,6 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .riga-colore-categoria:last-child{ margin-bottom:0; }
 .riga-colore-categoria .etichetta-categoria{ font-weight:600; font-size:0.85rem; margin-bottom:5px; display:block; }
 .griglia-swatch{ display:flex; flex-wrap:wrap; gap:6px; }
-.swatch-colore-libero{
-  width:36px; height:36px; border-radius:50%; border:2px solid var(--bordo); cursor:pointer;
-  overflow:hidden; display:inline-block; position:relative; flex-shrink:0;
-  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
-  transition: transform 0.1s ease, border-color 0.1s ease;
-}
-.swatch-colore-libero:hover{ transform: scale(1.1); }
-.swatch-colore-libero input[type="color"]{
-  position:absolute; top:-6px; left:-6px; width:48px; height:48px; border:none; padding:0;
-  cursor:pointer; opacity:0;
-}
 
 
 /* =========================================================
@@ -968,8 +957,7 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .stato-connessione-v23{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid var(--bordo);border-radius:999px;background:var(--carta);font:600 .58rem/1 IBM Plex Sans,sans-serif;color:var(--testo-tenue);white-space:nowrap}
 .stato-connessione-dot{width:7px;height:7px;border-radius:50%;background:#888;box-shadow:0 0 0 2px rgba(0,0,0,.04)}
 .stato-connessione-v23.online .stato-connessione-dot{background:#2f8f55}.stato-connessione-v23.offline .stato-connessione-dot{background:#b36b18}
-.pagina-offline-v23{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:rgba(10,16,30,.45);opacity:0;transition:opacity .18s ease}.pagina-offline-v23[hidden]{display:none}.pagina-offline-v23.visibile{opacity:1}.pagina-offline-card-v23{width:min(390px,100%);padding:25px;border:1px solid var(--bordo);border-radius:24px;background:var(--carta);box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center}.offline-icon-v23{width:52px;height:52px;margin:auto auto 12px;border-radius:16px;display:grid;place-items:center;background:var(--sfondo);font-size:1.7rem}.pagina-offline-card-v23 h2{margin:0 0 7px}.pagina-offline-card-v23 p{margin:0 0 18px;color:var(--testo-tenue);font-size:.78rem;line-height:1.5}
-@media(max-width:600px){.stato-connessione-v23{font-size:.52rem;padding:4px 6px}.app-header-actions{gap:4px}.pagina-offline-card-v23{padding:22px}}
+@media(max-width:600px){.stato-connessione-v23{font-size:.52rem;padding:4px 6px}.app-header-actions{gap:4px}}
 /* V26 — Sicurezza */
 
 /* V27 — diagnostica */
@@ -1130,6 +1118,7 @@ h3{ font-family: var(--font-display); font-weight:600; }
 }
 .swatch-colore-libero{
   display:inline-flex;
+  flex-shrink:0;
   width:48px;height:48px;
   border-radius:12px;
   border:1px solid var(--bordo);
@@ -1369,13 +1358,6 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .stato-connessione-v23.online .stato-connessione-dot{background:#2f9e5c}
 .stato-connessione-v23.offline{border-color:#e5c477;color:#8a5a00}
 .stato-connessione-v23.offline .stato-connessione-dot{background:#e0a53a}
-.pagina-offline-v23{position:fixed;left:0;right:0;bottom:12px;display:flex;justify-content:center;padding:0 12px;z-index:60;pointer-events:none;opacity:0;transition:opacity .18s ease}
-.pagina-offline-v23[hidden]{display:none!important}
-.pagina-offline-v23.visibile{opacity:1}
-.pagina-offline-v23-box{pointer-events:auto;display:flex;align-items:center;gap:10px;max-width:420px;padding:11px 14px;border-radius:14px;border:1px solid #e5c477;background:var(--carta);box-shadow:0 6px 18px rgba(20,30,50,.12)}
-.pagina-offline-v23-box h2{margin:0;font-size:.8rem}
-.pagina-offline-v23-box p{margin:2px 0 0;font-size:.68rem;line-height:1.35;color:var(--testo-tenue)}
-.pagina-offline-v23-icona{font-size:1.3rem;flex-shrink:0}
 
 /* V47 — Prossimo turno */
 .prossimo-turno-widget{margin:0 0 10px;padding:10px 13px;border:1px solid var(--bordo,#d9dee8);border-radius:15px;background:linear-gradient(135deg,var(--sfondo-secondario,#f4f6fa),var(--sfondo-card,#fff))}
