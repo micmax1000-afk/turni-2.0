@@ -1,93 +1,80 @@
 # App Android con Capacitor + GitHub Actions
 
-Questa guida sostituisce `ANDROID-BUILD.md` (quello era per Bubblewrap/TWA — un metodo diverso,
-che avvolge solo il sito senza dare accesso alle funzioni native del telefono). Capacitor crea
-un'app Android vera, con accesso reale a cose come i promemoria affidabili — il motivo per cui
-siamo passati a questo metodo.
+## ⚠️ Ottobre 2026 — corretto un problema sul numero di build
 
-**Non hai ancora pubblicato nulla su Play Console per questo progetto**, quindi qui sotto uso una
-chiave di firma nuova, generata apposta — nessun rischio di conflitto con qualcosa di già online.
+Ogni AAB generato finora aveva lo stesso identico `versionCode` (1), un valore rimasto scritto a
+mano nel file `android/app/build.gradle` fin dalla primissima configurazione del progetto, mai
+aggiornato nonostante il numero di versione dell'app (`manifest.json`) sia cambiato decine di
+volte. Play Console rifiuta qualsiasi caricamento con lo stesso `versionCode` (o uno più basso) di
+uno già presente — per questo il tentativo di caricare un AAB più recente su un canale che ne
+aveva già uno veniva respinto.
+
+**Corretto**: ora `versionCode` viene calcolato da solo, leggendo la versione direttamente da
+`www/manifest.json` (es. `2.45.2` → `20000 + 4500 + 2` = `24502`) — niente più da aggiornare a
+mano, e ogni nuova build avrà sempre un numero più alto della precedente, automaticamente.
 
 ## ⚠️ La chiave di firma — leggi questo per primo
 
 Il file `chiavi/turni-release.keystore` (nella cartella a parte, NON dentro il progetto da
-caricare su GitHub) è **permanente**: ogni futuro aggiornamento dell'app dovrà essere firmato con
-questa stessa identica chiave. Se la perdi, non potrai più pubblicare aggiornamenti alla stessa
-app — dovresti ripartire da un'app nuova su Play Store, perdendo recensioni e installazioni.
+caricare su GitHub) è **permanente**: ogni futuro aggiornamento dell'app deve essere firmato con
+questa stessa identica chiave, altrimenti Play Console rifiuta l'aggiornamento trattandolo come
+un'app estranea. **Questa chiave esiste già nei Secrets del tuo repository GitHub** — se hai
+seguito la guida la prima volta, non devi rifare nulla su questo fronte; serve solo se un giorno
+dovessi ricostruire il repository da zero.
 
-**Salvala subito in almeno due posti sicuri e diversi** (un password manager + una chiavetta USB,
-o due cloud diversi) — non fidarti solo di GitHub. La password è nello stesso posto
-(`chiavi/password.txt`).
+**Conservala in almeno due posti sicuri e diversi**, oltre a GitHub — non fidarti solo di un
+singolo posto.
 
 ## Passo 1 — Carica il progetto su GitHub
 
-Scarica lo zip del progetto (contiene già `android/`, `www/`, `capacitor.config.json`,
-`.github/workflows/`) e caricalo nel repository `micmax1000-afk/turni` — sostituendo tutto il
-contenuto attuale con questo.
+Scarica lo zip del progetto e caricalo nel repository (`micmax1000-afk/turni-2.0`), sostituendo
+tutto il contenuto attuale con questo. Da terminale, più affidabile di un estrattore grafico
+(che a volte salta le cartelle nascoste come `.github`):
 
-## Passo 2 — Salva i quattro segreti su GitHub
+```bash
+cd ~/turni-2.0
+find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+unzip -o ~/Scaricati/Turni-Progetto-Capacitor.zip -d .
+git add -A
+git commit -m "Aggiornamento"
+git push
+```
 
-Sul repository: **Settings → Secrets and variables → Actions → New repository secret**.
-Crea questi quattro segreti (nome esatto a sinistra, valore a destra):
+## Passo 2 — I quattro segreti (solo se li stai impostando per la prima volta)
+
+Settings → Secrets and variables → Actions → New repository secret:
 
 | Nome del secret | Valore |
 |---|---|
-| `ANDROID_KEYSTORE_BASE64` | Contenuto di `chiavi/turni-release.keystore.base64.txt` (tutto, è una riga sola) |
+| `ANDROID_KEYSTORE_BASE64` | Contenuto di `chiavi/turni-release.keystore.base64.txt` |
 | `ANDROID_KEYSTORE_PASSWORD` | Contenuto di `chiavi/password.txt` |
 | `ANDROID_KEY_ALIAS` | `turni-ps` |
-| `ANDROID_KEY_PASSWORD` | Lo stesso valore di `ANDROID_KEYSTORE_PASSWORD` (la chiave usa la stessa password del keystore) |
+| `ANDROID_KEY_PASSWORD` | Lo stesso valore di `ANDROID_KEYSTORE_PASSWORD` |
 
-## Passo 3 — Attiva GitHub Pages dalla scheda Actions
+Se li hai già impostati in precedenza, **non toccarli** — restano validi, non c'è nulla da
+rifare qui.
 
-Repository → **Settings → Pages** → in "Source" scegli **GitHub Actions** (non più "Deploy from
-a branch" se era impostato così prima).
+## Passo 3 — GitHub Pages da Actions (solo se non già fatto)
 
-## Passo 4 — Prova il workflow
+Settings → Pages → Source → **GitHub Actions**.
 
-Scheda **Actions** del repository → workflow **"Pubblica sito e genera pacchetto Android"** →
-**Run workflow** → lascia la casella "Genera anche il pacchetto Android" spuntata → **Run
-workflow**.
+## Passo 4 — Fai partire il workflow
 
-Da qui in avanti, **ogni volta che carichi modifiche sul branch main**, il sito si pubblica da
-solo su GitHub Pages, e il pacchetto Android si rigenera insieme (a meno che tu non tolga la
-spunta quando lo avvii a mano).
+Scheda Actions → "Pubblica sito e genera pacchetto Android" → **Run workflow**.
 
 ## Passo 5 — Scarica il pacchetto per Play Console
 
-Al termine dell'esecuzione (qualche minuto), apri quella esecuzione del workflow → in fondo alla
-pagina, sezione **Artifacts** → scarica `pacchetto-android-turni-ps`. Dentro trovi:
-- Il file **.aab** — questo carichi su Play Console
-- Il file **.apk** — questo installi/provi direttamente sul telefono (sideload), senza passare da Play Console
-
-## Passo 6 — L'impronta SHA-256, se ti serve ancora `assetlinks.json`
-
-Con Capacitor questo file non è più necessario (era specifico di Bubblewrap/TWA) — l'app nativa
-non ne ha bisogno. Se un domani lo tenessi comunque per qualche motivo, l'impronta è stampata nei
-log del workflow, nello step "Mostra l'impronta SHA-256...".
+A fine esecuzione, apri quella run → **Artifacts** → scarica `pacchetto-android-turni-ps`. Dentro
+trovi sia il `.aab` (per Play Console) sia l'`.apk` (per installarlo a mano sul telefono).
 
 ## Il prodotto in-app per il Backup Drive (1,99€)
 
-Il codice usa già il modulo giusto per Capacitor (Google Play Billing diretto). Perché funzioni
-davvero, su Play Console devi creare un **prodotto in-app** con **esattamente** questo ID
-(deve corrispondere carattere per carattere, altrimenti l'app non lo troverà):
+Su Play Console serve un **prodotto in-app** con **esattamente** questo ID:
 
 ```
 backup_drive_automatico
 ```
 
-Repository app su Play Console → **Monetizzazione** → **Prodotti** → **Prodotti in-app** →
-**Crea prodotto** → incolla l'ID qui sopra → imposta il prezzo (1,99€) → **Attiva**. Serve anche
-un account di pagamento commerciante collegato, se non l'hai già (Play Console te lo segnala se
-manca).
-
-⚠️ Un acquisto in-app **si può testare solo nella versione caricata su Play Console** (almeno in
-"Test interni") — non funziona provando l'APK installato a mano (sideload), perché la verifica
-dell'acquisto passa dai server di Google Play legati a quella build specifica.
-
-## ⚠️ Se attivi "Play App Signing" al primo caricamento
-
-Play Console propone di default di far gestire a Google la firma finale di distribuzione
-("Play App Signing"). In quel caso continui comunque a firmare i tuoi caricamenti con **questa**
-chiave (quella che carichi tu resta la "chiave di upload") — Google la userà solo per verificare
-che sei tu, poi ri-firma con una sua chiave per gli utenti finali. Non cambia nulla nel workflow:
-continui a usare sempre questa stessa chiave per ogni nuovo caricamento.
+Monetizzazione → Prodotti → Prodotti in-app → Crea prodotto → incolla l'ID → prezzo 1,99€ →
+Attiva. Un acquisto in-app si può testare solo tramite una build caricata su Play Console (almeno
+"Test interni") — non funziona con l'APK installato a mano.

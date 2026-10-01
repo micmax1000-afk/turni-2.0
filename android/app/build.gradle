@@ -1,5 +1,18 @@
 apply plugin: 'com.android.application'
 
+// versionCode calcolato automaticamente dal numero di versione dell'app (major.minor.patch),
+// letto direttamente da www/manifest.json — la stessa identica fonte che viene già aggiornata
+// ad ogni rilascio — invece di un numero scritto a mano qui. Quest'ultimo era rimasto bloccato a
+// 1 fin dal primo giorno nonostante il "versionName" sia cambiato decine di volte: Play Console
+// rifiuta qualsiasi caricamento con lo stesso versionCode di uno già presente, quindi ogni AAB
+// fatto finora aveva lo stesso identico numero di build ed era perciò irricevibile dal secondo in poi.
+def manifestJson = new groovy.json.JsonSlurper().parse(file("${projectDir}/../../www/manifest.json"))
+def nomeVersione = manifestJson.version
+def partiVersione = nomeVersione.tokenize('.')
+def codiceVersioneCalcolato = (partiVersione[0].toInteger() * 10000) + (partiVersione[1].toInteger() * 100) + partiVersione[2].toInteger()
+def partiVersione = nomeVersione.tokenize('.')
+def codiceVersioneCalcolato = (partiVersione[0].toInteger() * 10000) + (partiVersione[1].toInteger() * 100) + partiVersione[2].toInteger()
+
 android {
     namespace = "turniaccessorio.ps"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +20,8 @@ android {
         applicationId "turniaccessorio.ps"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "2.36.0"
+        versionCode codiceVersioneCalcolato
+        versionName nomeVersione
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,8 +31,6 @@ android {
     }
     // La firma di rilascio legge le credenziali da variabili d'ambiente, mai scritte qui nel
     // codice: GitHub Actions le passa dai Secrets del repository al momento della build.
-    // In locale, senza queste variabili impostate, la build "release" userebbe la firma di
-    // debug automatica di Android Studio — comoda per provare, ma MAI da caricare su Play Console.
     signingConfigs {
         release {
             def ksPath = System.getenv("ANDROID_KEYSTORE_PATH")

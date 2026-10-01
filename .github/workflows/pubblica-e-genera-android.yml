@@ -1,8 +1,5 @@
 name: Pubblica sito e genera pacchetto Android
 
-# Si avvia da solo ad ogni push su main (pubblica sempre il sito su GitHub Pages), e genera
-# anche il pacchetto Android (AAB/APK) — a mano dalla scheda "Actions" (pulsante "Run workflow"),
-# oppure automaticamente ad ogni push se la casella qui sotto è spuntata.
 "on":
   push:
     branches: [main]
@@ -41,7 +38,6 @@ jobs:
 
   genera-android:
     runs-on: ubuntu-latest
-    # Sulla push automatica genera sempre; su avvio manuale, solo se la casella è spuntata.
     if: github.event_name == 'push' || github.event.inputs.genera_android == 'true'
     steps:
       - name: Scarica il codice
@@ -84,9 +80,6 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
-
-      - name: Mostra l'impronta SHA-256 della chiave (serve per assetlinks.json, se usato)
-        run: keytool -list -v -keystore "$RUNNER_TEMP/turni-release.keystore" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" | grep -A1 "SHA256:"
 
       - name: Carica AAB e APK come risultato di questa esecuzione
         uses: actions/upload-artifact@v4
