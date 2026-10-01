@@ -10,8 +10,6 @@ def manifestJson = new groovy.json.JsonSlurper().parse(file("${projectDir}/../..
 def nomeVersione = manifestJson.version
 def partiVersione = nomeVersione.tokenize('.')
 def codiceVersioneCalcolato = (partiVersione[0].toInteger() * 10000) + (partiVersione[1].toInteger() * 100) + partiVersione[2].toInteger()
-def partiVersione = nomeVersione.tokenize('.')
-def codiceVersioneCalcolato = (partiVersione[0].toInteger() * 10000) + (partiVersione[1].toInteger() * 100) + partiVersione[2].toInteger()
 
 android {
     namespace = "turniaccessorio.ps"
