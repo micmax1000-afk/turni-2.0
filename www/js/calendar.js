@@ -555,9 +555,11 @@ function renderCalendario(){
     // la cascata a mano) — uno stile scritto in riga qui ha sempre l'ultima parola, senza
     // eccezioni, e risolve il problema alla radice invece di rincorrere l'ennesima regola CSS
     // dimenticata da qualche versione precedente.
-    const modelloColoreCustom = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
-    if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
-    else if(categoria) cella.style.background = coloreCategoria(categoria);
+    if(calendarioAColoriAttivo()){
+      const modelloColoreCustom = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+      if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
+      else if(categoria) cella.style.background = coloreCategoria(categoria);
+    }
 
     if(t && t.generatoAutomaticamente) classi += ' auto-generato';
     if(iso === isoOggi) classi += ' oggi';
@@ -585,8 +587,14 @@ function renderCalendario(){
       : modelloUsato ? (modelloUsato.sigla || modelloUsato.nome.slice(0,2).toUpperCase())
       : categoria ? (CODICE_CATEGORIA[categoria] || INIZIALE_CATEGORIA[categoria] || categoria) : '—';
 
+    // A calendario senza colori, le 5 fasce di base usano una sigla a una sola lettera
+    // (S/P/M/N/R) invece del nome — più leggibile su uno sfondo bianco uniforme, dove il colore
+    // non fa più da scorciatoia visiva. Gli altri turni (Ufficio, personalizzati...) restano
+    // invariati, seguono comunque la loro sigla già impostata.
     let etichetta = categoria === 'assenza'
       ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
+      : (!calendarioAColoriAttivo() && categoria && SIGLA_SINGOLA_CATEGORIA[categoria])
+      ? SIGLA_SINGOLA_CATEGORIA[categoria]
       // Nomi brevi (Sera, Mattina, Ufficio...) entrano nella cella per intero; quelli da 9
       // caratteri in su ("Pomeriggio" compreso — esattamente al limite, prima gli sfuggiva) userebbero
       // troppo spazio, quindi per questi mostriamo la sigla — il nome completo resta comunque

@@ -105,6 +105,10 @@ h3{ font-family: var(--font-display); font-weight:600; }
 .giorno-cella.festivo .giorno-numero{ color: var(--rosso-bollo); }
 .giorno-cella.ha-turno .giorno-numero{ font-weight:700; }
 .giorno-cella.riposo-giorno .giorno-numero{ color: var(--testo-tenue); font-weight:400; }
+/* Calendario senza colori: anche il numero di Riposo torna nero come tutti gli altri, invece
+   del grigio più spento usato quando i colori sono accesi (lì serve a distinguerlo a colpo
+   d'occhio; su sfondo bianco uniforme basta già la sigla "R"). */
+body.calendario-senza-colori .giorno-cella.riposo-giorno .giorno-numero{ color: var(--testo) !important; }
 /* Barratura solo per assenze, non per riposi/turni */
 .giorno-cella.tipo-assenza .giorno-numero,
 .giorno-cella.ha-assenza .giorno-numero{

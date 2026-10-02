@@ -173,6 +173,18 @@
             <label class="campo-modale">Inizio<input type="time" id="campoEventoOraInizio"></label>
             <label class="campo-modale">Fine<input type="time" id="campoEventoOraFine"></label>
           </div>
+          <label class="campo-modale campo-riga" id="campoEventoRicordamiWrap"><input type="checkbox" id="campoEventoRicordami"> 🔔 Ricordami</label>
+          <label class="campo-modale" id="campoEventoAnticipoWrap" hidden>Quando avvisarmi
+            <select id="campoEventoAnticipo">
+              <option value="0">All'orario dell'evento</option>
+              <option value="5">5 minuti prima</option>
+              <option value="15">15 minuti prima</option>
+              <option value="30" selected>30 minuti prima</option>
+              <option value="60">1 ora prima</option>
+              <option value="120">2 ore prima</option>
+              <option value="1440">1 giorno prima</option>
+            </select>
+          </label>
           <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
           <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
         </div>
@@ -418,6 +430,11 @@
         </div>
         <button type="button" class="btn-icona" id="btnChiudiColoriTurni" aria-label="Chiudi tavolozza" title="Chiudi">✕</button>
       </div>
+      <label class="switch-avanzate-v17" style="margin-bottom:12px;">
+        <input type="checkbox" id="toggleCalendarioAColori">
+        <span class="switch-avanzate-v17-testo"><strong>🎨 Calendario a colori</strong><small>Disattivato: celle bianche, solo le sigle (S/P/M/N/R).</small></span>
+      </label>
+      <div id="corpoColoriTurniWrap">
       <div id="corpoColoriTurni"></div>
       <div class="pannello-colori-azioni">
         <button class="btn-secondario" id="btnEsportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Esporta colori (Drive)</button>
@@ -425,6 +442,7 @@
         <input type="file" id="campoImportaColoriTurni" accept="application/json,.json" hidden>
         <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">↺ Ripristina predefiniti</button>
         <button class="btn-primario" id="btnChiudiColoriTurni2" type="button">Fatto</button>
+      </div>
       </div>
     </div>
 

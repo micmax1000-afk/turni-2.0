@@ -20,6 +20,7 @@ window.TurniPSConfig = Object.freeze({
     CHIAVE_ASPETTATIVA_MIGRATA: 'simCedolino_aspettativaMigrata_v1',
     CHIAVE_DISCLAIMER_MOSTRATO: 'simCedolino_disclaimerMostrato_v1',
     CHIAVE_COLORI_TURNI: 'simCedolino_coloriTurni_v1',
+    CHIAVE_CALENDARIO_A_COLORI: 'simCedolino_calendarioAColori_v1',
     CHIAVE_REPORT_BLOCCHI: 'simCedolino_reportBlocchi_v1',
     CHIAVE_ULTIMO_MODELLO_USATO: 'simCedolino_ultimoModelloUsato_v1',
     CHIAVE_MODELLI_TURNO: 'simCedolino_modelliTurno_v1',

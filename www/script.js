@@ -54,7 +54,8 @@ const {
   CHIAVE_ULTIMO_BACKUP,
   CHIAVE_ASPETTATIVA_MIGRATA,
   CHIAVE_DISCLAIMER_MOSTRATO,
-  CHIAVE_COLORI_TURNI
+  CHIAVE_COLORI_TURNI,
+  CHIAVE_CALENDARIO_A_COLORI
 } = TurniPSConfig.keys;
 
 // Espone le chiavi in scope globale condiviso (moduli classic script)
@@ -62,7 +63,8 @@ Object.assign(window, {
   CHIAVE_ANAGRAFICA, CHIAVE_TURNI, CHIAVE_TABELLE, CHIAVE_CONGUAGLI,
   CHIAVE_STORICO, CHIAVE_ASSENZE, CHIAVE_SEQUENZA, CHIAVE_NOTE_GIORNI,
   CHIAVE_SEQUENZA_ANCORA, CHIAVE_SEQUENZA_ULTIMO_GIORNO, CHIAVE_ULTIMO_BACKUP,
-  CHIAVE_ASPETTATIVA_MIGRATA, CHIAVE_DISCLAIMER_MOSTRATO, CHIAVE_COLORI_TURNI
+  CHIAVE_ASPETTATIVA_MIGRATA, CHIAVE_DISCLAIMER_MOSTRATO, CHIAVE_COLORI_TURNI,
+  CHIAVE_CALENDARIO_A_COLORI
 });
 
 AppState.coloriTurni = caricaColoriTurni();
@@ -280,6 +282,10 @@ let tokenAccessoDriveCorrente = null;
    --------------------------------------------------------- */
 
 
+function aggiornaClasseCalendarioColori(){
+  document.body.classList.toggle('calendario-senza-colori', !calendarioAColoriAttivo());
+}
+
 // Numero di versione mostrato in Impostazioni — letto da manifest.json, la stessa fonte
 // aggiornata ad ogni rilascio, così sul telefono si vede sempre quella davvero installata,
 // senza doverla dedurre indirettamente da GitHub o dai file scaricati.
@@ -302,6 +308,7 @@ function inizializza(){
   if(typeof inizializzaOffline==='function') inizializzaOffline();
   inizializzaPlayBilling().then(() => renderSezioneBackupDrive());
   mostraVersioneApp();
+  aggiornaClasseCalendarioColori();
   // Piccolo ritardo perché la libreria Google (caricata con "defer") abbia il tempo di essere pronta
   setTimeout(() => {
     inizializzaGoogleIdentity();
@@ -598,8 +605,24 @@ function inizializza(){
     p.hidden = false;
     renderColoriTurni();
     aggiornaPulsantiColoriDrive();
+    el('toggleCalendarioAColori').checked = calendarioAColoriAttivo();
+    aggiornaAspettoBlocCoCloriPersonalizzati();
     p.scrollIntoView({behavior:'smooth', block:'nearest'});
   }
+  // Il blocco di personalizzazione resta visibile e utilizzabile anche a calendario spento
+  // (puoi comunque prepararlo in anticipo), solo visivamente attenuato per far capire che non
+  // sta avendo effetto finché non riaccendi l'interruttore sopra.
+  function aggiornaAspettoBlocCoCloriPersonalizzati(){
+    const wrap = el('corpoColoriTurniWrap');
+    if(wrap) wrap.style.opacity = calendarioAColoriAttivo() ? '1' : '.45';
+  }
+  el('toggleCalendarioAColori')?.addEventListener('change', () => {
+    const acceso = el('toggleCalendarioAColori').checked;
+    TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, acceso ? '1' : '0');
+    aggiornaClasseCalendarioColori();
+    aggiornaAspettoBlocCoCloriPersonalizzati();
+    renderCalendario();
+  });
   el('btnApriColoriTurni')?.addEventListener('click', () => {
     const p = el('pannelloColoriTurni');
     if(!p) return;
@@ -819,7 +842,15 @@ function inizializza(){
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
   on('btnSalvaEvento','click', salvaEventoV2);
   on('btnEliminaEvento','click', eliminaEventoV2);
-  on('campoEventoTuttoIlGiorno','change', () => { el('campiEventoOrario').hidden = el('campoEventoTuttoIlGiorno').checked; });
+  on('campoEventoTuttoIlGiorno','change', () => {
+    const tutt = el('campoEventoTuttoIlGiorno').checked;
+    el('campiEventoOrario').hidden = tutt;
+    el('campoEventoRicordamiWrap').hidden = tutt;
+    el('campoEventoAnticipoWrap').hidden = tutt || !el('campoEventoRicordami').checked;
+  });
+  on('campoEventoRicordami','change', () => {
+    el('campoEventoAnticipoWrap').hidden = el('campoEventoTuttoIlGiorno').checked || !el('campoEventoRicordami').checked;
+  });
   const listaEventiGiornoHost = el('listaEventiGiornoV2');
   if(listaEventiGiornoHost) listaEventiGiornoHost.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-evento-id]');
@@ -1419,9 +1450,53 @@ function apriModificaEventoV2(id){
   el('campoEventoOraFine').value = ev ? (ev.oraFine || '') : '';
   el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
   el('campoEventoNote').value = ev ? (ev.note || '') : '';
+  el('campoEventoRicordami').checked = !!(ev && ev.ricordami);
+  el('campoEventoAnticipo').value = ev && ev.anticipoMinuti != null ? String(ev.anticipoMinuti) : '30';
   el('campiEventoOrario').hidden = el('campoEventoTuttoIlGiorno').checked;
+  el('campoEventoRicordamiWrap').hidden = el('campoEventoTuttoIlGiorno').checked;
+  el('campoEventoAnticipoWrap').hidden = el('campoEventoTuttoIlGiorno').checked || !el('campoEventoRicordami').checked;
   el('btnEliminaEvento').hidden = !ev;
   el('overlayEvento').hidden = false;
+}
+
+// Le notifiche Android vogliono un numero intero (32 bit) come identificativo, non la stringa
+// "evento_1234567890123" che usiamo noi internamente — ne ricaviamo uno stabile dalle ultime
+// cifre, così lo stesso evento ottiene sempre lo stesso numero (utile per sostituire/annullare
+// il promemoria quando l'evento viene modificato o cancellato).
+function idNotificaDaEvento(idEvento){
+  const cifre = String(idEvento).replace(/\D/g, '').slice(-9);
+  return parseInt(cifre, 10) || 1;
+}
+
+async function schedulaPromemoriaEvento(iso, evento){
+  const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+  if(!plugin) return; // sul sito normale (o fuori dall'app) i promemoria non sono disponibili
+  const idNotifica = idNotificaDaEvento(evento.id);
+  try{ await plugin.cancel({ notifications: [{ id: idNotifica }] }); }catch(e){}
+  if(!evento.ricordami || evento.tuttoIlGiorno || !evento.oraInizio) return;
+  const quando = new Date(`${iso}T${evento.oraInizio}:00`);
+  quando.setMinutes(quando.getMinutes() - (evento.anticipoMinuti || 0));
+  if(quando.getTime() <= Date.now()){
+    mostraToast('L\'orario del promemoria è già passato: non verrà inviato.', 'avviso');
+    return;
+  }
+  try{
+    await plugin.schedule({ notifications: [{
+      id: idNotifica,
+      title: evento.titolo,
+      body: evento.luogo ? `${evento.oraInizio} — ${evento.luogo}` : `Alle ${evento.oraInizio}`,
+      schedule: { at: quando }
+    }]});
+  }catch(e){
+    console.warn('Promemoria non programmato:', e);
+    mostraToast('Non è stato possibile programmare il promemoria.', 'avviso');
+  }
+}
+
+async function annullaPromemoriaEvento(idEvento){
+  const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+  if(!plugin) return;
+  try{ await plugin.cancel({ notifications: [{ id: idNotificaDaEvento(idEvento) }] }); }catch(e){}
 }
 
 function salvaEventoV2(){
@@ -1435,17 +1510,22 @@ function salvaEventoV2(){
     oraInizio: tuttoIlGiorno ? '' : el('campoEventoOraInizio').value,
     oraFine: tuttoIlGiorno ? '' : el('campoEventoOraFine').value,
     luogo: el('campoEventoLuogo').value.trim(),
-    note: el('campoEventoNote').value.trim()
+    note: el('campoEventoNote').value.trim(),
+    ricordami: !tuttoIlGiorno && el('campoEventoRicordami').checked,
+    anticipoMinuti: parseInt(el('campoEventoAnticipo').value, 10) || 0
   };
   if(!AppState.eventiGiorno[giornoSelezionato]) AppState.eventiGiorno[giornoSelezionato] = [];
   const lista = AppState.eventiGiorno[giornoSelezionato];
+  let eventoSalvato;
   if(eventoInModificaV2){
     const esistente = lista.find(e => e.id === eventoInModificaV2.id);
-    if(esistente) Object.assign(esistente, dati);
+    if(esistente){ Object.assign(esistente, dati); eventoSalvato = esistente; }
   } else {
-    lista.push({ id: 'evento_' + Date.now(), ...dati });
+    eventoSalvato = { id: 'evento_' + Date.now(), ...dati };
+    lista.push(eventoSalvato);
   }
   salvaEventiGiornoStorage();
+  if(eventoSalvato) schedulaPromemoriaEvento(giornoSelezionato, eventoSalvato);
   el('overlayEvento').hidden = true;
   renderListaEventiGiornoV2();
   renderCalendario();
@@ -1454,6 +1534,7 @@ function salvaEventoV2(){
 
 function eliminaEventoV2(){
   if(!eventoInModificaV2) return;
+  annullaPromemoriaEvento(eventoInModificaV2.id);
   const lista = AppState.eventiGiorno[eventoInModificaV2.iso];
   if(lista){
     AppState.eventiGiorno[eventoInModificaV2.iso] = lista.filter(e => e.id !== eventoInModificaV2.id);

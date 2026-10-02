@@ -289,9 +289,27 @@ function aggiornaStatoDrive(stato, messaggio=''){
   renderSezioneBackupDrive();
 }
 
-function inizializzaGoogleIdentity(){
-  if(typeof google === 'undefined' || !google.accounts) return;
+// L'accesso a Google Drive usa due strade diverse a seconda di dove gira l'app, perché Google
+// Identity Services (il popup del sito normale) non funziona dentro una WebView Android — stesso
+// genere di problema già risolto per i pagamenti. Dentro l'app Capacitor usiamo invece il modulo
+// nativo di accesso Google, che apre la vera schermata di accesso di sistema.
+function pluginGoogleSignInNativo(){
+  return (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleSignIn) || null;
+}
+
+async function inizializzaGoogleIdentity(){
   if(!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('INSERISCI-QUI')) return;
+  const pluginNativo = pluginGoogleSignInNativo();
+  if(pluginNativo){
+    try{
+      await pluginNativo.initialize({ clientId: GOOGLE_CLIENT_ID, scopes: ['https://www.googleapis.com/auth/drive.file'] });
+      tokenClientGoogle = 'nativo'; // segnaposto: indica solo che l'inizializzazione è andata a buon fine
+    }catch(e){
+      console.warn('Google Sign-In nativo non disponibile:', e);
+    }
+    return;
+  }
+  if(typeof google === 'undefined' || !google.accounts) return;
   tokenClientGoogle = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/drive.file',
@@ -307,13 +325,30 @@ function inizializzaGoogleIdentity(){
   });
 }
 
-function collegaGoogleDrive(){
+async function collegaGoogleDrive(){
   if(!navigator.onLine){ aggiornaStatoDrive('offline', 'Sei offline. Collegati a Internet per usare Google Drive.'); return; }
   if(!tokenClientGoogle){
     aggiornaStatoDrive('configurazione', 'Il collegamento Google non è configurato o non è ancora pronto.');
     return;
   }
   aggiornaStatoDrive('connessione', 'Connessione a Google Drive in corso…');
+  const pluginNativo = pluginGoogleSignInNativo();
+  if(pluginNativo){
+    try{
+      const risultato = await pluginNativo.signIn();
+      if(risultato && risultato.accessToken){
+        tokenAccessoDriveCorrente = risultato.accessToken;
+        aggiornaStatoDrive('collegato');
+        eseguiBackupSuDrive();
+      } else {
+        aggiornaStatoDrive('errore', 'Google non ha restituito un token di accesso.');
+      }
+    }catch(e){
+      if(e && e.code === 'SIGN_IN_CANCELED') aggiornaStatoDrive('configurazione', 'Accesso annullato.');
+      else aggiornaStatoDrive('errore', 'Accesso a Google non riuscito. Riprova.');
+    }
+    return;
+  }
   tokenClientGoogle.requestAccessToken({ prompt: '' });
 }
 
@@ -457,12 +492,23 @@ async function ripristinaBackupDaDrive(){
   }
 }
 
-function controllaBackupDriveAutomatico(){
+async function controllaBackupDriveAutomatico(){
   if(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO)!=='1') return;
   if(!navigator.onLine || !tokenClientGoogle) return;
   const ultimo=TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP_DRIVE);
   const giorniPassati=ultimo?(Date.now()-new Date(ultimo).getTime())/86400000:Infinity;
   if(giorniPassati<GIORNI_TRA_BACKUP_DRIVE) return;
+  const pluginNativo = pluginGoogleSignInNativo();
+  if(pluginNativo){
+    try{
+      const risultato = await pluginNativo.signIn();
+      if(risultato && risultato.accessToken){
+        tokenAccessoDriveCorrente = risultato.accessToken;
+        eseguiBackupSuDrive();
+      }
+    }catch(e){ /* nessun account disponibile o accesso annullato: riprova al prossimo avvio */ }
+    return;
+  }
   tokenClientGoogle.requestAccessToken({prompt:''});
 }
 

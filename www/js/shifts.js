@@ -13,6 +13,14 @@ const CATEGORIE_COLORABILI = [
 ];
 
 
+// Spento di default: calendario bianco con sole sigle, finché non lo si accende esplicitamente
+// dalle Impostazioni. Chi vuole i colori può riaccenderlo in qualsiasi momento.
+function calendarioAColoriAttivo(){
+  return TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1';
+}
+
+const SIGLA_SINGOLA_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
+
 function coloreCategoria(chiave){
   const c = CATEGORIE_COLORABILI.find(x => x.chiave === chiave);
   const v = (AppState.coloriTurni && AppState.coloriTurni[chiave]) || (c && c.predefinito) || '#E8ECF0';
