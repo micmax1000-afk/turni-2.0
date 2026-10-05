@@ -34,4 +34,4 @@ window.TurniPSConfig = Object.freeze({
 Object.assign(window, window.TurniPSConfig.keys);
 
 // Google Drive: inserire qui il Client ID OAuth 2.0 dell'app web configurato in Google Cloud.
-window.GOOGLE_CLIENT_ID = 'INSERISCI-QUI-IL-TUO-CLIENT-ID.apps.googleusercontent.com';
+window.GOOGLE_CLIENT_ID = '791672006491-ag6sieism1imr26jau7nd63ltq8isn77.apps.googleusercontent.com';

@@ -559,6 +559,13 @@ function renderCalendario(){
       const modelloColoreCustom = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
       if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
       else if(categoria) cella.style.background = coloreCategoria(categoria);
+      else cella.style.background = '';
+    } else {
+      // Non basta "non scrivere nulla": le classi tipo-X hanno ancora la loro regola CSS di
+      // sfondo colorato (serve quando i colori sono accesi), quindi senza un bianco scritto qui
+      // in riga esplicitamente quella regola resterebbe comunque visibile. Il bianco deve vincere
+      // allo stesso modo con cui il colore vince quando è acceso.
+      cella.style.background = '#FFFFFF';
     }
 
     if(t && t.generatoAutomaticamente) classi += ' auto-generato';
@@ -657,7 +664,7 @@ function renderCalendario(){
     const oreLabel = ore > 0 ? `<span class="giorno-ore">${String(ore).replace('.',',')}h</span>` : '';
     const tipoLabel = categoria === 'assenza'
       ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
-      : categoria === 'riposo'
+      : categoria === 'riposo' && calendarioAColoriAttivo()
         ? 'Riposo'
         : etichetta || 'Libero';
 
