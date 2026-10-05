@@ -109,6 +109,7 @@ h3{ font-family: var(--font-display); font-weight:600; }
    del grigio più spento usato quando i colori sono accesi (lì serve a distinguerlo a colpo
    d'occhio; su sfondo bianco uniforme basta già la sigla "R"). */
 body.calendario-senza-colori .giorno-cella.riposo-giorno .giorno-numero{ color: var(--testo) !important; }
+
 /* Barratura solo per assenze, non per riposi/turni */
 .giorno-cella.tipo-assenza .giorno-numero,
 .giorno-cella.ha-assenza .giorno-numero{

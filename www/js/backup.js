@@ -188,6 +188,14 @@ async function inizializzaPlayBilling(){
   if(plugin){
     try{
       await plugin.init();
+      // Prima di poter comprare, il plugin ha bisogno di interrogare il catalogo di Google Play
+      // per questo prodotto (prezzo, nome, ecc.) — senza questo passaggio buy() fallisce sempre
+      // con "Product not registered", anche se l'app è installata correttamente dal Play Store.
+      try{
+        await plugin.getAvailableProducts({ inAppSkus: [PLAY_PRODUCT_ID_BACKUP_DRIVE], subsSkus: [] });
+      }catch(e){
+        console.warn('Interrogazione del catalogo prodotti non riuscita:', e);
+      }
       if(!listenerAcquistiCollegato){
         listenerAcquistiCollegato = true;
         await plugin.addListener('purchasesUpdated', (dati) => {

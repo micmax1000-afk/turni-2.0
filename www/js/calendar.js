@@ -598,9 +598,10 @@ function renderCalendario(){
     // (S/P/M/N/R) invece del nome — più leggibile su uno sfondo bianco uniforme, dove il colore
     // non fa più da scorciatoia visiva. Gli altri turni (Ufficio, personalizzati...) restano
     // invariati, seguono comunque la loro sigla già impostata.
+    const siglaSingolaUsata = categoria !== 'assenza' && categoria && SIGLA_SINGOLA_CATEGORIA[categoria];
     let etichetta = categoria === 'assenza'
       ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
-      : (!calendarioAColoriAttivo() && categoria && SIGLA_SINGOLA_CATEGORIA[categoria])
+      : siglaSingolaUsata
       ? SIGLA_SINGOLA_CATEGORIA[categoria]
       // Nomi brevi (Sera, Mattina, Ufficio...) entrano nella cella per intero; quelli da 9
       // caratteri in su ("Pomeriggio" compreso — esattamente al limite, prima gli sfuggiva) userebbero
@@ -664,9 +665,7 @@ function renderCalendario(){
     const oreLabel = ore > 0 ? `<span class="giorno-ore">${String(ore).replace('.',',')}h</span>` : '';
     const tipoLabel = categoria === 'assenza'
       ? siglaAssenza(voceAssenza ? voceAssenza.nome : 'Assenza')
-      : categoria === 'riposo' && calendarioAColoriAttivo()
-        ? 'Riposo'
-        : etichetta || 'Libero';
+      : etichetta || 'Libero';
 
     cella.className = classi;
     cella.dataset.data = iso;
@@ -680,9 +679,21 @@ function renderCalendario(){
         ${(AppState.eventiGiorno[iso] || []).length ? '<span class="giorno-pallino-evento" title="Hai un evento questo giorno" aria-hidden="true">●</span>' : ''}
         <span class="giorno-badge-list">${badgeVisibili.join('')}</span>
       </span>
-      <span class="giorno-turno-badge" style="background:transparent" title="${escapeHtml(nomeCategoria)}"><span class="giorno-turno-codice">${escapeHtml(codiceCategoria)}</span><span class="giorno-turno-nome">${escapeHtml(tipoLabel)}</span></span>
+      <span class="giorno-turno-badge" style="background:transparent" title="${escapeHtml(nomeCategoria)}"><span class="giorno-turno-codice">${escapeHtml(codiceCategoria)}</span><span class="giorno-turno-nome"${siglaSingolaUsata ? ' data-sigla-singola="1"' : ''}>${escapeHtml(tipoLabel)}</span></span>
       ${orario || oreLabel ? `<span class="giorno-meta">${orario}${oreLabel}</span>` : '<span class="giorno-meta giorno-meta-vuoto">—</span>'}
     `;
+
+    // Una regola CSS con !important altrove tiene questo testo fisso e piccolo (pensata per nomi
+    // come "Sera"/"Mattina") — per la sigla a una sola lettera lo ingrandiamo qui, scrivendo
+    // anche noi in !important dal JS: è l'unico modo di vincere con certezza su un'altra regola
+    // già !important, invece di sperare che la cascata CSS la scavalchi da sola.
+    if(siglaSingolaUsata){
+      const nodoSigla = cella.querySelector('[data-sigla-singola]');
+      if(nodoSigla){
+        nodoSigla.style.setProperty('font-size', '1.2rem', 'important');
+        nodoSigla.style.setProperty('font-weight', '900', 'important');
+      }
+    }
 
     cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
     griglia.appendChild(cella);
