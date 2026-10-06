@@ -1,5 +1,11 @@
 {
   "appId": "turniaccessorio.ps",
   "appName": "Turni & Accessorio PS",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_turni",
+      "iconColor": "#1B2440"
+    }
+  }
 }
