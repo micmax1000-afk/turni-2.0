@@ -1368,7 +1368,14 @@ function apriModificaModelloV2(id){
   const m = id ? (AppState.modelliTurno || []).find(x => x.id === id) : null;
   el('titoloModificaModello').textContent = m ? `Modifica "${m.nome}"` : 'Nuovo turno';
   el('campoModModelloNome').value = m ? m.nome : '';
-  el('campoModModelloSigla').value = m ? (m.sigla || '') : '';
+  // Mattino, Pomeriggio, Sera, Notte e Riposo hanno una lettera fissa sul calendario (M/P/S/N/R),
+  // qualunque nome tu dia loro: il campo resta visibile ma bloccato, così non sembra modificabile.
+  const lettereFisse = (typeof SIGLA_SINGOLA_CATEGORIA !== 'undefined') ? SIGLA_SINGOLA_CATEGORIA : {};
+  const lettera = m ? lettereFisse[m.id] : null;
+  const campoSigla = el('campoModModelloSigla');
+  campoSigla.disabled = !!lettera;
+  campoSigla.value = lettera ? lettera : (m ? String(m.sigla || '').slice(0, 2) : '');
+  el('testoEtichettaSigla').textContent = lettera ? 'Sigla (fissa)' : 'Sigla (2 lettere, per i turni che crei tu)';
   const isRiposo = !!(m && m.riposo);
   el('campiModModelloOrario').hidden = isRiposo;
   el('campoModModelloInizio').value = m ? (m.oraInizio || '') : '';
@@ -1386,9 +1393,11 @@ function salvaModificaModelloV2(){
   if(!nome){ mostraToast('Dai un nome al turno prima di salvare.', 'avviso'); return; }
   // Sigla: quella scritta a mano ha sempre la precedenza; solo se lasci il campo vuoto la
   // ricaviamo noi dalle prime due lettere del nome, come prima.
-  const siglaScritta = el('campoModModelloSigla').value.trim().toUpperCase();
-  const sigla = siglaScritta || nome.slice(0,2).toUpperCase();
+  const siglaScritta = el('campoModModelloSigla').value.trim().toUpperCase().slice(0, 2);
+  let sigla = siglaScritta || nome.slice(0,2).toUpperCase();
   const esistente = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
+  // Campo bloccato (turni di base): la sigla memorizzata resta com'è, non la sostituiamo con la lettera.
+  if(el('campoModModelloSigla').disabled && esistente && esistente.sigla) sigla = esistente.sigla;
   const isRiposo = !!(esistente && esistente.riposo); // il tipo "riposo" non si crea da qui, solo si rinomina se già esistente
   let modelloSalvato;
   if(!isRiposo){
@@ -1481,10 +1490,25 @@ async function schedulaPromemoriaEvento(iso, evento){
     return;
   }
   try{
+    // Il canale "predefinito" creato dal modulo ha la vibrazione spenta e importanza media, e su
+    // Android 8+ le impostazioni di un canale già esistente non si possono più cambiare dall'app.
+    // Ne creiamo uno nostro, con id nuovo: importanza alta (suona e compare in primo piano) e
+    // vibrazione accesa. Creare di nuovo un canale già esistente è innocuo.
+    try{
+      await plugin.createChannel({
+        id: 'promemoria_eventi',
+        name: 'Promemoria eventi',
+        description: 'Avvisi per gli eventi del calendario',
+        importance: 4,
+        visibility: 1,
+        vibration: true
+      });
+    }catch(e){ console.warn('Canale notifiche non creato:', e); }
     await plugin.schedule({ notifications: [{
       id: idNotifica,
       title: evento.titolo,
       body: evento.luogo ? `${evento.oraInizio} — ${evento.luogo}` : `Alle ${evento.oraInizio}`,
+      channelId: 'promemoria_eventi',
       schedule: { at: quando }
     }]});
   }catch(e){
