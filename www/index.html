@@ -185,6 +185,25 @@
               <option value="1440">1 giorno prima</option>
             </select>
           </label>
+          <div class="campo-modale" id="campoEventoAvvisoWrap" hidden>
+            <strong>⏰ Avviso evento</strong>
+            <label class="campo-modale">Durata
+              <select id="campoEventoAvvisoDurata">
+                <option value="0" selected>Nessuno (solo notifica normale)</option>
+                <option value="5">5 secondi</option>
+                <option value="10">10 secondi</option>
+                <option value="15">15 secondi</option>
+              </select>
+            </label>
+            <label class="campo-modale" id="campoEventoAvvisoModoWrap">Come avvisa
+              <select id="campoEventoAvvisoModo">
+                <option value="suono_vibra" selected>Suono e vibrazione</option>
+                <option value="vibra">Solo vibrazione</option>
+                <option value="suono">Solo suono</option>
+              </select>
+            </label>
+            <small>Suona/vibra anche in silenzioso, poi si ferma da sola. La notifica resta con i tasti Spegni e Posticipa 5 min.</small>
+          </div>
           <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
           <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
         </div>

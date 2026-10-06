@@ -314,15 +314,7 @@ function inizializza(){
     inizializzaGoogleIdentity();
     controllaBackupDriveAutomatico();
   }, 800);
-  if(Object.keys(AppState.turni).length > 0){
-    const dataUltimoBackup = TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP);
-    const giorniPassati = dataUltimoBackup ? Math.floor((new Date() - new Date(dataUltimoBackup)) / 86400000) : Infinity;
-    if(giorniPassati >= 30){
-      mostraAvviso(dataUltimoBackup
-        ? `Sono passati ${giorniPassati} giorni dall'ultimo backup. I tuoi dati vivono solo su questo dispositivo: se lo perdi o cambi telefono senza aver esportato un backup recente, li perdi. Vai su Backup Dati (in fondo a ogni pagina) per esportarne uno nuovo.`
-        : `Non hai mai fatto un backup dei tuoi dati. Vivono solo su questo dispositivo: vai su Backup Dati (in fondo a ogni pagina) per esportarne uno.`);
-    }
-  }
+  // Nessun avviso/popup sul backup (tolto su richiesta): si esporta quando si vuole da Backup Dati.
 
   // "Servizio svolto" in Azioni rapide: salvataggio indipendente (come la nota del giorno),
   // così si può compilare senza dover aprire il pannello completo di modifica turno.
@@ -847,10 +839,13 @@ function inizializza(){
     el('campiEventoOrario').hidden = tutt;
     el('campoEventoRicordamiWrap').hidden = tutt;
     el('campoEventoAnticipoWrap').hidden = tutt || !el('campoEventoRicordami').checked;
+    aggiornaCampiAvvisoEvento();
   });
   on('campoEventoRicordami','change', () => {
     el('campoEventoAnticipoWrap').hidden = el('campoEventoTuttoIlGiorno').checked || !el('campoEventoRicordami').checked;
+    aggiornaCampiAvvisoEvento();
   });
+  on('campoEventoAvvisoDurata','change', aggiornaCampiAvvisoEvento);
   const listaEventiGiornoHost = el('listaEventiGiornoV2');
   if(listaEventiGiornoHost) listaEventiGiornoHost.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-evento-id]');
@@ -1464,6 +1459,9 @@ function apriModificaEventoV2(id){
   el('campiEventoOrario').hidden = el('campoEventoTuttoIlGiorno').checked;
   el('campoEventoRicordamiWrap').hidden = el('campoEventoTuttoIlGiorno').checked;
   el('campoEventoAnticipoWrap').hidden = el('campoEventoTuttoIlGiorno').checked || !el('campoEventoRicordami').checked;
+  el('campoEventoAvvisoDurata').value = ev && ev.avvisoSecondi ? String(ev.avvisoSecondi) : '0';
+  el('campoEventoAvvisoModo').value = ev && ev.avvisoModo ? ev.avvisoModo : 'suono_vibra';
+  aggiornaCampiAvvisoEvento();
   el('btnEliminaEvento').hidden = !ev;
   el('overlayEvento').hidden = false;
 }
@@ -1477,11 +1475,29 @@ function idNotificaDaEvento(idEvento){
   return parseInt(cifre, 10) || 1;
 }
 
+
+// ── Avviso evento (suono/vibrazione di pochi secondi, anche in silenzioso) ──
+// Funziona solo nell'app Android: è un piccolo modulo nativo (AvvisoEventoPlugin).
+function pluginAvvisoEvento(){
+  const C = window.Capacitor;
+  if(!C || !(C.isNativePlatform && C.isNativePlatform())) return null;
+  if(C.Plugins && C.Plugins.AvvisoEvento) return C.Plugins.AvvisoEvento;
+  try{ return C.registerPlugin ? C.registerPlugin('AvvisoEvento') : null; }catch(e){ return null; }
+}
+function aggiornaCampiAvvisoEvento(){
+  const wrap = el('campoEventoAvvisoWrap'); if(!wrap) return;
+  const visibile = !!pluginAvvisoEvento() && !el('campoEventoTuttoIlGiorno').checked && el('campoEventoRicordami').checked;
+  wrap.hidden = !visibile;
+  el('campoEventoAvvisoModoWrap').hidden = el('campoEventoAvvisoDurata').value === '0';
+}
+
 async function schedulaPromemoriaEvento(iso, evento){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return; // sul sito normale (o fuori dall'app) i promemoria non sono disponibili
   const idNotifica = idNotificaDaEvento(evento.id);
   try{ await plugin.cancel({ notifications: [{ id: idNotifica }] }); }catch(e){}
+  const avviso = pluginAvvisoEvento();
+  if(avviso){ try{ await avviso.annulla({ id: idNotifica }); }catch(e){} }
   if(!evento.ricordami || evento.tuttoIlGiorno || !evento.oraInizio) return;
   const quando = new Date(`${iso}T${evento.oraInizio}:00`);
   quando.setMinutes(quando.getMinutes() - (evento.anticipoMinuti || 0));
@@ -1499,6 +1515,28 @@ async function schedulaPromemoriaEvento(iso, evento){
         return;
       }
     }catch(e){ console.warn('Permesso notifiche non verificabile:', e); }
+    // 1b) Avviso forte di pochi secondi (modulo nativo): al posto della notifica normale.
+    //     La notifica la pubblica il modulo stesso, con i tasti Spegni e Posticipa.
+    if(avviso && evento.avvisoSecondi > 0){
+      try{
+        // Android 12+: per l'orario preciso serve il permesso "Allarmi e promemoria" (chiesto una volta sola).
+        const chiave = 'turni_allarmi_esatti_chiesto';
+        const ex = await plugin.checkExactNotificationSetting();
+        if(ex && ex.exact_alarm === 'denied' && !localStorage.getItem(chiave)){
+          localStorage.setItem(chiave, '1');
+          await plugin.changeExactNotificationSetting();
+        }
+      }catch(e){}
+      await avviso.programma({
+        id: idNotifica,
+        titolo: evento.titolo,
+        testo: evento.luogo ? `${evento.oraInizio} — ${evento.luogo}` : `Alle ${evento.oraInizio}`,
+        quandoMs: quando.getTime(),
+        durataSec: evento.avvisoSecondi,
+        modo: evento.avvisoModo || 'suono_vibra'
+      });
+      return;
+    }
     // 2) Canale NUOVO (v2): su Android le impostazioni di un canale già creato (suono, vibrazione)
     //    non si possono più cambiare, e il vecchio canale poteva essere nato senza vibrazione.
     //    Importanza alta = suono + comparsa in primo piano; vibrazione accesa. Il vecchio si elimina.
@@ -1533,6 +1571,8 @@ async function annullaPromemoriaEvento(idEvento){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return;
   try{ await plugin.cancel({ notifications: [{ id: idNotificaDaEvento(idEvento) }] }); }catch(e){}
+  const avviso = pluginAvvisoEvento();
+  if(avviso){ try{ await avviso.annulla({ id: idNotificaDaEvento(idEvento) }); }catch(e){} }
 }
 
 function salvaEventoV2(){
@@ -1548,7 +1588,9 @@ function salvaEventoV2(){
     luogo: el('campoEventoLuogo').value.trim(),
     note: el('campoEventoNote').value.trim(),
     ricordami: !tuttoIlGiorno && el('campoEventoRicordami').checked,
-    anticipoMinuti: parseInt(el('campoEventoAnticipo').value, 10) || 0
+    anticipoMinuti: parseInt(el('campoEventoAnticipo').value, 10) || 0,
+    avvisoSecondi: parseInt(el('campoEventoAvvisoDurata').value, 10) || 0,
+    avvisoModo: el('campoEventoAvvisoModo').value || 'suono_vibra'
   };
   if(!AppState.eventiGiorno[giornoSelezionato]) AppState.eventiGiorno[giornoSelezionato] = [];
   const lista = AppState.eventiGiorno[giornoSelezionato];

@@ -147,9 +147,7 @@ function aggiornaAvvisiApp(){
       out.push({tipo:'info', testo:'Nessun turno registrato nel mese corrente. Se hai già la turnazione, puoi generarla o inserirla dal calendario.'});
     }
   }
-  const ultimo = TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP);
-  if(Object.keys(AppState.turni || {}).length && !ultimo) out.push({tipo:'avviso', testo:'Backup non ancora effettuato: esporta una copia dei tuoi dati.'});
-  else if(ultimo){ const giorni=Math.floor((oggi-new Date(ultimo))/86400000); if(giorni>=30) out.push({tipo:'avviso', testo:`Backup vecchio di ${giorni} giorni. È consigliato crearne uno nuovo.`}); }
+  // Banner sul backup tolto su richiesta.
 
   // La turnazione automatica sta per finire (o è già finita): proponiamo di continuarla con un
   // tocco solo, invece di dover andare in Turni → Genera automaticamente → Continua manualmente.
