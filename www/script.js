@@ -1490,26 +1490,38 @@ async function schedulaPromemoriaEvento(iso, evento){
     return;
   }
   try{
-    // Il canale "predefinito" creato dal modulo ha la vibrazione spenta e importanza media, e su
-    // Android 8+ le impostazioni di un canale già esistente non si possono più cambiare dall'app.
-    // Ne creiamo uno nostro, con id nuovo: importanza alta (suona e compare in primo piano) e
-    // vibrazione accesa. Creare di nuovo un canale già esistente è innocuo.
+    // 1) Permesso notifiche (Android 13+): lo chiediamo esplicitamente, così se è negato lo diciamo.
+    try{
+      let perm = await plugin.checkPermissions();
+      if(perm.display !== 'granted') perm = await plugin.requestPermissions();
+      if(perm.display !== 'granted'){
+        mostraToast('Notifiche disattivate per l\'app: attivale dalle impostazioni di Android.', 'avviso');
+        return;
+      }
+    }catch(e){ console.warn('Permesso notifiche non verificabile:', e); }
+    // 2) Canale NUOVO (v2): su Android le impostazioni di un canale già creato (suono, vibrazione)
+    //    non si possono più cambiare, e il vecchio canale poteva essere nato senza vibrazione.
+    //    Importanza alta = suono + comparsa in primo piano; vibrazione accesa. Il vecchio si elimina.
+    try{ await plugin.deleteChannel({ id: 'promemoria_eventi' }); }catch(e){}
     try{
       await plugin.createChannel({
-        id: 'promemoria_eventi',
+        id: 'promemoria_eventi_v2',
         name: 'Promemoria eventi',
         description: 'Avvisi per gli eventi del calendario',
-        importance: 4,
+        importance: 5,
         visibility: 1,
-        vibration: true
+        vibration: true,
+        lights: true
       });
     }catch(e){ console.warn('Canale notifiche non creato:', e); }
+    // 3) allowWhileIdle: senza, Android usa un allarme che NON sveglia il telefono (RTC invece di
+    //    RTC_WAKEUP) e con schermo spento / risparmio energetico la notifica compare in ritardo o mai.
     await plugin.schedule({ notifications: [{
       id: idNotifica,
       title: evento.titolo,
       body: evento.luogo ? `${evento.oraInizio} — ${evento.luogo}` : `Alle ${evento.oraInizio}`,
-      channelId: 'promemoria_eventi',
-      schedule: { at: quando }
+      channelId: 'promemoria_eventi_v2',
+      schedule: { at: quando, allowWhileIdle: true }
     }]});
   }catch(e){
     console.warn('Promemoria non programmato:', e);
