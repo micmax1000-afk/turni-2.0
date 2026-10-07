@@ -19,8 +19,14 @@ public class AvvisoEventoPlugin extends Plugin {
             d.put("id", call.getInt("id", 0));
             d.put("titolo", call.getString("titolo", ""));
             d.put("testo", call.getString("testo", ""));
-            Double quando = call.getDouble("quandoMs", 0.0);
-            d.put("quando", (long) (quando == null ? 0.0 : quando));
+            // L'orario è un numero grande (millisecondi): arriva come Long e PluginCall.getDouble()
+            // lo ignorerebbe restituendo 0, cioè "subito". Si legge quindi dal JSON in modo diretto.
+            long quando = call.getData().optLong("quandoMs", 0L);
+            if (quando <= 0) {
+                call.reject("Orario dell'avviso mancante");
+                return;
+            }
+            d.put("quando", quando);
             d.put("durata", call.getInt("durataSec", 10));
             d.put("modo", call.getString("modo", "suono_vibra"));
             AvvisoEventoGestore.programma(getContext(), d);

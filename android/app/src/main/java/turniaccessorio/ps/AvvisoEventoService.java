@@ -9,7 +9,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
+import android.media.AudioManager;
 import android.media.RingtoneManager;
+import android.media.ToneGenerator;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -32,6 +34,12 @@ public class AvvisoEventoService extends Service {
 
     private MediaPlayer player;
     private Vibrator vibratore;
+    private ToneGenerator toneBip;
+    private final Runnable ripetiBip = new Runnable() {
+        @Override public void run() {
+            try { if (toneBip != null) { toneBip.startTone(ToneGenerator.TONE_PROP_BEEP, 200); handler.postDelayed(this, 700); } } catch (Exception ignored) { }
+        }
+    };
     private PowerManager.WakeLock wakeLock;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private int idNotifica = 0;
@@ -54,8 +62,12 @@ public class AvvisoEventoService extends Service {
         }
         int durata = Math.max(3, Math.min(60, dati.optInt("durata", 10)));
         String modo = dati.optString("modo", "suono_vibra");
-        if (!"vibra".equals(modo)) avviaSuono();
-        if (!"suono".equals(modo)) avviaVibrazione();
+        if ("bip".equals(modo)) {
+            avviaBip();
+        } else {
+            if (!"vibra".equals(modo)) avviaSuono();
+            if (!"suono".equals(modo)) avviaVibrazione();
+        }
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         if (pm != null) {
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "turni:avviso");
@@ -106,6 +118,16 @@ public class AvvisoEventoService extends Service {
                 .addAction(0, "Posticipa 5 min", azione(AvvisoEventoGestore.AZIONE_POSTICIPA, 0))
                 .addAction(0, "Spegni", azione(AvvisoEventoGestore.AZIONE_SPEGNI, 1));
         return b.build();
+    }
+
+    /** Solo "bip" brevi e ripetuti (volume sveglia), senza suoneria né vibrazione. */
+    private void avviaBip() {
+        try {
+            toneBip = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+            handler.post(ripetiBip);
+        } catch (Exception e) {
+            toneBip = null;
+        }
     }
 
     private void avviaSuono() {
@@ -160,6 +182,8 @@ public class AvvisoEventoService extends Service {
     private void fermaTutto() {
         handler.removeCallbacksAndMessages(null);
         fermaSuono();
+        try { if (toneBip != null) toneBip.release(); } catch (Exception ignored) { }
+        toneBip = null;
         try { if (vibratore != null) vibratore.cancel(); } catch (Exception ignored) { }
         vibratore = null;
         try { if (wakeLock != null && wakeLock.isHeld()) wakeLock.release(); } catch (Exception ignored) { }
