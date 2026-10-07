@@ -387,54 +387,86 @@ async function trovaFileBackupDrive(){
       headers:{'Authorization':`Bearer ${tokenAccessoDriveCorrente}`}
     });
     if(!await rispostaDriveOk(risposta,'Ricerca del backup')){
-      return null;
+      return false; // errore (distinto da "il file non esiste", che è null)
     }
     const dati = await risposta.json();
     const file = Array.isArray(dati.files) ? dati.files[0] : null;
     if(file && file.id) TurniPSStorage.setItem(CHIAVE_ID_FILE_DRIVE,file.id);
     return file || null;
   }catch(e){
-    return null;
+    return false;
   }
 }
 
-async function eseguiBackupSuDrive(){
+async function eseguiBackupSuDrive(opz){
+  const automatico = !!(opz && opz.automatico);
+  const forza = !!(opz && opz.forza);
   if(!tokenAccessoDriveCorrente) return false;
   if(!navigator.onLine){ aggiornaStatoDrive('offline', 'Backup rimandato: dispositivo offline.'); return false; }
   const appVuota = !Object.keys(AppState.turni || {}).length && !Object.keys(AppState.eventiGiorno || {}).length
     && !(AppState.assenze || []).length && !Object.keys(AppState.storico || {}).length && !AppState.anagrafica;
   if(appVuota){
-    aggiornaStatoDrive('collegato', 'Nessun dato da salvare su questo telefono. Se hai già un backup su Drive, usa «Ripristina da Drive»: così non viene sovrascritto.');
+    // Telefono nuovo o app reinstallata: se su Drive c'è un backup lo si propone subito (come fanno
+    // le altre app) invece di salvare dati vuoti; in nessun caso si scrive sopra al backup.
+    const presente = await trovaFileBackupDrive();
+    if(presente && presente.id){
+      aggiornaStatoDrive('collegato', 'Trovato un backup su Google Drive.');
+      ripristinaBackupDaDrive({proposto:true});
+      return false;
+    }
+    if(presente === false) return false; // errore già mostrato
+    aggiornaStatoDrive('collegato', 'Nessun dato da salvare su questo telefono e nessun backup su Drive.');
     return false;
   }
   aggiornaStatoDrive('backup', 'Salvataggio del backup su Google Drive…');
   const dati=costruisciDatiBackup();
   const contenuto=JSON.stringify(dati, null, 2);
-  let idFileEsistente=TurniPSStorage.getItem(CHIAVE_ID_FILE_DRIVE);
   try{
-    if(!idFileEsistente){
-      const trovato = await trovaFileBackupDrive();
-      idFileEsistente = trovato && trovato.id ? trovato.id : null;
+    // Si guarda SEMPRE cosa c'è già su Drive prima di scrivere.
+    const trovato = await trovaFileBackupDrive();
+    if(trovato === false){
+      if(TurniPSStorage.getItem(CHIAVE_STATO_BACKUP_DRIVE) === 'backup') aggiornaStatoDrive('errore','Non riesco a controllare il backup su Google Drive. Riprova tra poco.');
+      return false;
+    }
+    const idFileEsistente = trovato && trovato.id ? trovato.id : null;
+    // Il file su Drive è diverso da quello che questo telefono ha scritto l'ultima volta
+    // (altro telefono, app reinstallata, modificato a mano): non si sovrascrive di nascosto.
+    if(idFileEsistente && !forza && trovato.modifiedTime !== TurniPSStorage.getItem(CHIAVE_MODIFICA_DRIVE)){
+      if(automatico){
+        aggiornaStatoDrive('collegato', 'Su Drive c\u2019è un backup diverso da quello di questo telefono: non è stato sovrascritto. Usa «Ripristina da Drive» per recuperarlo, oppure «Sincronizza ora» per sostituirlo con i dati di questo telefono.');
+      } else {
+        aggiornaStatoDrive('collegato', 'Su Drive c\u2019è già un backup: scegli se sostituirlo.');
+        mostraConferma(
+          'Su Google Drive c\u2019è già un backup che non risulta salvato da questo telefono (o è stato modificato altrove). Sostituirlo con i dati di questo telefono? Se hai cambiato telefono o reinstallato l\u2019app, scegli Annulla e usa «Ripristina da Drive».',
+          () => eseguiBackupSuDrive({forza:true}),
+          'Sostituire il backup su Drive?'
+        );
+      }
+      return false;
     }
     let risposta;
+    let risultato;
     if(idFileEsistente){
-      risposta=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(idFileEsistente)}?uploadType=media`,{
+      TurniPSStorage.setItem(CHIAVE_ID_FILE_DRIVE,idFileEsistente);
+      risposta=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(idFileEsistente)}?uploadType=media&fields=id,modifiedTime`,{
         method:'PATCH',
         headers:{'Authorization':`Bearer ${tokenAccessoDriveCorrente}`,'Content-Type':'application/json'},
         body:contenuto
       });
       if(!await rispostaDriveOk(risposta,'Aggiornamento del backup')) return false;
+      risultato=await risposta.json();
     } else {
       const metadati={name:'backup-turni-accessorio-ps.json',mimeType:'application/json'};
       const form=new FormData();
       form.append('metadata',new Blob([JSON.stringify(metadati)],{type:'application/json'}));
       form.append('file',new Blob([contenuto],{type:'application/json'}));
-      risposta=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Authorization':`Bearer ${tokenAccessoDriveCorrente}`},body:form});
+      risposta=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime',{method:'POST',headers:{'Authorization':`Bearer ${tokenAccessoDriveCorrente}`},body:form});
       if(!await rispostaDriveOk(risposta,'Creazione del backup')) return false;
-      const risultato=await risposta.json();
+      risultato=await risposta.json();
       if(!risultato.id){ aggiornaStatoDrive('errore','Google ha risposto senza un ID file. Il backup non è stato confermato.'); return false; }
       TurniPSStorage.setItem(CHIAVE_ID_FILE_DRIVE,risultato.id);
     }
+    if(risultato && risultato.modifiedTime) TurniPSStorage.setItem(CHIAVE_MODIFICA_DRIVE,risultato.modifiedTime);
     const adesso=new Date().toISOString();
     TurniPSStorage.setItem(CHIAVE_ULTIMO_BACKUP_DRIVE,adesso);
     aggiornaStatoDrive('ok','Backup salvato e confermato da Google Drive.');
@@ -446,8 +478,8 @@ async function eseguiBackupSuDrive(){
   }
 }
 
-
-async function ripristinaBackupDaDrive(){
+async function ripristinaBackupDaDrive(opz){
+  const proposto = !!(opz && opz.proposto === true); // chiamata dall'app (telefono nuovo) e non dal pulsante
   if(!tokenAccessoDriveCorrente){
     aggiornaStatoDrive('non_collegato','Collega prima Google Drive per ripristinare un backup.');
     return false;
@@ -460,11 +492,10 @@ async function ripristinaBackupDaDrive(){
   aggiornaStatoDrive('ripristino','Lettura del backup da Google Drive…');
 
   try{
-    let idFile = TurniPSStorage.getItem(CHIAVE_ID_FILE_DRIVE);
-    if(!idFile){
-      const trovato = await trovaFileBackupDrive();
-      idFile = trovato && trovato.id ? trovato.id : null;
-    }
+    const trovatoRip = await trovaFileBackupDrive();
+    if(trovatoRip === false) return false; // errore già mostrato
+    const idFile = trovatoRip && trovatoRip.id ? trovatoRip.id : null;
+    const modificaFile = trovatoRip ? trovatoRip.modifiedTime : null;
     if(!idFile){
       aggiornaStatoDrive('errore','Nessun backup Turni & Accessorio PS trovato su Google Drive.');
       return false;
@@ -494,10 +525,15 @@ async function ripristinaBackupDaDrive(){
     );
 
     mostraAnteprimaBackup(file,dati);
+    const quando = modificaFile ? new Date(modificaFile).toLocaleString('it-IT') : '';
     mostraConferma(
-      'Il ripristino da Google Drive sostituirà i dati attuali. Prima di continuare assicurati di avere un backup recente. Continuare?',
+      proposto
+        ? `Ho trovato un backup dei tuoi dati su Google Drive${quando ? ' (salvato il ' + quando + ')' : ''}. Vuoi ripristinarlo su questo telefono?`
+        : 'Il ripristino da Google Drive sostituirà i dati attuali. Prima di continuare assicurati di avere un backup recente. Continuare?',
       () => {
         importaBackup(file,dati);
+        // Da ora questo telefono è allineato a questo backup: i prossimi salvataggi sono consentiti.
+        if(modificaFile) TurniPSStorage.setItem(CHIAVE_MODIFICA_DRIVE, modificaFile);
         aggiornaStatoDrive('ok','Backup letto da Google Drive e pronto per il ripristino.');
       },
       'Ripristina da Drive'
@@ -521,7 +557,7 @@ async function controllaBackupDriveAutomatico(){
       const risultato = await pluginNativo.signIn();
       if(risultato && risultato.accessToken){
         tokenAccessoDriveCorrente = risultato.accessToken;
-        eseguiBackupSuDrive();
+        eseguiBackupSuDrive({automatico:true});
       }
     }catch(e){ /* nessun account disponibile o accesso annullato: riprova al prossimo avvio */ }
     return;
@@ -740,3 +776,6 @@ const CHIAVE_MESSAGGIO_BACKUP_DRIVE = 'simCedolino_messaggioBackupDrive_v1';
 const GIORNI_TRA_BACKUP_DRIVE = 3;
 
 const CHIAVE_ID_FILE_DRIVE = 'simCedolino_idFileDrive_v1';
+// Data di ultima modifica del file su Drive nel momento in cui QUESTO telefono l'ha scritto o ripristinato:
+// se su Drive risulta diversa, il file è stato cambiato altrove e non va sovrascritto di nascosto.
+const CHIAVE_MODIFICA_DRIVE = 'simCedolino_modificaDrive_v1';

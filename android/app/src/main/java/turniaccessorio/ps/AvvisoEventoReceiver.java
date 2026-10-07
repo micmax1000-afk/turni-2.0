@@ -8,6 +8,35 @@ import android.app.NotificationManager;
 import androidx.core.content.ContextCompat;
 
 public class AvvisoEventoReceiver extends BroadcastReceiver {
+    private static void pubblicaSoloNotifica(Context context, int id) {
+        try {
+            org.json.JSONObject d = AvvisoEventoGestore.leggi(context, id);
+            if (d == null) return;
+            NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                android.app.NotificationChannel c = new android.app.NotificationChannel(
+                        "avviso_evento_semplice", "Promemoria eventi", NotificationManager.IMPORTANCE_HIGH);
+                c.enableVibration(true);
+                nm.createNotificationChannel(c);
+            }
+            android.app.PendingIntent apri = android.app.PendingIntent.getActivity(context, id,
+                    new Intent(context, MainActivity.class),
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+            androidx.core.app.NotificationCompat.Builder b = new androidx.core.app.NotificationCompat.Builder(context, "avviso_evento_semplice")
+                    .setSmallIcon(R.drawable.ic_stat_turni)
+                    .setColor(0xFF1B2440)
+                    .setContentTitle(d.optString("titolo", "Evento"))
+                    .setContentText(d.optString("testo", ""))
+                    .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                    .setDefaults(android.app.Notification.DEFAULT_ALL)
+                    .setAutoCancel(true)
+                    .setContentIntent(apri);
+            nm.notify(id, b.build());
+        } catch (Exception ignored) {
+        }
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         String azione = intent.getAction();
@@ -19,7 +48,10 @@ public class AvvisoEventoReceiver extends BroadcastReceiver {
                 s.putExtra("id", id);
                 try {
                     ContextCompat.startForegroundService(context, s);
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    // Il sistema non ha permesso di avviare il servizio (limiti in background del
+                    // telefono): almeno la notifica deve comparire.
+                    pubblicaSoloNotifica(context, id);
                 }
                 break;
             }

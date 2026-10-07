@@ -61,9 +61,20 @@ final class AvvisoEventoGestore {
         PendingIntent pi = intentAllarme(c, id);
         boolean esatto = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms();
         try {
-            if (esatto) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, quando, pi);
-            else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, quando, pi);
-        } catch (SecurityException e) {
+            if (esatto) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, quando, pi);
+                return;
+            }
+        } catch (SecurityException ignored) {
+        }
+        // Senza il permesso "Allarmi e promemoria" (su Xiaomi spesso negato) un allarme normale può
+        // arrivare in forte ritardo: setAlarmClock è invece sempre puntuale, anche con il telefono in
+        // risparmio energetico, e non richiede alcun permesso.
+        try {
+            PendingIntent mostra = PendingIntent.getActivity(c, 0, new Intent(c, MainActivity.class),
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            am.setAlarmClock(new AlarmManager.AlarmClockInfo(quando, mostra), pi);
+        } catch (Exception e) {
             am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, quando, pi);
         }
     }
