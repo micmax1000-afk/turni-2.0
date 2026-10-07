@@ -90,6 +90,9 @@ function costruisciDatiBackup(){
     sequenzaTurni: AppState.sequenzaTurni,
     noteGiorni: AppState.noteGiorni,
     coloriTurni: AppState.coloriTurni || {},
+    eventiGiorno: AppState.eventiGiorno || {},
+    modelliTurno: Array.isArray(AppState.modelliTurno) ? AppState.modelliTurno : null,
+    calendarioAColori: (TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1'),
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
   };
 }
@@ -398,6 +401,12 @@ async function trovaFileBackupDrive(){
 async function eseguiBackupSuDrive(){
   if(!tokenAccessoDriveCorrente) return false;
   if(!navigator.onLine){ aggiornaStatoDrive('offline', 'Backup rimandato: dispositivo offline.'); return false; }
+  const appVuota = !Object.keys(AppState.turni || {}).length && !Object.keys(AppState.eventiGiorno || {}).length
+    && !(AppState.assenze || []).length && !Object.keys(AppState.storico || {}).length && !AppState.anagrafica;
+  if(appVuota){
+    aggiornaStatoDrive('collegato', 'Nessun dato da salvare su questo telefono. Se hai già un backup su Drive, usa «Ripristina da Drive»: così non viene sovrascritto.');
+    return false;
+  }
   aggiornaStatoDrive('backup', 'Salvataggio del backup su Google Drive…');
   const dati=costruisciDatiBackup();
   const contenuto=JSON.stringify(dati, null, 2);
@@ -414,7 +423,7 @@ async function eseguiBackupSuDrive(){
         headers:{'Authorization':`Bearer ${tokenAccessoDriveCorrente}`,'Content-Type':'application/json'},
         body:contenuto
       });
-      if(!await rispostaDriveOk(resposta,'Aggiornamento del backup')) return false;
+      if(!await rispostaDriveOk(risposta,'Aggiornamento del backup')) return false;
     } else {
       const metadati={name:'backup-turni-accessorio-ps.json',mimeType:'application/json'};
       const form=new FormData();
@@ -554,7 +563,8 @@ function analizzaBackup(dati){
     tabelle: dati.tabelle && typeof dati.tabelle === 'object' ? Object.keys(dati.tabelle).length : 0,
     conguagli: dati.conguagliPerMese && typeof dati.conguagliPerMese === 'object' ? Object.keys(dati.conguagliPerMese).length : 0,
     sequenza: Array.isArray(dati.sequenzaTurni) ? dati.sequenzaTurni.length : 0,
-    note: dati.noteGiorni && typeof dati.noteGiorni === 'object' ? Object.keys(dati.noteGiorni).length : 0
+    note: dati.noteGiorni && typeof dati.noteGiorni === 'object' ? Object.keys(dati.noteGiorni).length : 0,
+    eventi: dati.eventiGiorno && typeof dati.eventiGiorno === 'object' ? Object.keys(dati.eventiGiorno).length : 0
   };
   if(!Object.values(sezioni).some(v => v === true || v > 0)) throw new Error('Backup vuoto');
   return {version, data: dati.dataEsportazione || null, sezioni};
@@ -671,6 +681,24 @@ function importaBackup(file, datiGiaLetti){
       if(dati.sequenzaTurni) AppState.sequenzaTurni = dati.sequenzaTurni;
       if(dati.noteGiorni){ AppState.noteGiorni = dati.noteGiorni; salvaNoteGiorniStorage(); }
       if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
+      if(dati.eventiGiorno && typeof dati.eventiGiorno === 'object' && !Array.isArray(dati.eventiGiorno)){
+        AppState.eventiGiorno = dati.eventiGiorno;
+        salvaEventiGiornoStorage();
+        // Gli allarmi di Android non fanno parte del backup: si riprogrammano i promemoria futuri.
+        try{
+          Object.keys(AppState.eventiGiorno).forEach(iso => (AppState.eventiGiorno[iso] || []).forEach(ev => {
+            if(ev && ev.ricordami && typeof schedulaPromemoriaEvento === 'function') schedulaPromemoriaEvento(iso, ev);
+          }));
+        }catch(e){}
+      }
+      if(Array.isArray(dati.modelliTurno) && dati.modelliTurno.length){
+        AppState.modelliTurno = dati.modelliTurno;
+        salvaModelliTurnoStorage();
+      }
+      if(typeof dati.calendarioAColori === 'boolean'){
+        TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, dati.calendarioAColori ? '1' : '0');
+        if(typeof aggiornaClasseCalendarioColori === 'function') aggiornaClasseCalendarioColori();
+      }
       if(dati.coloriTurni && typeof dati.coloriTurni === 'object'){
         AppState.coloriTurni = Object.assign({}, dati.coloriTurni);
         salvaColoriTurniStorage();
