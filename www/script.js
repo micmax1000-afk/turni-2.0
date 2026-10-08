@@ -832,6 +832,7 @@ function inizializza(){
   on('btnEliminaModello','click', eliminaModelloV2);
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
+  on('btnChiudiScegliBackupDrive','click', () => { el('overlayScegliBackupDrive').hidden = true; });
   on('btnSalvaEvento','click', salvaEventoV2);
   on('btnEliminaEvento','click', eliminaEventoV2);
   on('campoEventoTuttoIlGiorno','change', () => {
