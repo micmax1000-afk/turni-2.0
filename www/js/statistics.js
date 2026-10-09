@@ -20,7 +20,11 @@ function statisticheAnno(anno){
     const rep=giorni.filter(t=>t.reperibilita).length;
     const ext=giorni.filter(t=>t.servizioEsterno).length;
     const op=giorni.filter(t=>t.ordinePubblico).length;
-    const voce={mese:m+1,ore,straordinario:stra,turni:lavorati,riposi:rip,assenze:ass,missioni,reperibilita:rep,servizioEsterno:ext,ordinePubblico:op,netto:Number(st.netto)||0,lordo:Number(st.totaleLordo)||0};
+    const voce={mese:m+1,ore,straordinario:stra,turni:lavorati,riposi:rip,assenze:ass,missioni,reperibilita:rep,servizioEsterno:ext,ordinePubblico:op,netto:0,lordo:0};
+    // Netto e lordo si calcolano da soli per ogni mese con turni inseriti (stesso calcolo del
+    // cedolino), senza dover premere "Genera cedolino"; senza turni resta il valore salvato, se c'è.
+    if(giorni.length && typeof generaCedolino==='function'){ const c=generaCedolino(anno,m); voce.netto=Number(c.netto)||0; voce.lordo=Number(c.comp.totaleLordo)||0; }
+    else { voce.netto=Number(st.netto)||0; voce.lordo=Number(st.totaleLordo)||0; }
     out.mesi.push(voce);
     ['ore','straordinario','turni','riposi','assenze','missioni','reperibilita','servizioEsterno','ordinePubblico','netto','lordo'].forEach(k=>out[k]+=voce[k]);
   }
@@ -39,7 +43,7 @@ function renderStatistiche(){
   // Un unico riepilogo annuale, invece di due pannelli separati con la stessa natura di dato
   // (entrambi totali sull'anno) — meno blocchi da scorrere, stessa informazione.
   const valoriCards=[s.ore,s.turni,s.straordinario,s.assenze,s.missioni,s.netto,s.riposi,s.reperibilita,s.servizioEsterno,s.ordinePubblico,s.lordo];
-  const cards=[['🕐',oreFmt(s.ore),'Ore lavorate'],['📅',s.turni,'Giornate lavorate'],['⏱️',oreFmt(s.straordinario),'Straordinario'],['🗂️',s.assenze,'Assenze'],['🚓',s.missioni,'Missioni'],['💶',euroFmt(s.netto),'Netto registrato'],['💤',s.riposi,'Riposi'],['🛰️',s.reperibilita,'Reperibilità'],['🚗',s.servizioEsterno,'Servizio esterno'],['🛡️',s.ordinePubblico,'Ordine pubblico'],['💶',euroFmt(s.lordo),'Lordo registrato']].filter((c, i) => i < 2 || Number(valoriCards[i]) > 0); // i riquadri a zero non si mostrano (ore e giornate sempre)
+  const cards=[['🕐',oreFmt(s.ore),'Ore lavorate'],['📅',s.turni,'Giornate lavorate'],['⏱️',oreFmt(s.straordinario),'Straordinario'],['🗂️',s.assenze,'Assenze'],['🚓',s.missioni,'Missioni'],['💶',euroFmt(s.netto),'Netto stimato'],['💤',s.riposi,'Riposi'],['🛰️',s.reperibilita,'Reperibilità'],['🚗',s.servizioEsterno,'Servizio esterno'],['🛡️',s.ordinePubblico,'Ordine pubblico'],['💶',euroFmt(s.lordo),'Lordo stimato']].filter((c, i) => i < 2 || Number(valoriCards[i]) > 0); // i riquadri a zero non si mostrano (ore e giornate sempre)
   // I 3 andamenti mese-per-mese (Ore/Straordinario/Netto) ripetevano gli stessi 12 mesi tre
   // volte una sotto l'altra, più una tabella che li ripeteva una quarta volta: un solo grafico
   // con un selettore per cambiare vista mostra la stessa informazione senza la ripetizione.

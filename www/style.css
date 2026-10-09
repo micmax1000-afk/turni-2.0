@@ -1801,3 +1801,33 @@ body.calendario-moderno .mod-indennita .giorno-badge{background:none!important;b
 .scelta-tema{display:grid;grid-template-columns:repeat(3,auto);gap:3px;background:var(--carta);border-radius:10px;padding:3px;margin-left:auto}
 .scelta-tema button{border:0;background:transparent;border-radius:8px;padding:6px 9px;font:600 .74rem var(--font-corpo);color:var(--testo-tenue);cursor:pointer}
 .scelta-tema button.attivo{background:var(--pannello);color:var(--testo);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+
+/* =========================================================
+   v2.61.0 — Simboli delle indennità, legenda, colore degli eventi
+   =========================================================*/
+.icona-indennita{width:1em;height:1em;flex:0 0 auto;display:block}
+.giorno-badge.badge-icona{background:rgba(30,33,41,.08);color:#1E2129;font-size:.68rem;padding:0 2px}
+body.calendario-moderno .mod-indennita .giorno-badge.badge-icona{font-size:.72rem;padding:0 1px}
+@media(min-width:420px){body.calendario-moderno .mod-indennita .giorno-badge.badge-icona{font-size:.8rem}}
+.cerchio-icona{display:inline-flex;align-items:center;justify-content:center;gap:3px;font-size:1.05rem;color:var(--inchiostro)}
+.cerchio-icona.attiva{background:#DCE7FF;color:#1D4FC4}
+.indennita-giorno-badge .icona-indennita{font-size:.95rem;margin-right:2px}
+/* Eventi: striscia colorata (colore scelto nel modulo dell'evento) */
+body.calendario-moderno .mod-evento{color:#fff;font-weight:700;border-radius:4px;padding:1px 3px;text-align:center}
+.giorno-evento-titolo{color:#fff}
+.scelta-colore-evento{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.scelta-colore-evento button{width:30px;height:30px;border-radius:50%;border:0;padding:0;cursor:pointer}
+.scelta-colore-evento button.attivo{box-shadow:0 0 0 3px var(--pannello,#fff),0 0 0 5px var(--testo,#1E2129)}
+/* Pulsante "i" accanto al mese e finestra dei simboli */
+.mese-e-simboli{display:flex;align-items:center;gap:6px;min-width:0}
+.btn-simboli{flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--bordo);background:transparent;color:var(--testo-tenue,#6B7280);font:italic 700 .8rem/1 Georgia,serif;cursor:pointer;padding:0}
+.lista-simboli{display:flex;flex-direction:column;margin-top:8px}
+.riga-simbolo{display:flex;align-items:center;gap:12px;padding:10px 2px;border-top:1px solid var(--bordo);font-size:.95rem;cursor:pointer}
+.riga-simbolo:first-child{border-top:0}
+.riga-simbolo .icona-indennita{font-size:1.2rem;color:var(--inchiostro)}
+.riga-simbolo span{flex:1}
+.interruttore{appearance:none;-webkit-appearance:none;width:42px;height:24px;border-radius:12px;background:#C9CDC4;position:relative;cursor:pointer;flex:0 0 auto;margin:0;transition:background .15s}
+.interruttore::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+.interruttore:checked{background:#1D5FE0}
+.interruttore:checked::after{left:21px}
+.cerchio-icona{min-width:56px}

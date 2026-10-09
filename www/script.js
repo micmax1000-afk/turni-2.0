@@ -908,6 +908,11 @@ function inizializza(){
   on('btnEliminaModello','click', eliminaModelloV2);
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
+  on('btnSimboliCalendario','click', apriSimboliCalendario);
+  on('settingsSimboli','click', apriSimboliCalendario);
+  on('btnChiudiSimboli','click', () => { el('overlaySimboli').hidden = true; });
+  on('overlaySimboli','click', e => { if(e.target.id === 'overlaySimboli') el('overlaySimboli').hidden = true; });
+  on('listaSimboli','change', e => { if(e.target.dataset.simbolo) cambiaSimboloVisibile(e.target.dataset.simbolo, e.target.checked); });
   on('btnChiudiScegliBackupDrive','click', () => { el('overlayScegliBackupDrive').hidden = true; });
   on('btnSalvaEvento','click', salvaEventoV2);
   on('btnEliminaEvento','click', eliminaEventoV2);
@@ -1430,11 +1435,11 @@ function renderListaModelliIndennitaV2(){
   if(!host) return;
   const t = giornoPerPopupV2 ? (AppState.turni[giornoPerPopupV2] || {}) : {};
   const righeIndennita = INDENNITA_RAPIDE_V2.map(x => `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-indennita="${x.chiave}">
-    <span class="cerchio-modello cerchio-modello-assenza">${x.sigla}${t[x.chiave] ? ' ✓' : ''}</span>
+    <span class="cerchio-modello cerchio-modello-assenza cerchio-icona${t[x.chiave] ? ' attiva' : ''}">${iconaIndennita(x.chiave)}${t[x.chiave] ? ' ✓' : ''}</span>
     <span class="riga-modello-testo"><strong>${x.nome}</strong></span>
   </button>`).join('');
   const rigaStraordinario = `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" id="btnIndennitaStraordinarioV2">
-    <span class="cerchio-modello cerchio-modello-assenza">⏱️</span>
+    <span class="cerchio-modello cerchio-modello-assenza cerchio-icona">${iconaIndennita('straordinario')}</span>
     <span class="riga-modello-testo"><strong>Straordinario</strong><small>ore, prima o dopo il turno</small></span>
   </button>`;
   host.innerHTML = rigaStraordinario + righeIndennita;
@@ -1636,7 +1641,7 @@ function rigaEventoHtml(ev, isoOrigine, etichettaGiorno){
   const dettaglio = [etichettaGiorno, quando, ev.luogo].filter(Boolean).join(' · ');
   const icone = (promemoriaDiEvento(ev).length ? '🔔' : '') + (ev.ripeti ? '🔁' : '');
   return `<button type="button" class="riga-evento-giorno-v2" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">
-      <span class="riga-evento-giorno-pallino" aria-hidden="true">●</span>
+      <span class="riga-evento-giorno-pallino" aria-hidden="true" style="color:${coloreEvento(ev)}">●</span>
       <span class="riga-evento-giorno-testo"><strong>${escapeHtml(ev.titolo || 'Senza titolo')}</strong><small>${escapeHtml(dettaglio)}</small></span>
       ${icone ? `<span class="riga-evento-giorno-icone" aria-hidden="true">${icone}</span>` : ''}
       <span class="riga-modello-freccia" aria-hidden="true">›</span>
@@ -1732,6 +1737,7 @@ function apriModificaEventoV2(id, isoOrigine){
   el('campoEventoOraInizio').value = ev ? (ev.oraInizio || '') : pre.inizio;
   el('campoEventoOraFine').value = ev ? (ev.oraFine || '') : pre.fine;
   el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
+  impostaColoreEventoForm(ev ? coloreEvento(ev) : COLORI_EVENTO[0]);
   el('campoEventoNote').value = ev ? (ev.note || '') : '';
   el('campoEventoOraPromemoria').value = ev && ev.oraPromemoria ? ev.oraPromemoria : '08:00';
   el('campoEventoRipeti').value = ev && ev.ripeti ? ev.ripeti : '';
@@ -2090,6 +2096,39 @@ async function annullaPromemoriaEvento(idEvento){
   await annullaNotificheEvento(idEvento, plugin, pluginAvvisoEvento());
 }
 
+// Colore dell'evento: pallini nel modulo, uno solo scelto.
+let coloreEventoScelto = COLORI_EVENTO[0];
+function impostaColoreEventoForm(colore){
+  coloreEventoScelto = colore;
+  const host = el('sceltaColoreEvento');
+  if(!host) return;
+  if(!host.children.length){
+    host.innerHTML = COLORI_EVENTO.map(c => `<button type="button" role="radio" data-colore-evento="${c}" style="background:${c}" aria-label="Colore"></button>`).join('');
+    host.addEventListener('click', e => { const b = e.target.closest('[data-colore-evento]'); if(b) impostaColoreEventoForm(b.dataset.coloreEvento); });
+  }
+  host.querySelectorAll('[data-colore-evento]').forEach(b => {
+    const scelto = b.dataset.coloreEvento === colore;
+    b.classList.toggle('attivo', scelto);
+    b.setAttribute('aria-checked', scelto ? 'true' : 'false');
+  });
+}
+
+// Legenda dei simboli e scelta di quali mostrare nelle caselle (pulsante "i" e Altro).
+function apriSimboliCalendario(){
+  const nascoste = indennitaNascoste();
+  el('listaSimboli').innerHTML = ELENCO_INDENNITA.map(x => `<label class="riga-simbolo">
+    ${iconaIndennita(x.chiave)}<span>${escapeHtml(x.nome)}</span>
+    <input type="checkbox" class="interruttore" data-simbolo="${x.chiave}" ${nascoste.includes(x.chiave) ? '' : 'checked'} aria-label="Mostra ${escapeHtml(x.nome)} nel calendario">
+  </label>`).join('');
+  el('overlaySimboli').hidden = false;
+}
+function cambiaSimboloVisibile(chiave, visibile){
+  const nascoste = indennitaNascoste().filter(k => k !== chiave);
+  if(!visibile) nascoste.push(chiave);
+  TurniPSStorage.setItem(CHIAVE_INDENNITA_NASCOSTE, JSON.stringify(nascoste));
+  renderCalendario();
+}
+
 function salvaEventoV2(){
   if(!giornoSelezionato) return;
   const titolo = el('campoEventoTitolo').value.trim();
@@ -2112,6 +2151,7 @@ function salvaEventoV2(){
     tuttoIlGiorno,
     oraInizio: tuttoIlGiorno ? '' : el('campoEventoOraInizio').value,
     oraFine: tuttoIlGiorno ? '' : el('campoEventoOraFine').value,
+    colore: coloreEventoScelto,
     luogo: el('campoEventoLuogo').value.trim(),
     note: el('campoEventoNote').value.trim(),
     promemoria,
@@ -2287,11 +2327,11 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   if(!boxIndennita) return;
   if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
   const pezzi = [];
-  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge" title="${escapeHtml(x.nome)}">${x.sigla}</span>`); });
+  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge">${iconaIndennita(x.chiave)}${escapeHtml(x.nome)}</span>`); });
   if(typeof classificaTurno === 'function' && typeof totaleStraordinario === 'function'){
     const c = classificaTurno(t);
     const oreStr = totaleStraordinario(c);
-    if(oreStr > 0) pezzi.push(`<span class="indennita-giorno-badge indennita-giorno-badge-str" title="Straordinario">⏱️ ${formatOreMinuti(oreStr)}</span>`);
+    if(oreStr > 0) pezzi.push(`<span class="indennita-giorno-badge indennita-giorno-badge-str">${iconaIndennita('straordinario')}Straordinario ${formatOreMinuti(oreStr)}</span>`);
   }
   if(!pezzi.length){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
   boxIndennita.hidden = false;

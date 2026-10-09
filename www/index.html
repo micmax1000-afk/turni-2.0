@@ -46,7 +46,10 @@
   <section class="scheda scheda-calendario scheda-calendario-v2">
     <div class="calendario-header calendario-header-v2">
       <button class="btn-freccia" id="btnMesePrec" type="button" aria-label="Mese precedente">‹</button>
-      <button class="etichetta-mese-btn" id="etichettaMese" type="button" title="Vai a un mese specifico">—</button>
+      <span class="mese-e-simboli">
+        <button class="etichetta-mese-btn" id="etichettaMese" type="button" title="Vai a un mese specifico">—</button>
+        <button class="btn-simboli" id="btnSimboliCalendario" type="button" aria-label="Simboli del calendario" title="Simboli del calendario">i</button>
+      </span>
       <button class="btn-freccia" id="btnMeseSucc" type="button" aria-label="Mese successivo">›</button>
     </div>
     <div class="calendario-giorni-settimana">
@@ -177,6 +180,7 @@
         <div class="modale-header"><h2 id="titoloModaleEvento">Nuovo evento</h2><button class="btn-icona" id="btnChiudiEvento" aria-label="Chiudi">✕</button></div>
         <div class="modale-corpo">
           <label class="campo-modale">Titolo<input type="text" id="campoEventoTitolo" placeholder="es. Visita medica, Palestra..."></label>
+          <div class="campo-modale">Colore<div class="scelta-colore-evento" id="sceltaColoreEvento" role="radiogroup" aria-label="Colore dell'evento"></div></div>
           <label class="campo-modale campo-riga"><input type="checkbox" id="campoEventoTuttoIlGiorno"> Tutto il giorno</label>
           <div id="campiEventoOrario" class="riga-straordinario-ore">
             <label class="campo-modale">Inizio<input type="time" id="campoEventoOraInizio"></label>
@@ -886,6 +890,7 @@
       <div class="lista-strumenti-turni">
         <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span>🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Indennità nel calendario<small>Simboli e quali mostrare</small></i><b>›</b></button>
         <div class="riga-strumento-turni riga-tema">
           <span>🌓</span><i>Tema<small id="descrizioneTema">Come il telefono</small></i>
           <div class="scelta-tema" role="group" aria-label="Tema">
@@ -929,6 +934,16 @@
   <div id="backupAnteprima" hidden></div>
 
 <!-- Cambio orario di un modello: aggiornare anche i giorni già nel calendario? -->
+<div class="overlay" id="overlaySimboli" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Simboli del calendario</h2><button class="btn-icona" id="btnChiudiSimboli" type="button" aria-label="Chiudi">✕</button></div>
+    <div class="modale-corpo">
+      <small class="sotto-titolo">Con l'interruttore spento il simbolo non compare nelle caselle, ma l'indennità viene sempre contata nei calcoli.</small>
+      <div class="lista-simboli" id="listaSimboli"></div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="overlayAggiornaTurni" hidden>
   <div class="modale">
     <div class="modale-header"><h2>Aggiornare il calendario?</h2></div>

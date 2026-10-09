@@ -95,6 +95,7 @@ function costruisciDatiBackup(){
     calendarioAColori: (TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1'),
     stileCalendario: TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) === 'moderno' ? 'moderno' : 'classico',
     tema: TurniPSStorage.getItem(CHIAVE_TEMA) || 'auto',
+    indennitaNascoste: TurniPSStorage.getItem(CHIAVE_INDENNITA_NASCOSTE) || null,
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
   };
 }
@@ -761,6 +762,7 @@ function importaBackup(file, datiGiaLetti){
       if(typeof dati.calendarioAColori === 'boolean'){
         TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, dati.calendarioAColori ? '1' : '0');
         if(dati.stileCalendario === 'moderno' || dati.stileCalendario === 'classico') TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, dati.stileCalendario);
+        if(typeof dati.indennitaNascoste === 'string'){ try{ if(Array.isArray(JSON.parse(dati.indennitaNascoste))) TurniPSStorage.setItem(CHIAVE_INDENNITA_NASCOSTE, dati.indennitaNascoste); }catch(e){} }
         if(['auto', 'chiaro', 'scuro'].includes(dati.tema)){ TurniPSStorage.setItem(CHIAVE_TEMA, dati.tema); if(typeof applicaTema === 'function') applicaTema(); }
         if(typeof aggiornaClasseCalendarioColori === 'function') aggiornaClasseCalendarioColori();
       }

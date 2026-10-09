@@ -148,18 +148,18 @@ for(const stile of ['classico', 'moderno']){
   if(stile === 'moderno'){
     ok('moderno: etichetta del 1/10 "Sera"', c.etichetta1 === 'Sera');
     const m = await p.evaluate(() => {
-      AppState.turni['2026-10-02'] = Object.assign({}, AppState.turni['2026-10-02'], { missione: true, durataMissioneOre: 6, reperibilita: true });
+      AppState.turni['2026-10-02'] = Object.assign({}, AppState.turni['2026-10-02'], { missione: true, durataMissioneOre: 6, reperibilita: true, servizioEsterno: true, buonoPasto: true });
       renderCalendario();
       const q = d => document.querySelector(`.giorno-cella[data-data="${d}"]`);
       return {
         orari: [...document.querySelectorAll('.mod-turno')].some(e => /\d{1,2}:\d{2}/.test(e.textContent)),
-        indennita: q('2026-10-02').querySelector('.mod-indennita')?.textContent || '',
+        indennita: [...q('2026-10-02').querySelectorAll('.mod-indennita [aria-label]')].map(b => b.getAttribute('aria-label')).join(','),
         senzaIndennita: !q('2026-10-03').querySelector('.mod-indennita'),
         badgeInAlto: !!document.querySelector('.giorno-cella .mod-badge')
       };
     });
     ok('moderno: nessun orario nelle etichette', !m.orari);
-    ok('moderno: indennità (◆ ★) nell\'etichetta al posto dell\'orario', m.indennita.includes('◆') && m.indennita.includes('★'), m.indennita);
+    ok('moderno: icone di missione e reperibilità; servizio esterno e buono pasto nascosti all\'inizio', m.indennita === 'Missione,Reperibilità', m.indennita);
     ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
   }
   ok(`${stile}: barra in basso con Calendario/Report/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Turni,Altro' && c.oggiIcona === '9');
@@ -170,6 +170,19 @@ for(const stile of ['classico', 'moderno']){
     ok('i messaggi a comparsa sono visibili sullo schermo', t);
     await p.click('.giorno-cella[data-data="2026-10-20"]');
     ok('toccando un giorno si apre il menu rapido', await p.evaluate(() => !document.getElementById('popupRapidoGiorno').hidden));
+    await p.evaluate(() => { document.getElementById('popupRapidoGiorno').hidden = true; });
+    await p.click('#btnSimboliCalendario');
+    ok('pulsante "i": si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));
+    await p.click('#listaSimboli [data-simbolo="servizioEsterno"]');
+    ok('acceso "Servizio esterno": compare nella casella', await p.evaluate(() => [...document.querySelectorAll('.giorno-cella[data-data="2026-10-02"] .mod-indennita [aria-label]')].some(b => b.getAttribute('aria-label') === 'Servizio esterno')));
+    await p.click('#btnChiudiSimboli');
+    await p.click('#tabAltro'); await p.click('#settingsSimboli');
+    ok('la stessa legenda si apre da Altro, con la scelta salvata', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelector('#listaSimboli [data-simbolo="servizioEsterno"]').checked && !document.querySelector('#listaSimboli [data-simbolo="buonoPasto"]').checked));
+    await p.click('#btnChiudiSimboli'); await p.click('#tabCalendario');
+    await p.evaluate(() => { giornoPerPopupV2 = '2026-10-02'; apriSelettoreModelliV2('indennita'); });
+    ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .cerchio-icona svg').length === 10 && document.querySelector('[data-indennita="missione"] .cerchio-icona').textContent.includes('✓')));
+    await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; giornoSelezionato = '2026-10-02'; renderCalendario(); });
+    ok('riquadro del giorno: icona e nome per esteso', await p.evaluate(() => /Missione/.test(document.getElementById('indennitaGiornoSelezionatoV2').innerText) && !!document.querySelector('.indennita-giorno-badge svg')));
   }
   ok(`${stile}: nessun errore JavaScript`, !errori.length, errori.join(' | '));
   await ctx.close();
@@ -183,11 +196,13 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
   await p.click('#btnNuovoEventoGiornoV2');
   ok('modulo evento aperto, riquadro "notifiche disattivate" nascosto', await p.evaluate(() => !document.getElementById('overlayEvento').hidden && !document.getElementById('avvisoPermessiEvento').offsetParent));
   await p.fill('#campoEventoTitolo', 'Palestra');
+  await p.click('#sceltaColoreEvento [data-colore-evento="#2E9E5B"]');
   await p.selectOption('#campoEventoRipeti', 'settimana');
   await p.click('#btnAggiungiPromemoria');
   await p.click('#btnSalvaEvento');
   const ev = await p.evaluate(() => AppState.eventiGiorno['2026-10-20'][0]);
   ok('evento salvato: ogni settimana, 2 promemoria diversi (10 e 30 minuti)', ev.ripeti === 'settimana' && ev.promemoria.map(x => x.min).join() === '10,30');
+  ok('colore dell\'evento salvato e usato nella casella', ev.colore === '#2E9E5B' && await p.evaluate(() => getComputedStyle(document.querySelector('.giorno-cella[data-data="2026-10-27"] .mod-evento')).backgroundColor === 'rgb(46, 158, 91)'));
   ok('compare anche il 27/10 e il 3/11', await p.evaluate(() => eventiDelGiorno('2026-10-27').length === 1 && eventiDelGiorno('2026-11-03').length === 1));
   await p.evaluate(() => { giornoSelezionato = '2026-10-27'; renderListaEventiGiornoV2(); });
   await p.locator('#listaEventiGiornoV2 [data-evento-id]').first().click();
@@ -246,6 +261,8 @@ sezione('Report');
   ok('riquadro blu: accredito del mese visualizzato (ottobre)', r.mese === 'Ottobre 2026' && /a ottobre/.test(r.hero) && r.hero.includes(r.atteso));
   ok('importi con il punto delle migliaia', /^\d\.\d{3},\d{2} €$/.test(r.atteso));
   ok('"Il mese": turni e riposi', r.tiles[0] === '24' && r.tiles[1] === '6');
+  const netti = await p.evaluate(() => ({ righe: [...document.querySelectorAll('[data-stat-corpo="netto"] .stat-v-row b')].map(b => b.innerText), set: euro(generaCedolino(2026, 8).netto), ott: euro(generaCedolino(2026, 9).netto), storico: Object.keys(AppState.storico || {}).length }));
+  ok('netto di ogni mese con turni calcolato da solo (senza Genera cedolino)', netti.storico === 0 && netti.righe[8] === netti.set && netti.righe[9] === netti.ott && netti.righe[7] === '—', netti.righe.join(' '));
   ok('statistiche: niente riquadri a zero', !r.cards.includes('Missioni') && r.cards.includes('Ore lavorate'));
   ok('prossimo turno e riepilogo mese tolti', await p.evaluate(() => !document.getElementById('prossimoTurnoWidget').offsetParent && !document.getElementById('riepilogoTurniV45').offsetParent));
   await p.click('#btnGeneraCedolino');
