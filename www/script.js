@@ -836,15 +836,16 @@ function inizializza(){
   on('btnSalvaEvento','click', salvaEventoV2);
   on('btnEliminaEvento','click', eliminaEventoV2);
   on('campoEventoTuttoIlGiorno','change', () => {
-    const tutt = el('campoEventoTuttoIlGiorno').checked;
-    el('campiEventoOrario').hidden = tutt;
-    el('campoEventoRicordamiWrap').hidden = tutt;
-    el('campoEventoAnticipoWrap').hidden = tutt || !el('campoEventoRicordami').checked;
-    aggiornaCampiAvvisoEvento();
+    aggiornaVistaOrariEvento();
+    ridisegnaPromemoriaEvento(null); // ripartono dal valore predefinito del nuovo tipo di evento
   });
-  on('campoEventoRicordami','change', () => {
-    el('campoEventoAnticipoWrap').hidden = el('campoEventoTuttoIlGiorno').checked || !el('campoEventoRicordami').checked;
-    aggiornaCampiAvvisoEvento();
+  on('btnAggiungiPromemoria','click', () => {
+    const tutt = el('campoEventoTuttoIlGiorno').checked;
+    if(el('listaPromemoriaEvento').children.length >= MAX_PROMEMORIA_EVENTO){
+      mostraToast('Puoi aggiungere al massimo ' + MAX_PROMEMORIA_EVENTO + ' promemoria.', 'avviso'); return;
+    }
+    aggiungiRigaPromemoria({ min: tutt ? 0 : 10 });
+    aggiornaTestoPromemoriaEvento();
   });
   on('campoEventoAvvisoDurata','change', aggiornaCampiAvvisoEvento);
   const listaEventiGiornoHost = el('listaEventiGiornoV2');
@@ -1451,15 +1452,15 @@ function apriModificaEventoV2(id){
   el('titoloModaleEvento').textContent = ev ? 'Modifica evento' : 'Nuovo evento';
   el('campoEventoTitolo').value = ev ? (ev.titolo || '') : '';
   el('campoEventoTuttoIlGiorno').checked = !!(ev && ev.tuttoIlGiorno);
-  el('campoEventoOraInizio').value = ev ? (ev.oraInizio || '') : '';
-  el('campoEventoOraFine').value = ev ? (ev.oraFine || '') : '';
+  const pre = ev ? null : orariPredefinitiEvento(giornoSelezionato);
+  el('campoEventoOraInizio').value = ev ? (ev.oraInizio || '') : pre.inizio;
+  el('campoEventoOraFine').value = ev ? (ev.oraFine || '') : pre.fine;
   el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
   el('campoEventoNote').value = ev ? (ev.note || '') : '';
-  el('campoEventoRicordami').checked = !!(ev && ev.ricordami);
-  el('campoEventoAnticipo').value = ev && ev.anticipoMinuti != null ? String(ev.anticipoMinuti) : '30';
-  el('campiEventoOrario').hidden = el('campoEventoTuttoIlGiorno').checked;
-  el('campoEventoRicordamiWrap').hidden = el('campoEventoTuttoIlGiorno').checked;
-  el('campoEventoAnticipoWrap').hidden = el('campoEventoTuttoIlGiorno').checked || !el('campoEventoRicordami').checked;
+  el('campoEventoOraPromemoria').value = ev && ev.oraPromemoria ? ev.oraPromemoria : '08:00';
+  aggiornaVistaOrariEvento();
+  // Nuovo evento: un promemoria "10 minuti prima" già pronto, come Google Calendar.
+  ridisegnaPromemoriaEvento(ev ? promemoriaDiEvento(ev) : null);
   el('campoEventoAvvisoDurata').value = ev && ev.avvisoSecondi ? String(ev.avvisoSecondi) : '0';
   el('campoEventoAvvisoModo').value = ev && ev.avvisoModo ? ev.avvisoModo : 'suono_vibra';
   aggiornaCampiAvvisoEvento();
@@ -1471,11 +1472,122 @@ function apriModificaEventoV2(id){
 // "evento_1234567890123" che usiamo noi internamente — ne ricaviamo uno stabile dalle ultime
 // cifre, così lo stesso evento ottiene sempre lo stesso numero (utile per sostituire/annullare
 // il promemoria quando l'evento viene modificato o cancellato).
-function idNotificaDaEvento(idEvento){
+function idNotificaDaEvento(idEvento, indice){
   const cifre = String(idEvento).replace(/\D/g, '').slice(-9);
-  return parseInt(cifre, 10) || 1;
+  const n = parseInt(cifre, 10) || 1;
+  if(indice == null) return n; // id "vecchio" (un solo promemoria): serve ancora per annullare quelli già programmati
+  return (n % 100000000) * 10 + indice; // un id diverso per ogni promemoria, sempre sotto il limite di Android
 }
 
+// ── Promemoria multipli (come Google Calendar) ──
+const MAX_PROMEMORIA_EVENTO = 5;
+const OPZIONI_PROMEMORIA_ORARIO = [
+  [0, "All'orario dell'evento"], [5, '5 minuti prima'], [10, '10 minuti prima'], [15, '15 minuti prima'],
+  [30, '30 minuti prima'], [60, '1 ora prima'], [120, '2 ore prima'], [1440, '1 giorno prima']
+];
+const OPZIONI_PROMEMORIA_TUTTO = [
+  [0, 'Il giorno stesso'], [-1, 'La sera prima (20:00)'], [1440, '1 giorno prima'],
+  [2880, '2 giorni prima'], [10080, '1 settimana prima']
+];
+
+// Elenco dei promemoria di un evento, anche per gli eventi salvati con le versioni precedenti.
+function promemoriaDiEvento(ev){
+  if(!ev) return [];
+  if(Array.isArray(ev.promemoria)) return ev.promemoria.filter(p => p && Number.isFinite(p.min));
+  if(ev.ricordami && !ev.tuttoIlGiorno) return [{ min: ev.anticipoMinuti || 0 }];
+  return [];
+}
+function quandoPromemoria(iso, ev, p){
+  if(ev.tuttoIlGiorno){
+    if(p.min < 0){ const d = new Date(`${iso}T20:00:00`); d.setDate(d.getDate() - 1); return d; }
+    const d = new Date(`${iso}T${ev.oraPromemoria || '08:00'}:00`);
+    d.setDate(d.getDate() - Math.round(p.min / 1440));
+    return d;
+  }
+  if(!ev.oraInizio) return null;
+  const d = new Date(`${iso}T${ev.oraInizio}:00`);
+  d.setMinutes(d.getMinutes() - p.min);
+  return d;
+}
+const due = n => String(n).padStart(2, '0');
+// Nuovo evento: inizio all'ora tonda successiva (oggi) o alle 9:00 (altri giorni), durata 1 ora.
+function orariPredefinitiEvento(iso){
+  let h = 9;
+  const ora = new Date();
+  const oggi = `${ora.getFullYear()}-${due(ora.getMonth() + 1)}-${due(ora.getDate())}`;
+  if(iso === oggi) h = Math.min(ora.getHours() + 1, 22);
+  return { inizio: `${due(h)}:00`, fine: h >= 23 ? '23:59' : `${due(h + 1)}:00` };
+}
+function aggiornaVistaOrariEvento(){
+  const tutt = el('campoEventoTuttoIlGiorno').checked;
+  el('campiEventoOrario').hidden = tutt;
+  el('campoEventoOraPromemoriaWrap').hidden = !tutt;
+}
+function aggiungiRigaPromemoria(p){
+  const tutt = el('campoEventoTuttoIlGiorno').checked;
+  const opzioni = tutt ? OPZIONI_PROMEMORIA_TUTTO : OPZIONI_PROMEMORIA_ORARIO;
+  const riga = document.createElement('div');
+  riga.className = 'riga-promemoria';
+  const sel = document.createElement('select');
+  sel.className = 'pr-sel';
+  opzioni.forEach(([v, t]) => sel.add(new Option(t, String(v))));
+  if(!tutt) sel.add(new Option('Personalizzata…', 'x'));
+  const num = document.createElement('input');
+  num.type = 'number'; num.min = '1'; num.max = '999'; num.className = 'pr-num'; num.hidden = true; num.inputMode = 'numeric';
+  const uni = document.createElement('select');
+  uni.className = 'pr-unita'; uni.hidden = true;
+  [['1', 'minuti'], ['60', 'ore'], ['1440', 'giorni']].forEach(([v, t]) => uni.add(new Option(t, v)));
+  const x = document.createElement('button');
+  x.type = 'button'; x.className = 'pr-x'; x.textContent = '✕'; x.setAttribute('aria-label', 'Togli promemoria');
+  const min = p && Number.isFinite(p.min) ? p.min : (tutt ? 0 : 10);
+  if(opzioni.some(([v]) => v === min)){
+    sel.value = String(min);
+  } else if(!tutt){
+    sel.value = 'x';
+    const f = min % 1440 === 0 ? 1440 : (min % 60 === 0 ? 60 : 1);
+    uni.value = String(f); num.value = String(Math.max(1, Math.round(min / f)));
+  } else {
+    sel.add(new Option(`${Math.round(min / 1440)} giorni prima`, String(min))); sel.value = String(min);
+  }
+  const mostra = () => { const c = sel.value === 'x'; num.hidden = !c; uni.hidden = !c; };
+  sel.addEventListener('change', mostra);
+  x.addEventListener('click', () => { riga.remove(); aggiornaTestoPromemoriaEvento(); });
+  mostra();
+  riga.append(sel, num, uni, x);
+  el('listaPromemoriaEvento').appendChild(riga);
+}
+function ridisegnaPromemoriaEvento(lista){
+  el('listaPromemoriaEvento').innerHTML = '';
+  const tutt = el('campoEventoTuttoIlGiorno').checked;
+  const elenco = lista === null || lista === undefined ? [{ min: tutt ? 0 : 10 }] : lista;
+  elenco.slice(0, MAX_PROMEMORIA_EVENTO).forEach(aggiungiRigaPromemoria);
+  aggiornaTestoPromemoriaEvento();
+}
+function leggiPromemoriaDalForm(){
+  const out = [];
+  el('listaPromemoriaEvento').querySelectorAll('.riga-promemoria').forEach(riga => {
+    const sel = riga.querySelector('.pr-sel');
+    let min;
+    if(sel.value === 'x'){
+      const n = parseInt(riga.querySelector('.pr-num').value, 10);
+      if(!(n > 0)) return;
+      min = n * parseInt(riga.querySelector('.pr-unita').value, 10);
+    } else {
+      min = parseInt(sel.value, 10);
+    }
+    if(Number.isFinite(min) && !out.some(p => p.min === min)) out.push({ min });
+  });
+  return out;
+}
+function aggiornaTestoPromemoriaEvento(){
+  const tutt = el('campoEventoTuttoIlGiorno').checked;
+  const n = el('listaPromemoriaEvento').children.length;
+  el('hintPromemoriaEvento').textContent = !n
+    ? 'Nessun promemoria: tocca «Aggiungi promemoria» se ne vuoi uno.'
+    : (tutt ? "Evento senza orario: i promemoria arrivano all'ora scelta qui sopra." : 'Puoi aggiungerne più di uno (massimo ' + MAX_PROMEMORIA_EVENTO + ').');
+  el('btnAggiungiPromemoria').hidden = n >= MAX_PROMEMORIA_EVENTO;
+  aggiornaCampiAvvisoEvento();
+}
 
 // ── Avviso evento (suono/vibrazione di pochi secondi, anche in silenzioso) ──
 // Funziona solo nell'app Android: è un piccolo modulo nativo (AvvisoEventoPlugin).
@@ -1487,25 +1599,44 @@ function pluginAvvisoEvento(){
 }
 function aggiornaCampiAvvisoEvento(){
   const wrap = el('campoEventoAvvisoWrap'); if(!wrap) return;
-  const visibile = !!pluginAvvisoEvento() && !el('campoEventoTuttoIlGiorno').checked && el('campoEventoRicordami').checked;
+  const visibile = !!pluginAvvisoEvento() && el('listaPromemoriaEvento').children.length > 0;
   wrap.hidden = !visibile;
   el('campoEventoAvvisoModoWrap').hidden = el('campoEventoAvvisoDurata').value === '0';
+}
+
+async function annullaNotificheEvento(idEvento, plugin, avviso){
+  const ids = [idNotificaDaEvento(idEvento)];
+  for(let i = 0; i < 10; i++) ids.push(idNotificaDaEvento(idEvento, i));
+  try{ await plugin.cancel({ notifications: ids.map(id => ({ id })) }); }catch(e){}
+  if(avviso){ for(const id of ids){ try{ await avviso.annulla({ id }); }catch(e){} } }
 }
 
 async function schedulaPromemoriaEvento(iso, evento){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return; // sul sito normale (o fuori dall'app) i promemoria non sono disponibili
-  const idNotifica = idNotificaDaEvento(evento.id);
-  try{ await plugin.cancel({ notifications: [{ id: idNotifica }] }); }catch(e){}
   const avviso = pluginAvvisoEvento();
-  if(avviso){ try{ await avviso.annulla({ id: idNotifica }); }catch(e){} }
-  if(!evento.ricordami || evento.tuttoIlGiorno || !evento.oraInizio) return;
-  const quando = new Date(`${iso}T${evento.oraInizio}:00`);
-  quando.setMinutes(quando.getMinutes() - (evento.anticipoMinuti || 0));
-  if(quando.getTime() <= Date.now()){
-    mostraToast('L\'orario del promemoria è già passato: non verrà inviato.', 'avviso');
-    return;
+  await annullaNotificheEvento(evento.id, plugin, avviso);
+  const lista = promemoriaDiEvento(evento);
+  if(!lista.length) return;
+  const adesso = Date.now();
+  const futuri = [];
+  let passati = 0;
+  lista.forEach((p, indice) => {
+    const quando = quandoPromemoria(iso, evento, p);
+    if(!quando) return;
+    if(quando.getTime() <= adesso){ passati++; return; }
+    futuri.push({ indice, quando, p });
+  });
+  if(passati){
+    mostraToast(futuri.length ? 'Qualche promemoria è già passato: non verrà inviato.' : "L'orario del promemoria è già passato: non verrà inviato.", 'avviso');
   }
+  if(!futuri.length) return;
+  const giornoTesto = `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+  const corpo = (p) => {
+    if(evento.tuttoIlGiorno) return evento.luogo ? `Tutto il giorno — ${evento.luogo}` : 'Tutto il giorno';
+    const base = evento.luogo ? `${evento.oraInizio} — ${evento.luogo}` : `Alle ${evento.oraInizio}`;
+    return p.min >= 1440 ? `Il ${giornoTesto}: ${base}` : base;
+  };
   try{
     // 1) Permesso notifiche (Android 13+): lo chiediamo esplicitamente, così se è negato lo diciamo.
     try{
@@ -1516,8 +1647,8 @@ async function schedulaPromemoriaEvento(iso, evento){
         return;
       }
     }catch(e){ console.warn('Permesso notifiche non verificabile:', e); }
-    // 1b) Avviso forte di pochi secondi (modulo nativo): al posto della notifica normale.
-    //     La notifica la pubblica il modulo stesso, con i tasti Spegni e Posticipa.
+    // 2) Avviso forte di pochi secondi (modulo nativo): al posto della notifica normale.
+    //    La notifica la pubblica il modulo stesso, con i tasti Spegni e Posticipa.
     if(avviso && evento.avvisoSecondi > 0){
       try{
         // Android 12+: per l'orario preciso serve il permesso "Allarmi e promemoria" (chiesto una volta sola).
@@ -1528,19 +1659,20 @@ async function schedulaPromemoriaEvento(iso, evento){
           await plugin.changeExactNotificationSetting();
         }
       }catch(e){}
-      await avviso.programma({
-        id: idNotifica,
-        titolo: evento.titolo,
-        testo: evento.luogo ? `${evento.oraInizio} — ${evento.luogo}` : `Alle ${evento.oraInizio}`,
-        quandoMs: quando.getTime(),
-        durataSec: evento.avvisoSecondi,
-        modo: evento.avvisoModo || 'suono_vibra'
-      });
+      for(const f of futuri){
+        await avviso.programma({
+          id: idNotificaDaEvento(evento.id, f.indice),
+          titolo: evento.titolo,
+          testo: corpo(f.p),
+          quandoMs: f.quando.getTime(),
+          durataSec: evento.avvisoSecondi,
+          modo: evento.avvisoModo || 'suono_vibra'
+        });
+      }
       return;
     }
-    // 2) Canale NUOVO (v2): su Android le impostazioni di un canale già creato (suono, vibrazione)
-    //    non si possono più cambiare, e il vecchio canale poteva essere nato senza vibrazione.
-    //    Importanza alta = suono + comparsa in primo piano; vibrazione accesa. Il vecchio si elimina.
+    // 3) Canale v2: su Android le impostazioni di un canale già creato non si possono più cambiare.
+    //    Importanza alta = suono + comparsa in primo piano; vibrazione accesa.
     try{ await plugin.deleteChannel({ id: 'promemoria_eventi' }); }catch(e){}
     try{
       await plugin.createChannel({
@@ -1553,15 +1685,15 @@ async function schedulaPromemoriaEvento(iso, evento){
         lights: true
       });
     }catch(e){ console.warn('Canale notifiche non creato:', e); }
-    // 3) allowWhileIdle: senza, Android usa un allarme che NON sveglia il telefono (RTC invece di
-    //    RTC_WAKEUP) e con schermo spento / risparmio energetico la notifica compare in ritardo o mai.
-    await plugin.schedule({ notifications: [{
-      id: idNotifica,
+    // 4) allowWhileIdle: senza, Android usa un allarme che NON sveglia il telefono e con schermo
+    //    spento / risparmio energetico la notifica compare in ritardo o mai.
+    await plugin.schedule({ notifications: futuri.map(f => ({
+      id: idNotificaDaEvento(evento.id, f.indice),
       title: evento.titolo,
-      body: evento.luogo ? `${evento.oraInizio} — ${evento.luogo}` : `Alle ${evento.oraInizio}`,
+      body: corpo(f.p),
       channelId: 'promemoria_eventi_v2',
-      schedule: { at: quando, allowWhileIdle: true }
-    }]});
+      schedule: { at: f.quando, allowWhileIdle: true }
+    })) });
   }catch(e){
     console.warn('Promemoria non programmato:', e);
     mostraToast('Non è stato possibile programmare il promemoria.', 'avviso');
@@ -1571,9 +1703,7 @@ async function schedulaPromemoriaEvento(iso, evento){
 async function annullaPromemoriaEvento(idEvento){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return;
-  try{ await plugin.cancel({ notifications: [{ id: idNotificaDaEvento(idEvento) }] }); }catch(e){}
-  const avviso = pluginAvvisoEvento();
-  if(avviso){ try{ await avviso.annulla({ id: idNotificaDaEvento(idEvento) }); }catch(e){} }
+  await annullaNotificheEvento(idEvento, plugin, pluginAvvisoEvento());
 }
 
 function salvaEventoV2(){
@@ -1581,6 +1711,11 @@ function salvaEventoV2(){
   const titolo = el('campoEventoTitolo').value.trim();
   if(!titolo){ mostraToast('Dai un titolo all\'evento prima di salvare.', 'avviso'); return; }
   const tuttoIlGiorno = el('campoEventoTuttoIlGiorno').checked;
+  const promemoria = leggiPromemoriaDalForm();
+  if(!tuttoIlGiorno && promemoria.length && !el('campoEventoOraInizio').value){
+    mostraToast("Imposta l'orario di Inizio: serve per il promemoria.", 'avviso');
+    return;
+  }
   const dati = {
     titolo,
     tuttoIlGiorno,
@@ -1588,8 +1723,10 @@ function salvaEventoV2(){
     oraFine: tuttoIlGiorno ? '' : el('campoEventoOraFine').value,
     luogo: el('campoEventoLuogo').value.trim(),
     note: el('campoEventoNote').value.trim(),
-    ricordami: !tuttoIlGiorno && el('campoEventoRicordami').checked,
-    anticipoMinuti: parseInt(el('campoEventoAnticipo').value, 10) || 0,
+    promemoria,
+    oraPromemoria: el('campoEventoOraPromemoria').value || '08:00',
+    ricordami: promemoria.length > 0,
+    anticipoMinuti: promemoria.length ? Math.max(0, promemoria[0].min) : 0,
     avvisoSecondi: parseInt(el('campoEventoAvvisoDurata').value, 10) || 0,
     avvisoModo: el('campoEventoAvvisoModo').value || 'suono_vibra'
   };

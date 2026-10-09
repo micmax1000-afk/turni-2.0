@@ -1515,3 +1515,11 @@ body.calendario-senza-colori .giorno-cella.riposo-giorno .giorno-numero{ color: 
 .riga-strumento-turni:hover{background:var(--carta)}
 .riga-strumento-turni span{font-size:1rem}
 .riga-strumento-turni b{margin-left:auto;font-weight:400;opacity:.4;font-size:1.1rem}
+
+/* Promemoria evento (v2.50.2) */
+.riga-promemoria{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.riga-promemoria select{flex:1;min-width:120px}
+.riga-promemoria .pr-num{width:72px;flex:0 0 72px}
+.riga-promemoria .pr-unita{flex:0 0 100px;min-width:0}
+.riga-promemoria .pr-x{width:38px;height:38px;border:0;background:none;font-size:1.1rem;color:var(--testo-tenue);cursor:pointer}
+.btn-testo-evento{align-self:flex-start;border:0;background:none;color:var(--inchiostro);font-weight:600;font-size:0.95rem;padding:6px 0;cursor:pointer}

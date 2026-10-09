@@ -173,20 +173,15 @@
             <label class="campo-modale">Inizio<input type="time" id="campoEventoOraInizio"></label>
             <label class="campo-modale">Fine<input type="time" id="campoEventoOraFine"></label>
           </div>
-          <label class="campo-modale campo-riga" id="campoEventoRicordamiWrap"><input type="checkbox" id="campoEventoRicordami"> 🔔 Ricordami</label>
-          <label class="campo-modale" id="campoEventoAnticipoWrap" hidden>Quando avvisarmi
-            <select id="campoEventoAnticipo">
-              <option value="0">All'orario dell'evento</option>
-              <option value="5">5 minuti prima</option>
-              <option value="15">15 minuti prima</option>
-              <option value="30" selected>30 minuti prima</option>
-              <option value="60">1 ora prima</option>
-              <option value="120">2 ore prima</option>
-              <option value="1440">1 giorno prima</option>
-            </select>
-          </label>
+          <label class="campo-modale" id="campoEventoOraPromemoriaWrap" hidden>Il promemoria arriva alle<input type="time" id="campoEventoOraPromemoria" value="08:00"></label>
+          <div class="campo-modale" id="campoEventoPromemoriaWrap">
+            <strong>🔔 Promemoria</strong>
+            <div id="listaPromemoriaEvento"></div>
+            <button type="button" class="btn-testo-evento" id="btnAggiungiPromemoria">＋ Aggiungi promemoria</button>
+            <small id="hintPromemoriaEvento"></small>
+          </div>
           <div class="campo-modale" id="campoEventoAvvisoWrap" hidden>
-            <strong>⏰ Avviso evento</strong>
+            <strong>⏰ Avviso forte (facoltativo)</strong>
             <label class="campo-modale">Durata
               <select id="campoEventoAvvisoDurata">
                 <option value="0" selected>Nessuno (solo notifica normale)</option>

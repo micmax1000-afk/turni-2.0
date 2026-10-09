@@ -741,7 +741,7 @@ function importaBackup(file, datiGiaLetti){
         // Gli allarmi di Android non fanno parte del backup: si riprogrammano i promemoria futuri.
         try{
           Object.keys(AppState.eventiGiorno).forEach(iso => (AppState.eventiGiorno[iso] || []).forEach(ev => {
-            if(ev && ev.ricordami && typeof schedulaPromemoriaEvento === 'function') schedulaPromemoriaEvento(iso, ev);
+            if(ev && typeof promemoriaDiEvento === 'function' && promemoriaDiEvento(ev).length && typeof schedulaPromemoriaEvento === 'function') schedulaPromemoriaEvento(iso, ev);
           }));
         }catch(e){}
       }
