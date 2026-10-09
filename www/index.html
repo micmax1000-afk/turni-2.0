@@ -362,7 +362,124 @@
     </div>
   </div>
 
+  <div id="vistaStatistiche" hidden>
+    <section class="scheda" id="sezioneReportTop">
+      <div class="intestazione-scheda">
+        <h2>Report</h2>
+        <button type="button" class="btn-icona" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
+      </div>
+      <div class="report-mese-nav">
+        <button type="button" class="btn-freccia" id="btnReportMesePrec" aria-label="Mese precedente">‹</button>
+        <b id="reportMeseEtichetta">—</b>
+        <button type="button" class="btn-freccia" id="btnReportMeseSucc" aria-label="Mese successivo">›</button>
+      </div>
+      <div class="report-hero" id="reportHero"></div>
+      <div id="prossimoTurnoWidget" class="prossimo-turno-widget" hidden>
+        <span class="prossimo-turno-eyebrow">⏭️ Prossimo turno</span>
+        <div class="prossimo-turno-corpo">
+          <span class="prossimo-turno-icona" id="prossimoTurnoIcona">☀️</span>
+          <div class="prossimo-turno-testo">
+            <strong id="prossimoTurnoLabel">—</strong>
+            <span id="prossimoTurnoOrario">—</span>
+          </div>
+          <span class="prossimo-turno-quando" id="prossimoTurnoQuando">—</span>
+        </div>
+      </div>
+
+      <div id="riepilogoTurniV45" class="riepilogo-turni-v45" aria-live="polite">
+        <button type="button" class="riepilogo-turni-v45-titolo" id="riepilogoTurniV45Toggle" aria-expanded="false">
+          <span><strong>Riepilogo mese</strong> <span id="riepilogoTurniV45Mese">—</span></span>
+          <span class="riepilogo-turni-v45-freccia" aria-hidden="true">▾</span>
+        </button>
+        <div class="riepilogo-turni-v45-grid">
+          <div><strong id="v45RtLavoro">0</strong><span>turni</span></div>
+          <div><strong id="v45RtRiposi">0</strong><span>riposi</span></div>
+          <div><strong id="v45RtAssenze">0</strong><span>assenze</span></div>
+          <div><strong id="v45RtStraordinario">0:00</strong><span>straordinario</span></div>
+        </div>
+        <div id="riepilogoTurniV45Espanso" class="riepilogo-turni-v45-espanso" hidden>
+          <div><span>🛡️ Missioni</span><strong id="v45RtMissioni">0</strong></div>
+          <div><span>🚓 Servizio esterno</span><strong id="v45RtServizioEsterno">0</strong></div>
+          <div><span>📞 Reperibilità</span><strong id="v45RtReperibilita">0</strong></div>
+          <div><span>🛡 Ordine pubblico</span><strong id="v45RtOrdinePubblico">0</strong></div>
+          <div><span>🍽️ Buoni pasto</span><strong id="v45RtBuoniPasto">0</strong></div>
+          <div><span>🔄 Ore compensate</span><strong id="v45RtOreCompensate">0:00</strong></div>
+          <div><span>⚡ Extra</span><strong id="v45RtExtra">0</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scheda" id="sezioneRiepilogo">
+      <h2>Riepilogo Ore del Mese</h2>
+      <p class="sotto-titolo">Ore riconosciute dal motore in base ai turni inseriti (mese visualizzato nel calendario) — nessun importo, solo classificazione.</p>
+
+      <div class="stat-panel-v17 stat-dettagli">
+        <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
+        <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
+        <div><span>💰 Straordinario netto stimato</span><strong id="rStrNetto">—</strong></div>
+        <div><span>💤 Riposi</span><strong id="rRiposi">0</strong></div>
+        <div><span>🚗 Servizio esterno</span><strong id="rServizioEsterno">0</strong></div>
+        <div><span>🛡️ Ordine pubblico</span><strong id="rOrdinePubblico">0</strong></div>
+        <div><span>🔦 Controllo territorio</span><strong id="rControlloTerritorio">0</strong></div>
+        <div><span>🍽️ Buoni pasto <small>(informativo)</small></span><strong id="rBuoniPasto">0</strong></div>
+      </div>
+
+      <details class="azioni-calendario-rapide-v2">
+        <summary>Mostra tutti i dettagli ▾</summary>
+        <div class="azioni-calendario-rapide-v2-corpo">
+        <div class="stat-v17">
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>🕐 Ore lavorate</h3>
+          <div><span>Notturne</span><strong id="rNotturne">0,00</strong></div>
+          <div><span>Festive</span><strong id="rFestive">0,00</strong></div>
+          <div><span>Domenicali</span><strong id="rDomenicali">0,00</strong></div>
+          <div><span>Notturne festive</span><strong id="rNotturneFestive">0,00</strong></div>
+        </div>
+
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>⏱️ Straordinario, per fascia</h3>
+          <div><span>Diurno</span><strong id="rStrDiurno">0,00</strong></div>
+          <div><span>Notturno</span><strong id="rStrNotturno">0,00</strong></div>
+          <div><span>Festivo</span><strong id="rStrFestivo">0,00</strong></div>
+          <div><span>Notturno festivo</span><strong id="rStrNotturnoFestivo">0,00</strong></div>
+        </div>
+
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>📋 Giorni e altro</h3>
+          <div><span>📞 Reperibilità</span><strong id="rReperibilita">0</strong></div>
+          <div><span>🚓 Missioni</span><strong id="rMissioni">0</strong></div>
+          <div><span>🔄 Str. convertito in riposo <small>(escluso dalla paga, saldo in Assenze)</small></span><strong id="rOreCompensate">0,00</strong></div>
+        </div>
+        </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="scheda" id="sezioneStatisticheGrafici">
+      <div class="intestazione-scheda">
+        <h2>Statistiche</h2>
+      </div>
+      <label class="campo-modale">Anno
+        <input type="number" id="campoAnnoStatistiche" min="2000" max="2100" inputmode="numeric">
+      </label>
+      <div id="contenitoreStatistiche" class="statistiche-container"></div>
+    </section>
+  </div>
+
   <div id="vistaCedolino" hidden>
+  <section class="scheda" id="sezioneCedolino">
+    <h2>🧾 Cedolino simulato</h2>
+    <p class="sotto-titolo">Genera il cedolino del mese visualizzato a partire da anagrafica, turni e tabelle ufficiali. A dicembre la tredicesima viene aggiunta automaticamente.</p>
+    <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
+      <input type="number" id="campoConguagliMese" step="0.01" value="0">
+    </label>
+    <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
+    <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / Esporta PDF</button>
+      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>🗑️ Cancella Cedolino</button>
+    </div>
+  </section>
 
   <details class="cedolino-sezione-secondaria">
     <summary>💰 Cosa arriva sul conto ▾</summary>
@@ -423,23 +540,11 @@
     <button class="btn-secondario" id="btnCancellaRiepilogoAnnuale" type="button" hidden style="margin-top:12px;">🗑️ Cancella Riepilogo</button>
   </section>
   </details>
-  <section class="scheda" id="sezioneCedolino">
-    <h2>Cedolino Simulato</h2>
-    <p class="sotto-titolo">Genera il cedolino del mese visualizzato a partire da anagrafica, turni e tabelle ufficiali. A dicembre la tredicesima viene aggiunta automaticamente.</p>
-    <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
-      <input type="number" id="campoConguagliMese" step="0.01" value="0">
-    </label>
-    <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
-    <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
-      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / Esporta PDF</button>
-      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>🗑️ Cancella Cedolino</button>
-    </div>
-  </section>
-  <section class="scheda nota-finale">
+  <details class="nota-finale nota-finale-v2">
+    <summary>ⓘ Valori indicativi, calcolati da tabelle pubbliche: verificali sempre sul cedolino ufficiale. <b>Leggi tutto</b></summary>
     <p class="nota-piede">Cedolino simulato con conguagli manuali, tredicesima automatica a dicembre e storico mensile. Valori delle tabelle ufficiali indicativi: verificali sul tuo cedolino reale prima di usarli per decisioni economiche.</p>
     <p class="nota-piede" style="margin-top:8px;">Progetto indipendente, non ufficiale e non affiliato alla Polizia di Stato né ad alcun ente pubblico. Tutti i valori delle tabelle sono stati reperiti da fonti pubbliche disponibili online (siti sindacali, normativa pubblicata) e possono contenere errori, essere incompleti o non aggiornati. L'autore declina ogni responsabilità per incongruenze, errori o danni derivanti dall'uso di questa app: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni economiche o personali.</p>
-  </section>
+  </details>
   </div>
 
   <div id="vistaAssenze" hidden>
@@ -796,104 +901,6 @@
       </div>
     </section>
     <p class="piede-altro"><a href="https://micmax-apps.netlify.app/privacy-turni.html" target="_blank" rel="noopener" id="linkPrivacy">Informativa sulla privacy</a> · <span id="versioneAppTesto"></span></p>
-  </div>
-
-  <div id="vistaStatistiche" hidden>
-    <section class="scheda" id="sezioneReportTop">
-      <div class="intestazione-scheda">
-        <h2>Report</h2>
-        <button type="button" class="btn-icona" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
-      </div>
-      <div id="prossimoTurnoWidget" class="prossimo-turno-widget" hidden>
-        <span class="prossimo-turno-eyebrow">⏭️ Prossimo turno</span>
-        <div class="prossimo-turno-corpo">
-          <span class="prossimo-turno-icona" id="prossimoTurnoIcona">☀️</span>
-          <div class="prossimo-turno-testo">
-            <strong id="prossimoTurnoLabel">—</strong>
-            <span id="prossimoTurnoOrario">—</span>
-          </div>
-          <span class="prossimo-turno-quando" id="prossimoTurnoQuando">—</span>
-        </div>
-      </div>
-
-      <div id="riepilogoTurniV45" class="riepilogo-turni-v45" aria-live="polite">
-        <button type="button" class="riepilogo-turni-v45-titolo" id="riepilogoTurniV45Toggle" aria-expanded="false">
-          <span><strong>Riepilogo mese</strong> <span id="riepilogoTurniV45Mese">—</span></span>
-          <span class="riepilogo-turni-v45-freccia" aria-hidden="true">▾</span>
-        </button>
-        <div class="riepilogo-turni-v45-grid">
-          <div><strong id="v45RtLavoro">0</strong><span>turni</span></div>
-          <div><strong id="v45RtRiposi">0</strong><span>riposi</span></div>
-          <div><strong id="v45RtAssenze">0</strong><span>assenze</span></div>
-          <div><strong id="v45RtStraordinario">0:00</strong><span>straordinario</span></div>
-        </div>
-        <div id="riepilogoTurniV45Espanso" class="riepilogo-turni-v45-espanso" hidden>
-          <div><span>🛡️ Missioni</span><strong id="v45RtMissioni">0</strong></div>
-          <div><span>🚓 Servizio esterno</span><strong id="v45RtServizioEsterno">0</strong></div>
-          <div><span>📞 Reperibilità</span><strong id="v45RtReperibilita">0</strong></div>
-          <div><span>🛡 Ordine pubblico</span><strong id="v45RtOrdinePubblico">0</strong></div>
-          <div><span>🍽️ Buoni pasto</span><strong id="v45RtBuoniPasto">0</strong></div>
-          <div><span>🔄 Ore compensate</span><strong id="v45RtOreCompensate">0:00</strong></div>
-          <div><span>⚡ Extra</span><strong id="v45RtExtra">0</strong></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="scheda" id="sezioneRiepilogo">
-      <h2>Riepilogo Ore del Mese</h2>
-      <p class="sotto-titolo">Ore riconosciute dal motore in base ai turni inseriti (mese visualizzato nel calendario) — nessun importo, solo classificazione.</p>
-
-      <div class="stat-panel-v17 stat-dettagli">
-        <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
-        <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
-        <div><span>💰 Straordinario netto stimato</span><strong id="rStrNetto">—</strong></div>
-        <div><span>💤 Riposi</span><strong id="rRiposi">0</strong></div>
-        <div><span>🚗 Servizio esterno</span><strong id="rServizioEsterno">0</strong></div>
-        <div><span>🛡️ Ordine pubblico</span><strong id="rOrdinePubblico">0</strong></div>
-        <div><span>🔦 Controllo territorio</span><strong id="rControlloTerritorio">0</strong></div>
-        <div><span>🍽️ Buoni pasto <small>(informativo)</small></span><strong id="rBuoniPasto">0</strong></div>
-      </div>
-
-      <details class="azioni-calendario-rapide-v2">
-        <summary>Mostra tutti i dettagli ▾</summary>
-        <div class="azioni-calendario-rapide-v2-corpo">
-        <div class="stat-v17">
-        <div class="stat-panel-v17 stat-dettagli">
-          <h3>🕐 Ore lavorate</h3>
-          <div><span>Notturne</span><strong id="rNotturne">0,00</strong></div>
-          <div><span>Festive</span><strong id="rFestive">0,00</strong></div>
-          <div><span>Domenicali</span><strong id="rDomenicali">0,00</strong></div>
-          <div><span>Notturne festive</span><strong id="rNotturneFestive">0,00</strong></div>
-        </div>
-
-        <div class="stat-panel-v17 stat-dettagli">
-          <h3>⏱️ Straordinario, per fascia</h3>
-          <div><span>Diurno</span><strong id="rStrDiurno">0,00</strong></div>
-          <div><span>Notturno</span><strong id="rStrNotturno">0,00</strong></div>
-          <div><span>Festivo</span><strong id="rStrFestivo">0,00</strong></div>
-          <div><span>Notturno festivo</span><strong id="rStrNotturnoFestivo">0,00</strong></div>
-        </div>
-
-        <div class="stat-panel-v17 stat-dettagli">
-          <h3>📋 Giorni e altro</h3>
-          <div><span>📞 Reperibilità</span><strong id="rReperibilita">0</strong></div>
-          <div><span>🚓 Missioni</span><strong id="rMissioni">0</strong></div>
-          <div><span>🔄 Str. convertito in riposo <small>(escluso dalla paga, saldo in Assenze)</small></span><strong id="rOreCompensate">0,00</strong></div>
-        </div>
-        </div>
-        </div>
-      </details>
-    </section>
-
-    <section class="scheda" id="sezioneStatisticheGrafici">
-      <div class="intestazione-scheda">
-        <h2>Statistiche</h2>
-      </div>
-      <label class="campo-modale">Anno
-        <input type="number" id="campoAnnoStatistiche" min="2000" max="2100" inputmode="numeric">
-      </label>
-      <div id="contenitoreStatistiche" class="statistiche-container"></div>
-    </section>
   </div>
 
   <div id="appAlerts" class="app-alerts-v20" hidden></div>

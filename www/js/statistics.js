@@ -37,7 +37,7 @@ function renderStatistiche(){
   const oreFmt=v=>typeof formatOreDashboard==='function'?formatOreDashboard(v):`${Number(v||0).toFixed(1)} h`;
   // Un unico riepilogo annuale, invece di due pannelli separati con la stessa natura di dato
   // (entrambi totali sull'anno) — meno blocchi da scorrere, stessa informazione.
-  const cards=[['🕐',oreFmt(s.ore),'Ore lavorate'],['📅',s.turni,'Giornate lavorate'],['⏱️',oreFmt(s.straordinario),'Straordinario'],['🗂️',s.assenze,'Assenze'],['🚓',s.missioni,'Missioni'],['💶',euroFmt(s.netto),'Netto registrato'],['💤',s.riposi,'Riposi'],['🛰️',s.reperibilita,'Reperibilità'],['🚗',s.servizioEsterno,'Servizio esterno'],['🛡️',s.ordinePubblico,'Ordine pubblico'],['💶',euroFmt(s.lordo),'Lordo registrato']];
+  const cards=[['🕐',oreFmt(s.ore),'Ore lavorate'],['📅',s.turni,'Giornate lavorate'],['⏱️',oreFmt(s.straordinario),'Straordinario'],['🗂️',s.assenze,'Assenze'],['🚓',s.missioni,'Missioni'],['💶',euroFmt(s.netto),'Netto registrato'],['💤',s.riposi,'Riposi'],['🛰️',s.reperibilita,'Reperibilità'],['🚗',s.servizioEsterno,'Servizio esterno'],['🛡️',s.ordinePubblico,'Ordine pubblico'],['💶',euroFmt(s.lordo),'Lordo registrato']].filter(c => !(c[2].endsWith('registrato') && !(Number(c[2] === 'Netto registrato' ? s.netto : s.lordo) > 0))); // netto/lordo solo se c'è un cedolino salvato
   // I 3 andamenti mese-per-mese (Ore/Straordinario/Netto) ripetevano gli stessi 12 mesi tre
   // volte una sotto l'altra, più una tabella che li ripeteva una quarta volta: un solo grafico
   // con un selettore per cambiare vista mostra la stessa informazione senza la ripetizione.

@@ -337,6 +337,9 @@ function inizializza(){
   if(overlayModello) document.body.appendChild(overlayModello);
   renderModelliTabTurni();
   aggiornaRiassuntoAnagraficaAltro();
+  on('btnReportMesePrec', 'click', () => el('btnMesePrec').click());
+  on('btnReportMeseSucc', 'click', () => el('btnMeseSucc').click());
+  on('tabReport', 'click', renderReportHero);
   on('tabTurni', 'click', renderModelliTabTurni);
   on('tabAltro', 'click', aggiornaRiassuntoAnagraficaAltro);
   const listaModelliTab = el('listaModelliTabTurni');
@@ -1276,6 +1279,35 @@ function eliminaPatternSempliceV2(){
   });
 }
 
+
+// Report: in cima quanto arriva sul conto il mese dopo quello visualizzato, più ore e netto
+// dello straordinario. Stessi calcoli di "Cosa arriva sul conto" e del riepilogo ore.
+function renderReportHero(){
+  const box = el('reportHero');
+  if(!box) return;
+  el('reportMeseEtichetta').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
+  try{
+    const euroFmt = v => typeof euro === 'function' ? euro(v) : `${Number(v || 0).toFixed(2)} €`;
+    const prossimo = (meseCorrente + 1) % 12, annoProssimo = meseCorrente === 11 ? annoCorrente + 1 : annoCorrente;
+    const acc = generaAccreditoConto(annoProssimo, prossimo);
+    const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
+    const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
+    const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
+    const precedente = NOMI_MESI[(meseCorrente + 11) % 12].toLowerCase();
+    box.innerHTML = `
+      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[prossimo].toLowerCase()}</div>
+      <div class="report-hero-cifra">${euroFmt(acc.netto)}</div>
+      <div class="report-hero-det">Stipendio di ${NOMI_MESI[meseCorrente].toLowerCase()} + accessorie di ${precedente} · stima</div>
+      <div class="report-hero-tiles">
+        <div><b>${String(Math.round(ore * 10) / 10).replace('.', ',')}</b><span>ore lavorate</span></div>
+        <div><b class="${ns.netto > 0 ? 'pos' : ''}">${ns.netto > 0 ? '+' : ''}${euroFmt(ns.netto)}</b><span>netto straordinario</span></div>
+      </div>`;
+    box.hidden = false;
+  }catch(e){
+    console.warn('Riquadro Report non calcolato:', e);
+    box.hidden = true;
+  }
+}
 
 // Scheda Turni: i modelli di turno con il loro colore e orario, toccandone uno si modifica.
 function renderModelliTabTurni(){

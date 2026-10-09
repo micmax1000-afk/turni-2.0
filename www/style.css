@@ -1616,3 +1616,40 @@ body.scrittura-in-corso .barra-schede{display:none}
 
 .riga-strumento-turni[hidden]{display:none}
 #vistaImpostazioni #sezioneBackup,#vistaImpostazioni #sezioneBackupDrive{border-radius:18px}
+
+
+/* Report (v2.55.0): riquadro "Arriva sul conto", schede arrotondate, statistiche a riquadri */
+#vistaStatistiche .scheda,#vistaCedolino .scheda{border-radius:18px}
+.report-mese-nav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+.report-mese-nav b{font:700 1rem var(--font-corpo)}
+.report-mese-nav .btn-freccia{width:36px;height:36px}
+.report-hero{background:linear-gradient(135deg,#1B2440,#2E4A8F);color:#fff;border-radius:18px;padding:16px;margin-bottom:12px}
+.report-hero-et{font-size:.8rem;opacity:.85}
+.report-hero-cifra{font:700 2.1rem/1.15 var(--font-cifre);margin:4px 0 2px}
+.report-hero-det{font-size:.74rem;opacity:.75}
+.report-hero-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.report-hero-tiles div{background:rgba(255,255,255,.12);border-radius:14px;padding:10px 12px}
+.report-hero-tiles b{display:block;font:700 1.15rem/1.2 var(--font-cifre)}
+.report-hero-tiles b.pos{color:#7CE3A1}
+.report-hero-tiles span{font-size:.72rem;color:rgba(255,255,255,.78)}
+#rControlloTerritorio{font-family:var(--font-corpo)!important}
+.cedolino-sezione-secondaria{background:var(--pannello,#fff);border:1px solid var(--bordo);border-radius:18px;margin:0 0 12px;overflow:hidden}
+.cedolino-sezione-secondaria>summary{padding:14px 16px;font-weight:700;cursor:pointer;list-style:none}
+.cedolino-sezione-secondaria>summary::-webkit-details-marker{display:none}
+.cedolino-sezione-secondaria>.scheda{border:0;box-shadow:none;margin:0;border-radius:0}
+.nota-finale-v2{margin:8px 4px 0;font-size:.74rem;color:var(--testo-tenue);text-align:center}
+.nota-finale-v2>summary{cursor:pointer;list-style:none;padding:6px 8px;line-height:1.5}
+.nota-finale-v2>summary::-webkit-details-marker{display:none}
+.nota-finale-v2>summary b{color:var(--inchiostro)}
+.nota-finale-v2[open]>summary b{display:none}
+.nota-finale-v2 .nota-piede{text-align:left}
+#contenitoreStatistiche .stat-cards-v17{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:0;border-radius:0;overflow:visible}
+#contenitoreStatistiche .stat-card{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px;border:0;border-radius:14px;padding:10px 12px;background:var(--carta)}
+#contenitoreStatistiche .stat-card span{font-size:.95rem}
+#contenitoreStatistiche .stat-card strong{font:700 1.15rem/1.2 var(--font-cifre);margin:0}
+#contenitoreStatistiche .stat-card small{font-size:.72rem;opacity:1;color:var(--testo-tenue)}
+#contenitoreStatistiche .stat-v-track{height:12px;background:var(--carta)}
+#contenitoreStatistiche .stat-v-fill{background:linear-gradient(90deg,#5B7BD5,#2E4A8F)}
+#contenitoreStatistiche .stat-v-fill.stat-stra{background:linear-gradient(90deg,#F0A35E,#C26930)}
+#contenitoreStatistiche .stat-v-fill.stat-netto{background:linear-gradient(90deg,#6FD3A6,#2E9E83)}
+#contenitoreStatistiche .stat-v-row:has(.stat-v-fill[style*="width:0%"]){opacity:.45}

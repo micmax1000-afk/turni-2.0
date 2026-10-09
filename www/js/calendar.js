@@ -377,7 +377,7 @@ function aggiornaRiepilogoMensile(){
   el('rMissioni').textContent = missioni;
   el('rServizioEsterno').textContent = servizioEsterno;
   el('rOrdinePubblico').textContent = ordinePubblico;
-  el('rControlloTerritorio').textContent = `${giorniControlloTerritorioSerali} serale · ${giorniControlloTerritorioNotturni} notturno`;
+  el('rControlloTerritorio').textContent = `Serale ${giorniControlloTerritorioSerali} · Notturno ${giorniControlloTerritorioNotturni}`;
   el('rBuoniPasto').textContent = `${buoniPasto} (${euro(round2(buoniPasto * AppState.tabelle.buonoPastoValore))})`;
   el('rOreCompensate').textContent = round2(oreCompensateTotale).toLocaleString('it-IT', {minimumFractionDigits:2});
 }
@@ -785,6 +785,7 @@ function renderCalendario(){
   if(typeof aggiornaRiepilogoVisualeMese === 'function') aggiornaRiepilogoVisualeMese();
   if(typeof aggiornaRiepilogoGiornoSelezionatoV2 === 'function') aggiornaRiepilogoGiornoSelezionatoV2();
   if(typeof renderProssimiEventiV2 === 'function') renderProssimiEventiV2();
+  if(typeof renderReportHero === 'function') renderReportHero();
 }
 
 function selezionaGiorno(iso){
