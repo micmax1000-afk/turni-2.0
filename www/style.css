@@ -1830,3 +1830,15 @@ html[data-tema="scuro"] .anteprima-classificazione.anteprima-giorno .et-str{back
 .opzioni-riga-altro .riga-anagrafica[hidden]{display:none}
 .opzioni-riga-altro input[type=time]{width:auto;border:0;border-radius:9px;background:var(--carta);color:var(--inchiostro);font:600 .95rem var(--font-corpo);padding:7px 10px;margin:0}
 #sceltaPeriodoEsporta button.attivo{background:var(--inchiostro);border-color:var(--inchiostro);color:var(--pannello)}
+/* Modifica il giorno → Assenza: elenco da toccare */
+.elenco-assenze-giorno{margin-top:2px}
+.riga-assenza-giorno{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:0;border-top:1px solid var(--bordo);background:none;color:var(--testo);font:inherit;text-align:left;cursor:pointer}
+.riga-assenza-giorno:first-child{border-top:0}
+.riga-assenza-giorno span{font-size:1.05rem;flex:0 0 auto}
+.riga-assenza-giorno b{flex:1;font-size:.92rem}
+.riga-assenza-giorno em{font-style:normal;font-weight:700;font-size:.9rem}
+.riga-assenza-giorno em small{font-weight:500;color:var(--testo-tenue,#6B7280)}
+.riga-assenza-giorno i{font-style:normal;color:#1D4FC4;font-weight:800}
+.riga-assenza-giorno.attiva{background:#DCE7FF}
+html[data-tema="scuro"] .riga-assenza-giorno.attiva{background:#22305A}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .riga-assenza-giorno.attiva{background:#22305A}}

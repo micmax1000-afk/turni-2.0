@@ -182,6 +182,19 @@ function aggiornaEditorGiornoV3(){
   }).join('');
   el('contaIndennitaGiorno').textContent = attive ? `${attive} ${attive === 1 ? 'attiva' : 'attive'}` : '';
   el('notaControlloTerritorio').hidden = !el('campoControlloTerritorio').checked;
+  // Assenza: elenco da toccare, con quanto resta di ognuna
+  const elenco = el('elencoAssenzeGiorno');
+  if(elenco && modo === 'assenza'){
+    const scelta = el('campoAssenzaTipo').value;
+    const voci = [...el('campoAssenzaTipo').options].filter(o => o.value).map(o => (AppState.assenze || []).find(a => a.id === o.value)).filter(Boolean);
+    elenco.innerHTML = voci.map(a => {
+      const x = typeof saldoAssenza === 'function' ? saldoAssenza(a) : null;
+      const saldo = x && x.spettanti ? `${numeroIt(x.rimangono)} <small>/ ${numeroIt(x.spettanti)} ${x.unita}</small>` : '';
+      const attiva = a.id === scelta;
+      return `<button type="button" class="riga-assenza-giorno${attiva ? ' attiva' : ''}" data-assenza-giorno="${escapeHtml(a.id)}"><span>${ICONE_ASSENZE[a.nome] || (a.unita === 'h' ? '⏱️' : '📅')}</span><b>${escapeHtml(a.nome)}</b><em>${saldo}</em>${attiva ? '<i aria-hidden="true">✓</i>' : ''}</button>`;
+    }).join('');
+    el('contaAssenzaGiorno').textContent = scelta ? '' : 'tocca per scegliere';
+  }
   // Prima / dopo il turno
   document.querySelectorAll('#pannelloTurno .scelta-prima-dopo').forEach(g => {
     const valore = el(g.dataset.per).value;

@@ -753,6 +753,13 @@ function inizializza(){
       aggiornaVisibilitaCampiOrario(); aggiornaAnteprima(); aggiornaEditorGiornoV3();
       return;
     }
+    const ass = e.target.closest('[data-assenza-giorno]');
+    if(ass){
+      el('campoAssenzaTipo').value = ass.dataset.assenzaGiorno;
+      el('campoAssenzaTipo').dispatchEvent(new Event('change'));
+      aggiornaEditorGiornoV3();
+      return;
+    }
     const mod = e.target.closest('[data-modello-giorno]');
     if(mod){
       const m = (AppState.modelliTurno || []).find(x => x.id === mod.dataset.modelloGiorno);

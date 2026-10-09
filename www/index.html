@@ -267,11 +267,11 @@
         </div>
         <input type="checkbox" id="campoRiposo" hidden>
         <div id="bloccoAssenzaGiorno" hidden>
-          <label class="campo-modale">Quale assenza
-            <select id="campoAssenzaTipo">
-              <option value="">— scegli —</option>
-            </select>
-          </label>
+          <select id="campoAssenzaTipo" hidden>
+            <option value="">— scegli —</option>
+          </select>
+          <p class="titolo-sezione-giorno">Quale assenza <em id="contaAssenzaGiorno"></em></p>
+          <div class="gruppo-assenze elenco-assenze-giorno" id="elencoAssenzeGiorno"></div>
           <div id="campiRiposoCompensativo" style="display:none;">
             <div class="riga-straordinario-ore">
               <label class="campo-modale">Turno sostituito — dalle<input type="time" id="campoRCOraInizio"></label>
