@@ -741,18 +741,13 @@ function importaBackup(file, datiGiaLetti){
         salvaEventiGiornoStorage();
         // Gli allarmi di Android non fanno parte del backup: si annullano quelli degli eventi
         // di prima e si riprogrammano i promemoria futuri, uno alla volta e senza messaggi.
-        if(typeof schedulaPromemoriaEvento === 'function' && typeof annullaPromemoriaEvento === 'function'){
+        if(typeof riprogrammaPromemoriaEventi === 'function' && typeof annullaPromemoriaEvento === 'function'){
           (async () => {
             try{
               for(const iso of Object.keys(eventiPrima)) for(const ev of (eventiPrima[iso] || [])){
                 if(ev && ev.id) await annullaPromemoriaEvento(ev.id);
               }
-              const adesso = Date.now();
-              for(const iso of Object.keys(AppState.eventiGiorno)) for(const ev of (AppState.eventiGiorno[iso] || [])){
-                if(!ev || !ev.id) continue;
-                const futuro = promemoriaDiEvento(ev).some(p => { const q = quandoPromemoria(iso, ev, p); return q && q.getTime() > adesso; });
-                if(futuro) await schedulaPromemoriaEvento(iso, ev, { silenzioso: true });
-              }
+              await riprogrammaPromemoriaEventi({ soloAggiungi: false });
             }catch(e){ console.warn('Promemoria del backup non riprogrammati:', e); }
           })();
         }

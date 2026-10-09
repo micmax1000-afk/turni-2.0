@@ -309,6 +309,9 @@ function inizializza(){
   inizializzaPlayBilling().then(() => renderSezioneBackupDrive());
   mostraVersioneApp();
   aggiornaClasseCalendarioColori();
+  // Promemoria degli eventi: si rimettono quelli che Android potrebbe aver cancellato e si
+  // programmano le prossime volte degli eventi che si ripetono. Con calma, dopo l'avvio.
+  setTimeout(() => { riprogrammaPromemoriaEventi(); }, 4000);
   // Piccolo ritardo perché la libreria Google (caricata con "defer") abbia il tempo di essere pronta
   setTimeout(() => {
     inizializzaGoogleIdentity();
@@ -835,6 +838,18 @@ function inizializza(){
   on('btnChiudiScegliBackupDrive','click', () => { el('overlayScegliBackupDrive').hidden = true; });
   on('btnSalvaEvento','click', salvaEventoV2);
   on('btnEliminaEvento','click', eliminaEventoV2);
+  on('btnEliminaEventoGiorno','click', eliminaEventoSoloGiornoV2);
+  on('campoEventoRipeti','change', aggiornaVistaRipetiEvento);
+  on('btnAttivaNotificheEvento','click', attivaNotifichePromemoria);
+  // Tornando dalle impostazioni di Android: si ricontrolla se le notifiche sono state attivate.
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && el('overlayEvento') && !el('overlayEvento').hidden) controllaPermessiPromemoria();
+  });
+  const prossimiHost = el('listaProssimiEventiV2');
+  if(prossimiHost) prossimiHost.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-evento-giorno]');
+    if(btn) apriEventoDaProssimi(btn);
+  });
   on('campoEventoTuttoIlGiorno','change', () => {
     aggiornaVistaOrariEvento();
     ridisegnaPromemoriaEvento(null); // ripartono dal valore predefinito del nuovo tipo di evento
@@ -851,7 +866,7 @@ function inizializza(){
   const listaEventiGiornoHost = el('listaEventiGiornoV2');
   if(listaEventiGiornoHost) listaEventiGiornoHost.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-evento-id]');
-    if(btn) apriModificaEventoV2(btn.dataset.eventoId);
+    if(btn) apriModificaEventoV2(btn.dataset.eventoId, btn.dataset.eventoIso);
   });
   on('btnChiudiStraordinarioRapido','click', () => { el('overlayStraordinarioRapido').hidden = true; });
   on('btnSalvaStraordinarioRapido','click', salvaStraordinarioRapidoV2);
@@ -1433,22 +1448,107 @@ let eventoInModificaV2 = null; // { iso, id } dell'evento aperto nel mini-form, 
 function renderListaEventiGiornoV2(){
   const host = el('listaEventiGiornoV2');
   if(!host || !giornoSelezionato) return;
-  const eventi = AppState.eventiGiorno[giornoSelezionato] || [];
+  const eventi = eventiDelGiorno(giornoSelezionato);
   if(!eventi.length){ host.innerHTML = ''; return; }
-  host.innerHTML = eventi.map(ev => {
-    const quando = ev.tuttoIlGiorno ? 'Tutto il giorno' : `${ev.oraInizio || '—'} - ${ev.oraFine || '—'}`;
-    return `<button type="button" class="riga-evento-giorno-v2" data-evento-id="${escapeHtml(ev.id)}">
-      <span class="riga-evento-giorno-pallino" aria-hidden="true">●</span>
-      <span class="riga-evento-giorno-testo"><strong>${escapeHtml(ev.titolo || 'Senza titolo')}</strong><small>${escapeHtml(quando)}</small></span>
-      <span class="riga-modello-freccia" aria-hidden="true">›</span>
-    </button>`;
-  }).join('');
+  host.innerHTML = eventi.map(({ ev, isoOrigine }) => rigaEventoHtml(ev, isoOrigine)).join('');
 }
 
-function apriModificaEventoV2(id){
+// Una riga dell'elenco eventi: titolo, orario, luogo, 🔔 se ha promemoria, 🔁 se si ripete.
+function rigaEventoHtml(ev, isoOrigine, etichettaGiorno){
+  const quando = ev.tuttoIlGiorno ? 'Tutto il giorno'
+    : ev.oraInizio && !ev.oraFine ? `Alle ${ev.oraInizio}` : `${ev.oraInizio || '—'} - ${ev.oraFine || '—'}`;
+  const dettaglio = [etichettaGiorno, quando, ev.luogo].filter(Boolean).join(' · ');
+  const icone = (promemoriaDiEvento(ev).length ? '🔔' : '') + (ev.ripeti ? '🔁' : '');
+  return `<button type="button" class="riga-evento-giorno-v2" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">
+      <span class="riga-evento-giorno-pallino" aria-hidden="true">●</span>
+      <span class="riga-evento-giorno-testo"><strong>${escapeHtml(ev.titolo || 'Senza titolo')}</strong><small>${escapeHtml(dettaglio)}</small></span>
+      ${icone ? `<span class="riga-evento-giorno-icone" aria-hidden="true">${icone}</span>` : ''}
+      <span class="riga-modello-freccia" aria-hidden="true">›</span>
+    </button>`;
+}
+
+// ── Eventi che si ripetono ──
+// L'evento resta salvato solo nel giorno in cui è nato (isoOrigine); le ripetizioni si calcolano.
+// ev.ripeti: '' | 'settimana' | '2settimane' | 'mese' | 'anno'; ev.ripetiFino: ultimo giorno (facoltativo);
+// ev.eccezioni: giorni cancellati uno per uno ("Elimina solo questo giorno").
+function dataDaIso(iso){ return new Date(`${iso}T12:00:00`); } // mezzogiorno: niente sorprese con l'ora legale
+function eventoCadeIl(isoOrigine, ev, iso){
+  if(!ev || (ev.eccezioni || []).includes(iso)) return false;
+  if(iso === isoOrigine) return true;
+  if(!ev.ripeti || iso < isoOrigine) return false;
+  if(ev.ripetiFino && iso > ev.ripetiFino) return false;
+  const a = dataDaIso(isoOrigine), b = dataDaIso(iso);
+  switch(ev.ripeti){
+    case 'settimana': return Math.round((b - a) / 86400000) % 7 === 0;
+    case '2settimane': return Math.round((b - a) / 86400000) % 14 === 0;
+    case 'mese': return a.getDate() === b.getDate(); // il 31 salta i mesi più corti, come Google Calendar
+    case 'anno': return a.getDate() === b.getDate() && a.getMonth() === b.getMonth();
+    default: return false;
+  }
+}
+// Tutti gli eventi di un giorno, comprese le ripetizioni di eventi nati in giorni precedenti.
+function eventiDelGiorno(iso){
+  const out = [];
+  Object.keys(AppState.eventiGiorno || {}).forEach(o => {
+    if(o > iso) return;
+    (AppState.eventiGiorno[o] || []).forEach(ev => {
+      if(ev && (o === iso || ev.ripeti) && eventoCadeIl(o, ev, iso)) out.push({ ev, isoOrigine: o });
+    });
+  });
+  const chiave = x => x.ev.tuttoIlGiorno ? '' : (x.ev.oraInizio || '99');
+  return out.sort((x, y) => chiave(x).localeCompare(chiave(y)));
+}
+// I prossimi giorni (al massimo "quanti") in cui cade l'evento, a partire da "daIso" compreso.
+function prossimeOccorrenzeEvento(isoOrigine, ev, daIso, quanti){
+  const out = [];
+  const d = dataDaIso(isoOrigine > daIso ? isoOrigine : daIso);
+  for(let i = 0; i < 800 && out.length < quanti; i++){
+    const iso = dataISO(d);
+    if(!ev.ripeti && iso > isoOrigine) break;
+    if(ev.ripetiFino && iso > ev.ripetiFino) break;
+    if(eventoCadeIl(isoOrigine, ev, iso)) out.push(iso);
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+// ── Prossimi eventi (7 giorni) sotto il calendario ──
+function renderProssimiEventiV2(){
+  const box = el('prossimiEventiV2'), host = el('listaProssimiEventiV2');
+  if(!box || !host) return;
+  const adesso = new Date();
+  const oraAdesso = `${due(adesso.getHours())}:${due(adesso.getMinutes())}`;
+  const righe = [];
+  for(let i = 0; i < 7; i++){
+    const d = new Date(adesso.getFullYear(), adesso.getMonth(), adesso.getDate() + i, 12);
+    const iso = dataISO(d);
+    const etichetta = i === 0 ? 'Oggi' : i === 1 ? 'Domani'
+      : d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '');
+    eventiDelGiorno(iso).forEach(({ ev, isoOrigine }) => {
+      // Oggi: si tolgono gli eventi già finiti.
+      if(i === 0 && !ev.tuttoIlGiorno && (ev.oraFine || ev.oraInizio) && (ev.oraFine || ev.oraInizio) <= oraAdesso) return;
+      righe.push(rigaEventoHtml(ev, isoOrigine, etichetta).replace('<button ', `<button data-evento-giorno="${iso}" `));
+    });
+  }
+  box.hidden = !righe.length;
+  host.innerHTML = righe.join('');
+}
+function apriEventoDaProssimi(btn){
+  const iso = btn.dataset.eventoGiorno;
+  const d = dataDaIso(iso);
+  meseCorrente = d.getMonth();
+  annoCorrente = d.getFullYear();
+  giornoSelezionato = iso;
+  renderCalendario();
+  apriModificaEventoV2(btn.dataset.eventoId, btn.dataset.eventoIso);
+}
+
+function apriModificaEventoV2(id, isoOrigine){
   if(!giornoSelezionato) return;
-  eventoInModificaV2 = id ? { iso: giornoSelezionato, id } : null;
-  const ev = id ? (AppState.eventiGiorno[giornoSelezionato] || []).find(e => e.id === id) : null;
+  const isoEvento = isoOrigine || giornoSelezionato;
+  const ev = id ? (AppState.eventiGiorno[isoEvento] || []).find(e => e.id === id) : null;
+  // iso = giorno in cui l'evento è salvato; giorno = quello aperto (diverso per una ripetizione)
+  eventoInModificaV2 = ev ? { iso: isoEvento, id, giorno: giornoSelezionato } : null;
   el('titoloModaleEvento').textContent = ev ? 'Modifica evento' : 'Nuovo evento';
   el('campoEventoTitolo').value = ev ? (ev.titolo || '') : '';
   el('campoEventoTuttoIlGiorno').checked = !!(ev && ev.tuttoIlGiorno);
@@ -1458,6 +1558,9 @@ function apriModificaEventoV2(id){
   el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
   el('campoEventoNote').value = ev ? (ev.note || '') : '';
   el('campoEventoOraPromemoria').value = ev && ev.oraPromemoria ? ev.oraPromemoria : '08:00';
+  el('campoEventoRipeti').value = ev && ev.ripeti ? ev.ripeti : '';
+  el('campoEventoRipetiFino').value = ev && ev.ripetiFino ? ev.ripetiFino : '';
+  aggiornaVistaRipetiEvento();
   aggiornaVistaOrariEvento();
   // Nuovo evento: un promemoria "10 minuti prima" già pronto, come Google Calendar.
   ridisegnaPromemoriaEvento(ev ? promemoriaDiEvento(ev) : null);
@@ -1465,7 +1568,35 @@ function apriModificaEventoV2(id){
   el('campoEventoAvvisoModo').value = ev && ev.avvisoModo ? ev.avvisoModo : 'suono_vibra';
   aggiornaCampiAvvisoEvento();
   el('btnEliminaEvento').hidden = !ev;
+  el('btnEliminaEvento').textContent = ev && ev.ripeti ? '🗑️ Tutta la serie' : '🗑️ Elimina';
+  el('btnEliminaEventoGiorno').hidden = !(ev && ev.ripeti);
   el('overlayEvento').hidden = false;
+  controllaPermessiPromemoria();
+}
+
+function aggiornaVistaRipetiEvento(){
+  const ripeti = el('campoEventoRipeti').value;
+  el('campoEventoRipetiFinoWrap').hidden = !ripeti;
+  el('hintRipetiEvento').hidden = !(ripeti && eventoInModificaV2);
+}
+
+// Notifiche dell'app spente: lo diciamo subito nel modulo, con un tasto per riattivarle.
+async function controllaPermessiPromemoria(){
+  const box = el('avvisoPermessiEvento'); if(!box) return;
+  const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+  if(!plugin || !el('listaPromemoriaEvento').children.length){ box.hidden = true; return; }
+  try{ const p = await plugin.checkPermissions(); box.hidden = p.display === 'granted'; }catch(e){ box.hidden = true; }
+}
+async function attivaNotifichePromemoria(){
+  const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+  if(!plugin) return;
+  let p = null;
+  try{ p = await plugin.requestPermissions(); }catch(e){}
+  if(p && p.display === 'granted'){ el('avvisoPermessiEvento').hidden = true; mostraToast('Notifiche attivate', 'successo'); return; }
+  // Android non ripropone la richiesta dopo un "no": si aprono le impostazioni delle notifiche dell'app.
+  const avviso = pluginAvvisoEvento();
+  if(avviso){ try{ await avviso.apriImpostazioniNotifiche(); return; }catch(e){} }
+  mostraAvviso('Apri Impostazioni di Android → App → Turni → Notifiche e attivale.', 'Notifiche disattivate');
 }
 
 // Le notifiche Android vogliono un numero intero (32 bit) come identificativo, non la stringa
@@ -1587,6 +1718,7 @@ function aggiornaTestoPromemoriaEvento(){
     : (tutt ? "Evento senza orario: i promemoria arrivano all'ora scelta qui sopra (tranne «La sera prima», alle 20:00)." : 'Puoi aggiungerne più di uno (massimo ' + MAX_PROMEMORIA_EVENTO + ').');
   el('btnAggiungiPromemoria').hidden = n >= MAX_PROMEMORIA_EVENTO;
   aggiornaCampiAvvisoEvento();
+  controllaPermessiPromemoria();
 }
 
 // ── Avviso evento (suono/vibrazione di pochi secondi, anche in silenzioso) ──
@@ -1604,79 +1736,104 @@ function aggiornaCampiAvvisoEvento(){
   el('campoEventoAvvisoModoWrap').hidden = el('campoEventoAvvisoDurata').value === '0';
 }
 
-async function annullaNotificheEvento(idEvento, plugin, avviso){
+// Slot di notifica per evento: 0..9 (fino a 5 promemoria × le prossime 2 ripetizioni).
+const SLOT_NOTIFICA_EVENTO = 10;
+const RIPETIZIONI_PROGRAMMATE = 2;
+async function annullaNotificheEvento(idEvento, plugin, avviso, tranne){
   const ids = [idNotificaDaEvento(idEvento)];
-  for(let i = 0; i < 10; i++) ids.push(idNotificaDaEvento(idEvento, i));
-  try{ await plugin.cancel({ notifications: ids.map(id => ({ id })) }); }catch(e){}
-  if(avviso){ for(const id of ids){ try{ await avviso.annulla({ id }); }catch(e){} } }
+  for(let i = 0; i < SLOT_NOTIFICA_EVENTO; i++) ids.push(idNotificaDaEvento(idEvento, i));
+  const daAnnullare = tranne ? ids.filter(id => !tranne.has(id)) : ids;
+  if(!daAnnullare.length) return;
+  try{ await plugin.cancel({ notifications: daAnnullare.map(id => ({ id })) }); }catch(e){}
+  if(avviso){ for(const id of daAnnullare){ try{ await avviso.annulla({ id }); }catch(e){} } }
 }
 
-// opzioni.silenzioso: nessun messaggio a schermo (es. ripristino di un backup con tanti eventi).
+// iso = giorno in cui l'evento è salvato (per un evento che si ripete: il primo).
+// opzioni.silenzioso: nessun messaggio e nessuna richiesta di permessi (apertura app, ripristino backup).
+// opzioni.soloAggiungi: riprogramma senza annullare nulla (all'apertura dell'app: le notifiche già
+//   comparse restano dove sono).
 async function schedulaPromemoriaEvento(iso, evento, opzioni = {}){
   const avvisa = (testo) => { if(!opzioni.silenzioso) mostraToast(testo, 'avviso'); };
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return; // sul sito normale (o fuori dall'app) i promemoria non sono disponibili
   const avviso = pluginAvvisoEvento();
-  await annullaNotificheEvento(evento.id, plugin, avviso);
-  const lista = promemoriaDiEvento(evento);
-  if(!lista.length) return;
+  const lista = promemoriaDiEvento(evento).slice(0, MAX_PROMEMORIA_EVENTO);
   const adesso = Date.now();
   const futuri = [];
   let passati = 0;
-  lista.forEach((p, indice) => {
-    const quando = quandoPromemoria(iso, evento, p);
-    if(!quando) return;
-    if(quando.getTime() <= adesso){ passati++; return; }
-    futuri.push({ indice, quando, p });
-  });
+  // Evento che si ripete: si programmano le prossime 2 volte; le successive le aggiunge
+  // l'apertura dell'app (riprogrammaPromemoriaEventi).
+  const giorni = evento.ripeti ? prossimeOccorrenzeEvento(iso, evento, dataISO(new Date()), 60) : [iso];
+  let ripetizione = 0;
+  for(const giorno of giorni){
+    if(ripetizione >= RIPETIZIONI_PROGRAMMATE) break;
+    let usata = false;
+    lista.forEach((p, indice) => {
+      const quando = quandoPromemoria(giorno, evento, p);
+      if(!quando) return;
+      if(quando.getTime() <= adesso){ passati++; return; }
+      futuri.push({ slot: ripetizione * MAX_PROMEMORIA_EVENTO + indice, quando, p, giorno });
+      usata = true;
+    });
+    if(usata) ripetizione++;
+  }
+  const idsNuovi = new Set(futuri.map(f => idNotificaDaEvento(evento.id, f.slot)));
+  // Con il modulo nativo un id riprogrammato sostituisce da solo quello vecchio: si annullano
+  // solo gli altri, così una notifica dello stesso evento già comparsa non sparisce.
+  if(!opzioni.soloAggiungi) await annullaNotificheEvento(evento.id, plugin, avviso, avviso ? idsNuovi : null);
   // Evento già passato (es. annotato dopo): niente avviso, non c'è nulla da ricordare.
   const inizioEvento = new Date(`${iso}T${evento.tuttoIlGiorno || !evento.oraInizio ? '23:59' : evento.oraInizio}:00`);
-  if(passati && inizioEvento.getTime() > adesso){
+  if(passati && !evento.ripeti && inizioEvento.getTime() > adesso){
     avvisa(futuri.length ? 'Qualche promemoria è già passato: non verrà inviato.' : "L'orario del promemoria è già passato: non verrà inviato.");
   }
   if(!futuri.length) return;
-  const giornoTesto = `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
-  const corpo = (p) => {
-    if(evento.tuttoIlGiorno) return evento.luogo ? `Tutto il giorno — ${evento.luogo}` : 'Tutto il giorno';
+  const corpo = (f) => {
+    const giornoTesto = `${f.giorno.slice(8, 10)}/${f.giorno.slice(5, 7)}`;
+    if(evento.tuttoIlGiorno){
+      const base = evento.luogo ? `Tutto il giorno — ${evento.luogo}` : 'Tutto il giorno';
+      return f.p.min !== 0 ? `Il ${giornoTesto}: ${base}` : base;
+    }
     const base = evento.luogo ? `${evento.oraInizio} — ${evento.luogo}` : `Alle ${evento.oraInizio}`;
-    return p.min >= 1440 ? `Il ${giornoTesto}: ${base}` : base;
+    return f.p.min >= 1440 ? `Il ${giornoTesto}: ${base}` : base;
   };
   try{
     // 1) Permesso notifiche (Android 13+): lo chiediamo esplicitamente, così se è negato lo diciamo.
     try{
       let perm = await plugin.checkPermissions();
-      if(perm.display !== 'granted') perm = await plugin.requestPermissions();
+      if(perm.display !== 'granted' && !opzioni.silenzioso) perm = await plugin.requestPermissions();
       if(perm.display !== 'granted'){
         avvisa('Notifiche disattivate per l\'app: attivale dalle impostazioni di Android.');
         return;
       }
     }catch(e){ console.warn('Permesso notifiche non verificabile:', e); }
-    // 2) Avviso forte di pochi secondi (modulo nativo): al posto della notifica normale.
-    //    La notifica la pubblica il modulo stesso, con i tasti Spegni e Posticipa.
-    if(avviso && evento.avvisoSecondi > 0){
-      try{
-        // Android 12+: per l'orario preciso serve il permesso "Allarmi e promemoria" (chiesto una volta sola).
-        const chiave = 'turni_allarmi_esatti_chiesto';
-        const ex = await plugin.checkExactNotificationSetting();
-        if(ex && ex.exact_alarm === 'denied' && !localStorage.getItem(chiave)){
-          localStorage.setItem(chiave, '1');
-          await plugin.changeExactNotificationSetting();
-        }
-      }catch(e){}
+    // 2) Modulo nativo: sia l'avviso forte (suono/vibrazione per pochi secondi) sia la notifica
+    //    normale (durata 0), entrambi con i tasti Posticipa e Spegni.
+    if(avviso){
+      if(evento.avvisoSecondi > 0 && !opzioni.silenzioso){
+        try{
+          // Android 12+: per l'orario preciso serve il permesso "Allarmi e promemoria" (chiesto una volta sola).
+          const chiave = 'turni_allarmi_esatti_chiesto';
+          const ex = await plugin.checkExactNotificationSetting();
+          if(ex && ex.exact_alarm === 'denied' && !localStorage.getItem(chiave)){
+            localStorage.setItem(chiave, '1');
+            await plugin.changeExactNotificationSetting();
+          }
+        }catch(e){}
+      }
       for(const f of futuri){
         await avviso.programma({
-          id: idNotificaDaEvento(evento.id, f.indice),
+          id: idNotificaDaEvento(evento.id, f.slot),
           titolo: evento.titolo,
-          testo: corpo(f.p),
+          testo: corpo(f),
           quandoMs: f.quando.getTime(),
-          durataSec: evento.avvisoSecondi,
+          durataSec: evento.avvisoSecondi > 0 ? evento.avvisoSecondi : 0,
           modo: evento.avvisoModo || 'suono_vibra'
         });
       }
       return;
     }
-    // 3) Canale v2: su Android le impostazioni di un canale già creato non si possono più cambiare.
-    //    Importanza alta = suono + comparsa in primo piano; vibrazione accesa.
+    // 3) Senza modulo nativo: notifiche di Capacitor. Canale v2: su Android le impostazioni di un
+    //    canale già creato non si possono più cambiare. Importanza alta = suono + primo piano.
     try{ await plugin.deleteChannel({ id: 'promemoria_eventi' }); }catch(e){}
     try{
       await plugin.createChannel({
@@ -1692,15 +1849,30 @@ async function schedulaPromemoriaEvento(iso, evento, opzioni = {}){
     // 4) allowWhileIdle: senza, Android usa un allarme che NON sveglia il telefono e con schermo
     //    spento / risparmio energetico la notifica compare in ritardo o mai.
     await plugin.schedule({ notifications: futuri.map(f => ({
-      id: idNotificaDaEvento(evento.id, f.indice),
+      id: idNotificaDaEvento(evento.id, f.slot),
       title: evento.titolo,
-      body: corpo(f.p),
+      body: corpo(f),
       channelId: 'promemoria_eventi_v2',
       schedule: { at: f.quando, allowWhileIdle: true }
     })) });
   }catch(e){
     console.warn('Promemoria non programmato:', e);
     avvisa('Non è stato possibile programmare il promemoria.');
+  }
+}
+
+// All'apertura dell'app (e dopo un ripristino): riprogramma i promemoria futuri di tutti gli eventi.
+// Serve se Android li ha cancellati (app chiusa forzatamente, risparmio energetico aggressivo) e
+// per far "scorrere" gli eventi che si ripetono, di cui si programmano solo le prossime volte.
+async function riprogrammaPromemoriaEventi(opzioni = { soloAggiungi: true }){
+  if(!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications)) return;
+  const oggi = dataISO(new Date());
+  for(const iso of Object.keys(AppState.eventiGiorno || {})){
+    for(const ev of (AppState.eventiGiorno[iso] || [])){
+      if(!ev || !ev.id || !promemoriaDiEvento(ev).length) continue;
+      if(ev.ripeti ? (ev.ripetiFino && ev.ripetiFino < oggi) : iso < oggi) continue;
+      try{ await schedulaPromemoriaEvento(iso, ev, { silenzioso: true, soloAggiungi: !!opzioni.soloAggiungi }); }catch(e){}
+    }
   }
 }
 
@@ -1716,6 +1888,13 @@ function salvaEventoV2(){
   if(!titolo){ mostraToast('Dai un titolo all\'evento prima di salvare.', 'avviso'); return; }
   const tuttoIlGiorno = el('campoEventoTuttoIlGiorno').checked;
   const promemoria = leggiPromemoriaDalForm();
+  const isoEvento = eventoInModificaV2 ? eventoInModificaV2.iso : giornoSelezionato;
+  const ripeti = el('campoEventoRipeti').value;
+  const ripetiFino = ripeti ? el('campoEventoRipetiFino').value : '';
+  if(ripetiFino && ripetiFino < isoEvento){
+    mostraToast('La data «Fino al» viene prima dell\'evento.', 'avviso');
+    return;
+  }
   if(!tuttoIlGiorno && promemoria.length && !el('campoEventoOraInizio').value){
     mostraToast("Imposta l'orario di Inizio: serve per il promemoria.", 'avviso');
     return;
@@ -1732,10 +1911,13 @@ function salvaEventoV2(){
     ricordami: promemoria.length > 0,
     anticipoMinuti: promemoria.length ? Math.max(0, promemoria[0].min) : 0,
     avvisoSecondi: parseInt(el('campoEventoAvvisoDurata').value, 10) || 0,
-    avvisoModo: el('campoEventoAvvisoModo').value || 'suono_vibra'
+    avvisoModo: el('campoEventoAvvisoModo').value || 'suono_vibra',
+    ripeti,
+    ripetiFino
   };
-  if(!AppState.eventiGiorno[giornoSelezionato]) AppState.eventiGiorno[giornoSelezionato] = [];
-  const lista = AppState.eventiGiorno[giornoSelezionato];
+  if(!ripeti) dati.eccezioni = []; // senza ripetizioni i giorni "saltati" non hanno più senso
+  if(!AppState.eventiGiorno[isoEvento]) AppState.eventiGiorno[isoEvento] = [];
+  const lista = AppState.eventiGiorno[isoEvento];
   let eventoSalvato;
   if(eventoInModificaV2){
     const esistente = lista.find(e => e.id === eventoInModificaV2.id);
@@ -1745,11 +1927,26 @@ function salvaEventoV2(){
     lista.push(eventoSalvato);
   }
   salvaEventiGiornoStorage();
-  if(eventoSalvato) schedulaPromemoriaEvento(giornoSelezionato, eventoSalvato);
+  if(eventoSalvato) schedulaPromemoriaEvento(isoEvento, eventoSalvato);
   el('overlayEvento').hidden = true;
   renderListaEventiGiornoV2();
   renderCalendario();
   mostraToast('Evento salvato', 'successo');
+}
+
+// Evento che si ripete: toglie solo la ripetizione del giorno aperto, il resto della serie resta.
+function eliminaEventoSoloGiornoV2(){
+  if(!eventoInModificaV2) return;
+  const { iso, id, giorno } = eventoInModificaV2;
+  const ev = (AppState.eventiGiorno[iso] || []).find(e => e.id === id);
+  if(!ev) return;
+  ev.eccezioni = [...new Set([...(ev.eccezioni || []), giorno])];
+  salvaEventiGiornoStorage();
+  schedulaPromemoriaEvento(iso, ev, { silenzioso: true });
+  el('overlayEvento').hidden = true;
+  renderListaEventiGiornoV2();
+  renderCalendario();
+  mostraToast('Evento tolto da questo giorno', 'successo');
 }
 
 function eliminaEventoV2(){

@@ -1523,3 +1523,18 @@ body.calendario-senza-colori .giorno-cella.riposo-giorno .giorno-numero{ color: 
 .riga-promemoria .pr-unita{flex:0 0 100px;min-width:0}
 .riga-promemoria .pr-x{width:38px;height:38px;border:0;background:none;font-size:1.1rem;color:var(--testo-tenue);cursor:pointer}
 .btn-testo-evento{align-self:flex-start;border:0;background:none;color:var(--inchiostro);font-weight:600;font-size:0.95rem;padding:6px 0;cursor:pointer}
+
+/* Eventi (v2.51.0): titolo nella casella del giorno, icone nella lista, prossimi eventi, permessi */
+.giorno-evento-titolo{display:flex;align-items:center;gap:2px;margin-top:auto;min-width:0;padding:1px 3px;border-radius:4px;background:#2196F3;color:#fff;font:600 .5rem/1.3 var(--font-corpo)}
+.giorno-evento-testo{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.giorno-evento-titolo b{flex:0 0 auto;font-weight:700}
+.giorno-cella.selezionata .giorno-evento-titolo{margin-right:16px}
+@media(min-width:700px){.giorno-evento-titolo{font-size:.62rem;padding:2px 5px}.giorno-cella.selezionata .giorno-evento-titolo{margin-right:20px}}
+.riga-evento-giorno-icone{flex-shrink:0;font-size:.8rem}
+.prossimi-eventi-v2{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.prossimi-eventi-titolo{font-size:.9rem}
+.prossimi-eventi-v2 .lista-eventi-giorno-v2{margin:0;gap:6px}
+.avviso-permessi-evento{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:8px 10px;border-radius:10px;background:#FFF4E5;color:#7A4100;font-size:.8rem}
+.avviso-permessi-evento .btn-secondario{align-self:flex-start}
+.hint-evento{color:var(--testo-tenue);margin-top:-4px}
+.gruppo-elimina-evento{display:flex;flex-direction:column;gap:6px}

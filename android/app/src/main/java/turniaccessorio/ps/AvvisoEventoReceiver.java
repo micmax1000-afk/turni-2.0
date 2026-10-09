@@ -8,6 +8,15 @@ import android.app.NotificationManager;
 import androidx.core.content.ContextCompat;
 
 public class AvvisoEventoReceiver extends BroadcastReceiver {
+    private static android.app.PendingIntent azione(Context context, String az, int id, int richiesta) {
+        Intent i = new Intent(context, AvvisoEventoReceiver.class);
+        i.setAction(az);
+        i.putExtra("id", id);
+        return android.app.PendingIntent.getBroadcast(context, id * 4 + richiesta, i,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /** Notifica normale (con suono e vibrazione del canale), con i tasti Posticipa e Spegni. */
     private static void pubblicaSoloNotifica(Context context, int id) {
         try {
             org.json.JSONObject d = AvvisoEventoGestore.leggi(context, id);
@@ -30,8 +39,12 @@ public class AvvisoEventoReceiver extends BroadcastReceiver {
                     .setContentText(d.optString("testo", ""))
                     .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
                     .setDefaults(android.app.Notification.DEFAULT_ALL)
+                    .setCategory(androidx.core.app.NotificationCompat.CATEGORY_EVENT)
                     .setAutoCancel(true)
-                    .setContentIntent(apri);
+                    .setContentIntent(apri)
+                    .setDeleteIntent(azione(context, AvvisoEventoGestore.AZIONE_SPEGNI, id, 2))
+                    .addAction(0, "Posticipa 5 min", azione(context, AvvisoEventoGestore.AZIONE_POSTICIPA, id, 0))
+                    .addAction(0, "Spegni", azione(context, AvvisoEventoGestore.AZIONE_SPEGNI, id, 1));
             nm.notify(id, b.build());
         } catch (Exception ignored) {
         }
@@ -44,6 +57,12 @@ public class AvvisoEventoReceiver extends BroadcastReceiver {
         int id = intent.getIntExtra("id", 0);
         switch (azione) {
             case AvvisoEventoGestore.AZIONE_SCATTA: {
+                // Durata 0 = promemoria normale: solo la notifica, senza servizio né suono prolungato.
+                org.json.JSONObject d = AvvisoEventoGestore.leggi(context, id);
+                if (d != null && d.optInt("durata", 10) <= 0) {
+                    pubblicaSoloNotifica(context, id);
+                    break;
+                }
                 Intent s = new Intent(context, AvvisoEventoService.class);
                 s.putExtra("id", id);
                 try {
