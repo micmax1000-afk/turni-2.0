@@ -1,0 +1,403 @@
+// Controlli automatici di Turni & Accessorio PS.
+// Avvio: `npm test` (serve il browser di Playwright: `npx playwright install chromium`).
+// Apre l'app vera in un browser senza finestra, con una data fissa (9 ottobre 2026) e dati di
+// prova, e controlla calcoli, calendario, eventi, promemoria, turni e Report.
+// Esce con codice 1 se anche un solo controllo fallisce.
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+
+const RADICE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'www');
+const TIPI = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.svg':'image/svg+xml', '.webmanifest':'application/manifest+json' };
+const server = http.createServer((req, res) => {
+  const file = path.join(RADICE, decodeURIComponent(req.url.split('?')[0]).replace(/^\/$/, '/index.html'));
+  if(!file.startsWith(RADICE) || !fs.existsSync(file) || fs.statSync(file).isDirectory()){ res.writeHead(404); return res.end(); }
+  res.writeHead(200, { 'Content-Type': TIPI[path.extname(file)] || 'application/octet-stream' });
+  fs.createReadStream(file).pipe(res);
+});
+await new Promise(r => server.listen(0, '127.0.0.1', r));
+const URL_APP = `http://127.0.0.1:${server.address().port}/index.html`;
+
+let falliti = 0, superati = 0;
+const ok = (nome, condizione, dettaglio = '') => {
+  if(condizione){ superati++; console.log(`  ✔ ${nome}`); }
+  else { falliti++; console.log(`  ✘ ${nome}${dettaglio ? ' — ' + dettaglio : ''}`); }
+};
+const sezione = t => console.log(`\n${t}`);
+
+// Dati di prova: ciclo Sera/Pomeriggio/Mattina/Notte/Riposo a settembre e ottobre 2026.
+const CICLO = [['19:00','01:00','sera'],['13:00','19:00','pomeriggio'],['07:00','13:00','mattina'],['01:00','07:00','notte'],null];
+function turniDiProva(){
+  const t = {};
+  for(const m of ['09','10']) for(let d = 1; d <= 30; d++){
+    const iso = `2026-${m}-${String(d).padStart(2,'0')}`, c = CICLO[(d - 1) % 5];
+    t[iso] = c ? { data: iso, oraInizio: c[0], oraFine: c[1], modelloId: c[2] } : { data: iso, riposo: true };
+  }
+  return t;
+}
+
+const browser = await chromium.launch();
+async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true, scuro = false, nativo = false } = {}){
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome', colorScheme: scuro ? 'dark' : 'light' });
+  const p = await ctx.newPage();
+  const errori = [];
+  p.on('pageerror', e => errori.push(e.message));
+  await p.clock.setFixedTime(new Date('2026-10-09T10:00:00+02:00'));
+  await p.addInitScript(([t, e, s, c, n]) => {
+    if(sessionStorage.getItem('preparato')) return;
+    localStorage.clear();
+    localStorage.setItem('simCedolino_turni_v1', t);
+    localStorage.setItem('simCedolino_eventiGiorno_v1', e);
+    localStorage.setItem('simCedolino_stileCalendario_v1', s);
+    localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
+    localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
+    sessionStorage.setItem('preparato', '1');
+    if(n){
+      // Finti moduli Android, per vedere cosa verrebbe programmato.
+      window.__log = [];
+      const f = (nome, risposta) => a => { window.__log.push([nome, JSON.parse(JSON.stringify(a || {}))]); return Promise.resolve(risposta || {}); };
+      window.Capacitor = { isNativePlatform: () => true, Plugins: {
+        LocalNotifications: { cancel: f('ln.cancel'), schedule: f('ln.schedule'), checkPermissions: f('ln.check', { display: 'granted' }), requestPermissions: f('ln.req', { display: 'granted' }), createChannel: f('x'), deleteChannel: f('x'), checkExactNotificationSetting: f('x', { exact_alarm: 'granted' }) },
+        AvvisoEvento: { programma: f('av.programma'), annulla: f('av.annulla'), statoNotifiche: f('stato', { attive: true }), apriImpostazioniNotifiche: f('impostazioni'),
+          stampa: a => { window.__log.push(['stampa', a, document.documentElement.getAttribute('data-tema'), !document.getElementById('contenitoreCedolino').hidden]); return new Promise(r => setTimeout(r, 300)); } } } };
+    }
+  }, [JSON.stringify(turni), JSON.stringify(eventi), stile, colori, nativo]);
+  await p.goto(URL_APP);
+  await p.waitForFunction(() => typeof renderCalendario === 'function' && document.querySelector('.giorno-cella'));
+  await p.click('#tabCalendario');
+  return { p, ctx, errori };
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Calcoli (ore, straordinari, festivi, indennità)');
+{
+  const { p, ctx, errori } = await apri();
+  const r = await p.evaluate(() => {
+    const T = (data, o) => classificaTurno(Object.assign({ data }, o));
+    const out = {
+      notteFeriale: T('2026-10-07', { oraInizio:'22:00', oraFine:'06:00' }),
+      str2023: T('2026-10-06', { oraInizio:'14:00', oraFine:'20:00', straordinarioDopoInizio:'20:00', straordinarioDopoFine:'23:00' }),
+      domenica: T('2026-10-11', { oraInizio:'08:00', oraFine:'14:00' }),
+      permesso: T('2026-10-14', { oraInizio:'08:00', oraFine:'14:00', permessoBreveAttivo:true, permessoBreveOraInizio:'10:00', permessoBreveOraFine:'12:00' }),
+      compensato: T('2026-10-15', { oraInizio:'08:00', oraFine:'14:00', straordinarioDopoInizio:'14:00', straordinarioDopoFine:'17:00', compensaStraordinario:true }),
+      ognissanti: T('2026-10-31', { oraInizio:'22:00', oraFine:'06:00', straordinarioDopoInizio:'06:00', straordinarioDopoFine:'08:00' }),
+      primaDomenica: T('2026-11-09', { oraInizio:'00:00', oraFine:'06:00', straordinarioPrimaInizio:'22:00', straordinarioPrimaFine:'00:00' }),
+      natale: T('2026-12-25', { oraInizio:'08:00', oraFine:'14:00' }),
+      vigilia: T('2026-12-24', { oraInizio:'14:00', oraFine:'20:00', straordinarioDopoInizio:'20:00', straordinarioDopoFine:'02:00' }),
+      pasqua: [eFestivoFisso('2027-03-28'), eFestivoFisso('2027-03-29'), eFestivoFisso('2027-03-30')],
+      tab: AppState.tabelle
+    };
+    // Mese con missioni, OP, reperibilità (anche in un giorno di assenza: non va pagata)
+    const v = n => AppState.assenze.find(a => a.nome === n);
+    AppState.turni = {
+      '2026-10-05': { data:'2026-10-05', oraInizio:'08:00', oraFine:'14:00', straordinarioDopoInizio:'14:00', straordinarioDopoFine:'16:00' },
+      '2026-10-07': { data:'2026-10-07', oraInizio:'22:00', oraFine:'06:00', reperibilita:true },
+      '2026-10-11': { data:'2026-10-11', oraInizio:'08:00', oraFine:'14:00', ordinePubblico:true, opSede:'in' },
+      '2026-10-12': { data:'2026-10-12', oraInizio:'07:00', oraFine:'13:00', missione:true, durataMissioneOre:6 },
+      '2026-10-13': { data:'2026-10-13', oraInizio:'07:00', oraFine:'17:00', missione:true, durataMissioneOre:10 },
+      '2026-10-19': { data:'2026-10-19', assenzaTipo: v('Congedo ordinario').id, oraInizio:'08:00', oraFine:'14:00', reperibilita:true }
+    };
+    out.ottobre = calcolaCompetenze(2026, 9);
+    out.dicembre = calcolaCompetenze(2026, 11);
+    out.cedolino = generaCedolino(2026, 9);
+    return out;
+  });
+  const t = r.tab, a = r.ottobre.accessorie, tar = t.straordinarioOrarioAttuale['Assistente Capo'], r2 = x => Math.round(x * 100) / 100;
+  ok('notte 22-06 feriale: 8h notturne', r.notteFeriale.notturne === 8);
+  ok('straordinario 20-23: 2h diurno + 1h notturno (notte dalle 22)', r.str2023.strDiurno === 2 && r.str2023.strNotturno === 1);
+  ok('domenica 8-14: 6h domenicali', r.domenica.domenicali === 6);
+  ok('permesso breve 10-12 in turno 8-14: 4h ordinarie', r.permesso.ordinarie === 4 && r.permesso.orePermessoBreve === 2);
+  ok('straordinario a recupero: nulla in paga, 3h compensate', r.compensato.strDiurno === 0 && r.compensato.oreCompensate === 3);
+  ok('notte sab 31/10 → dom 1/11 (Ognissanti): 2h notturne + 6h notturne festive', r.ognissanti.notturne === 2 && r.ognissanti.notturneFestive === 6);
+  ok('straordinario 06-08 dopo quella notte: festivo (domenica), non diurno', r.ognissanti.strFestivo === 2 && r.ognissanti.strDiurno === 0);
+  ok('straordinario "prima" 22-24 di domenica, prima di un turno lunedì 00-06: notturno festivo', r.primaDomenica.strNotturnoFestivo === 2);
+  ok('Natale 8-14: 6h festive', r.natale.festive === 6);
+  ok('Vigilia, straordinario 20-02: 2h diurno, 2h notturno, 2h notturno festivo', r.vigilia.strDiurno === 2 && r.vigilia.strNotturno === 2 && r.vigilia.strNotturnoFestivo === 2);
+  ok('Pasqua e Pasquetta 2027 festive, il giorno dopo no', r.pasqua.join() === 'true,true,false');
+  ok('importo straordinario diurno = ore × tariffa', a.strDiurno === r2(r.ottobre.tot.strDiurno * tar.diurno));
+  ok('indennità notturna = ore notturne × tariffa', a.indTurnoNotturno === r2(r.ottobre.tot.notturne * t.indennitaTurnoNotturnoOraria));
+  ok('missioni: 6h a tariffa piena + 10h a tariffa ridotta', a.indMissioni === r2(6 * t.indennitaTrasfertaOraria + 10 * t.indennitaTrasfertaOrariaRidotta));
+  ok('ordine pubblico in sede (≥ 4h)', a.indOP === t.indennitaOPInSede);
+  ok('reperibilità pagata una volta sola (non nel giorno di assenza)', a.indReperibilita === r2(t.reperibilitaGiornaliera));
+  ok('tredicesima solo a dicembre', r.dicembre.fisse.tredicesima > 0 && !('tredicesima' in r.ottobre.fisse));
+  ok('cedolino: netto positivo e minore del lordo', r.cedolino.netto > 0 && r.cedolino.netto < r.cedolino.comp.totaleLordo);
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Calendario, barra in basso e messaggi');
+for(const stile of ['classico', 'moderno']){
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile });
+  const c = await p.evaluate(() => {
+    const n = document.querySelector('.barra-schede').getBoundingClientRect();
+    return {
+      celle: document.querySelectorAll('#calendarioGriglia .giorno-cella[data-data]').length,
+      moderno: document.body.classList.contains('calendario-moderno'),
+      etichetta1: document.querySelector('.giorno-cella[data-data="2026-10-01"] .mod-turno b')?.innerText,
+      barraInBasso: n.bottom <= innerHeight && n.bottom > innerHeight - 40,
+      nomi: [...document.querySelectorAll('.barra-schede small')].map(s => s.textContent).join(','),
+      oggiIcona: document.getElementById('iconaCalendarioGiorno').textContent,
+      matita: !!document.getElementById('btnFabAggiungiV2')
+    };
+  });
+  ok(`${stile}: 31 giorni nel calendario`, c.celle === 31);
+  ok(`${stile}: stile applicato`, c.moderno === (stile === 'moderno'));
+  if(stile === 'moderno'){
+    ok('moderno: etichetta del 1/10 "Sera"', c.etichetta1 === 'Sera');
+    const m = await p.evaluate(() => {
+      AppState.turni['2026-10-02'] = Object.assign({}, AppState.turni['2026-10-02'], { missione: true, durataMissioneOre: 6, reperibilita: true, servizioEsterno: true, buonoPasto: true });
+      renderCalendario();
+      const q = d => document.querySelector(`.giorno-cella[data-data="${d}"]`);
+      return {
+        orari: [...document.querySelectorAll('.mod-turno')].some(e => /\d{1,2}:\d{2}/.test(e.textContent)),
+        indennita: [...q('2026-10-02').querySelectorAll('.mod-indennita [aria-label]')].map(b => b.getAttribute('aria-label')).join(','),
+        senzaIndennita: !q('2026-10-03').querySelector('.mod-indennita'),
+        badgeInAlto: !!document.querySelector('.giorno-cella .mod-badge')
+      };
+    });
+    ok('moderno: nessun orario nelle etichette', !m.orari);
+    ok('moderno: icone di missione e reperibilità; servizio esterno e buono pasto nascosti all\'inizio', m.indennita === 'Missione,Reperibilità', m.indennita);
+    ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
+  }
+  ok(`${stile}: barra in basso con Calendario/Report/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Turni,Altro' && c.oggiIcona === '9');
+  ok(`${stile}: matita tolta`, !c.matita);
+  if(stile === 'moderno'){
+    await p.evaluate(() => mostraToast('Prova', 'successo', 5000));
+    const t = await p.evaluate(() => { const r = document.querySelector('#toastContainer .toast-v20').getBoundingClientRect(); return r.top > 0 && r.bottom < innerHeight; });
+    ok('i messaggi a comparsa sono visibili sullo schermo', t);
+    await p.click('.giorno-cella[data-data="2026-10-20"]');
+    ok('toccando un giorno si apre il menu rapido', await p.evaluate(() => !document.getElementById('popupRapidoGiorno').hidden));
+    await p.evaluate(() => { document.getElementById('popupRapidoGiorno').hidden = true; });
+    await p.click('#btnSimboliCalendario');
+    ok('pulsante "i": si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));
+    await p.click('#listaSimboli [data-simbolo="servizioEsterno"]');
+    ok('acceso "Servizio esterno": compare nella casella', await p.evaluate(() => [...document.querySelectorAll('.giorno-cella[data-data="2026-10-02"] .mod-indennita [aria-label]')].some(b => b.getAttribute('aria-label') === 'Servizio esterno')));
+    await p.click('#btnChiudiSimboli');
+    await p.click('#tabAltro'); await p.click('#settingsSimboli');
+    ok('la stessa legenda si apre da Altro, con la scelta salvata', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelector('#listaSimboli [data-simbolo="servizioEsterno"]').checked && !document.querySelector('#listaSimboli [data-simbolo="buonoPasto"]').checked));
+    await p.click('#btnChiudiSimboli'); await p.click('#tabCalendario');
+    await p.evaluate(() => { giornoPerPopupV2 = '2026-10-02'; apriSelettoreModelliV2('indennita'); });
+    ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .cerchio-icona svg').length === 10 && document.querySelector('[data-indennita="missione"] .cerchio-icona').textContent.includes('✓')));
+    await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; giornoSelezionato = '2026-10-02'; renderCalendario(); });
+    ok('riquadro del giorno: icona e nome per esteso', await p.evaluate(() => /Missione/.test(document.getElementById('indennitaGiornoSelezionatoV2').innerText) && !!document.querySelector('.indennita-giorno-badge svg')));
+  }
+  ok(`${stile}: nessun errore JavaScript`, !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); });
+  await p.click('#btnNuovoEventoGiornoV2');
+  ok('modulo evento aperto, riquadro "notifiche disattivate" nascosto', await p.evaluate(() => !document.getElementById('overlayEvento').hidden && !document.getElementById('avvisoPermessiEvento').offsetParent));
+  await p.fill('#campoEventoTitolo', 'Palestra');
+  await p.click('#sceltaColoreEvento [data-colore-evento="#2E9E5B"]');
+  await p.selectOption('#campoEventoRipeti', 'settimana');
+  await p.click('#btnAggiungiPromemoria');
+  await p.click('#btnSalvaEvento');
+  const ev = await p.evaluate(() => AppState.eventiGiorno['2026-10-20'][0]);
+  ok('evento salvato: ogni settimana, 2 promemoria diversi (10 e 30 minuti)', ev.ripeti === 'settimana' && ev.promemoria.map(x => x.min).join() === '10,30');
+  ok('colore dell\'evento salvato e usato nella casella', ev.colore === '#2E9E5B' && await p.evaluate(() => getComputedStyle(document.querySelector('.giorno-cella[data-data="2026-10-27"] .mod-evento')).backgroundColor === 'rgb(46, 158, 91)'));
+  ok('compare anche il 27/10 e il 3/11', await p.evaluate(() => eventiDelGiorno('2026-10-27').length === 1 && eventiDelGiorno('2026-11-03').length === 1));
+  await p.evaluate(() => { giornoSelezionato = '2026-10-27'; renderListaEventiGiornoV2(); });
+  await p.locator('#listaEventiGiornoV2 [data-evento-id]').first().click();
+  await p.click('#btnEliminaEventoGiorno');
+  ok('"Solo questo giorno" toglie il 27 e lascia il 3/11', await p.evaluate(() => eventiDelGiorno('2026-10-27').length === 0 && eventiDelGiorno('2026-11-03').length === 1));
+  await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderListaEventiGiornoV2(); });
+  await p.locator('#listaEventiGiornoV2 [data-evento-id]').first().click();
+  await p.click('#btnEliminaEvento');
+  ok('"Tutta la serie" elimina tutto', await p.evaluate(() => !AppState.eventiGiorno['2026-10-20'] && eventiDelGiorno('2026-11-03').length === 0));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Promemoria (moduli Android simulati)');
+{
+  const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});
+  const eventi = { '2026-10-10': [ev('evento_1700000000123', 'Visita', '10:00')], '2026-01-01': [ev('evento_1700000000456', 'Corso', '19:00', { ripeti:'settimana', promemoria:[{min:30}] })], '2025-01-01': [ev('evento_1700000000789', 'Vecchio', '09:00')] };
+  const { p, ctx, errori } = await apri({ eventi, nativo: true });
+  await p.waitForFunction(() => window.__log.filter(x => x[0] === 'av.programma').length >= 4, null, { timeout: 15000 }).catch(() => {});
+  const log = await p.evaluate(() => window.__log.filter(x => x[0] === 'av.programma').map(x => x[1]));
+  const visita = log.filter(x => x.titolo === 'Visita'), corso = log.filter(x => x.titolo === 'Corso');
+  ok('all\'apertura: 2 promemoria per "Visita", notifica normale (durata 0)', visita.length === 2 && visita.every(x => x.durataSec === 0));
+  ok('evento settimanale: programmate le prossime 2 volte (15 e 22 ottobre)', corso.length === 2 && corso.map(x => new Date(x.quandoMs).getDate()).join() === '15,22');
+  ok('evento passato non programmato', !log.some(x => x.titolo === 'Vecchio'));
+  ok('all\'apertura non si annulla nulla (le notifiche già comparse restano)', await p.evaluate(() => !window.__log.some(x => x[0] === 'av.annulla')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Turni: cambio orario di un modello');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.click('#tabTurni');
+  const tab = await p.evaluate(() => ({ tessere: [...document.querySelectorAll('.griglia-modelli-tab [data-modello-tab]:not(.tessera-nuovo)')].map(b => b.dataset.modelloTab).join(), altri: [...document.querySelectorAll('.altri-modelli [data-modello-tab]')].map(b => b.dataset.modelloTab).join(), sera: document.querySelector('[data-modello-tab="sera"]').innerText, assenzeQui: !!document.querySelector('#vistaAssenze #btnApriAssenzeV64') }));
+  ok('Turni: in alto i 5 modelli usati, gli altri 3 in "Altri modelli"', tab.tessere === 'sera,pomeriggio,mattina,notte,riposo' && tab.altri.split(',').length === 3, tab.tessere + ' | ' + tab.altri);
+  ok('tessera con orario, durata e volte nel mese', /19:00 – 01:00 · 6 h/.test(tab.sera) && /6 volte a ottobre/.test(tab.sera), tab.sera);
+  ok('"Assenze e permessi" non è più in Turni', !tab.assenzeQui);
+  ok('i modelli hanno colori diversi', await p.evaluate(() => new Set([...document.querySelectorAll('.tessera-modello > b')].map(b => b.style.background)).size >= 4));
+  await p.locator('#listaModelliTabTurni [data-modello-tab="sera"]').click();
+  ok('la finestra "Modifica turno" si apre dalla scheda Turni', await p.locator('#overlayModificaModello').isVisible());
+  await p.fill('#campoModModelloInizio', '18:40');
+  await p.fill('#campoModModelloFine', '00:15');
+  await p.click('#btnSalvaModello');
+  ok('compare la domanda "Aggiornare il calendario?"', await p.locator('#overlayAggiornaTurni').isVisible());
+  await p.click('#btnAggTurniFuturi');
+  const r = await p.evaluate(() => ({ futuro: AppState.turni['2026-10-11'].oraInizio, passato: AppState.turni['2026-10-06'].oraInizio }));
+  ok('"da oggi in poi": l\'11/10 diventa 18:40, il 6/10 resta 19:00', r.futuro === '18:40' && r.passato === '19:00');
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Assenze in Altro e sequenza automatica');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.click('#tabAltro');
+  await p.click('#btnApriAssenzeV64');
+  ok('Altro → Assenze e permessi apre la pagina delle assenze', await p.evaluate(() => !!document.getElementById('sezioneAssenze').offsetParent && document.getElementById('tabAltro').classList.contains('attiva')));
+  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, tiles: document.querySelectorAll('#assenzeSummaryGrid .assenza-riepilogo').length, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nonUsate: document.getElementById('titoloAssenzeNonUsate').textContent, festivoInNonUsate: [...document.querySelectorAll('#corpoAssenzeNonUsate .card-assenza-compact-nome')].some(n => n.textContent.includes('Riposo festivo')) }));
+  ok('Assenze: titolo uguale alla voce di Altro, 3 riquadri in cima', ass.titolo === 'Assenze e permessi' && ass.tiles === 3);
+  ok('ogni voce: quanto resta su quanto spetta (Congedo ordinario 30 / 30 gg)', /Congedo ordinario 30 \/ 30 gg/.test(ass.congedo), ass.congedo);
+  ok('voci a zero in "Non usate"', /^Non usate \(\d+\)$/.test(ass.nonUsate) && ass.festivoInNonUsate, ass.nonUsate);
+  await p.click('#btnChiudiAssenze');
+  await p.click('#settingsAnagrafica');
+  await p.click('[data-passo="campoAnni"][data-delta="1"]');
+  await p.selectOption('#campoRegione', 'Toscana');
+  const an = await p.evaluate(() => ({ salvata: JSON.parse(localStorage.getItem('simCedolino_anagrafica_v1')), testata: document.querySelector('.testata-anagrafica').innerText, ancoraQui: !document.getElementById('vistaAnagrafica').hidden }));
+  ok('Anagrafica: si salva da sola (anni +1, regione) senza uscire dalla pagina', an.salvata.anni == 1 && an.salvata.regione === 'Toscana' && an.ancoraQui, JSON.stringify(an.salvata));
+  ok('testata: qualifica, parametro e regione', /Assistente Capo/.test(an.testata) && /116,50/.test(an.testata) && /Toscana/.test(an.testata), an.testata);
+  await p.click('#btnChiudiAnagrafica');
+  await p.evaluate(() => { const v = AppState.assenze.find(a => a.nome === 'Congedo ordinario'); AppState.turni['2026-10-20'] = { data: '2026-10-20', assenzaTipo: v.id }; salvaTurniStorage(); });
+  await p.click('#tabTurni'); await p.click('#settingsSequenza');
+  ok('la sequenza si apre a pagina intera', await p.evaluate(() => !document.getElementById('vistaSequenza').hidden && document.getElementById('vistaAssenze').hidden));
+  await p.locator('[data-modifica-pattern="pattern_quinta5"]').click();
+  await p.locator('#sceltaFaseSequenza [data-fase="3"]').click();
+  const etichetta = await p.locator('#btnGeneraEditorPatternV2').innerText();
+  ok('pulsante: "Genera 92 giorni · fino al 08/01/2027"', etichetta === 'Genera 92 giorni · fino al 08/01/2027', etichetta);
+  ok('anteprima: il 20 (ferie) resta tratteggiato', await p.evaluate(() => [...document.querySelectorAll('#anteprimaSeqGriglia .g-resta em')].map(e => e.textContent).join() === '20'));
+  await p.click('#btnGeneraEditorPatternV2');
+  const r = await p.evaluate(() => ({ g9: AppState.turni['2026-10-09'].modelloId, g10: !!AppState.turni['2026-10-10'].riposo, g11: AppState.turni['2026-10-11'].modelloId, g20: !!AppState.turni['2026-10-20'].assenzaTipo, g21: AppState.turni['2026-10-21'].modelloId, gen8: !!AppState.turni['2027-01-08']?.riposo, gen9: !!AppState.turni['2027-01-09'] }));
+  ok('"Quel giorno fai: Notte": 9/10 Notte, 10 Riposo, 11 Sera', r.g9 === 'notte' && r.g10 && r.g11 === 'sera');
+  ok('le ferie del 20 restano, il 21 continua il ciclo; si ferma l\'8 gennaio', r.g20 && r.g21 === 'sera' && r.gen8 && !r.gen9, JSON.stringify(r));
+  await p.click('#tabTurni');
+  ok('in Turni: "In uso: Turno in quinta · fino al 08/01/2027"', await p.evaluate(() => document.getElementById('statoSequenzaTurni').textContent === 'In uso: Turno in quinta · fino al 08/01/2027'));
+  await p.click('#settingsSequenza');
+  await p.click('[data-continua-pattern="pattern_quinta5"]');
+  const c = await p.evaluate(() => ({ da: document.getElementById('campoEditorPatternDataInizio').value, fase: document.querySelector('#sceltaFaseSequenza .attivo').textContent }));
+  ok('"Continua": riparte dal 9 gennaio con Sera (dopo il Riposo dell\'8: il ciclo non si sfasa)', c.da === '2027-01-09' && c.fase === 'Sera', JSON.stringify(c));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Modifica il giorno, Tabelle, avvisi');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.evaluate(() => { giornoSelezionato = '2026-10-01'; renderCalendario(); });
+  await p.click('#btnModificaGiornoSelezionatoV2');
+  const e = await p.evaluate(() => { const r = document.getElementById('pannelloTurno').getBoundingClientRect(); return { pieno: !document.getElementById('pannelloTurno').hidden && r.top <= 1 && r.height >= innerHeight - 1, sotto: document.getElementById('sottotitoloModaleTurno').textContent, tipo: document.querySelector('#sceltaTipoGiorno .attivo')?.dataset.tipoGiorno }; });
+  ok('"Modifica il giorno" a pagina intera, con il turno in alto (Sera · 19:00 – 01:00)', e.pieno && e.tipo === 'turno' && e.sotto === 'Sera · 19:00 – 01:00', JSON.stringify(e));
+  await p.click('[data-modello-giorno="notte"]');
+  await p.click('[data-indennita-giorno="campoReperibilita"]');
+  await p.click('[data-passo-ore="campoStrOre1"][data-delta="0.5"]');
+  await p.click('[data-passo-ore="campoStrOre1"][data-delta="0.5"]');
+  await p.click('#bloccoStrPrimo [data-valore="dopo"]');
+  await p.click('#btnSalvaTurnoTesta');
+  const t = await p.evaluate(() => AppState.turni['2026-10-01']);
+  ok('salvato: Notte 01–07, reperibilità, 1 h di straordinario dopo (07–08)', t.oraInizio === '01:00' && t.oraFine === '07:00' && t.modelloId === 'notte' && t.reperibilita && t.straordinarioPrimaInizio === '07:00' && t.straordinarioPrimaFine === '08:00', JSON.stringify(t));
+  await p.click('#btnModificaGiornoSelezionatoV2');
+  await p.click('[data-tipo-giorno="riposo"]');
+  await p.click('#btnSalvaTurno');
+  ok('"Riposo" salva il giorno come riposo', await p.evaluate(() => AppState.turni['2026-10-01'].riposo === true));
+  ok('l\'avviso sta solo nel Calendario', await p.evaluate(() => !!document.querySelector('#vistaTurni #appAlerts')));
+  await p.click('#tabAltro'); await p.click('#settingsTabelle');
+  await p.click('#toggleTabelleAvanzate');
+  await p.evaluate(() => { const i = document.querySelector('input[data-t="buonoPastoValore"]'); i.value = '8'; i.dispatchEvent(new Event('change', { bubbles: true })); });
+  ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Report');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.click('#tabReport');
+  const r = await p.evaluate(() => ({ hero: document.getElementById('reportHero').innerText, atteso: euro(generaAccreditoConto(2026, 9).netto), mese: document.getElementById('reportMeseEtichetta').innerText, tiles: [...document.querySelectorAll('#meseTilesReport b')].map(b => b.innerText), cards: [...document.querySelectorAll('#contenitoreStatistiche .stat-card small')].map(s => s.innerText) }));
+  ok('riquadro blu: accredito del mese visualizzato (ottobre)', r.mese === 'Ottobre 2026' && /a ottobre/.test(r.hero) && r.hero.includes(r.atteso));
+  ok('importi con il punto delle migliaia', /^\d\.\d{3},\d{2} €$/.test(r.atteso));
+  ok('"Il mese": turni e riposi', r.tiles[0] === '24' && r.tiles[1] === '6');
+  const netti = await p.evaluate(() => ({ righe: [...document.querySelectorAll('[data-stat-corpo="netto"] .stat-v-row b')].map(b => b.innerText), set: euro(generaCedolino(2026, 8).netto), ott: euro(generaCedolino(2026, 9).netto), storico: Object.keys(AppState.storico || {}).length }));
+  ok('netto di ogni mese con turni calcolato da solo (senza Genera cedolino)', netti.storico === 0 && netti.righe[8] === netti.set && netti.righe[9] === netti.ott && netti.righe[7] === '—', netti.righe.join(' '));
+  ok('statistiche: niente riquadri a zero', !r.cards.includes('Missioni') && r.cards.includes('Ore lavorate'));
+  ok('prossimo turno e riepilogo mese tolti', await p.evaluate(() => !document.getElementById('prossimoTurnoWidget').offsetParent && !document.getElementById('riepilogoTurniV45').offsetParent));
+  await p.click('#btnGeneraCedolino');
+  ok('Genera cedolino funziona', await p.evaluate(() => !document.getElementById('contenitoreCedolino').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Tutte le schede, tema chiaro e scuro');
+for(const scuro of [false, true]){
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno', scuro });
+  for(const t of ['tabReport', 'tabTurni', 'tabAltro', 'tabCalendario']){ await p.click('#' + t); }
+  await p.click('#tabAltro'); await p.click('#settingsAnagrafica');
+  await p.click('#tabAltro'); await p.click('#settingsTabelle');
+  const sfondo = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  ok(`tema ${scuro ? 'scuro' : 'chiaro'}: sfondo ${sfondo}`, scuro ? sfondo === 'rgb(18, 21, 28)' : sfondo !== 'rgb(18, 21, 28)');
+  ok(`tema ${scuro ? 'scuro' : 'chiaro'}: tutte le schede si aprono senza errori`, !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  const sfondo = () => p.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await p.click('#tabAltro');
+  ok('pulsanti del tema visibili, "Auto" attivo', await p.evaluate(() => document.querySelector('.scelta-tema [data-tema="auto"]').classList.contains('attivo') && !!document.querySelector('.scelta-tema [data-tema="scuro"]').offsetParent));
+  await p.click('.scelta-tema [data-tema="scuro"]');
+  ok('"Scuro" con il telefono in chiaro: sfondo scuro', await sfondo() === 'rgb(18, 21, 28)');
+  await p.reload();
+  await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('"Scuro" resta dopo la riapertura', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
+  await p.emulateMedia({ colorScheme: 'dark' });
+  await p.click('#tabAltro');
+  await p.click('.scelta-tema [data-tema="chiaro"]');
+  ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(18, 21, 28)');
+  await p.click('.scelta-tema [data-tema="auto"]');
+  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Stampa / Esporta PDF nell\'app Android');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true, scuro: true });
+  await p.click('#tabReport');
+  await p.click('#btnGeneraCedolino');
+  await p.click('#btnStampaCedolino');
+  await p.waitForFunction(() => window.__log.some(x => x[0] === 'stampa'), null, { timeout: 3000 }).catch(() => {});
+  const s = await p.evaluate(() => window.__log.find(x => x[0] === 'stampa'));
+  ok('si apre la finestra di stampa di Android (non window.print)', !!s && s[1].titolo === 'Cedolino stimato' && s[3]);
+  ok('durante la stampa il foglio è chiaro anche col tema scuro', !!s && s[2] === 'chiaro');
+  await p.waitForTimeout(500);
+  ok('chiusa la stampa, il tema torna come prima', await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+await browser.close();
+server.close();
+console.log(`\n${superati} controlli superati, ${falliti} falliti`);
+process.exit(falliti ? 1 : 0);

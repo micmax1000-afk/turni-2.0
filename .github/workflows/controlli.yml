@@ -1,0 +1,28 @@
+name: Controlli automatici
+
+# Prova l'app (calcoli, calendario, eventi, promemoria, turni, Report, tema chiaro/scuro)
+# su ogni pull request, prima di unirla. Si può lanciare anche a mano dalla scheda Actions.
+"on":
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  controlli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+
+      - name: Imposta Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Installa il browser per le prove
+        run: npx playwright install --with-deps chromium
+
+      - name: Esegui i controlli
+        run: npm test

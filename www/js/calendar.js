@@ -377,7 +377,7 @@ function aggiornaRiepilogoMensile(){
   el('rMissioni').textContent = missioni;
   el('rServizioEsterno').textContent = servizioEsterno;
   el('rOrdinePubblico').textContent = ordinePubblico;
-  el('rControlloTerritorio').textContent = `${giorniControlloTerritorioSerali} serale · ${giorniControlloTerritorioNotturni} notturno`;
+  el('rControlloTerritorio').textContent = `Serale ${giorniControlloTerritorioSerali} · Notturno ${giorniControlloTerritorioNotturni}`;
   el('rBuoniPasto').textContent = `${buoniPasto} (${euro(round2(buoniPasto * AppState.tabelle.buonoPastoValore))})`;
   el('rOreCompensate').textContent = round2(oreCompensateTotale).toLocaleString('it-IT', {minimumFractionDigits:2});
 }
@@ -598,7 +598,7 @@ function renderCalendario(){
       // sfondo colorato (serve quando i colori sono accesi), quindi senza un bianco scritto qui
       // in riga esplicitamente quella regola resterebbe comunque visibile. Il bianco deve vincere
       // allo stesso modo con cui il colore vince quando è acceso.
-      cella.style.background = '#FFFFFF';
+      cella.style.background = 'var(--pannello, #FFFFFF)'; // bianco, o grigio scuro col tema scuro
     }
 
     if(t && t.generatoAutomaticamente) classi += ' auto-generato';
@@ -685,16 +685,16 @@ function renderCalendario(){
     if(haReperibilita) classi += ' ha-reperibilita';
     if(haOP) classi += ' ha-op';
 
+    // Indennità del giorno come icone; quelle nascoste dall'utente non si mostrano (si contano lo stesso).
+    const presenti = { straordinario: haStraordinario, missione: haMissione, servizioEsterno: haServizioEsterno, ordinePubblico: haOP,
+      reperibilita: haReperibilita, controlloTerritorio: haControllo, buonoPasto: haBuono, cambioTurno: !!(t && t.cambioTurno),
+      compensazioneRiposo: !!(t && t.compensazioneRiposo), recuperoFestivoLavorato: !!(t && t.recuperoFestivoLavorato), servizioSvolto: haNota };
+    const nascoste = indennitaNascoste();
     const badge = [];
-    if(haStraordinario) badge.push('<span class="giorno-badge badge-straordinario" title="Straordinario" aria-label="Straordinario">⏱</span>');
-    if(haMissione) badge.push('<span class="giorno-badge badge-missione" title="Missione" aria-label="Missione">◆</span>');
     if(haAssenza) badge.push('<span class="giorno-badge badge-assenza" title="Assenza" aria-label="Assenza">A</span>');
-    if(haServizioEsterno) badge.push('<span class="giorno-badge badge-esterno" title="Servizio esterno" aria-label="Servizio esterno">◆</span>');
-    if(haOP) badge.push('<span class="giorno-badge badge-op" title="Ordine pubblico" aria-label="Ordine pubblico">OP</span>');
-    if(haReperibilita) badge.push('<span class="giorno-badge badge-reperibilita" title="Reperibilità" aria-label="Reperibilità">★</span>');
-    if(haControllo) badge.push('<span class="giorno-badge badge-controllo" title="Controllo territorio" aria-label="Controllo territorio">CT</span>');
-    if(haBuono) badge.push('<span class="giorno-badge badge-buono" title="Buono pasto" aria-label="Buono pasto">€</span>');
-    if(haNota) badge.push('<span class="giorno-badge badge-nota" title="Nota servizio" aria-label="Nota servizio">✎</span>');
+    ELENCO_INDENNITA.forEach(x => {
+      if(presenti[x.chiave] && !nascoste.includes(x.chiave)) badge.push(`<span class="giorno-badge badge-icona" title="${x.nome}" aria-label="${x.nome}">${iconaIndennita(x.chiave)}</span>`);
+    });
 
     // Su mobile mostriamo solo i primi 3 indicatori e un contatore +N.
     const badgeVisibili = badge.slice(0, 3);
@@ -719,28 +719,31 @@ function renderCalendario(){
     // Eventi del giorno: il titolo del primo in una striscia in fondo alla casella, "+N" se sono di più.
     const eventiCella = typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : (AppState.eventiGiorno[iso] || []).map(ev => ({ ev }));
     const strisciaEvento = eventiCella.length
-      ? `<span class="giorno-evento-titolo" title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}"><span class="giorno-evento-testo">${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}</span>${eventiCella.length > 1 ? `<b>+${eventiCella.length - 1}</b>` : ''}</span>`
+      ? `<span class="giorno-evento-titolo"${coloreEventoStile(eventiCella[0].ev)} title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}"><span class="giorno-evento-testo">${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}</span>${eventiCella.length > 1 ? `<b>+${eventiCella.length - 1}</b>` : ''}</span>`
       : '';
 
     if(moderno){
       // Nome per esteso dove ci sta (Sera, Notte, Mattina...), sigla per i nomi lunghi.
       let nomeEtichetta = categoria === 'assenza' ? tipoLabel
         : (t && (t.aggiornamentoProfessionale || t.addestramentoTiro || t.compensazioneRiposo || t.recuperoFestivoLavorato)) ? etichetta
-        : categoria === 'pomeriggio' && !modelloUsato ? 'Pomer.'
+        // Turni di base: nomi brevi fissi, che entrano sempre nella casella.
+        : NOME_BREVE_CATEGORIA[categoria] && (!modelloUsato || NOME_BREVE_CATEGORIA[modelloUsato.id]) ? NOME_BREVE_CATEGORIA[categoria]
         : nomeCategoria;
       if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
-      const oraEtichetta = t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? t.oraInizio : '';
+      // Sotto il nome, al posto dell'orario (che si vede toccando il giorno): le indennità del
+      // giorno, al massimo 3 più "+N". L'assenza non serve: è già scritta nell'etichetta.
+      const indennita = badge.filter(b => !b.includes('badge-assenza'));
+      const indennitaVisibili = indennita.slice(0, 3).join('') + (indennita.length > 3 ? `<span class="giorno-badge">+${indennita.length - 3}</span>` : '');
       const sfondo = coloreTurno || '#E4E7EC';
       const sfondoForte = coloreTurno ? scurisciColore(coloreTurno, 0.35) : '#C9CED6';
       const etichettaTurno = t && categoria
-        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoForte)};color:${testoSuColore(sfondoForte)}">${escapeHtml(nomeEtichetta)}</b>${oraEtichetta ? `<span style="background:${escapeHtml(sfondo)};color:${testoSuColore(sfondo)}">${escapeHtml(oraEtichetta)}</span>` : ''}</span>`
+        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoForte)};color:${testoSuColore(sfondoForte)}">${escapeHtml(nomeEtichetta)}</b>${indennita.length ? `<span class="mod-indennita" style="background:${escapeHtml(sfondo)};color:${testoSuColore(sfondo)}">${indennitaVisibili}</span>` : ''}</span>`
         : '';
       const rigaEvento = eventiCella.length
-        ? `<span class="mod-evento" title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}"><i aria-hidden="true">●</i>${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}${eventiCella.length > 1 ? ` <b>+${eventiCella.length - 1}</b>` : ''}</span>`
+        ? `<span class="mod-evento"${coloreEventoStile(eventiCella[0].ev)} title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}">${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}${eventiCella.length > 1 ? ` <b>+${eventiCella.length - 1}</b>` : ''}</span>`
         : '';
       cella.innerHTML = `
         <span class="mod-numero">${g}</span>
-        ${badgeVisibili.length ? `<span class="mod-badge">${badgeVisibili.join('')}</span>` : ''}
         ${etichettaTurno}
         ${rigaEvento}
       `;
@@ -785,6 +788,7 @@ function renderCalendario(){
   if(typeof aggiornaRiepilogoVisualeMese === 'function') aggiornaRiepilogoVisualeMese();
   if(typeof aggiornaRiepilogoGiornoSelezionatoV2 === 'function') aggiornaRiepilogoGiornoSelezionatoV2();
   if(typeof renderProssimiEventiV2 === 'function') renderProssimiEventiV2();
+  if(typeof renderReportHero === 'function') renderReportHero();
 }
 
 function selezionaGiorno(iso){
@@ -834,6 +838,54 @@ const MODELLI_TURNO = {
   pomeridiano: { oraInizio:'14:00', oraFine:'20:00', etichetta:'Turno 14:00–20:00' }
 };
 
+// ── Simboli delle indennità (icone disegnate, uguali su tutti i telefoni) ──
+// Usati nelle caselle del calendario, nel menu "Cosa vuoi aggiungere?", nel riquadro del giorno
+// e nella legenda. Le indennità "nascoste" non compaiono nelle caselle ma si contano sempre.
+const DISEGNI_INDENNITA = {
+  straordinario: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  missione: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
+  servizioEsterno: '<path d="M3 17v-4l2.5-6h13L21 13v4z"/><path d="M3 13h18"/><circle cx="7.5" cy="17" r="1.8" fill="currentColor"/><circle cx="16.5" cy="17" r="1.8" fill="currentColor"/>',
+  ordinePubblico: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  reperibilita: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18h2"/>',
+  controlloTerritorio: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+  buonoPasto: '<path d="M7 3v18M4.5 3v5a2.5 2.5 0 0 0 5 0V3M17 21V3c-2 0-3.5 3-3.5 8H17"/>',
+  cambioTurno: '<path d="M4 8h15l-3.5-3.5M20 16H5l3.5 3.5"/>',
+  compensazioneRiposo: '<circle cx="12" cy="12" r="9"/><path d="M10 16.5v-9h2.8a2.6 2.6 0 0 1 0 5.2H10M12.6 12.7l2.6 3.8"/>',
+  recuperoFestivoLavorato: '<circle cx="12" cy="12" r="9"/><path d="M10.2 16.5v-9h4.6M10.2 11.8h3.8"/>',
+  servizioSvolto: '<path d="M4 20l4-1 11-11-3-3L5 16z"/>'
+};
+const ELENCO_INDENNITA = [
+  { chiave:'straordinario', nome:'Straordinario' },
+  { chiave:'missione', nome:'Missione' },
+  { chiave:'ordinePubblico', nome:'Ordine pubblico' },
+  { chiave:'servizioEsterno', nome:'Servizio esterno' },
+  { chiave:'buonoPasto', nome:'Buono pasto' },
+  { chiave:'reperibilita', nome:'Reperibilità' },
+  { chiave:'controlloTerritorio', nome:'Controllo territorio' },
+  { chiave:'cambioTurno', nome:'Cambio turno' },
+  { chiave:'compensazioneRiposo', nome:'Lavorato sul riposo' },
+  { chiave:'recuperoFestivoLavorato', nome:'Lavorato in festivo' },
+  { chiave:'servizioSvolto', nome:'Nota servizio' }
+];
+// Di solito si hanno quasi ogni giorno: all'inizio non si mostrano, per far risaltare il resto.
+const INDENNITA_NASCOSTE_PREDEFINITE = ['servizioEsterno', 'buonoPasto', 'controlloTerritorio'];
+// Colori che si possono dare a un evento (il primo è quello di partenza).
+const COLORI_EVENTO = ['#2E7DD7', '#2E9E5B', '#E08A00', '#D64545', '#8E44AD', '#00838F', '#6D4C41', '#546E7A'];
+function coloreEvento(ev){ return ev && COLORI_EVENTO.includes(ev.colore) ? ev.colore : COLORI_EVENTO[0]; }
+function coloreEventoStile(ev){ return ` style="background:${coloreEvento(ev)}"`; }
+function iconaIndennita(chiave, classe){
+  const d = DISEGNI_INDENNITA[chiave];
+  return d ? `<svg class="icona-indennita${classe ? ' ' + classe : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>` : '';
+}
+function indennitaNascoste(){
+  try{
+    const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_INDENNITA_NASCOSTE) || 'null');
+    if(Array.isArray(v)) return v;
+  }catch(e){}
+  return INDENNITA_NASCOSTE_PREDEFINITE.slice();
+}
+
+const NOME_BREVE_CATEGORIA = { mattina:'Matt.', pomeriggio:'Pom.', sera:'Sera', notte:'Notte', riposo:'Riposo' };
 const INIZIALE_CATEGORIA = { mattina:'Mattina', pomeriggio:'Pomeriggio', sera:'Sera', notte:'Notte', riposo:'Riposo' };
 const CODICE_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
 const ICONA_CATEGORIA = { mattina:'☀️', pomeriggio:'🌤️', sera:'🌇', notte:'🌙', riposo:'💤', assenza:'🏖️' };

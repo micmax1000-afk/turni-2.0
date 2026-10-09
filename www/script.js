@@ -303,6 +303,23 @@ function mostraVersioneApp(){
   }).catch(() => {});
 }
 
+// Tema: 'auto' (segue il telefono, predefinito), 'chiaro' o 'scuro'.
+function temaScelto(){
+  const t = TurniPSStorage.getItem(CHIAVE_TEMA);
+  return t === 'chiaro' || t === 'scuro' ? t : 'auto';
+}
+function applicaTema(){
+  const t = temaScelto();
+  const descrizione = document.getElementById('descrizioneTema');
+  if(descrizione) descrizione.textContent = { auto: 'Come il telefono', chiaro: 'Sempre chiaro', scuro: 'Sempre scuro' }[t];
+  if(t === 'auto') document.documentElement.removeAttribute('data-tema');
+  else document.documentElement.setAttribute('data-tema', t);
+  document.querySelectorAll('.scelta-tema [data-tema]').forEach(b => {
+    b.classList.toggle('attivo', b.dataset.tema === t);
+    b.setAttribute('aria-pressed', b.dataset.tema === t ? 'true' : 'false');
+  });
+}
+
 // Barra in basso: l'icona del Calendario mostra il giorno di oggi.
 function aggiornaIconaCalendarioOggi(){
   const t = document.getElementById('iconaCalendarioGiorno');
@@ -331,6 +348,36 @@ function inizializza(){
   aggiornaIconaCalendarioOggi();
   document.addEventListener('visibilitychange', () => { if(!document.hidden) aggiornaIconaCalendarioOggi(); });
   inizializzaBarraETastiera();
+  applicaTema();
+  document.querySelectorAll('[data-tema]').forEach(b => { if(b.tagName === 'BUTTON') b.addEventListener('click', () => {
+    TurniPSStorage.setItem(CHIAVE_TEMA, b.dataset.tema);
+    applicaTema();
+  }); });
+  // La finestra "Modifica turno" stava dentro la scheda Calendario: aperta dalla scheda Turni
+  // restava invisibile. Spostata in fondo alla pagina, si apre da qualunque scheda.
+  const overlayModello = el('overlayModificaModello');
+  if(overlayModello) document.body.appendChild(overlayModello);
+  renderModelliTabTurni();
+  aggiornaRiassuntoAnagraficaAltro();
+  aggiornaRiassuntoAssenzeAltro();
+  on('btnReportMesePrec', 'click', () => el('btnMesePrec').click());
+  on('btnReportMeseSucc', 'click', () => el('btnMeseSucc').click());
+  on('tabReport', 'click', renderReportHero);
+  const cambiaAnnoStatistiche = d => {
+    const campo = el('campoAnnoStatistiche');
+    campo.value = (Number(campo.value) || new Date().getFullYear()) + d;
+    renderStatistiche();
+  };
+  on('btnAnnoStatPrec', 'click', () => cambiaAnnoStatistiche(-1));
+  on('btnAnnoStatSucc', 'click', () => cambiaAnnoStatistiche(1));
+
+  on('tabTurni', 'click', renderModelliTabTurni);
+  on('tabAltro', 'click', aggiornaRiassuntoAnagraficaAltro);
+  const listaModelliTab = el('listaModelliTabTurni');
+  if(listaModelliTab) listaModelliTab.addEventListener('click', e => {
+    const b = e.target.closest('[data-modello-tab]');
+    if(b) apriModificaModelloV2(b.dataset.modelloTab || null);
+  });
   // Promemoria degli eventi: si rimettono quelli che Android potrebbe aver cancellato e si
   // programmano le prossime volte degli eventi che si ripetono. Con calma, dopo l'avvio.
   setTimeout(() => { riprogrammaPromemoriaEventi(); }, 4000);
@@ -435,12 +482,7 @@ function inizializza(){
     if(p && p.hidden) apriPannelloColori();
     else p?.scrollIntoView({behavior:'smooth',block:'start'});
   });
-  on('btnApriAssenzeV64','click', () => {
-    const p = el('sezioneAssenze');
-    if(!p) return;
-    p.hidden = !p.hidden;
-    if(!p.hidden) p.scrollIntoView({behavior:'smooth',block:'start'});
-  });
+  on('btnApriAssenzeV64','click', () => mostraScheda('assenze'));
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
   on('settingsDrive','click', () => mostraImpostazioniBackup('sezioneBackupDrive'));
   on('btnChiudiSettingsBackup','click', () => { const p=el('impostazioniBackupPanel'); if(p) p.hidden = true; });
@@ -448,7 +490,16 @@ function inizializza(){
   el('btnAnagrafica').addEventListener('click', () => mostraScheda('anagrafica'));
   on('btnStatistiche','click', () => mostraScheda('statistiche'));
   on('campoAnnoStatistiche','change', renderStatistiche);
-  el('btnSalvaAnagrafica').addEventListener('click', salvaAnagraficaDaModale);
+  // Anagrafica: si salva da sola a ogni modifica; − e + per anni di servizio e figli.
+  on('sezioneAnagrafica','change', e => { if(e.target.matches('select, input')) salvaAnagraficaDaModale(); });
+  on('sezioneAnagrafica','click', e => {
+    const b = e.target.closest('[data-passo]');
+    if(!b) return;
+    const campo = el(b.dataset.passo);
+    campo.value = Math.max(0, (Number(campo.value) || 0) + Number(b.dataset.delta));
+    salvaAnagraficaDaModale();
+  });
+  on('btnChiudiAnagrafica','click', () => mostraScheda('altro'));
   el('btnCancellaAnagrafica').addEventListener('click', () => {
     mostraConferma(
       'Questo cancellerà i dati anagrafici salvati (qualifica, anni di servizio, sede, regione, ecc.) e riporterà il form ai valori predefiniti. Turni, assenze, tabelle e cedolini generati non vengono toccati. Continuare?',
@@ -458,15 +509,23 @@ function inizializza(){
   el('campoQualifica').addEventListener('change', aggiornaVisualizzazioneParametro);
 
   on('btnTabelle','click', () => mostraScheda('tabelle'));
-  el('btnSalvaTabelle').addEventListener('click', () => {
+  // Tabelle: si salvano da sole a ogni modifica.
+  on('corpoTabelle','change', e => {
+    if(e.target.id === 'toggleTabelleAvanzate' || !e.target.matches('input, select')) return;
     leggiTabelleDaModale();
-    mostraScheda('turni');
+    segnaTabelleSalvate();
     aggiornaRiepilogoMensile();
     if(!el('contenitoreCedolino').hidden) renderCedolino();
   });
+  el('btnSalvaTabelle').addEventListener('click', () => { leggiTabelleDaModale(); segnaTabelleSalvate(); });
+  on('btnChiudiTabelle','click', () => { leggiTabelleDaModale(); mostraScheda('altro'); });
   el('btnResetTabelle').addEventListener('click', () => {
-    AppState.tabelle = clonaTabelleConSoglie(TABELLE_PREDEFINITE);
-    renderTabelle();
+    mostraConferma('Riportare tutte le tabelle ai valori predefiniti?', () => {
+      AppState.tabelle = clonaTabelleConSoglie(TABELLE_PREDEFINITE);
+      salvaTabelleStorage();
+      renderTabelle();
+      segnaTabelleSalvate();
+    });
   });
 
   on('btnAggiungiAssenzaPersonalizzata','click', () => {
@@ -478,45 +537,40 @@ function inizializza(){
   on('filtroCalendarioSelect','change', e => impostaFiltroCalendario(e.target.value));
   on('btnModificaGiornoSelezionatoV2','click', () => { if(giornoSelezionato) apriModaleTurno(giornoSelezionato); });
 
-  on('settingsSequenza','click', () => {
-    mostraScheda('sequenza');
-    el('sezioneSequenza')?.scrollIntoView({behavior:'smooth', block:'start'});
-  });
-  on('btnChiudiSequenza','click', () => {
-    const seq = el('sezioneSequenza');
-    if(seq) seq.hidden = true;
-  });
-  on('btnChiudiAssenze','click', () => {
-    const sez = el('sezioneAssenze');
-    if(sez) sez.hidden = true;
-  });
+  on('settingsSequenza','click', () => mostraScheda('sequenza'));
+  on('btnChiudiSequenza','click', () => mostraScheda('turni'));
+  on('btnChiudiAssenze','click', () => mostraScheda('altro'));
   const listaPatternSempliceHost = el('listaPatternSempliceV2');
   if(listaPatternSempliceHost) listaPatternSempliceHost.addEventListener('click', (e) => {
     if(e.target.closest('#btnNuovoPatternV2')){ nuovoPatternV2(); return; }
-    const matita = e.target.closest('[data-modifica-pattern]');
-    if(matita){ apriEditorPatternSempliceV2(matita.dataset.modificaPattern); return; }
-    const btn = e.target.closest('[data-pattern-semplice]');
-    if(!btn) return;
-    const mappaPatternIdRiga = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10', corta:'pattern_settimana_corta', lunga:'pattern_settimana_lunga' };
-    const patternId = mappaPatternIdRiga[btn.dataset.patternSemplice];
-    if(patternId) apriEditorPatternSempliceV2(patternId); // un solo tocco: apre subito l'editor, con generazione inclusa
+    const continua = e.target.closest('[data-continua-pattern]');
+    if(continua){ apriEditorPatternSempliceV2(continua.dataset.continuaPattern, true); return; }
+    const card = e.target.closest('[data-modifica-pattern]');
+    if(card) apriEditorPatternSempliceV2(card.dataset.modificaPattern);
   });
   on('campoEditorPatternNome','change', rinominaPatternSempliceV2);
   on('btnAggiungiGiornoEditorPatternV2','click', aggiungiGiornoPatternSempliceV2);
   on('btnRimuoviGiornoEditorPatternV2','click', rimuoviGiornoPatternSempliceV2);
   on('btnEliminaPatternV2','click', eliminaPatternSempliceV2);
-  on('btnChiudiEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; });
-  on('campoEditorPatternDurataPreset','change', () => {
-    aggiornaGiorniEditorPatternV2();
-    const c = el('contenitoreEditorPatternGiorniPersonalizzati');
-    if(c) c.hidden = el('campoEditorPatternDurataPreset').value !== 'personalizzato';
+  on('btnChiudiEditorPatternV2','click', () => { el('overlayEditorPatternV2').hidden = true; renderListaPatternSempliceV2(); });
+  on('campoEditorPatternDataInizio','change', () => { editorSeq.meseAnteprima = null; calcolaFaseAutomaticaV2(); aggiornaPassiDueTreV2(); });
+  on('campoEditorPatternFino','change', () => { editorSeq.meseAnteprima = null; aggiornaPassiDueTreV2(); });
+  on('sceltaFaseSequenza','click', e => { const b = e.target.closest('[data-fase]'); if(!b) return; editorSeq.fase = Number(b.dataset.fase); editorSeq.faseScelta = true; aggiornaPassiDueTreV2(); });
+  on('sceltaDurataSequenza','click', e => {
+    const b = e.target.closest('[data-durata]'); if(!b) return;
+    editorSeq.durata = b.dataset.durata; editorSeq.meseAnteprima = null;
+    aggiornaPassiDueTreV2();
+    if(editorSeq.durata === 'data' && !el('campoEditorPatternFino').value) el('campoEditorPatternFino').focus();
   });
-  on('campoEditorPatternDataInizio','change', aggiornaGiorniEditorPatternV2);
-  on('campoEditorPatternGiorni','input', () => { el('campoEditorPatternDurataPreset').value = 'personalizzato'; });
+  const spostaAnteprimaSeq = passo => { const [a, m] = editorSeq.meseAnteprima.split('-').map(Number); const d = new Date(a, m - 1 + passo, 1); editorSeq.meseAnteprima = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; aggiornaPassiDueTreV2(); };
+  on('btnAnteprimaSeqPrec','click', () => spostaAnteprimaSeq(-1));
+  on('btnAnteprimaSeqSucc','click', () => spostaAnteprimaSeq(1));
+  on('campoSeqProteggiAssenze','change', aggiornaPassiDueTreV2);
+  on('campoSeqSovrascrivi','change', aggiornaPassiDueTreV2);
   on('btnGeneraEditorPatternV2','click', generaDaEditorPatternV2);
-  on('btnContinuaEditorPatternV2','click', continuaDaEditorPatternV2);
   const cicloPatternHostSemplice = el('cicloPatternV2');
   if(cicloPatternHostSemplice) cicloPatternHostSemplice.addEventListener('click', (e) => {
+    if(e.target.closest('[data-aggiungi-giorno]')){ aggiungiGiornoPatternSempliceV2(); return; }
     const btn = e.target.closest('[data-giorno-index]');
     if(!btn) return;
     giornoPatternSelezionatoSemplcieV2 = Number(btn.dataset.giornoIndex);
@@ -529,7 +583,7 @@ function inizializza(){
     if(btn){ assegnaModelloAGiornoPatternSempliceV2(btn.dataset.modelloIdPattern); renderIndennitaGiornoPatternSempliceV2(); }
   });
   const indennitaPatternHostSemplice = el('corpoIndennitaGiornoPatternV2');
-  if(indennitaPatternHostSemplice) indennitaPatternHostSemplice.addEventListener('change', aggiornaIndennitaGiornoPatternSempliceV2);
+  if(indennitaPatternHostSemplice) indennitaPatternHostSemplice.addEventListener('click', aggiornaIndennitaGiornoPatternSempliceV2);
   on('campoPatternStraordinarioAttivo','change', aggiornaStraordinarioRientroPatternSempliceV2);
   on('campoPatternStraordinarioQuando','change', aggiornaStraordinarioRientroPatternSempliceV2);
   on('campoPatternStraordinarioInizio','change', aggiornaStraordinarioRientroPatternSempliceV2);
@@ -635,13 +689,13 @@ function inizializza(){
   }
   el('toggleCalendarioAColori')?.addEventListener('change', () => {
     const acceso = el('toggleCalendarioAColori').checked;
-    TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, acceso ? '1' : '0');
+    TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, acceso ? '1' : '0'); aggiornaStatoStrumentiTurni();
     aggiornaClasseCalendarioColori();
     aggiornaAspettoBlocCoCloriPersonalizzati();
     renderCalendario();
   });
   document.querySelectorAll('[data-stile-calendario]').forEach(b => b.addEventListener('click', () => {
-    TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, b.dataset.stileCalendario);
+    TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, b.dataset.stileCalendario); aggiornaStatoStrumentiTurni();
     aggiornaClasseCalendarioColori();
     renderCalendario();
   }));
@@ -677,11 +731,54 @@ function inizializza(){
   });
 
   el('btnChiudiTurno').addEventListener('click', () => { el('pannelloTurno').hidden = true; });
+  // Finestra "Modifica il giorno": pulsanti che comandano i campi di sempre.
+  on('btnSalvaTurnoTesta','click', () => el('btnSalvaTurno').click());
+  on('pannelloTurno','click', e => {
+    const tipo = e.target.closest('[data-tipo-giorno]');
+    if(tipo){
+      modoGiornoEditor = tipo.dataset.tipoGiorno;
+      el('campoRiposo').checked = modoGiornoEditor === 'riposo';
+      if(modoGiornoEditor !== 'assenza') el('campoAssenzaTipo').value = '';
+      aggiornaVisibilitaCampiOrario(); aggiornaAnteprima(); aggiornaEditorGiornoV3();
+      return;
+    }
+    const mod = e.target.closest('[data-modello-giorno]');
+    if(mod){
+      const m = (AppState.modelliTurno || []).find(x => x.id === mod.dataset.modelloGiorno);
+      if(m){ el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; aggiornaAnteprima(); aggiornaEditorGiornoV3(); }
+      return;
+    }
+    const ind = e.target.closest('[data-indennita-giorno]');
+    if(ind){
+      const casella = el(ind.dataset.indennitaGiorno);
+      casella.checked = !casella.checked;
+      casella.dispatchEvent(new Event('change'));
+      aggiornaAnteprima(); aggiornaEditorGiornoV3();
+      return;
+    }
+    const passo = e.target.closest('[data-passo-ore]');
+    if(passo){
+      const campo = el(passo.dataset.passoOre);
+      campo.value = Math.max(0, (Number(campo.value) || 0) + Number(passo.dataset.delta)) || '';
+      campo.dispatchEvent(new Event('input'));
+      return;
+    }
+    const pd = e.target.closest('.scelta-prima-dopo [data-valore]');
+    if(pd){
+      const sel = el(pd.closest('.scelta-prima-dopo').dataset.per);
+      sel.value = pd.dataset.valore;
+      sel.dispatchEvent(new Event('input'));
+      aggiornaEditorGiornoV3();
+    }
+  });
+  on('pannelloTurno','input', () => aggiornaEditorGiornoV3());
+  on('pannelloTurno','change', () => aggiornaEditorGiornoV3());
 
   el('btnAggiungiSecondoStraordinario').addEventListener('click', () => {
-    el('blocchStrSecondo').hidden = false;
-    el('btnAggiungiSecondoStraordinario').hidden = true;
-    el('campoStrOre2')?.focus();
+    const primo = el('bloccoStrPrimo');
+    if(primo && primo.hidden){ primo.hidden = false; el('campoStrOre1')?.focus(); }
+    else { el('blocchStrSecondo').hidden = false; el('campoStrOre2')?.focus(); }
+    el('btnAggiungiSecondoStraordinario').hidden = !el('blocchStrSecondo').hidden && !(primo && primo.hidden);
     aggiornaAnteprima();
   });
   el('btnRimuoviSecondoStraordinario').addEventListener('click', () => {
@@ -847,6 +944,8 @@ function inizializza(){
   on('btnImpostazioni','click', () => mostraScheda('impostazioni'));
   on('btnChiudiModificaModello','click', () => { el('overlayModificaModello').hidden = true; });
   on('btnSalvaModello','click', salvaModificaModelloV2);
+  on('overlayModificaModello','input', () => aggiornaAnteprimaModelloV2());
+  on('overlayModificaModello','click', e => { if(e.target.closest('#btnModModelloColoreAutomatico')) setTimeout(aggiornaAnteprimaModelloV2, 0); });
   el('campoModModelloColore').addEventListener('input', () => {
     modelloColoreForzatoV2 = el('campoModModelloColore').value;
     dipingiSwatchModelloV2();
@@ -862,6 +961,11 @@ function inizializza(){
   on('btnEliminaModello','click', eliminaModelloV2);
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
+  on('btnSimboliCalendario','click', apriSimboliCalendario);
+  on('settingsSimboli','click', apriSimboliCalendario);
+  on('btnChiudiSimboli','click', () => { el('overlaySimboli').hidden = true; });
+  on('overlaySimboli','click', e => { if(e.target.id === 'overlaySimboli') el('overlaySimboli').hidden = true; });
+  on('listaSimboli','change', e => { if(e.target.dataset.simbolo) cambiaSimboloVisibile(e.target.dataset.simbolo, e.target.checked); });
   on('btnChiudiScegliBackupDrive','click', () => { el('overlayScegliBackupDrive').hidden = true; });
   on('btnSalvaEvento','click', salvaEventoV2);
   on('btnEliminaEvento','click', eliminaEventoV2);
@@ -981,146 +1085,221 @@ function apriSelettoreModelliV2(scheda){
 
 function coloreModelloV2(m){
   if(typeof coloreCategoria !== 'function') return '#E8ECF0';
-  if(m.riposo) return coloreCategoria('riposo');
-  const categoria = (typeof categoriaTurno === 'function' && m.oraInizio && m.oraFine) ? categoriaTurno(m.oraInizio, m.oraFine) : null;
-  return coloreCategoria(categoria || 'mattina');
+  // Colore scelto a mano per il modello, altrimenti quello della sua categoria (Sera, Notte...).
+  // Prima categoriaTurno veniva chiamata senza data e il risultato ricadeva sempre su "Mattina".
+  if(m.colore) return m.colore;
+  return coloreAutomaticoPerModello(m);
 }
 
-// Lista visiva dei pattern: ogni riga si tocca per aprire subito l'editor (ciclo + indennità +
-// generazione, tutto in un unico posto) — non c'è più un concetto di riga "selezionata" da
-// applicare a parte, dato che il tocco apre già tutto quello che serve.
+// Lista delle sequenze: striscia con i colori del ciclo; quella in uso dice fin dove arriva e
+// si può continuare. Le 4 di base restano sempre in elenco (toccandole si ricreano se eliminate).
+function patternInUsoV2(){
+  const id = TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN);
+  return id ? (AppState.pattern || []).find(p => p.id === id) || null : null;
+}
 function renderListaPatternSempliceV2(){
   const host = el('listaPatternSempliceV2');
   if(!host) return;
-  const trovaModello = id => (AppState.modelliTurno || []).find(m => m.id === id);
-  const pallini = ids => ids.map(id => {
-    const m = trovaModello(id);
-    const colore = m ? coloreModelloV2(m) : '#E8ECF0';
-    return `<span style="width:16px;height:16px;border-radius:50%;background:${colore};margin-right:-5px;border:2px solid var(--pannello);display:inline-block;"></span>`;
-  }).join('');
-  const voci = [
-    { value:'quinta', nome:'Turno in quinta', sotto:'5 giorni a rotazione', giorni:['sera','pomeriggio','mattina','notte','riposo'] },
-    { value:'quinta10', nome:'Turno in quinta 10 giorni', sotto:'10 giorni a rotazione', giorni:['sera','pomeriggio','mattina','notte','riposo'] },
-    { value:'corta', nome:'Settimana corta', sotto:'Lun–Ven, orario fisso', icona:'📅' },
-    { value:'lunga', nome:'Settimana lunga', sotto:'Lun–Sab, orario fisso', icona:'📅' }
-  ];
-  const mappaPatternId = { quinta:'pattern_quinta5', quinta10:'pattern_quinta10', corta:'pattern_settimana_corta', lunga:'pattern_settimana_lunga' };
-  const idPatternNoti = new Set(Object.values(mappaPatternId));
-  const righeNote = voci.map(v => {
-    const anteprima = v.giorni ? `<span style="display:flex;flex-shrink:0;">${pallini(v.giorni)}</span>` : `<span style="font-size:1.1rem;flex-shrink:0;">${v.icona}</span>`;
-    const patternId = mappaPatternId[v.value];
-    const matita = patternId ? `<button type="button" class="riga-modello-matita" data-modifica-pattern="${patternId}" aria-label="Modifica ciclo di ${escapeHtml(v.nome)}">✏️</button>` : '';
-    return `<div class="riga-modello-selettore">
-      <button type="button" class="riga-modello-selettore-corpo" data-pattern-semplice="${v.value}">
-        ${anteprima}
-        <span class="riga-modello-testo"><strong>${escapeHtml(v.nome)}</strong><small>${escapeHtml(v.sotto)}</small></span>
-      </button>
-      ${matita}
+  const modelli = AppState.modelliTurno || [];
+  const presenti = AppState.pattern || [];
+  const elenco = presenti.concat(PATTERN_BASE_V2.filter(b => !presenti.some(p => p.id === b.id)));
+  const inUso = patternInUsoV2();
+  const fino = TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO);
+  host.innerHTML = elenco.map(p => {
+    const striscia = p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return `<i style="background:${m ? coloreModelloV2(m) : '#E8ECF0'}"></i>`; }).join('');
+    const usato = inUso && inUso.id === p.id;
+    const stato = usato
+      ? `<small class="stato-attivo">${fino ? 'Generato fino al ' + dataBreve(fino) : 'In uso'}</small><span class="continua-seq" data-continua-pattern="${escapeHtml(p.id)}">▶ Continua</span>`
+      : `<small>${p.giorni.length} ${p.giorni.length === 1 ? 'giorno' : 'giorni'} a rotazione</small>`;
+    return `<div class="card-sequenza${usato ? ' in-uso' : ''}" data-modifica-pattern="${escapeHtml(p.id)}" role="button" tabindex="0">
+      ${usato ? '<span class="badge-in-uso">IN USO</span>' : ''}<strong>${escapeHtml(p.nome)}</strong>
+      <span class="striscia-sequenza">${striscia}</span>
+      <span class="stato-sequenza">${stato}</span>
     </div>`;
-  }).join('');
-  // Pattern creati da te con "+ Nuovo pattern": non rientrano nei 4 noti sopra, li aggiungiamo
-  // qui con la stessa struttura (anteprima colorata + matita), toccabili per aprire l'editor.
-  const righePersonali = (AppState.pattern || []).filter(p => !idPatternNoti.has(p.id)).map(p => {
-    const idsGiorni = p.giorni.slice(0, 6).map(g => g.modelloId);
-    return `<div class="riga-modello-selettore">
-      <button type="button" class="riga-modello-selettore-corpo" data-modifica-pattern="${escapeHtml(p.id)}">
-        <span style="display:flex;flex-shrink:0;">${pallini(idsGiorni)}</span>
-        <span class="riga-modello-testo"><strong>${escapeHtml(p.nome)}</strong><small>${p.giorni.length} giorni</small></span>
-      </button>
-      <button type="button" class="riga-modello-matita" data-modifica-pattern="${escapeHtml(p.id)}" aria-label="Modifica ${escapeHtml(p.nome)}">✏️</button>
-    </div>`;
-  }).join('');
-  host.innerHTML = righeNote + righePersonali + `<button type="button" class="riga-modello-nuovo" id="btnNuovoPatternV2">＋ Nuovo pattern</button>`;
+  }).join('') + `<button type="button" class="card-sequenza card-sequenza-nuova" id="btnNuovoPatternV2">＋ Nuova sequenza</button>`;
 }
 
 // ===================== Editor del ciclo (solo visualizzazione/modifica, non genera nulla) =====================
 let patternInModificaSemplcieV2 = null;
 let giornoPatternSelezionatoSemplcieV2 = 0;
+// Scelte dei passi 2 e 3 dell'editor
+const editorSeq = { fase: 0, faseScelta: false, durata: 'mese3', meseAnteprima: null };
 
-function apriEditorPatternSempliceV2(patternId){
+function patternInModificaV2(){ return (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2) || null; }
+
+function apriEditorPatternSempliceV2(patternId, continua){
   let p = (AppState.pattern || []).find(x => x.id === patternId);
   if(!p){
-    // Una delle 4 righe fisse (Turno in quinta/10gg/Settimana corta/lunga) resta sempre visibile
-    // in elenco anche se l'hai eliminata: qui la ricreiamo da zero, così ritoccarla funziona
-    // sempre come "ricomincia da capo" invece di restare una riga che non apre più nulla.
+    // Una delle 4 sequenze di base eliminata: si ricrea da zero toccandola.
     const seme = PATTERN_BASE_V2.find(x => x.id === patternId);
     if(!seme) return;
     p = { id:seme.id, nome:seme.nome, giorni: seme.giorni.map(g => ({ modelloId:g.modelloId, indennita: g.indennita || [], secondoTurno: g.secondoTurno || null })) };
     AppState.pattern.push(p);
     salvaPatternStorage();
-    mostraToast('Pattern ricreato da zero', 'successo');
   }
-  // Forziamo sempre la scheda Turni (con "Genera turni automaticamente" visibile) dietro
-  // all'editor: se per qualche motivo era rimasta attiva Calendario (es. la matita del
-  // calendario toccata per errore, o un'altra sequenza di navigazione), l'editor del ciclo
-  // non deve mai aprirsi sopra la schermata sbagliata.
   mostraScheda('sequenza');
   patternInModificaSemplcieV2 = patternId;
   giornoPatternSelezionatoSemplcieV2 = 0;
-  el('titoloEditorPatternV2').textContent = 'Ciclo — ' + p.nome;
+  el('titoloEditorPatternV2').textContent = p.nome;
   el('campoEditorPatternNome').value = p.nome;
+  // Da quando: per la sequenza in uso, "Continua" riparte dal giorno dopo l'ultimo generato.
+  const inUso = patternInUsoV2();
+  const fino = TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO);
+  let inizio = dataISO(new Date());
+  if(continua && inUso && inUso.id === p.id && fino){
+    const d = new Date(fino + 'T12:00:00'); d.setDate(d.getDate() + 1); inizio = dataISO(d);
+  }
+  el('campoEditorPatternDataInizio').value = inizio;
+  el('campoEditorPatternFino').value = '';
+  editorSeq.faseScelta = false;
+  editorSeq.durata = 'mese3';
+  editorSeq.meseAnteprima = null;
+  calcolaFaseAutomaticaV2();
   renderCicloPatternSempliceV2();
   renderTavolozzaPatternSempliceV2();
   renderIndennitaGiornoPatternSempliceV2();
-  if(!el('campoEditorPatternDataInizio').value) el('campoEditorPatternDataInizio').value = dataISO(new Date());
-  aggiornaGiorniEditorPatternV2();
+  aggiornaPassiDueTreV2();
   el('overlayEditorPatternV2').hidden = false;
+  el('overlayEditorPatternV2').querySelector('.modale-corpo').scrollTop = 0;
 }
 
-function aggiornaGiorniEditorPatternV2(){
-  const preset = el('campoEditorPatternDurataPreset').value;
-  if(preset === 'personalizzato') return; // il numero resta quello digitato dall'utente
-  const dataInizioStr = el('campoEditorPatternDataInizio').value || dataISO(new Date());
-  const inizio = new Date(dataInizioStr + 'T00:00:00');
-  const fine = new Date(inizio);
-  if(preset === 'settimana') fine.setDate(fine.getDate() + 7);
-  else if(preset === 'mese') fine.setMonth(fine.getMonth() + 1);
-  else if(preset === 'mese3') fine.setMonth(fine.getMonth() + 3);
-  else if(preset === 'mese6') fine.setMonth(fine.getMonth() + 6);
-  else if(preset === 'anno') fine.setFullYear(fine.getFullYear() + 1);
-  const giorni = Math.round((fine - inizio) / 86400000);
-  el('campoEditorPatternGiorni').value = Math.min(giorni, 366);
+// Se questa sequenza è quella in uso, la fase del giorno scelto si conosce già.
+function calcolaFaseAutomaticaV2(){
+  const p = patternInModificaV2();
+  if(!p || editorSeq.faseScelta) return;
+  const inUso = patternInUsoV2();
+  const ancora = TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA);
+  const inizio = el('campoEditorPatternDataInizio').value;
+  editorSeq.fase = inUso && inUso.id === p.id && ancora && inizio ? faseCicloIl(ancora, inizio, p.giorni.length) : 0;
 }
 
-// Applica il pattern attualmente aperto nell'editor e genera i turni — vale per QUALSIASI
-// pattern (non solo Turno in quinta), usando sequenzaDaPatternV2() come unico traduttore verso
-// la generazione originale, che restiamo a riusare invariata.
+// Intervallo da generare secondo "Fino a quando" (fine compresa).
+function intervalloEditorSeqV2(){
+  const inizioIso = el('campoEditorPatternDataInizio').value;
+  if(!inizioIso) return null;
+  const inizio = new Date(inizioIso + 'T12:00:00');
+  let fine = new Date(inizio);
+  switch(editorSeq.durata){
+    case 'mese': fine.setMonth(fine.getMonth() + 1); fine.setDate(fine.getDate() - 1); break;
+    case 'mese3': fine.setMonth(fine.getMonth() + 3); fine.setDate(fine.getDate() - 1); break;
+    case 'mese6': fine.setMonth(fine.getMonth() + 6); fine.setDate(fine.getDate() - 1); break;
+    case 'fineanno': fine = new Date(inizio.getFullYear(), 11, 31, 12); break;
+    case 'data': {
+      const v = el('campoEditorPatternFino').value;
+      if(!v) return null;
+      fine = new Date(v + 'T12:00:00');
+      break;
+    }
+  }
+  const giorni = Math.round((fine - inizio) / 86400000) + 1;
+  if(giorni < 1) return null;
+  return { inizioIso, fineIso: dataISO(fine), giorni: Math.min(giorni, 731) };
+}
+
+function nomeBreveModelloSeq(m){ return m ? (NOME_BREVE_CATEGORIA[m.id] || m.nome) : '?'; }
+
+// Passo 2 (scelte) e passo 3 (anteprima del mese, interruttori, pulsante).
+function aggiornaPassiDueTreV2(){
+  const p = patternInModificaV2();
+  if(!p) return;
+  const modelli = AppState.modelliTurno || [];
+  if(editorSeq.fase >= p.giorni.length) editorSeq.fase = 0;
+  el('sceltaFaseSequenza').innerHTML = p.giorni.map((g, i) => {
+    const m = modelli.find(x => x.id === g.modelloId);
+    const scelta = i === editorSeq.fase;
+    const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
+    return `<button type="button" data-fase="${i}" class="${scelta ? 'attivo' : ''}" ${scelta ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
+  }).join('');
+  el('sceltaDurataSequenza').querySelectorAll('[data-durata]').forEach(b => b.classList.toggle('attivo', b.dataset.durata === editorSeq.durata));
+  el('campoEditorPatternFino').hidden = editorSeq.durata !== 'data';
+
+  const intervallo = intervalloEditorSeqV2();
+  const proteggi = el('campoSeqProteggiAssenze').checked;
+  const sovrascrivi = el('campoSeqSovrascrivi').checked;
+  // Conteggi sull'intervallo intero
+  let conTurno = 0, conAssenza = 0;
+  if(intervallo){
+    const d = new Date(intervallo.inizioIso + 'T12:00:00');
+    for(let i = 0; i < intervallo.giorni; i++){
+      const t = AppState.turni[dataISO(d)];
+      if(t && t.assenzaTipo) conAssenza++; else if(t) conTurno++;
+      d.setDate(d.getDate() + 1);
+    }
+  }
+  el('testoSeqSovrascrivi').innerHTML = `Sovrascrivi i turni già presenti${conTurno ? ` <small>(${conTurno} ${conTurno === 1 ? 'giorno' : 'giorni'})</small>` : ''}`;
+
+  // Anteprima di un mese
+  const base = editorSeq.meseAnteprima || (intervallo ? intervallo.inizioIso.slice(0, 7) : dataISO(new Date()).slice(0, 7));
+  editorSeq.meseAnteprima = base;
+  const [anno, mese] = base.split('-').map(Number);
+  el('anteprimaSeqMese').textContent = `${NOMI_MESI[mese - 1]} ${anno}`;
+  const primo = new Date(anno, mese - 1, 1, 12);
+  const vuoti = (primo.getDay() + 6) % 7;
+  const giorniMese = new Date(anno, mese, 0).getDate();
+  let html = ['L','M','M','G','V','S','D'].map(x => `<i>${x}</i>`).join('') + '<span></span>'.repeat(vuoti);
+  for(let g = 1; g <= giorniMese; g++){
+    const iso = `${base}-${String(g).padStart(2, '0')}`;
+    const t = AppState.turni[iso];
+    const dentro = intervallo && iso >= intervallo.inizioIso && iso <= intervallo.fineIso;
+    if(!dentro){ html += `<span class="g-fuori">${g}</span>`; continue; }
+    if(t && t.assenzaTipo && proteggi){
+      const voce = (AppState.assenze || []).find(a => a.id === t.assenzaTipo);
+      html += `<span class="g-resta"><em>${g}</em>${escapeHtml(siglaAssenza(voce ? voce.nome : 'Assenza'))}</span>`; continue;
+    }
+    if(t && !t.assenzaTipo && !sovrascrivi){ html += `<span class="g-resta"><em>${g}</em>resta</span>`; continue; }
+    const scarto = Math.round((new Date(iso + 'T12:00:00') - new Date(intervallo.inizioIso + 'T12:00:00')) / 86400000);
+    const giorno = p.giorni[(editorSeq.fase + scarto) % p.giorni.length];
+    const m = modelli.find(x => x.id === giorno.modelloId);
+    const colore = m ? coloreModelloV2(m) : '#E8ECF0';
+    html += `<span style="background:${colore};color:${testoSuColore(colore)}"><em>${g}</em>${escapeHtml(m ? (m.sigla || nomeBreveModelloSeq(m).slice(0, 3)) : '?')}</span>`;
+  }
+  el('anteprimaSeqGriglia').innerHTML = html;
+  const note = [];
+  if(conAssenza) note.push(proteggi ? `${conAssenza} ${conAssenza === 1 ? 'giorno di assenza resta' : 'giorni di assenza restano'} com'${conAssenza === 1 ? 'è' : 'erano'} (tratteggiati).` : `Attenzione: ${conAssenza === 1 ? 'verrà cancellata 1 assenza' : `verranno cancellate ${conAssenza} assenze`}.`);
+  if(conTurno && !sovrascrivi) note.push(`${conTurno} ${conTurno === 1 ? 'giorno con un turno resta' : 'giorni con un turno restano'} com'${conTurno === 1 ? 'è' : 'erano'}.`);
+  el('anteprimaSeqNota').textContent = note.join(' ');
+  const btn = el('btnGeneraEditorPatternV2');
+  btn.disabled = !intervallo;
+  btn.textContent = intervallo ? `Genera ${intervallo.giorni} ${intervallo.giorni === 1 ? 'giorno' : 'giorni'} · fino al ${dataBreve(intervallo.fineIso)}` : 'Scegli fino a quando';
+}
+
 function generaDaEditorPatternV2(){
-  const daPattern = sequenzaDaPatternV2(patternInModificaSemplcieV2);
-  if(!daPattern){ mostraAvviso('Questo pattern non ha giorni da generare.'); return; }
-  AppState.sequenzaTurni = daPattern;
-  salvaSequenzaStorage();
-  // La generazione vera legge dai campi originali (campoSequenzaDataInizio/Giorni): li
-  // allineiamo a quanto scelto qui nell'editor, invece di duplicare la logica di generazione.
-  el('campoSequenzaDataInizio').value = el('campoEditorPatternDataInizio').value;
-  el('campoSequenzaGiorni').value = el('campoEditorPatternGiorni').value;
-  generaSequenzaTurni();
-}
-
-function continuaDaEditorPatternV2(){
-  const daPattern = sequenzaDaPatternV2(patternInModificaSemplcieV2);
-  if(!daPattern){ mostraAvviso('Questo pattern non ha giorni da generare.'); return; }
-  AppState.sequenzaTurni = daPattern;
-  salvaSequenzaStorage();
-  continuaSequenzaTurni();
+  const p = patternInModificaV2();
+  const sequenza = sequenzaDaPatternV2(patternInModificaSemplcieV2);
+  const intervallo = intervalloEditorSeqV2();
+  if(!p || !sequenza || !sequenza.length){ mostraAvviso('Questa sequenza non ha giorni da generare.'); return; }
+  if(!intervallo){ mostraAvviso('Scegli fino a quando generare.'); return; }
+  const scritti = generaTurniDaCiclo({
+    sequenza, dataInizioIso: intervallo.inizioIso, numeroGiorni: intervallo.giorni, fase: editorSeq.fase,
+    proteggiAssenze: el('campoSeqProteggiAssenze').checked, sovrascrivi: el('campoSeqSovrascrivi').checked, patternId: p.id
+  });
+  el('overlayEditorPatternV2').hidden = true;
+  const d = new Date(intervallo.inizioIso + 'T12:00:00');
+  annoCorrente = d.getFullYear();
+  meseCorrente = d.getMonth();
+  giornoSelezionato = intervallo.inizioIso;
+  mostraScheda('calendario');
+  renderCalendario();
+  renderListaPatternSempliceV2();
+  mostraToast(`${p.nome}: ${scritti} ${scritti === 1 ? 'giorno generato' : 'giorni generati'} fino al ${dataBreve(intervallo.fineIso)}`, 'successo', 4000);
 }
 
 function renderCicloPatternSempliceV2(){
   const host = el('cicloPatternV2');
-  const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
+  const p = patternInModificaV2();
   if(!host || !p) return;
   const modelli = AppState.modelliTurno || [];
   host.innerHTML = p.giorni.map((g, i) => {
     const m = modelli.find(x => x.id === g.modelloId);
     const colore = m ? coloreModelloV2(m) : '#E8ECF0';
-    const sigla = m ? (m.sigla || '?') : '?';
-    const selezionato = i === giornoPatternSelezionatoSemplcieV2;
-    const bordo = selezionato ? 'border:2px solid var(--inchiostro);' : 'border:2px solid transparent;';
-    const badge = (g.indennita && g.indennita.length) ? '<span style="font-size:.5rem;">🛡️</span>' : '';
-    return `<button type="button" class="ciclo-pattern-giorno-v2" data-giorno-index="${i}" style="background:${colore};${bordo}">
-      <span style="font-size:.6rem;font-weight:800;">${escapeHtml(sigla)}</span>${badge}
+    const forte = scurisciColore(colore, 0.35);
+    const icone = (g.indennita || []).slice(0, 2).map(k => iconaIndennita(k)).join('') + (g.straordinario ? iconaIndennita('straordinario') : '');
+    return `<button type="button" class="giorno-ciclo-v3${i === giornoPatternSelezionatoSemplcieV2 ? ' selezionato' : ''}" data-giorno-index="${i}">
+      <small>${i + 1}°</small><b style="background:${forte};color:${testoSuColore(forte)}">${escapeHtml(nomeBreveModelloSeq(m))}</b><span style="background:${colore};color:${testoSuColore(colore)}">${icone || '&nbsp;'}</span>
     </button>`;
-  }).join('');
+  }).join('') + '<button type="button" class="giorno-ciclo-v3 giorno-ciclo-aggiungi" data-aggiungi-giorno aria-label="Aggiungi un giorno al ciclo">＋</button>';
+  el('btnRimuoviGiornoEditorPatternV2').hidden = p.giorni.length <= 1;
+  aggiornaPassiDueTreV2();
 }
 
 // Mostra la lista delle indennità fisse per il giorno del ciclo ATTUALMENTE selezionato — nascosta
@@ -1136,9 +1315,8 @@ function renderIndennitaGiornoPatternSempliceV2(){
   if(!modello || modello.riposo){ box.hidden = true; return; }
   box.hidden = false;
   const attive = giorno.indennita || [];
-  corpo.innerHTML = INDENNITA_RAPIDE_V2.map(x => `<label class="campo-modale campo-riga">
-    <input type="checkbox" data-indennita-pattern="${x.chiave}" ${attive.includes(x.chiave) ? 'checked' : ''}> ${escapeHtml(x.nome)}
-  </label>`).join('');
+  el('titoloIndennitaGiornoPatternV2').textContent = `${giornoPatternSelezionatoSemplcieV2 + 1}° giorno (${modello.nome}): cosa c'è sempre`;
+  corpo.innerHTML = INDENNITA_RAPIDE_V2.map(x => `<button type="button" data-indennita-pattern="${x.chiave}" class="${attive.includes(x.chiave) ? 'attivo' : ''}" aria-pressed="${attive.includes(x.chiave) ? 'true' : 'false'}">${iconaIndennita(x.chiave)}${escapeHtml(x.nome)}</button>`).join('');
 
   const str = giorno.straordinario || null;
   el('campoPatternStraordinarioAttivo').checked = !!str;
@@ -1179,12 +1357,16 @@ function aggiornaStraordinarioRientroPatternSempliceV2(){
   salvaPatternStorage();
 }
 
-function aggiornaIndennitaGiornoPatternSempliceV2(){
+function aggiornaIndennitaGiornoPatternSempliceV2(e){
+  const b = e && e.target.closest('[data-indennita-pattern]');
+  if(!b) return;
+  b.classList.toggle('attivo');
+  b.setAttribute('aria-pressed', b.classList.contains('attivo') ? 'true' : 'false');
   const p = (AppState.pattern || []).find(x => x.id === patternInModificaSemplcieV2);
   if(!p) return;
   const giorno = p.giorni[giornoPatternSelezionatoSemplcieV2];
   if(!giorno) return;
-  const spuntate = Array.from(el('corpoIndennitaGiornoPatternV2').querySelectorAll('[data-indennita-pattern]:checked')).map(c => c.dataset.indennitaPattern);
+  const spuntate = Array.from(el('corpoIndennitaGiornoPatternV2').querySelectorAll('[data-indennita-pattern].attivo')).map(c => c.dataset.indennitaPattern);
   giorno.indennita = spuntate;
   salvaPatternStorage();
   renderCicloPatternSempliceV2(); // aggiorna il 🛡️ sul giorno nel ciclo
@@ -1195,7 +1377,8 @@ function renderTavolozzaPatternSempliceV2(){
   if(!host) return;
   host.innerHTML = (AppState.modelliTurno || []).map(m => {
     const colore = coloreModelloV2(m);
-    return `<button type="button" class="tavolozza-pattern-cerchio-v2" data-modello-id-pattern="${escapeHtml(m.id)}" style="background:${colore}" title="${escapeHtml(m.nome)}">${escapeHtml(m.sigla || '?')}</button>`;
+    const forte = scurisciColore(colore, 0.35);
+    return `<button type="button" class="tavolozza-pattern-v3" data-modello-id-pattern="${escapeHtml(m.id)}" style="background:${forte};color:${testoSuColore(forte)}" title="${escapeHtml(m.nome)}">${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
 }
 
@@ -1246,7 +1429,7 @@ function rimuoviGiornoPatternSempliceV2(){
 
 function nuovoPatternV2(){
   const primoModello = (AppState.modelliTurno || [])[0];
-  const p = { id:'pattern_' + Date.now(), nome:'Nuovo pattern', giorni:[{ modelloId: primoModello ? primoModello.id : '', indennita:[] }] };
+  const p = { id:'pattern_' + Date.now(), nome:'Nuova sequenza', giorni:[{ modelloId: primoModello ? primoModello.id : '', indennita:[] }] };
   AppState.pattern.push(p);
   salvaPatternStorage();
   apriEditorPatternSempliceV2(p.id);
@@ -1254,7 +1437,8 @@ function nuovoPatternV2(){
 
 function eliminaPatternSempliceV2(){
   if(!patternInModificaSemplcieV2) return;
-  mostraConferma('Eliminare definitivamente questo pattern? I turni già generati sul calendario non verranno toccati.', () => {
+  mostraConferma('Eliminare definitivamente questa sequenza? I turni già generati sul calendario non verranno toccati.', () => {
+    if(TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) === patternInModificaSemplcieV2) TurniPSStorage.removeItem(CHIAVE_SEQUENZA_PATTERN);
     AppState.pattern = AppState.pattern.filter(p => p.id !== patternInModificaSemplcieV2);
     salvaPatternStorage();
     el('overlayEditorPatternV2').hidden = true;
@@ -1263,7 +1447,138 @@ function eliminaPatternSempliceV2(){
 }
 
 
+// Report: in cima quanto arriva sul conto il mese dopo quello visualizzato, più ore e netto
+// dello straordinario. Stessi calcoli di "Cosa arriva sul conto" e del riepilogo ore.
+function renderReportHero(){
+  const box = el('reportHero');
+  if(!box) return;
+  el('reportMeseEtichetta').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
+  try{
+    const euroFmt = v => typeof euro === 'function' ? euro(v) : `${Number(v || 0).toFixed(2)} €`;
+    // Quanto arriva sul conto NEL mese visualizzato: stipendio del mese prima + accessorie di due mesi prima.
+    const acc = generaAccreditoConto(annoCorrente, meseCorrente);
+    const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
+    const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
+    const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
+    // Riquadri in cima a "Il mese" (al posto del vecchio "Riepilogo mese").
+    const strOre = t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
+    if(el('meseTileTurni')){
+      el('meseTileTurni').textContent = r.giorniPresenzaEffettiva;
+      el('meseTileRiposi').textContent = r.riposi;
+      el('meseTileStraordinario').textContent = `${String(Math.round(strOre * 100) / 100).replace('.', ',')} h`;
+    }
+    const precedente = NOMI_MESI[(meseCorrente + 11) % 12].toLowerCase();
+    const dueMesiPrima = NOMI_MESI[(meseCorrente + 10) % 12].toLowerCase();
+    box.innerHTML = `
+      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()}</div>
+      <div class="report-hero-cifra">${euroFmt(acc.netto)}</div>
+      <div class="report-hero-det">Stipendio di ${precedente} + accessorie di ${dueMesiPrima} · stima</div>
+      <div class="report-hero-tiles">
+        <div><b>${String(Math.round(ore * 10) / 10).replace('.', ',')}</b><span>ore lavorate</span></div>
+        <div><b class="${ns.netto > 0 ? 'pos' : ''}">${ns.netto > 0 ? '+' : ''}${euroFmt(ns.netto)}</b><span>netto straordinario</span></div>
+      </div>`;
+    box.hidden = false;
+  }catch(e){
+    console.warn('Riquadro Report non calcolato:', e);
+    box.hidden = true;
+  }
+}
+
+// Scheda Turni: i modelli di turno con il loro colore e orario, toccandone uno si modifica.
+// Scheda Turni: in alto, a tessere, i modelli usati negli ultimi/prossimi 3 mesi; gli altri in
+// "Altri modelli", chiuso. Ogni tessera dice orario, durata e quante volte c'è nel mese visualizzato.
+const MODELLI_DI_SOLITO_RARI = ['aggiornamentoProfessionale', 'addestramentoTiro', 'ufficio'];
+function turnoUsaModello(t, m){
+  if(!t || t.assenzaTipo) return false;
+  if(m.riposo) return !!t.riposo;
+  if(t.riposo) return false;
+  if(t.modelloId) return t.modelloId === m.id;
+  return !!(t.oraInizio && t.oraInizio === m.oraInizio && t.oraFine === m.oraFine);
+}
+function durataModelloTesto(m){
+  if(m.riposo || !m.oraInizio || !m.oraFine) return '';
+  const min = o => { const [h, mm] = o.split(':').map(Number); return h * 60 + mm; };
+  let d = min(m.oraFine) - min(m.oraInizio);
+  if(d <= 0) d += 24 * 60;
+  const h = Math.floor(d / 60), r = d % 60;
+  return r ? `${h} h ${r}` : `${h} h`;
+}
+function renderModelliTabTurni(){
+  const host = el('listaModelliTabTurni');
+  if(!host) return;
+  const modelli = AppState.modelliTurno || [];
+  const oggi = new Date();
+  const da = dataISO(new Date(oggi.getFullYear(), oggi.getMonth() - 3, oggi.getDate()));
+  const a = dataISO(new Date(oggi.getFullYear(), oggi.getMonth() + 3, oggi.getDate()));
+  const prefissoMese = `${annoCorrente}-${String(meseCorrente + 1).padStart(2, '0')}-`;
+  const voci = Object.entries(AppState.turni || {});
+  const usatiDiRecente = new Set(modelli.filter(m => voci.some(([iso, t]) => iso >= da && iso <= a && turnoUsaModello(t, m))).map(m => m.id));
+  // Senza turni recenti (app appena installata) in alto vanno tutti tranne quelli di solito rari.
+  const inAlto = m => usatiDiRecente.size ? usatiDiRecente.has(m.id) : !MODELLI_DI_SOLITO_RARI.includes(m.id);
+  const nomeMese = NOMI_MESI[meseCorrente].toLowerCase();
+  const tessera = m => {
+    const colore = coloreModelloV2(m);
+    const forte = typeof scurisciColore === 'function' ? scurisciColore(colore, 0.35) : colore;
+    const sigla = m.sigla || (m.nome || '??').slice(0, 2).toUpperCase();
+    const durata = durataModelloTesto(m);
+    const orario = m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}${durata ? ' · ' + durata : ''}`;
+    const volte = voci.filter(([iso, t]) => iso.startsWith(prefissoMese) && turnoUsaModello(t, m)).length;
+    const conteggio = volte ? `${volte} ${volte === 1 ? 'volta' : 'volte'} a ${nomeMese}` : `Mai a ${nomeMese}`;
+    return `<button type="button" class="tessera-modello" data-modello-tab="${escapeHtml(m.id)}">
+      <b style="background:${escapeHtml(forte)};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</b>
+      <span style="background:${escapeHtml(colore)};color:${testoSuColore(colore)}"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(orario)}</small><em>${escapeHtml(conteggio)}</em></span>
+    </button>`;
+  };
+  const riga = m => {
+    const colore = coloreModelloV2(m);
+    const forte = typeof scurisciColore === 'function' ? scurisciColore(colore, 0.35) : colore;
+    const sigla = m.sigla || (m.nome || '??').slice(0, 2).toUpperCase();
+    return `<button type="button" class="riga-strumento-turni riga-modello-tab" data-modello-tab="${escapeHtml(m.id)}">
+      <span class="sigla-modello-tab" style="background:${escapeHtml(forte)};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</span>
+      <i>${escapeHtml(m.nome)}<small>${escapeHtml(m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}`)}</small></i><b>›</b>
+    </button>`;
+  };
+  const sopra = modelli.filter(inAlto), sotto = modelli.filter(m => !inAlto(m));
+  const eraAperto = !!host.querySelector('.altri-modelli[open]');
+  host.innerHTML = `<div class="griglia-modelli-tab">${sopra.map(tessera).join('')}<button type="button" class="tessera-modello tessera-nuovo" data-modello-tab=""><span>＋</span>Nuovo</button></div>`
+    + (sotto.length ? `<details class="altri-modelli"${eraAperto ? ' open' : ''}><summary>Altri modelli (${sotto.length})<b aria-hidden="true">⌄</b></summary><div class="lista-strumenti-turni">${sotto.map(riga).join('')}</div></details>` : '');
+  aggiornaStatoStrumentiTurni();
+}
+// Sotto le voci degli strumenti: com'è adesso, invece di una descrizione fissa.
+function aggiornaStatoStrumentiTurni(){
+  const seq = el('statoSequenzaTurni');
+  if(seq){
+    const usato = typeof patternInUsoV2 === 'function' ? patternInUsoV2() : null;
+    const fino = TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO);
+    seq.textContent = usato ? `In uso: ${usato.nome}${fino ? ' · fino al ' + dataBreve(fino) : ''}` : 'Ripete una sequenza sul calendario';
+    seq.classList.toggle('stato-attivo', !!usato);
+  }
+  const col = el('statoColoriTurni');
+  if(col){
+    col.textContent = `${calendarioModernoAttivo() ? 'Moderno' : 'Classico'} · ${calendarioAColoriAttivo() ? 'a colori' : 'senza colori'}`;
+    col.classList.add('stato-attivo');
+  }
+}
+function dataBreve(iso){ const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
+// Scheda Altro: sotto "Anagrafica" un riassunto (qualifica · regione).
+function aggiornaRiassuntoAssenzeAltro(){
+  const box = el('riassuntoAssenzeAltro');
+  if(!box || typeof calcolaSaldoCongedoOrdinario !== 'function') return;
+  const s = calcolaSaldoCongedoOrdinario(new Date().getFullYear());
+  const rimasti = Math.round((s.valoreEffettivo - s.usate) * 10) / 10;
+  box.textContent = s.valoreEffettivo ? `Congedo ordinario: ${String(rimasti).replace('.', ',')} ${rimasti === 1 ? 'giorno rimasto' : 'giorni rimasti'}` : 'Congedi, permessi e saldi';
+  box.classList.toggle('stato-attivo', !!s.valoreEffettivo);
+}
+function aggiornaRiassuntoAnagraficaAltro(){
+  const box = el('riassuntoAnagraficaAltro');
+  if(!box) return;
+  const a = AppState.anagrafica || {};
+  const parti = [a.qualifica, a.regione].filter(Boolean);
+  box.textContent = parti.length ? parti.join(' · ') : 'Da compilare: serve per il cedolino';
+}
+
 function renderListaModelliTurniV2(){
+  renderModelliTabTurni();
   const host = el('listaModelliTurni');
   if(!host) return;
   const tGiornoCorrente = giornoPerPopupV2 ? (AppState.turni[giornoPerPopupV2] || {}) : {};
@@ -1320,11 +1635,11 @@ function renderListaModelliIndennitaV2(){
   if(!host) return;
   const t = giornoPerPopupV2 ? (AppState.turni[giornoPerPopupV2] || {}) : {};
   const righeIndennita = INDENNITA_RAPIDE_V2.map(x => `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-indennita="${x.chiave}">
-    <span class="cerchio-modello cerchio-modello-assenza">${x.sigla}${t[x.chiave] ? ' ✓' : ''}</span>
+    <span class="cerchio-modello cerchio-modello-assenza cerchio-icona${t[x.chiave] ? ' attiva' : ''}">${iconaIndennita(x.chiave)}${t[x.chiave] ? ' ✓' : ''}</span>
     <span class="riga-modello-testo"><strong>${x.nome}</strong></span>
   </button>`).join('');
   const rigaStraordinario = `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" id="btnIndennitaStraordinarioV2">
-    <span class="cerchio-modello cerchio-modello-assenza">⏱️</span>
+    <span class="cerchio-modello cerchio-modello-assenza cerchio-icona">${iconaIndennita('straordinario')}</span>
     <span class="riga-modello-testo"><strong>Straordinario</strong><small>ore, prima o dopo il turno</small></span>
   </button>`;
   host.innerHTML = rigaStraordinario + righeIndennita;
@@ -1418,7 +1733,7 @@ function apriModificaModelloV2(id){
   const campoSigla = el('campoModModelloSigla');
   campoSigla.disabled = !!lettera;
   campoSigla.value = lettera ? lettera : (m ? String(m.sigla || '').slice(0, 2) : '');
-  el('testoEtichettaSigla').textContent = lettera ? 'Sigla (fissa)' : 'Sigla (2 lettere, per i turni che crei tu)';
+  el('testoEtichettaSigla').textContent = lettera ? 'Sigla (fissa)' : 'Sigla';
   const isRiposo = !!(m && m.riposo);
   el('campiModModelloOrario').hidden = isRiposo;
   el('campoModModelloInizio').value = m ? (m.oraInizio || '') : '';
@@ -1429,7 +1744,22 @@ function apriModificaModelloV2(id){
   aggiornaStatoColoreModelloV2();
   // "Elimina" ha senso solo per un turno che già esiste, non per uno nuovo che stai ancora creando.
   el('btnEliminaModello').hidden = !m;
+  aggiornaAnteprimaModelloV2();
   el('overlayModificaModello').hidden = false;
+}
+// In cima alla finestra: la tessera del turno come apparirà nella scheda Turni.
+function aggiornaAnteprimaModelloV2(){
+  const box = el('anteprimaModello');
+  if(!box) return;
+  const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
+  const finto = { id: m ? m.id : 'nuovo', riposo: !!(m && m.riposo), nome: el('campoModModelloNome').value.trim() || 'Nuovo turno',
+    oraInizio: el('campoModModelloInizio').value, oraFine: el('campoModModelloFine').value };
+  const colore = el('campoModModelloColore').value || '#E4E7EC';
+  const forte = scurisciColore(colore, 0.35);
+  const sigla = (el('campoModModelloSigla').value || finto.nome.slice(0, 2)).toUpperCase();
+  const durata = durataModelloTesto(finto);
+  const orario = finto.riposo ? 'Giornata libera' : finto.oraInizio && finto.oraFine ? `${finto.oraInizio} – ${finto.oraFine}${durata ? ' · ' + durata : ''}` : 'Orario da scegliere';
+  box.innerHTML = `<span class="tessera-modello"><b style="background:${forte};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</b><span style="background:${colore};color:${testoSuColore(colore)}"><strong>${escapeHtml(finto.nome)}</strong><small>${escapeHtml(orario)}</small></span></span>`;
 }
 function salvaModificaModelloV2(){
   const nome = el('campoModModelloNome').value.trim();
@@ -1442,6 +1772,7 @@ function salvaModificaModelloV2(){
   // Campo bloccato (turni di base): la sigla memorizzata resta com'è, non la sostituiamo con la lettera.
   if(el('campoModModelloSigla').disabled && esistente && esistente.sigla) sigla = esistente.sigla;
   const isRiposo = !!(esistente && esistente.riposo); // il tipo "riposo" non si crea da qui, solo si rinomina se già esistente
+  const orarioPrima = esistente && !isRiposo ? { inizio: esistente.oraInizio, fine: esistente.oraFine } : null;
   let modelloSalvato;
   if(!isRiposo){
     const oraInizio = el('campoModModelloInizio').value, oraFine = el('campoModModelloFine').value;
@@ -1463,6 +1794,40 @@ function salvaModificaModelloV2(){
   renderListaModelliTurniV2();
   renderCalendario();
   mostraToast(`"${nome}" salvato`, 'successo');
+  if(orarioPrima && (orarioPrima.inizio !== modelloSalvato.oraInizio || orarioPrima.fine !== modelloSalvato.oraFine)){
+    proponiAggiornamentoTurniDelModello(modelloSalvato, orarioPrima);
+  }
+}
+
+// Ogni giorno del calendario conserva il proprio orario (copiato dal modello quando il turno è
+// stato inserito): cambiare il modello non tocca i giorni già inseriti. Qui si chiede se farlo.
+// Giorni coinvolti: quelli inseriti con questo modello e quelli senza modello con l'orario di prima.
+function proponiAggiornamentoTurniDelModello(modello, orarioPrima){
+  const oggi = dataISO(new Date());
+  const giorni = Object.keys(AppState.turni || {}).filter(iso => {
+    const t = AppState.turni[iso];
+    if(!t || t.riposo || t.assenzaTipo || !t.oraInizio) return false;
+    if(t.modelloId) return t.modelloId === modello.id;
+    return t.oraInizio === orarioPrima.inizio && t.oraFine === orarioPrima.fine;
+  });
+  if(!giorni.length) return;
+  const futuri = giorni.filter(iso => iso >= oggi);
+  el('testoAggiornaTurni').textContent =
+    `Hai cambiato l'orario di "${modello.nome}" (${orarioPrima.inizio}–${orarioPrima.fine} → ${modello.oraInizio}–${modello.oraFine}). ` +
+    `Nel calendario ci sono ${giorni.length} giorni con questo turno, di cui ${futuri.length} da oggi in poi.`;
+  el('btnAggTurniFuturi').hidden = !futuri.length;
+  const chiudi = () => { el('overlayAggiornaTurni').hidden = true; };
+  const applica = elenco => {
+    elenco.forEach(iso => { AppState.turni[iso].oraInizio = modello.oraInizio; AppState.turni[iso].oraFine = modello.oraFine; });
+    salvaTurniStorage();
+    chiudi();
+    renderCalendario();
+    mostraToast(`Aggiornati ${elenco.length} giorni del calendario`, 'successo');
+  };
+  el('btnAggTurniFuturi').onclick = () => applica(futuri);
+  el('btnAggTurniTutti').onclick = () => applica(giorni);
+  el('btnAggTurniNessuno').onclick = chiudi;
+  el('overlayAggiornaTurni').hidden = false;
 }
 function eliminaModelloV2(){
   if(!modelloInModificaV2) return;
@@ -1491,7 +1856,7 @@ function rigaEventoHtml(ev, isoOrigine, etichettaGiorno){
   const dettaglio = [etichettaGiorno, quando, ev.luogo].filter(Boolean).join(' · ');
   const icone = (promemoriaDiEvento(ev).length ? '🔔' : '') + (ev.ripeti ? '🔁' : '');
   return `<button type="button" class="riga-evento-giorno-v2" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">
-      <span class="riga-evento-giorno-pallino" aria-hidden="true">●</span>
+      <span class="riga-evento-giorno-pallino" aria-hidden="true" style="color:${coloreEvento(ev)}">●</span>
       <span class="riga-evento-giorno-testo"><strong>${escapeHtml(ev.titolo || 'Senza titolo')}</strong><small>${escapeHtml(dettaglio)}</small></span>
       ${icone ? `<span class="riga-evento-giorno-icone" aria-hidden="true">${icone}</span>` : ''}
       <span class="riga-modello-freccia" aria-hidden="true">›</span>
@@ -1587,7 +1952,10 @@ function apriModificaEventoV2(id, isoOrigine){
   el('campoEventoOraInizio').value = ev ? (ev.oraInizio || '') : pre.inizio;
   el('campoEventoOraFine').value = ev ? (ev.oraFine || '') : pre.fine;
   el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
+  impostaColoreEventoForm(ev ? coloreEvento(ev) : COLORI_EVENTO[0]);
   el('campoEventoNote').value = ev ? (ev.note || '') : '';
+  const dettagli = document.querySelector('#overlayEvento .dettagli-evento');
+  if(dettagli) dettagli.open = !!(ev && (ev.luogo || ev.note));
   el('campoEventoOraPromemoria').value = ev && ev.oraPromemoria ? ev.oraPromemoria : '08:00';
   el('campoEventoRipeti').value = ev && ev.ripeti ? ev.ripeti : '';
   el('campoEventoRipetiFino').value = ev && ev.ripetiFino ? ev.ripetiFino : '';
@@ -1945,6 +2313,39 @@ async function annullaPromemoriaEvento(idEvento){
   await annullaNotificheEvento(idEvento, plugin, pluginAvvisoEvento());
 }
 
+// Colore dell'evento: pallini nel modulo, uno solo scelto.
+let coloreEventoScelto = COLORI_EVENTO[0];
+function impostaColoreEventoForm(colore){
+  coloreEventoScelto = colore;
+  const host = el('sceltaColoreEvento');
+  if(!host) return;
+  if(!host.children.length){
+    host.innerHTML = COLORI_EVENTO.map(c => `<button type="button" role="radio" data-colore-evento="${c}" style="background:${c}" aria-label="Colore"></button>`).join('');
+    host.addEventListener('click', e => { const b = e.target.closest('[data-colore-evento]'); if(b) impostaColoreEventoForm(b.dataset.coloreEvento); });
+  }
+  host.querySelectorAll('[data-colore-evento]').forEach(b => {
+    const scelto = b.dataset.coloreEvento === colore;
+    b.classList.toggle('attivo', scelto);
+    b.setAttribute('aria-checked', scelto ? 'true' : 'false');
+  });
+}
+
+// Legenda dei simboli e scelta di quali mostrare nelle caselle (pulsante "i" e Altro).
+function apriSimboliCalendario(){
+  const nascoste = indennitaNascoste();
+  el('listaSimboli').innerHTML = ELENCO_INDENNITA.map(x => `<label class="riga-simbolo">
+    ${iconaIndennita(x.chiave)}<span>${escapeHtml(x.nome)}</span>
+    <input type="checkbox" class="interruttore" data-simbolo="${x.chiave}" ${nascoste.includes(x.chiave) ? '' : 'checked'} aria-label="Mostra ${escapeHtml(x.nome)} nel calendario">
+  </label>`).join('');
+  el('overlaySimboli').hidden = false;
+}
+function cambiaSimboloVisibile(chiave, visibile){
+  const nascoste = indennitaNascoste().filter(k => k !== chiave);
+  if(!visibile) nascoste.push(chiave);
+  TurniPSStorage.setItem(CHIAVE_INDENNITA_NASCOSTE, JSON.stringify(nascoste));
+  renderCalendario();
+}
+
 function salvaEventoV2(){
   if(!giornoSelezionato) return;
   const titolo = el('campoEventoTitolo').value.trim();
@@ -1967,6 +2368,7 @@ function salvaEventoV2(){
     tuttoIlGiorno,
     oraInizio: tuttoIlGiorno ? '' : el('campoEventoOraInizio').value,
     oraFine: tuttoIlGiorno ? '' : el('campoEventoOraFine').value,
+    colore: coloreEventoScelto,
     luogo: el('campoEventoLuogo').value.trim(),
     note: el('campoEventoNote').value.trim(),
     promemoria,
@@ -2142,11 +2544,11 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   if(!boxIndennita) return;
   if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
   const pezzi = [];
-  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge" title="${escapeHtml(x.nome)}">${x.sigla}</span>`); });
+  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge">${iconaIndennita(x.chiave)}${escapeHtml(x.nome)}</span>`); });
   if(typeof classificaTurno === 'function' && typeof totaleStraordinario === 'function'){
     const c = classificaTurno(t);
     const oreStr = totaleStraordinario(c);
-    if(oreStr > 0) pezzi.push(`<span class="indennita-giorno-badge indennita-giorno-badge-str" title="Straordinario">⏱️ ${formatOreMinuti(oreStr)}</span>`);
+    if(oreStr > 0) pezzi.push(`<span class="indennita-giorno-badge indennita-giorno-badge-str">${iconaIndennita('straordinario')}Straordinario ${formatOreMinuti(oreStr)}</span>`);
   }
   if(!pezzi.length){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
   boxIndennita.hidden = false;

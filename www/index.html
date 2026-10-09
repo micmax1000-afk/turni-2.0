@@ -6,6 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Turni & Accessorio PS</title>
 <link rel="stylesheet" href="style.css">
+<script>
+  // Tema scelto in Altro (automatico/chiaro/scuro): applicato subito, prima di disegnare la pagina,
+  // così non si vede un lampo di tema sbagliato all'apertura.
+  try{ var t = localStorage.getItem('simCedolino_tema_v1'); if(t === 'chiaro' || t === 'scuro') document.documentElement.setAttribute('data-tema', t); }catch(e){}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
@@ -41,7 +46,10 @@
   <section class="scheda scheda-calendario scheda-calendario-v2">
     <div class="calendario-header calendario-header-v2">
       <button class="btn-freccia" id="btnMesePrec" type="button" aria-label="Mese precedente">‹</button>
-      <button class="etichetta-mese-btn" id="etichettaMese" type="button" title="Vai a un mese specifico">—</button>
+      <span class="mese-e-simboli">
+        <button class="etichetta-mese-btn" id="etichettaMese" type="button" title="Vai a un mese specifico">—</button>
+        <button class="btn-simboli" id="btnSimboliCalendario" type="button" aria-label="Simboli del calendario" title="Simboli del calendario">i</button>
+      </span>
       <button class="btn-freccia" id="btnMeseSucc" type="button" aria-label="Mese successivo">›</button>
     </div>
     <div class="calendario-giorni-settimana">
@@ -101,25 +109,27 @@
       <div class="modale">
         <div class="modale-header"><h2 id="titoloModificaModello">Nuovo turno</h2><button class="btn-icona" id="btnChiudiModificaModello" aria-label="Chiudi">✕</button></div>
         <div class="modale-corpo">
-          <label class="campo-modale">Nome<input type="text" id="campoModModelloNome" placeholder="es. Turno spezzato"></label>
-          <label class="campo-modale"><span id="testoEtichettaSigla">Sigla (2 lettere, per i turni che crei tu)</span><input type="text" id="campoModModelloSigla" placeholder="es. PA" maxlength="2" style="text-transform:uppercase;"></label>
-          <div class="campo-modale">
-            <span>Colore sul calendario</span>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <label class="swatch-colore-libero" title="Scegli un colore">
-                <input type="color" id="campoModModelloColore">
-              </label>
-              <button type="button" class="btn-secondario" id="btnModModelloColoreAutomatico" style="padding:7px 11px;font-size:.78rem;">Usa colore automatico</button>
-            </div>
-            <p class="sotto-titolo" id="modModelloColoreStato" style="margin:6px 0 0;font-size:.72rem;"></p>
+          <div class="anteprima-modello" id="anteprimaModello" aria-hidden="true"></div>
+          <div class="nome-sigla-modello">
+            <label class="campo-modale">Nome<input type="text" id="campoModModelloNome" placeholder="es. Turno spezzato"></label>
+            <label class="campo-modale"><span id="testoEtichettaSigla">Sigla</span><input type="text" id="campoModModelloSigla" placeholder="PA" maxlength="2" style="text-transform:uppercase;"></label>
           </div>
-          <div id="campiModModelloOrario">
-            <label class="campo-modale">Ora inizio<input type="time" id="campoModModelloInizio"></label>
-            <label class="campo-modale">Ora fine<input type="time" id="campoModModelloFine"></label>
+          <div id="campiModModelloOrario" class="orari-giorno">
+            <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoModModelloInizio"></label>
+            <span aria-hidden="true">→</span>
+            <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoModModelloFine"></label>
           </div>
+          <div class="riga-colore-modello">
+            <span>Colore</span>
+            <label class="swatch-colore-libero" title="Scegli un colore">
+              <input type="color" id="campoModModelloColore">
+            </label>
+            <button type="button" class="btn-secondario" id="btnModModelloColoreAutomatico">Automatico</button>
+          </div>
+          <p class="sotto-titolo" id="modModelloColoreStato" style="margin:4px 0 0;font-size:.74rem;"></p>
         </div>
         <div class="modale-footer" style="justify-content:space-between;">
-          <button class="btn-secondario" id="btnEliminaModello" type="button">🗑️ Elimina</button>
+          <button class="btn-secondario editor-giorno-elimina" id="btnEliminaModello" type="button">Elimina</button>
           <button class="btn-primario" id="btnSalvaModello" type="button">Salva</button>
         </div>
       </div>
@@ -172,10 +182,12 @@
         <div class="modale-header"><h2 id="titoloModaleEvento">Nuovo evento</h2><button class="btn-icona" id="btnChiudiEvento" aria-label="Chiudi">✕</button></div>
         <div class="modale-corpo">
           <label class="campo-modale">Titolo<input type="text" id="campoEventoTitolo" placeholder="es. Visita medica, Palestra..."></label>
-          <label class="campo-modale campo-riga"><input type="checkbox" id="campoEventoTuttoIlGiorno"> Tutto il giorno</label>
-          <div id="campiEventoOrario" class="riga-straordinario-ore">
-            <label class="campo-modale">Inizio<input type="time" id="campoEventoOraInizio"></label>
-            <label class="campo-modale">Fine<input type="time" id="campoEventoOraFine"></label>
+          <div class="campo-modale">Colore<div class="scelta-colore-evento" id="sceltaColoreEvento" role="radiogroup" aria-label="Colore dell'evento"></div></div>
+          <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoEventoTuttoIlGiorno"><span>Tutto il giorno</span></label>
+          <div id="campiEventoOrario" class="orari-giorno">
+            <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoEventoOraInizio"></label>
+            <span aria-hidden="true">→</span>
+            <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoEventoOraFine"></label>
           </div>
           <label class="campo-modale">Ripeti
             <select id="campoEventoRipeti">
@@ -219,8 +231,11 @@
             </label>
             <small>Suona/vibra anche in silenzioso, poi si ferma da sola. La notifica resta con i tasti Spegni e Posticipa 5 min (che ci sono anche senza avviso forte).</small>
           </div>
-          <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
-          <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
+          <details class="riquadro-giorno altro-giorno dettagli-evento">
+            <summary>Luogo e note<b aria-hidden="true">⌄</b></summary>
+            <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
+            <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
+          </details>
         </div>
         <div class="modale-footer" style="justify-content:space-between;align-items:flex-end;gap:8px;">
           <div class="gruppo-elimina-evento">
@@ -233,60 +248,97 @@
     </div>
   </section>
 
-  <div class="pannello-turno-inline" id="pannelloTurno" hidden>
-      <div class="pannello-turno-header"><h2 id="titoloModaleTurno">Turno del giorno</h2><button class="btn-icona" id="btnChiudiTurno" aria-label="Chiudi">✕</button></div>
+  <!-- Avvisi (benvenuto, turni finiti...): solo nel Calendario -->
+  <div id="appAlerts" class="app-alerts-v20" hidden></div>
+  <div class="pannello-turno-inline editor-giorno" id="pannelloTurno" hidden>
+      <div class="pannello-turno-header editor-giorno-testa">
+        <button class="btn-icona" id="btnChiudiTurno" aria-label="Chiudi">✕</button>
+        <div class="editor-giorno-titolo"><h2 id="titoloModaleTurno">Turno del giorno</h2><small id="sottotitoloModaleTurno"></small></div>
+        <button class="btn-primario editor-giorno-salva" id="btnSalvaTurnoTesta" type="button">Salva</button>
+      </div>
       <div class="pannello-turno-corpo">
-        <label class="campo-modale campo-riga">
-          <input type="checkbox" id="campoRiposo"> Giorno di riposo
-        </label>
-        <label class="campo-modale">Assenza dal servizio
-          <select id="campoAssenzaTipo">
-            <option value="">— nessuna (turno di lavoro o riposo) —</option>
-          </select>
-        </label>
-        <div id="campiRiposoCompensativo" style="display:none;">
-          <label class="campo-modale">Turno sostituito — dalle<input type="time" id="campoRCOraInizio"></label>
-          <label class="campo-modale">alle<input type="time" id="campoRCOraFine"></label>
-          <p class="sotto-titolo" id="anteprimaRiposoCompensativo" style="margin:-4px 0 6px;"></p>
+        <div class="scelta-tipo-giorno" id="sceltaTipoGiorno" role="group" aria-label="Tipo di giorno">
+          <button type="button" data-tipo-giorno="turno">Turno</button>
+          <button type="button" data-tipo-giorno="riposo">Riposo</button>
+          <button type="button" data-tipo-giorno="assenza">Assenza</button>
         </div>
-        <div id="campiOrario">
-          <label class="campo-modale">Ora inizio<input type="time" id="campoOraInizio"></label>
-          <label class="campo-modale">Ora fine<input type="time" id="campoOraFine"></label>
-
-          <details class="pannello-indennita-straordinario" open>
-            <summary>+ Aggiungi indennità o straordinario</summary>
-            <div class="pannello-indennita-straordinario-corpo">
-          <label class="campo-modale campo-riga">
-            <input type="checkbox" id="campoSecondoAttivo"> Rientro / turno spezzato con pausa
+        <input type="checkbox" id="campoRiposo" hidden>
+        <div id="bloccoAssenzaGiorno" hidden>
+          <label class="campo-modale">Quale assenza
+            <select id="campoAssenzaTipo">
+              <option value="">— scegli —</option>
+            </select>
           </label>
-          <div id="campiSecondoSegmento" class="griglia-check" style="display:none;">
-            <label class="campo-modale">Ora inizio (dopo la pausa)<input type="time" id="campoSecondoOraInizio"></label>
-            <label class="campo-modale">Ora fine<input type="time" id="campoSecondoOraFine"></label>
+          <div id="campiRiposoCompensativo" style="display:none;">
+            <div class="riga-straordinario-ore">
+              <label class="campo-modale">Turno sostituito — dalle<input type="time" id="campoRCOraInizio"></label>
+              <label class="campo-modale">alle<input type="time" id="campoRCOraFine"></label>
+            </div>
+            <p class="sotto-titolo" id="anteprimaRiposoCompensativo" style="margin:-4px 0 6px;"></p>
           </div>
-          <p class="sotto-titolo" style="margin:-4px 0 6px;">Esempio: turno 08:00–14:00, pausa, poi rientro 15:00–18:00 — il periodo di pausa non viene conteggiato.</p>
+        </div>
+        <p class="sotto-titolo" id="testoRiposoGiorno" hidden>Giorno di riposo: nessuna ora da contare.</p>
+        <div id="campiOrario">
+          <p class="titolo-sezione-giorno">Turno</p>
+          <div class="scelta-modello-giorno" id="sceltaModelloGiorno"></div>
+          <div class="orari-giorno">
+            <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoOraInizio"></label>
+            <span aria-hidden="true">→</span>
+            <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoOraFine"></label>
+          </div>
+          <div id="anteprimaClassificazione" class="anteprima-classificazione anteprima-giorno"></div>
 
-          <p style="margin:6px 0 -2px; font-weight:700;">Straordinario</p>
-          <p class="sotto-titolo" style="margin:-2px 0 6px;">Indica solo quante ore e se sono prima o dopo il turno: calcoliamo noi l'orario esatto per la tariffa giusta.</p>
-          <div class="riga-straordinario-ore">
-            <label class="campo-modale">Ore<input type="number" id="campoStrOre1" min="0" step="0.25" placeholder="es. 2"></label>
-            <label class="campo-modale">Quando<select id="campoStrPosizione1"><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select></label>
+          <p class="titolo-sezione-giorno">Indennità <em id="contaIndennitaGiorno"></em></p>
+          <div class="griglia-indennita-giorno" id="grigliaIndennitaGiorno"></div>
+          <p class="nota-giorno" id="notaControlloTerritorio" hidden>📍 Controllo territorio: serve almeno 3 h continuative di sera/notte, e non va insieme all'Ordine pubblico (con entrambi non viene calcolato).</p>
+          <div class="caselle-indennita-nascoste" hidden>
+            <input type="checkbox" id="campoReperibilita"><input type="checkbox" id="campoMissione"><input type="checkbox" id="campoServizioEsterno">
+            <input type="checkbox" id="campoOrdinePubblico"><input type="checkbox" id="campoControlloTerritorio"><input type="checkbox" id="campoCambioTurno">
+            <input type="checkbox" id="campoCompensazioneRiposo"><input type="checkbox" id="campoRecuperoFestivo"><input type="checkbox" id="campoBuonoPasto">
           </div>
-          <details class="orario-preciso-facoltativo">
-            <summary>Preferisci inserire l'orario esatto? ▾</summary>
-            <div class="riga-straordinario-ore">
-              <label class="campo-modale">Dalle<input type="time" id="campoStrOrarioInizio1"></label>
-              <label class="campo-modale">Alle<input type="time" id="campoStrOrarioFine1"></label>
+          <div id="campoDurataMissioneBox" style="display:none; margin-top:6px;">
+            <label class="campo-modale">Durata missione (ore)
+              <input type="number" id="campoDurataMissione" min="0" step="0.5" value="0">
+            </label>
+            <p class="sotto-titolo" style="margin:2px 0 0;">Indennità oraria di trasferta: 0€ fino a 4h, tariffa piena 4-8h, ridotta al 40% oltre le 8h (fonte SIULP). Il rimborso pasti su ricevuta non è calcolato automaticamente.</p>
+          </div>
+          <div id="campoOrdinePubblicoBox" style="display:none; margin-top:6px;">
+            <label class="campo-modale">Sede del servizio di ordine pubblico
+              <select id="campoOPSede"><option value="in">In sede</option><option value="fuori">Fuori sede</option></select>
+            </label>
+            <label class="campo-modale campo-riga" id="campoOPPernottamentoBox" style="margin-top:4px; display:none;">
+              <input type="checkbox" id="campoOPPernottamento" checked> Con pernottamento fuori sede
+            </label>
+            <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore (fonte SIULP); sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
+          </div>
+
+          <p class="titolo-sezione-giorno">Straordinario</p>
+          <div class="riquadro-giorno">
+            <div id="bloccoStrPrimo">
+            <div class="riga-ore-straordinario">
+              <span>Ore</span>
+              <div class="contatore-anagrafica"><button type="button" data-passo-ore="campoStrOre1" data-delta="-0.5" aria-label="Meno mezz'ora">−</button><input type="number" id="campoStrOre1" min="0" step="0.25" placeholder="0" inputmode="decimal" aria-label="Ore di straordinario"><button type="button" data-passo-ore="campoStrOre1" data-delta="0.5" aria-label="Più mezz'ora">+</button></div>
             </div>
-          </details>
-          <input type="hidden" id="campoStrPrimaInizio"><input type="hidden" id="campoStrPrimaFine">
-          <button type="button" class="link-aggiungi-straordinario" id="btnAggiungiSecondoStraordinario">+ Aggiungi un altro straordinario</button>
-          <div id="blocchStrSecondo" hidden>
-            <div class="riga-straordinario-ore">
-              <label class="campo-modale">Ore<input type="number" id="campoStrOre2" min="0" step="0.25" placeholder="es. 1"></label>
-              <label class="campo-modale">Quando<select id="campoStrPosizione2"><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select></label>
-            </div>
+            <select id="campoStrPosizione1" hidden><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select>
+            <div class="scelta-prima-dopo" data-per="campoStrPosizione1"><button type="button" data-valore="prima">Prima del turno</button><button type="button" data-valore="dopo">Dopo il turno</button></div>
             <details class="orario-preciso-facoltativo">
-              <summary>Preferisci inserire l'orario esatto? ▾</summary>
+              <summary>Orario esatto (facoltativo)</summary>
+              <div class="riga-straordinario-ore">
+                <label class="campo-modale">Dalle<input type="time" id="campoStrOrarioInizio1"></label>
+                <label class="campo-modale">Alle<input type="time" id="campoStrOrarioFine1"></label>
+              </div>
+            </details>
+            </div>
+            <input type="hidden" id="campoStrPrimaInizio"><input type="hidden" id="campoStrPrimaFine">
+          <div id="blocchStrSecondo" hidden>
+            <div class="riga-ore-straordinario">
+              <span>Ore</span>
+              <div class="contatore-anagrafica"><button type="button" data-passo-ore="campoStrOre2" data-delta="-0.5" aria-label="Meno mezz'ora">−</button><input type="number" id="campoStrOre2" min="0" step="0.25" placeholder="0" inputmode="decimal" aria-label="Ore del secondo straordinario"><button type="button" data-passo-ore="campoStrOre2" data-delta="0.5" aria-label="Più mezz'ora">+</button></div>
+            </div>
+            <select id="campoStrPosizione2" hidden><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select>
+            <div class="scelta-prima-dopo" data-per="campoStrPosizione2"><button type="button" data-valore="prima">Prima del turno</button><button type="button" data-valore="dopo">Dopo il turno</button></div>
+            <details class="orario-preciso-facoltativo">
+              <summary>Orario esatto (facoltativo)</summary>
               <div class="riga-straordinario-ore">
                 <label class="campo-modale">Dalle<input type="time" id="campoStrOrarioInizio2"></label>
                 <label class="campo-modale">Alle<input type="time" id="campoStrOrarioFine2"></label>
@@ -295,11 +347,20 @@
             <input type="hidden" id="campoStrDopoInizio"><input type="hidden" id="campoStrDopoFine">
             <button type="button" class="link-rimuovi-straordinario" id="btnRimuoviSecondoStraordinario">✕ Rimuovi questo straordinario</button>
           </div>
-          <p class="sotto-titolo" id="anteprimaStraordinario" style="margin:-4px 0 6px;"></p>
-          <label class="campo-modale campo-riga">
-            <input type="checkbox" id="campoCompensaStraordinario"> Converti lo straordinario di oggi in riposo compensativo (non entra nel calcolo della paga)
-          </label>
+            <p class="anteprima-giorno" id="anteprimaStraordinario"></p>
+            <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoCompensaStraordinario"><span>Mettilo a riposo compensativo (non in paga)</span></label>
+            <button type="button" class="link-aggiungi-straordinario" id="btnAggiungiSecondoStraordinario">＋ Un altro straordinario</button>
+          </div>
 
+          <details class="riquadro-giorno altro-giorno">
+            <summary>Altro: rientro, permesso breve, recupero<b aria-hidden="true">⌄</b></summary>
+            <label class="campo-modale campo-riga">
+              <input type="checkbox" id="campoSecondoAttivo"> Rientro / turno spezzato con pausa
+            </label>
+            <div id="campiSecondoSegmento" class="griglia-check" style="display:none;">
+              <label class="campo-modale">Ora inizio (dopo la pausa)<input type="time" id="campoSecondoOraInizio"></label>
+              <label class="campo-modale">Ora fine<input type="time" id="campoSecondoOraFine"></label>
+            </div>
           <label class="campo-modale campo-riga">
             <input type="checkbox" id="campoPermessoBreveAttivo"> Permesso breve durante questo turno
           </label>
@@ -321,50 +382,144 @@
             </div>
             <p class="sotto-titolo" id="anteprimaRecuperoPermessoBreve" style="margin:-4px 0 6px;">Queste ore, a differenza del permesso breve, entrano nel calcolo della paga (ore retribuite in più), ma non si sommano al totale ore del turno né toccano il saldo rimanente di Permesso breve: scalano solo il debito di "ore da recuperare".</p>
           </div>
-
-          <div class="griglia-check">
-            <p class="sotto-titolo" style="grid-column:1/-1; margin:8px 0 -2px; font-weight:700; color:var(--inchiostro);">🍽️ Servizi e indennità extra del giorno</p>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoReperibilita"> Reperibilità</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoMissione"> Missione</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoServizioEsterno"> Servizio esterno</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoOrdinePubblico"> Ordine pubblico</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoControlloTerritorio"> Controllo del territorio</label>
-            <p class="sotto-titolo" style="grid-column:1/-1; margin:-4px 0 4px;">Spetta solo con almeno 3h continuative in fascia serale/notturna, e non è cumulabile con l'Ordine pubblico: se spunti entrambe su questo turno non verrà calcolata.</p>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoCambioTurno"> Cambio turno</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoCompensazioneRiposo"> Lavorato sul riposo (diritto a recupero riposo)</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoRecuperoFestivo"> Lavorato in giorno festivo (diritto a recupero festivo)</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoBuonoPasto"> Buono pasto</label>
-          </div>
-          <div id="campoDurataMissioneBox" style="display:none; margin-top:6px;">
-            <label class="campo-modale">Durata missione (ore)
-              <input type="number" id="campoDurataMissione" min="0" step="0.5" value="0">
-            </label>
-            <p class="sotto-titolo" style="margin:2px 0 0;">Indennità oraria di trasferta: 0€ fino a 4h, tariffa piena 4-8h, ridotta al 40% oltre le 8h (fonte SIULP). Il rimborso pasti su ricevuta non è calcolato automaticamente.</p>
-          </div>
-          <div id="campoOrdinePubblicoBox" style="display:none; margin-top:6px;">
-            <label class="campo-modale">Sede del servizio di ordine pubblico
-              <select id="campoOPSede"><option value="in">In sede</option><option value="fuori">Fuori sede</option></select>
-            </label>
-            <label class="campo-modale campo-riga" id="campoOPPernottamentoBox" style="margin-top:4px; display:none;">
-              <input type="checkbox" id="campoOPPernottamento" checked> Con pernottamento fuori sede
-            </label>
-            <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore (fonte SIULP); sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
-          </div>
-            </div>
           </details>
         </div>
-        <div id="anteprimaClassificazione" class="anteprima-classificazione"></div>
       </div>
       <div class="pannello-turno-footer">
-        <button class="btn-secondario" id="btnRimuoviTurno" type="button">Rimuovi turno</button>
-        <button class="btn-primario" id="btnSalvaTurno" type="button">Salva turno</button>
+        <button class="btn-secondario editor-giorno-elimina" id="btnRimuoviTurno" type="button">Elimina</button>
+        <button class="btn-primario" id="btnSalvaTurno" type="button">Salva</button>
       </div>
     </div>
   </div>
 
-  <div id="vistaCedolino" hidden>
+  <div id="vistaStatistiche" hidden>
+    <section class="scheda" id="sezioneReportTop">
+      <div class="intestazione-scheda">
+        <h2>Report</h2>
+        <button type="button" class="btn-icona" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
+      </div>
+      <div class="report-mese-nav">
+        <button type="button" class="btn-freccia" id="btnReportMesePrec" aria-label="Mese precedente">‹</button>
+        <b id="reportMeseEtichetta">—</b>
+        <button type="button" class="btn-freccia" id="btnReportMeseSucc" aria-label="Mese successivo">›</button>
+      </div>
+      <div class="report-hero" id="reportHero"></div>
+      <div id="prossimoTurnoWidget" class="prossimo-turno-widget" hidden>
+        <span class="prossimo-turno-eyebrow">⏭️ Prossimo turno</span>
+        <div class="prossimo-turno-corpo">
+          <span class="prossimo-turno-icona" id="prossimoTurnoIcona">☀️</span>
+          <div class="prossimo-turno-testo">
+            <strong id="prossimoTurnoLabel">—</strong>
+            <span id="prossimoTurnoOrario">—</span>
+          </div>
+          <span class="prossimo-turno-quando" id="prossimoTurnoQuando">—</span>
+        </div>
+      </div>
 
-  <details class="cedolino-sezione-secondaria">
+      <div id="riepilogoTurniV45" class="riepilogo-turni-v45" aria-live="polite">
+        <button type="button" class="riepilogo-turni-v45-titolo" id="riepilogoTurniV45Toggle" aria-expanded="false">
+          <span><strong>Riepilogo mese</strong> <span id="riepilogoTurniV45Mese">—</span></span>
+          <span class="riepilogo-turni-v45-freccia" aria-hidden="true">▾</span>
+        </button>
+        <div class="riepilogo-turni-v45-grid">
+          <div><strong id="v45RtLavoro">0</strong><span>turni</span></div>
+          <div><strong id="v45RtRiposi">0</strong><span>riposi</span></div>
+          <div><strong id="v45RtAssenze">0</strong><span>assenze</span></div>
+          <div><strong id="v45RtStraordinario">0:00</strong><span>straordinario</span></div>
+        </div>
+        <div id="riepilogoTurniV45Espanso" class="riepilogo-turni-v45-espanso" hidden>
+          <div><span>🛡️ Missioni</span><strong id="v45RtMissioni">0</strong></div>
+          <div><span>🚓 Servizio esterno</span><strong id="v45RtServizioEsterno">0</strong></div>
+          <div><span>📞 Reperibilità</span><strong id="v45RtReperibilita">0</strong></div>
+          <div><span>🛡 Ordine pubblico</span><strong id="v45RtOrdinePubblico">0</strong></div>
+          <div><span>🍽️ Buoni pasto</span><strong id="v45RtBuoniPasto">0</strong></div>
+          <div><span>🔄 Ore compensate</span><strong id="v45RtOreCompensate">0:00</strong></div>
+          <div><span>⚡ Extra</span><strong id="v45RtExtra">0</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scheda" id="sezioneRiepilogo">
+      <h2>Il mese</h2>
+      <div class="mese-tiles" id="meseTilesReport">
+        <div><b id="meseTileTurni">0</b><span>turni</span></div>
+        <div><b id="meseTileRiposi">0</b><span>riposi</span></div>
+        <div><b id="meseTileStraordinario">0 h</b><span>straordinario</span></div>
+      </div>
+
+      <div class="stat-panel-v17 stat-dettagli">
+        <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
+        <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
+        <div class="riga-nascosta"><span>💰 Straordinario netto stimato</span><strong id="rStrNetto">—</strong></div>
+        <div class="riga-nascosta"><span>💤 Riposi</span><strong id="rRiposi">0</strong></div>
+        <div><span>🚗 Servizio esterno</span><strong id="rServizioEsterno">0</strong></div>
+        <div><span>🛡️ Ordine pubblico</span><strong id="rOrdinePubblico">0</strong></div>
+        <div><span>🔦 Controllo territorio</span><strong id="rControlloTerritorio">0</strong></div>
+        <div><span>🍽️ Buoni pasto <small>(informativo)</small></span><strong id="rBuoniPasto">0</strong></div>
+      </div>
+
+      <details class="azioni-calendario-rapide-v2">
+        <summary>Mostra tutti i dettagli ▾</summary>
+        <div class="azioni-calendario-rapide-v2-corpo">
+        <div class="stat-v17">
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>🕐 Ore lavorate</h3>
+          <div><span>Notturne</span><strong id="rNotturne">0,00</strong></div>
+          <div><span>Festive</span><strong id="rFestive">0,00</strong></div>
+          <div><span>Domenicali</span><strong id="rDomenicali">0,00</strong></div>
+          <div><span>Notturne festive</span><strong id="rNotturneFestive">0,00</strong></div>
+        </div>
+
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>⏱️ Straordinario, per fascia</h3>
+          <div><span>Diurno</span><strong id="rStrDiurno">0,00</strong></div>
+          <div><span>Notturno</span><strong id="rStrNotturno">0,00</strong></div>
+          <div><span>Festivo</span><strong id="rStrFestivo">0,00</strong></div>
+          <div><span>Notturno festivo</span><strong id="rStrNotturnoFestivo">0,00</strong></div>
+        </div>
+
+        <div class="stat-panel-v17 stat-dettagli">
+          <h3>📋 Giorni e altro</h3>
+          <div><span>📞 Reperibilità</span><strong id="rReperibilita">0</strong></div>
+          <div><span>🚓 Missioni</span><strong id="rMissioni">0</strong></div>
+          <div><span>🔄 Str. convertito in riposo <small>(escluso dalla paga, saldo in Assenze)</small></span><strong id="rOreCompensate">0,00</strong></div>
+        </div>
+        </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="scheda" id="sezioneStatisticheGrafici">
+      <div class="intestazione-scheda">
+        <h2>Statistiche dell'anno</h2>
+      </div>
+      <input type="number" id="campoAnnoStatistiche" min="2000" max="2100" hidden>
+      <div class="anno-nav">
+        <button type="button" class="btn-freccia" id="btnAnnoStatPrec" aria-label="Anno precedente">‹</button>
+        <b id="annoStatEtichetta">—</b>
+        <button type="button" class="btn-freccia" id="btnAnnoStatSucc" aria-label="Anno successivo">›</button>
+      </div>
+      <div id="contenitoreStatistiche" class="statistiche-container"></div>
+
+    </section>
+  </div>
+
+  <div id="vistaCedolino" hidden>
+  <section class="scheda" id="sezioneCedolino">
+    <h2>🧾 Cedolino simulato</h2>
+    <p class="sotto-titolo">Il cedolino del mese visualizzato, da anagrafica, turni e tabelle. A dicembre c'è anche la tredicesima.</p>
+    <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
+      <input type="number" id="campoConguagliMese" step="0.01" value="0">
+    </label>
+    <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
+    <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
+    <div class="azioni-cedolino">
+      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / PDF</button>
+      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>Chiudi cedolino</button>
+    </div>
+  </section>
+
+  <details class="cedolino-sezione-secondaria nascosta-report">
     <summary>💰 Cosa arriva sul conto ▾</summary>
     <section class="scheda" id="sezioneAccreditoConto">
     <p class="sotto-titolo">Il Cedolino Simulato più sotto mostra quanto <strong>maturi</strong> lavorando nel mese selezionato. Questa scheda invece ricostruisce quanto ti <strong>arriva davvero sul conto</strong> in quel mese, tenendo conto dei tempi reali di accredito NoiPA: lo stipendio base del mese lavorato arriva il mese dopo, le indennità accessorie con un mese di ritardo ulteriore. La tredicesima invece non è sfasata, arriva a dicembre.</p>
@@ -389,7 +544,7 @@
     </section>
   </details>
 
-  <details class="cedolino-sezione-secondaria">
+  <details class="cedolino-sezione-secondaria solo-stampa">
     <summary>📅 Riepilogo Annuale ▾</summary>
     <section class="scheda" id="sezioneRiepilogoAnnuale">
     <p class="sotto-titolo">Ore e competenze sommate su tutto l'anno scelto. Lordo e Netto includono solo i mesi per cui hai già generato il cedolino nella scheda "Cedolino Simulato".</p>
@@ -423,52 +578,40 @@
     <button class="btn-secondario" id="btnCancellaRiepilogoAnnuale" type="button" hidden style="margin-top:12px;">🗑️ Cancella Riepilogo</button>
   </section>
   </details>
-  <section class="scheda" id="sezioneCedolino">
-    <h2>Cedolino Simulato</h2>
-    <p class="sotto-titolo">Genera il cedolino del mese visualizzato a partire da anagrafica, turni e tabelle ufficiali. A dicembre la tredicesima viene aggiunta automaticamente.</p>
-    <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
-      <input type="number" id="campoConguagliMese" step="0.01" value="0">
-    </label>
-    <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
-    <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
-      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / Esporta PDF</button>
-      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>🗑️ Cancella Cedolino</button>
-    </div>
-  </section>
-  <section class="scheda nota-finale">
+  <details class="nota-finale nota-finale-v2">
+    <summary>ⓘ Valori indicativi, calcolati da tabelle pubbliche: verificali sempre sul cedolino ufficiale. <b>Leggi tutto</b></summary>
     <p class="nota-piede">Cedolino simulato con conguagli manuali, tredicesima automatica a dicembre e storico mensile. Valori delle tabelle ufficiali indicativi: verificali sul tuo cedolino reale prima di usarli per decisioni economiche.</p>
     <p class="nota-piede" style="margin-top:8px;">Progetto indipendente, non ufficiale e non affiliato alla Polizia di Stato né ad alcun ente pubblico. Tutti i valori delle tabelle sono stati reperiti da fonti pubbliche disponibili online (siti sindacali, normativa pubblicata) e possono contenere errori, essere incompleti o non aggiornati. L'autore declina ogni responsabilità per incongruenze, errori o danni derivanti dall'uso di questa app: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni economiche o personali.</p>
-  </section>
+  </details>
   </div>
 
   <div id="vistaAssenze" hidden>
   <section class="scheda" id="sezioneStrumentiTurni">
     <h2>Turni</h2>
-    <p class="sotto-titolo">Modelli, sequenza automatica, colori e assenze.</p>
+    
+    <p class="strumenti-turni-titolo">I tuoi turni</p>
+    <div class="lista-strumenti-turni lista-modelli-tab-turni" id="listaModelliTabTurni"></div>
 
     <div class="legenda-colori" id="legendaColoriTurni">
     </div>
 
     <p class="strumenti-turni-titolo">Strumenti</p>
     <div class="lista-strumenti-turni">
-      <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span> Genera turni automaticamente <b>›</b></button>
-      <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span> Colori turni <b>›</b></button>
-      <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span> Assenze e permessi <b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span><i>Genera turni automaticamente<small id="statoSequenzaTurni">Ripete una sequenza sul calendario</small></i><b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span><i>Colori e stile calendario<small id="statoColoriTurni">Colori dei turni, stile Classico o Moderno</small></i><b>›</b></button>
     </div>
 
-    <div id="sezioneSequenzaHost" class="impostazioni-sottosezione"></div>
-
+    
     <div id="pannelloColoriTurni" class="pannello-colori-turni" hidden>
       <div class="pannello-colori-header">
         <div>
-          <strong class="pannello-colori-titolo">Colori turni</strong>
-          <p class="sotto-titolo" style="margin:4px 0 0;">Il colore si applica a tutta la casella (turni, riposo e assenze). Tocca il quadrato per cambiare.</p>
+          <strong class="pannello-colori-titolo">Colori e stile</strong>
+          <p class="sotto-titolo" style="margin:4px 0 0;">Tocca un colore per cambiarlo.</p>
         </div>
         <button type="button" class="btn-icona" id="btnChiudiColoriTurni" aria-label="Chiudi tavolozza" title="Chiudi">✕</button>
       </div>
       <div class="stile-calendario-scelta">
-        <strong>🗓️ Stile calendario</strong>
+        <strong>Stile del calendario</strong>
         <div class="stile-calendario-pulsanti">
           <button type="button" data-stile-calendario="classico" aria-pressed="true">
             <span class="stile-mini" aria-hidden="true"><i style="background:#F5A0C0"></i><i style="background:#FFAB76"></i><i style="background:#FFD98A"></i></span>Classico
@@ -477,19 +620,19 @@
             <span class="stile-mini stile-mini-moderno" aria-hidden="true"><i style="--c:#C2489A"></i><i style="--c:#E8803A"></i><i style="--c:#7E5BD6"></i></span>Moderno
           </button>
         </div>
-        <small>Classico: casella tutta colorata con la sigla. Moderno: sfondo chiaro, etichetta con nome e ora di inizio, eventi scritti sotto.</small>
+        <small>Classico: casella tutta colorata con la lettera del turno. Moderno: etichetta colorata con il nome, eventi sotto.</small>
       </div>
       <label class="switch-avanzate-v17" style="margin-bottom:12px;">
-        <input type="checkbox" id="toggleCalendarioAColori">
-        <span class="switch-avanzate-v17-testo"><strong>🎨 Calendario a colori</strong><small>Disattivato: celle bianche invece che colorate.</small></span>
+        <input type="checkbox" class="interruttore" id="toggleCalendarioAColori">
+        <span class="switch-avanzate-v17-testo"><strong>Calendario a colori</strong><small>Spento: caselle bianche.</small></span>
       </label>
       <div id="corpoColoriTurniWrap">
       <div id="corpoColoriTurni"></div>
       <div class="pannello-colori-azioni">
-        <button class="btn-secondario" id="btnEsportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Esporta colori (Drive)</button>
-        <button class="btn-secondario" id="btnImportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Importa colori (Drive)</button>
+        <button class="btn-secondario" id="btnEsportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Esporta (Drive)</button>
+        <button class="btn-secondario" id="btnImportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Importa (Drive)</button>
         <input type="file" id="campoImportaColoriTurni" accept="application/json,.json" hidden>
-        <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">↺ Ripristina predefiniti</button>
+        <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">↺ Predefiniti</button>
         <button class="btn-primario" id="btnChiudiColoriTurni2" type="button">Fatto</button>
       </div>
       </div>
@@ -497,14 +640,33 @@
 
   </section>
 
-  <section class="scheda" id="sezioneAssenze" hidden>
+  </div>
+
+  <!-- Assenze e permessi: pagina a sé, si apre da Altro -->
+  <div id="vistaGestioneAssenze" hidden>
+  <section class="scheda" id="sezioneAssenze">
     <div class="intestazione-scheda">
-      <h2>Assenze dal Servizio</h2>
-      <button class="btn-mini-icona" id="btnChiudiAssenze" title="Torna alle impostazioni" aria-label="Torna alle impostazioni">✕</button>
+      <h2>Assenze e permessi</h2>
+      <button class="btn-mini-icona" id="btnChiudiAssenze" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
     </div>
-    <p class="sotto-titolo">Elenco personalizzabile, solo informativo (non incide sul cedolino). Si salva da solo.</p>
+    <p class="sotto-titolo" id="sottotitoloAssenze">Quanto ti resta. Solo informativo: non cambia il cedolino.</p>
+    <div id="assenzeSummaryGrid" class="assenze-riepilogo" aria-live="polite"></div>
+    <div class="assenze-filtri-seg" role="group" aria-label="Filtra assenze">
+      <button type="button" class="filtro-assenze attivo" data-filtro-assenze="tutte">Tutte</button>
+      <button type="button" class="filtro-assenze" data-filtro-assenze="gg">Giorni</button>
+      <button type="button" class="filtro-assenze" data-filtro-assenze="h">Ore</button>
+    </div>
+    <p class="strumenti-turni-titolo">Le tue assenze</p>
+    <div id="corpoAssenze" class="gruppo-assenze"></div>
+    <details class="gruppo-assenze altri-modelli" id="gruppoAssenzeNonUsate" hidden>
+      <summary><span id="titoloAssenzeNonUsate">Non usate</span><b aria-hidden="true">⌄</b></summary>
+      <div id="corpoAssenzeNonUsate"></div>
+    </details>
+    <p class="strumenti-turni-titolo">Tue personalizzate</p>
+    <div id="corpoAssenzePersonalizzate" class="gruppo-assenze"></div>
+    <button type="button" class="btn-aggiungi-tratteggiato" id="btnAggiungiAssenzaPersonalizzata">＋ Aggiungi assenza personalizzata</button>
     <details class="info-richiudibile-assenze">
-      <summary>ℹ️ Come funzionano queste voci ▾</summary>
+      <summary>ℹ️ Come funzionano queste voci</summary>
       <div class="info-richiudibile-assenze-corpo">
         <p>📌 <strong>Congedo ordinario</strong>: varia con anni di servizio e orario (5 o 6 giorni). Su 6gg: 30/32/37/45gg (1-3 / 4-15 / oltre 15 / oltre 25 anni). Su 5gg: 26/28/32/39gg. Imposta il valore giusto per te.</p>
         <p>📌 <strong>Riposo compensativo</strong>: ore automatiche (non modificabili qui). Si accumulano convertendo lo straordinario in riposo; si consumano selezionando questa assenza sul giorno e indicando il turno sostituito.</p>
@@ -512,29 +674,44 @@
         <p>📌 <strong>Maternità/Paternità</strong> e <strong>Congedo parentale</strong>: solo tracciamento date, nessun importo calcolato (la retribuzione reale varia nel tempo). Imposta tu i giorni.</p>
       </div>
     </details>
-    <div class="assenze-toolbar-v38">
-      <div class="assenze-toolbar-title"><strong>Saldi e utilizzo</strong><span>Controlla rapidamente le disponibilità dell'anno corrente.</span></div>
-      <div class="assenze-filtri-v38" role="group" aria-label="Filtra assenze">
-        <button type="button" class="filtro-assenze attivo" data-filtro-assenze="tutte">Tutte</button>
-        <button type="button" class="filtro-assenze" data-filtro-assenze="gg">Giorni</button>
-        <button type="button" class="filtro-assenze" data-filtro-assenze="h">Ore</button>
-      </div>
-    </div>
-    <div class="assenze-search-wrap" role="search"><span aria-hidden="true">🔎</span><input id="cercaAssenza" type="search" autocomplete="off" placeholder="Cerca un tipo di assenza…" aria-label="Cerca assenza"></div>
-    <div id="assenzeSummaryGrid" class="assenze-summary-grid" aria-live="polite"></div>
-    <div id="corpoAssenze"></div>
-
-    <p class="sotto-titolo" style="margin:14px 0 4px;font-weight:700;text-transform:uppercase;font-size:.72rem;letter-spacing:.04em;">🎁 Tue personalizzate</p>
-    <div id="corpoAssenzePersonalizzate"></div>
-    <button type="button" class="btn-secondario" id="btnAggiungiAssenzaPersonalizzata" style="margin-top:10px;">+ Aggiungi assenza personalizzata</button>
   </section>
   </div>
 
+<!-- Genera turni automaticamente: pagina a sé, si apre dalla scheda Turni -->
+<div id="vistaSequenza" hidden>
+  <section class="scheda" id="sezioneSequenza">
+    <div class="intestazione-scheda">
+      <h2>🔁 Genera turni automaticamente</h2>
+      <button class="btn-mini-icona" id="btnChiudiSequenza" title="Torna a Turni" aria-label="Torna a Turni">✕</button>
+    </div>
+    <p class="sotto-titolo">Tocca una sequenza per modificarla o generarla sul calendario.</p>
+
+    <div id="listaPatternSempliceV2" class="lista-sequenze"></div>
+
+    <!-- Campi di appoggio per la generazione: l'editor del pattern (aperto toccando una riga
+         sopra) li imposta lui stesso prima di generare — non servono più campi visibili qui,
+         dato che "Da quando/Per quanto/Genera turni" vivono ora dentro l'editor. -->
+    <input type="date" id="campoSequenzaDataInizio" hidden>
+    <input type="number" id="campoSequenzaGiorni" min="1" max="366" value="30" hidden>
+  </section>
+</div>
+
 <div id="vistaAnagrafica" hidden>
   <section class="scheda" id="sezioneAnagrafica">
-    <h2>Anagrafica</h2>
-    <label class="campo-modale">Qualifica
-      <select id="campoQualifica">
+    <div class="intestazione-scheda">
+      <h2>Anagrafica</h2>
+      <button class="btn-mini-icona" id="btnChiudiAnagrafica" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
+    </div>
+    <p class="sotto-titolo" id="statoSalvataggioAnagrafica">Le modifiche si salvano da sole.</p>
+    <div class="testata-anagrafica" aria-live="polite">
+      <span id="visualizzaGrado"></span>
+      <div><strong id="testataQualifica">—</strong><small>Parametro <span id="visualizzaParametro">—</span> · <span id="testataRegione">—</span></small></div>
+      <em id="testataCompleta">Da completare</em>
+    </div>
+
+    <p class="strumenti-turni-titolo">Servizio</p>
+    <div class="gruppo-anagrafica">
+      <label class="riga-anagrafica"><span>Qualifica</span><select id="campoQualifica">
         <option>Agente</option><option>Agente Scelto</option><option>Assistente</option>
         <option>Assistente Capo</option><option>Assistente Capo Coordinatore</option>
         <option>Vice Sovrintendente</option><option>Sovrintendente</option><option>Sovrintendente Capo</option>
@@ -542,55 +719,33 @@
         <option>Vice Ispettore</option><option>Ispettore</option><option>Ispettore Capo</option><option>Ispettore Superiore</option>
         <option>Sostituto Commissario</option><option>Sostituto Commissario Coordinatore</option>
         <option>Vice Commissario</option><option>Commissario</option><option>Commissario Capo</option>
-      </select>
-    </label>
-    <div class="grado-visuale" aria-live="polite">
-      <div class="grado-visuale-titolo">Distintivo del grado</div>
-      <div class="grado-visuale-contenuto" id="visualizzaGrado">
-        <span class="grado-visuale-placeholder">Seleziona una qualifica</span>
-      </div>
-    </div>
-    <div class="campo-modale">
-      <span>Parametro stipendiale</span>
-      <div class="valore-automatico" id="visualizzaParametro">—</div>
-    </div>
-
-    <div class="anagrafica-griglia-compatta">
-      <label class="campo-modale">Anni di servizio
-        <input type="number" id="campoAnni" min="0" step="1">
-      </label>
-      <label class="campo-modale">Regione
-        <select id="campoRegione">
+      </select></label>
+      <div class="riga-anagrafica"><span>Anni di servizio</span><div class="contatore-anagrafica"><button type="button" data-passo="campoAnni" data-delta="-1" aria-label="Meno">−</button><input type="number" id="campoAnni" min="0" step="1" inputmode="numeric" aria-label="Anni di servizio"><button type="button" data-passo="campoAnni" data-delta="1" aria-label="Più">+</button></div></div>
+      <label class="riga-anagrafica"><span>Regione</span><select id="campoRegione">
           <option>Abruzzo</option><option>Basilicata</option><option>Calabria</option><option>Campania</option>
           <option>Emilia-Romagna</option><option>Friuli Venezia Giulia</option><option>Lazio</option><option>Liguria</option>
           <option>Lombardia</option><option>Marche</option><option>Molise</option><option>Piemonte</option>
           <option>Provincia di Trento</option><option>Provincia di Bolzano</option>
           <option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option>
           <option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
-        </select>
-      </label>
-      <label class="campo-modale">Coniuge a carico
-        <select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select>
-      </label>
-      <label class="campo-modale">Figli over 21 a carico (numero)
-        <input type="number" id="campoFigliOver21" min="0" step="1" value="0">
-      </label>
-      <label class="campo-modale">Iscrizione sindacale
-        <select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select>
-      </label>
+        </select></label>
+    </div>
+
+    <p class="strumenti-turni-titolo">Famiglia e tasse</p>
+    <div class="gruppo-anagrafica">
+      <label class="riga-anagrafica"><span>Coniuge a carico</span><select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select></label>
+      <div class="riga-anagrafica"><span>Figli over 21 a carico</span><div class="contatore-anagrafica"><button type="button" data-passo="campoFigliOver21" data-delta="-1" aria-label="Meno">−</button><input type="number" id="campoFigliOver21" min="0" step="1" value="0" inputmode="numeric" aria-label="Figli over 21 a carico"><button type="button" data-passo="campoFigliOver21" data-delta="1" aria-label="Più">+</button></div></div>
+      <label class="riga-anagrafica"><span>Iscritto al sindacato</span><select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select></label>
     </div>
 
     <div class="info-richiudibile">
-      <button type="button" class="info-richiudibile-toggle" id="toggleInfoFigliUnder21" aria-expanded="false">ℹ️ Figli under 21 a carico? <span class="info-richiudibile-freccia" aria-hidden="true">▾</span></button>
+      <button type="button" class="info-richiudibile-toggle" id="toggleInfoFigliUnder21" aria-expanded="false">ℹ️ Figli under 21: non vanno qui. Perché? <span class="info-richiudibile-freccia" aria-hidden="true">▾</span></button>
       <div class="info-richiudibile-corpo" id="corpoInfoFigliUnder21" hidden>
         <p>Dal marzo 2022 la detrazione fiscale per i figli under 21 è sostituita dall'<strong>Assegno Unico e Universale</strong> (INPS), che questa app non gestisce. Non c'è quindi un campo da compilare qui: verifica l'importo dell'Assegno Unico direttamente sul cedolino ufficiale o sull'app INPS.</p>
       </div>
     </div>
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-      <button class="btn-primario" id="btnSalvaAnagrafica" type="button">Salva</button>
-      <button class="btn-secondario" id="btnCancellaAnagrafica" type="button">🗑️ Cancella Anagrafica</button>
-    </div>
+    <button class="link-cancella-anagrafica" id="btnCancellaAnagrafica" type="button">Cancella anagrafica</button>
   </section>
   </div>
 
@@ -598,12 +753,16 @@
 
 <div id="vistaTabelle" hidden>
   <section class="scheda" id="sezioneTabelle">
-    <h2>Tabelle Ufficiali</h2>
-    <p class="avviso-tabelle">⚠ Valori indicativi tratti da fonti pubbliche (rinnovo CCNL 2022-2024 e Legge di Bilancio 2026). <strong>Verificali e correggili confrontandoli con il tuo cedolino NoiPA reale</strong> prima di usarli per decisioni economiche: stipendi, indennità e aliquote possono cambiare con i rinnovi contrattuali.</p>
+    <div class="intestazione-scheda">
+      <h2>Tabelle ufficiali</h2>
+      <button class="btn-mini-icona" id="btnChiudiTabelle" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
+    </div>
+    <p class="sotto-titolo" id="statoSalvataggioTabelle">Le modifiche si salvano da sole.</p>
+    <p class="nota-tabelle">⚠ Valori indicativi da fonti pubbliche (CCNL 2022-2024, Legge di Bilancio 2026): confrontali con il tuo cedolino NoiPA prima di usarli per decisioni economiche.</p>
     <div id="corpoTabelle"></div>
-    <div id="footerTabelleEsterno" style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-      <button class="btn-secondario" id="btnResetTabelle" type="button">Ripristina predefiniti</button>
-      <button class="btn-primario" id="btnSalvaTabelle" type="button">Salva</button>
+    <div id="footerTabelleEsterno">
+      <button class="link-cancella-anagrafica" id="btnResetTabelle" type="button">Ripristina i valori predefiniti</button>
+      <button class="btn-primario" id="btnSalvaTabelle" type="button" hidden>Salva</button>
     </div>
   </section>
   </div>
@@ -615,71 +774,75 @@
      aprendola, si passa alla scheda Turni — se vivesse dentro il Calendario si nasconderebbe
      insieme ad esso, anche restando tecnicamente "aperta". -->
 <div class="overlay" id="overlayEditorPatternV2" hidden>
-  <div class="modale">
-    <div class="modale-header"><h2 id="titoloEditorPatternV2">Ciclo del pattern</h2><button class="btn-icona" id="btnChiudiEditorPatternV2" aria-label="Chiudi">✕</button></div>
+  <div class="modale modale-sequenza">
+    <div class="modale-header"><h2 id="titoloEditorPatternV2">Sequenza</h2><button class="btn-icona" id="btnChiudiEditorPatternV2" aria-label="Chiudi">✕</button></div>
     <div class="modale-corpo">
-      <label class="campo-modale">Nome<input type="text" id="campoEditorPatternNome" placeholder="es. Turno in quinta"></label>
-      <p class="sotto-titolo" style="margin-top:0;">Tocca un giorno per selezionarlo, poi scegli un turno dalla tavolozza qui sotto.</p>
-      <div class="ciclo-pattern-v2" id="cicloPatternV2"></div>
-      <div style="display:flex;gap:16px;margin:-6px 0 8px;">
-        <button type="button" class="riga-modello-nuovo" id="btnAggiungiGiornoEditorPatternV2" style="flex:1;border-top:1px dashed var(--bordo);margin-top:0;">＋ Aggiungi giorno</button>
-        <button type="button" class="riga-modello-nuovo" id="btnRimuoviGiornoEditorPatternV2" style="flex:1;border-top:1px dashed var(--bordo);margin-top:0;color:#B3261E;">🗑️ Rimuovi questo giorno</button>
-      </div>
-      <div class="tavolozza-pattern-v2" id="tavolozzaPatternV2"></div>
-      <div id="indennitaGiornoPatternV2" class="indennita-giorno-pattern-v2" hidden>
-        <p class="sotto-titolo" style="margin:0 0 4px;font-weight:700;">Indennità fisse per questo giorno del ciclo</p>
-        <div id="corpoIndennitaGiornoPatternV2"></div>
-
-        <div style="height:1px;background:var(--bordo);margin:10px 0;"></div>
-        <label class="campo-modale campo-riga">
-          <input type="checkbox" id="campoPatternStraordinarioAttivo"> ⏱️ Straordinario programmato
-        </label>
-        <div id="campiPatternStraordinario" hidden>
-          <label class="campo-modale">Quando
-            <select id="campoPatternStraordinarioQuando">
-              <option value="prima">Prima del turno</option>
-              <option value="dopo">Dopo il turno</option>
-            </select>
+      <div class="passo-sequenza">
+        <h3><span class="numero-passo-seq">1</span>Il ciclo</h3>
+        <label class="campo-modale">Nome<input type="text" id="campoEditorPatternNome" placeholder="es. Turno in quinta"></label>
+        <p class="sotto-titolo" style="margin:0 0 8px;">Tocca un giorno e scegli il turno. Il numero dice in che punto del ciclo sei.</p>
+        <div class="ciclo-pattern-v3" id="cicloPatternV2"></div>
+        <button type="button" class="link-rimuovi-giorno" id="btnRimuoviGiornoEditorPatternV2">Togli il giorno selezionato</button>
+        <button type="button" id="btnAggiungiGiornoEditorPatternV2" hidden></button>
+        <div class="tavolozza-seq" id="tavolozzaPatternV2"></div>
+        <div id="indennitaGiornoPatternV2" class="indennita-giorno-pattern-v3" hidden>
+          <p class="titolo-indennita-giorno" id="titoloIndennitaGiornoPatternV2">Cosa c'è sempre in questo giorno</p>
+          <div id="corpoIndennitaGiornoPatternV2" class="chips-indennita-pattern"></div>
+          <label class="campo-modale campo-riga" style="margin-top:8px;">
+            <input type="checkbox" id="campoPatternStraordinarioAttivo"> Straordinario programmato
           </label>
-          <div class="riga-straordinario-ore">
-            <label class="campo-modale">Dalle<input type="time" id="campoPatternStraordinarioInizio"></label>
-            <label class="campo-modale">Alle<input type="time" id="campoPatternStraordinarioFine"></label>
+          <div id="campiPatternStraordinario" hidden>
+            <label class="campo-modale">Quando
+              <select id="campoPatternStraordinarioQuando">
+                <option value="prima">Prima del turno</option>
+                <option value="dopo">Dopo il turno</option>
+              </select>
+            </label>
+            <div class="riga-straordinario-ore">
+              <label class="campo-modale">Dalle<input type="time" id="campoPatternStraordinarioInizio"></label>
+              <label class="campo-modale">Alle<input type="time" id="campoPatternStraordinarioFine"></label>
+            </div>
+          </div>
+          <label class="campo-modale campo-riga">
+            <input type="checkbox" id="campoPatternRientroAttivo"> Rientro (secondo turno lo stesso giorno)
+          </label>
+          <div id="campiPatternRientro" hidden class="riga-straordinario-ore">
+            <label class="campo-modale">Dalle<input type="time" id="campoPatternRientroInizio"></label>
+            <label class="campo-modale">Alle<input type="time" id="campoPatternRientroFine"></label>
           </div>
         </div>
+      </div>
 
-        <div style="height:1px;background:var(--bordo);margin:10px 0;"></div>
-        <label class="campo-modale campo-riga">
-          <input type="checkbox" id="campoPatternRientroAttivo"> 🔁 Rientro (secondo turno lo stesso giorno)
-        </label>
-        <div id="campiPatternRientro" hidden class="riga-straordinario-ore">
-          <label class="campo-modale">Dalle<input type="time" id="campoPatternRientroInizio"></label>
-          <label class="campo-modale">Alle<input type="time" id="campoPatternRientroFine"></label>
+      <div class="passo-sequenza">
+        <h3><span class="numero-passo-seq">2</span>Da quando</h3>
+        <input type="date" id="campoEditorPatternDataInizio" class="campo-data-sequenza" aria-label="Primo giorno da generare">
+        <p class="etichetta-scelte">Quel giorno fai:</p>
+        <div class="scelte-sequenza" id="sceltaFaseSequenza"></div>
+        <p class="sotto-titolo" style="margin:6px 0 0;">Così l'app sa da che punto del ciclo partire, senza fare conti.</p>
+        <p class="etichetta-scelte">Fino a quando:</p>
+        <div class="scelte-sequenza" id="sceltaDurataSequenza">
+          <button type="button" data-durata="mese">1 mese</button>
+          <button type="button" data-durata="mese3">3 mesi</button>
+          <button type="button" data-durata="mese6">6 mesi</button>
+          <button type="button" data-durata="fineanno">Fino a fine anno</button>
+          <button type="button" data-durata="data">Fino al…</button>
         </div>
+        <input type="date" id="campoEditorPatternFino" class="campo-data-sequenza" aria-label="Ultimo giorno da generare" hidden>
       </div>
 
-      <div style="height:1px;background:var(--bordo);margin:12px 0;"></div>
-      <p class="sotto-titolo" style="margin:0 0 6px;font-weight:700;">Genera sul calendario</p>
-      <label class="campo-modale">📅 Da quando?
-        <input type="date" id="campoEditorPatternDataInizio">
-      </label>
-      <label class="campo-modale">📆 Per quanto tempo?
-        <select id="campoEditorPatternDurataPreset">
-          <option value="settimana">1 settimana</option>
-          <option value="mese" selected>1 mese</option>
-          <option value="mese3">3 mesi</option>
-          <option value="mese6">6 mesi</option>
-          <option value="anno">1 anno</option>
-          <option value="personalizzato">Numero di giorni personalizzato</option>
-        </select>
-      </label>
-      <label class="campo-modale durata-personalizzata" id="contenitoreEditorPatternGiorniPersonalizzati" hidden>Numero di giorni
-        <input type="number" id="campoEditorPatternGiorni" min="1" max="366" value="30" inputmode="numeric">
-      </label>
-      <div class="generatore-azioni" style="margin-top:8px;">
-        <button class="btn-primario btn-genera-grande" id="btnGeneraEditorPatternV2" type="button">🚀 Genera turni</button>
-        <button class="btn-secondario" id="btnContinuaEditorPatternV2" type="button">▶️ Continua da dove sei arrivato</button>
+      <div class="passo-sequenza">
+        <h3><span class="numero-passo-seq">3</span>Controlla e genera</h3>
+        <div class="anteprima-mese-seq-nav">
+          <button type="button" class="btn-freccia" id="btnAnteprimaSeqPrec" aria-label="Mese precedente">‹</button>
+          <strong id="anteprimaSeqMese"></strong>
+          <button type="button" class="btn-freccia" id="btnAnteprimaSeqSucc" aria-label="Mese successivo">›</button>
+        </div>
+        <div class="anteprima-mese-seq" id="anteprimaSeqGriglia"></div>
+        <p class="sotto-titolo" id="anteprimaSeqNota" style="margin:6px 0 0;"></p>
+        <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoSeqProteggiAssenze" checked><span>Non toccare ferie, permessi e assenze già inseriti</span></label>
+        <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoSeqSovrascrivi" checked><span id="testoSeqSovrascrivi">Sovrascrivi i turni già presenti</span></label>
+        <button class="btn-primario btn-genera-grande" id="btnGeneraEditorPatternV2" type="button">Genera</button>
       </div>
-      <p class="avviso-tabelle">⚠ Se nei giorni scelti esistono già turni, l'app ti chiederà conferma prima di sovrascriverli.</p>
     </div>
     <div class="modale-footer">
       <button class="btn-secondario" id="btnEliminaPatternV2" type="button">🗑️ Elimina</button>
@@ -738,16 +901,19 @@
 </div>
 
   <section class="scheda" id="sezioneBackup" hidden>
-    <h2>Backup Dati</h2>
-    <p class="sotto-titolo">Tutti i dati sono salvati solo su questo dispositivo/browser. Esporta un backup periodicamente per non perderli in caso di cambio telefono o cancellazione dati.</p>
+    <h2>💾 Backup sul telefono</h2>
     <p class="sotto-titolo" id="statoBackup"></p>
     <div class="barra-backup">
-      <button class="btn-secondario" id="btnEsportaBackup" type="button">💾 Esporta Backup (JSON)</button>
-      <button class="btn-secondario" id="btnImportaBackup" type="button">📥 Importa Backup</button>
-      <button class="btn-secondario" id="btnAnnullaRipristino" type="button">↩️ Annulla ultimo ripristino</button>
+      <button class="btn-primario" id="btnEsportaBackup" type="button">💾 Esporta backup</button>
+      <button class="btn-secondario" id="btnImportaBackup" type="button">📥 Importa</button>
+      <button class="btn-secondario" id="btnAnnullaRipristino" type="button">↩️ Annulla ripristino</button>
       <input type="file" id="campoImportaBackup" accept="application/json" hidden>
     </div>
-    <p class="sotto-titolo" style="margin-top:8px;">📌 Il file esportato finisce di solito nella cartella Download del telefono — che <strong>non è al sicuro</strong>, perché è sullo stesso dispositivo. Per un backup vero, spostalo o condividilo su un servizio cloud (Google Drive, iCloud, Dropbox) oppure inviatelo via email o un'altra app: se il file resta solo nel telefono, un guasto, un furto o un ripristino di fabbrica lo cancellano insieme a tutto il resto.</p>
+    <details class="spiegazione-backup">
+      <summary>Perché è importante?</summary>
+      <p class="sotto-titolo">Tutti i dati sono salvati solo su questo dispositivo. Esporta un backup ogni tanto per non perderli se cambi telefono o se i dati vengono cancellati.</p>
+      <p class="sotto-titolo">📌 Il file esportato finisce di solito nella cartella Download del telefono — che <strong>non è al sicuro</strong>, perché è sullo stesso dispositivo. Per un backup vero, spostalo o condividilo su un servizio cloud (Google Drive, iCloud, Dropbox) oppure inviatelo via email o un'altra app: se il file resta solo nel telefono, un guasto, un furto o un ripristino di fabbrica lo cancellano insieme a tutto il resto.</p>
+    </details>
   </section>
 
   <section class="scheda" id="sezioneBackupDrive" hidden>
@@ -758,148 +924,71 @@
     <section class="scheda">
       <h2>Altro</h2>
       <div id="statoConnessioneV23" class="stato-connessione-v23" role="status" aria-live="polite"></div>
-      <div class="impostazioni-lista" style="display:flex;flex-direction:column;gap:8px;margin:12px 0;">
-        <button type="button" class="btn-secondario" id="settingsAnagrafica">🪪 Anagrafica</button>
-        <button type="button" class="btn-secondario" id="settingsTabelle">📊 Tabelle ufficiali</button>
-        <button type="button" class="btn-secondario" id="settingsBackup">💾 Backup locale</button>
-        <button type="button" class="btn-secondario" id="settingsDrive">☁ Backup Drive</button>
-        <button type="button" class="btn-secondario" id="btnInstallaAppV23" hidden>📲 Installa l'app</button>
+      <p class="strumenti-turni-titolo">Impostazioni</p>
+      <div class="lista-strumenti-turni">
+        <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span>🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span><i>Assenze e permessi<small id="riassuntoAssenzeAltro">Congedi, permessi e saldi</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Indennità nel calendario<small>Simboli e quali mostrare</small></i><b>›</b></button>
+        <div class="riga-strumento-turni riga-tema">
+          <span>🌓</span><i>Tema<small id="descrizioneTema">Come il telefono</small></i>
+          <div class="scelta-tema" role="group" aria-label="Tema">
+            <button type="button" data-tema="auto">Auto</button>
+            <button type="button" data-tema="chiaro">Chiaro</button>
+            <button type="button" data-tema="scuro">Scuro</button>
+          </div>
+        </div>
+        <button type="button" class="riga-strumento-turni" id="btnInstallaAppV23" hidden><span>📲</span><i>Installa l'app<small>Aggiungila alla schermata Home</small></i><b>›</b></button>
       </div>
-  <section class="scheda" id="sezioneSequenza">
-    <div class="intestazione-scheda">
-      <h2>🔁 Genera turni automaticamente</h2>
-      <button class="btn-mini-icona" id="btnChiudiSequenza" title="Torna alle impostazioni" aria-label="Torna alle impostazioni">✕</button>
-    </div>
-    <p class="sotto-titolo">Tocca un pattern per vederlo, modificarlo o generarlo sul calendario.</p>
+      <!-- I backup sono sempre visibili qui sotto: questi due tasti restano solo per compatibilità -->
+      <button type="button" id="settingsBackup" hidden>Backup locale</button>
+      <button type="button" id="settingsDrive" hidden>Backup Drive</button>
+      <p class="strumenti-turni-titolo">Backup</p>
 
-    <div id="listaPatternSempliceV2" class="lista-modelli-selettore" style="border:1px solid var(--bordo);border-radius:12px;"></div>
-
-    <!-- Campi di appoggio per la generazione: l'editor del pattern (aperto toccando una riga
-         sopra) li imposta lui stesso prima di generare — non servono più campi visibili qui,
-         dato che "Da quando/Per quanto/Genera turni" vivono ora dentro l'editor. -->
-    <input type="date" id="campoSequenzaDataInizio" hidden>
-    <input type="number" id="campoSequenzaGiorni" min="1" max="366" value="30" hidden>
-  </section>
       <div id="impostazioniBackupContainer"></div>
       <div id="impostazioniBackupPanel" hidden>
         <p class="sotto-titolo">Sezioni backup spostate qui sotto.</p>
         <button type="button" class="btn-secondario" id="btnChiudiSettingsBackup">Chiudi</button>
       </div>
     </section>
-    <p class="sotto-titolo" style="text-align:center;margin:0;"><a href="https://micmax-apps.netlify.app/privacy-turni.html" target="_blank" rel="noopener" id="linkPrivacy">Informativa sulla privacy</a></p>
-    <p class="sotto-titolo" style="text-align:center;margin:-8px 0 0;" id="versioneAppTesto"></p>
+    <p class="piede-altro"><a href="https://micmax-apps.netlify.app/privacy-turni.html" target="_blank" rel="noopener" id="linkPrivacy">Informativa sulla privacy</a> · <span id="versioneAppTesto"></span></p>
   </div>
 
-  <div id="vistaStatistiche" hidden>
-    <section class="scheda" id="sezioneReportTop">
-      <div class="intestazione-scheda">
-        <h2>Report</h2>
-        <button type="button" class="btn-icona" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
-      </div>
-      <div id="prossimoTurnoWidget" class="prossimo-turno-widget" hidden>
-        <span class="prossimo-turno-eyebrow">⏭️ Prossimo turno</span>
-        <div class="prossimo-turno-corpo">
-          <span class="prossimo-turno-icona" id="prossimoTurnoIcona">☀️</span>
-          <div class="prossimo-turno-testo">
-            <strong id="prossimoTurnoLabel">—</strong>
-            <span id="prossimoTurnoOrario">—</span>
-          </div>
-          <span class="prossimo-turno-quando" id="prossimoTurnoQuando">—</span>
-        </div>
-      </div>
-
-      <div id="riepilogoTurniV45" class="riepilogo-turni-v45" aria-live="polite">
-        <button type="button" class="riepilogo-turni-v45-titolo" id="riepilogoTurniV45Toggle" aria-expanded="false">
-          <span><strong>Riepilogo mese</strong> <span id="riepilogoTurniV45Mese">—</span></span>
-          <span class="riepilogo-turni-v45-freccia" aria-hidden="true">▾</span>
-        </button>
-        <div class="riepilogo-turni-v45-grid">
-          <div><strong id="v45RtLavoro">0</strong><span>turni</span></div>
-          <div><strong id="v45RtRiposi">0</strong><span>riposi</span></div>
-          <div><strong id="v45RtAssenze">0</strong><span>assenze</span></div>
-          <div><strong id="v45RtStraordinario">0:00</strong><span>straordinario</span></div>
-        </div>
-        <div id="riepilogoTurniV45Espanso" class="riepilogo-turni-v45-espanso" hidden>
-          <div><span>🛡️ Missioni</span><strong id="v45RtMissioni">0</strong></div>
-          <div><span>🚓 Servizio esterno</span><strong id="v45RtServizioEsterno">0</strong></div>
-          <div><span>📞 Reperibilità</span><strong id="v45RtReperibilita">0</strong></div>
-          <div><span>🛡 Ordine pubblico</span><strong id="v45RtOrdinePubblico">0</strong></div>
-          <div><span>🍽️ Buoni pasto</span><strong id="v45RtBuoniPasto">0</strong></div>
-          <div><span>🔄 Ore compensate</span><strong id="v45RtOreCompensate">0:00</strong></div>
-          <div><span>⚡ Extra</span><strong id="v45RtExtra">0</strong></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="scheda" id="sezioneRiepilogo">
-      <h2>Riepilogo Ore del Mese</h2>
-      <p class="sotto-titolo">Ore riconosciute dal motore in base ai turni inseriti (mese visualizzato nel calendario) — nessun importo, solo classificazione.</p>
-
-      <div class="stat-panel-v17 stat-dettagli">
-        <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
-        <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
-        <div><span>💰 Straordinario netto stimato</span><strong id="rStrNetto">—</strong></div>
-        <div><span>💤 Riposi</span><strong id="rRiposi">0</strong></div>
-        <div><span>🚗 Servizio esterno</span><strong id="rServizioEsterno">0</strong></div>
-        <div><span>🛡️ Ordine pubblico</span><strong id="rOrdinePubblico">0</strong></div>
-        <div><span>🔦 Controllo territorio</span><strong id="rControlloTerritorio">0</strong></div>
-        <div><span>🍽️ Buoni pasto <small>(informativo)</small></span><strong id="rBuoniPasto">0</strong></div>
-      </div>
-
-      <details class="azioni-calendario-rapide-v2">
-        <summary>Mostra tutti i dettagli ▾</summary>
-        <div class="azioni-calendario-rapide-v2-corpo">
-        <div class="stat-v17">
-        <div class="stat-panel-v17 stat-dettagli">
-          <h3>🕐 Ore lavorate</h3>
-          <div><span>Notturne</span><strong id="rNotturne">0,00</strong></div>
-          <div><span>Festive</span><strong id="rFestive">0,00</strong></div>
-          <div><span>Domenicali</span><strong id="rDomenicali">0,00</strong></div>
-          <div><span>Notturne festive</span><strong id="rNotturneFestive">0,00</strong></div>
-        </div>
-
-        <div class="stat-panel-v17 stat-dettagli">
-          <h3>⏱️ Straordinario, per fascia</h3>
-          <div><span>Diurno</span><strong id="rStrDiurno">0,00</strong></div>
-          <div><span>Notturno</span><strong id="rStrNotturno">0,00</strong></div>
-          <div><span>Festivo</span><strong id="rStrFestivo">0,00</strong></div>
-          <div><span>Notturno festivo</span><strong id="rStrNotturnoFestivo">0,00</strong></div>
-        </div>
-
-        <div class="stat-panel-v17 stat-dettagli">
-          <h3>📋 Giorni e altro</h3>
-          <div><span>📞 Reperibilità</span><strong id="rReperibilita">0</strong></div>
-          <div><span>🚓 Missioni</span><strong id="rMissioni">0</strong></div>
-          <div><span>🔄 Str. convertito in riposo <small>(escluso dalla paga, saldo in Assenze)</small></span><strong id="rOreCompensate">0,00</strong></div>
-        </div>
-        </div>
-        </div>
-      </details>
-    </section>
-
-    <section class="scheda" id="sezioneStatisticheGrafici">
-      <div class="intestazione-scheda">
-        <h2>Statistiche</h2>
-      </div>
-      <label class="campo-modale">Anno
-        <input type="number" id="campoAnnoStatistiche" min="2000" max="2100" inputmode="numeric">
-      </label>
-      <div id="contenitoreStatistiche" class="statistiche-container"></div>
-    </section>
-  </div>
-
-  <div id="appAlerts" class="app-alerts-v20" hidden></div>
   <div id="toastContainer" class="toast-container toast-container-v20" aria-live="polite"></div>
   <div id="backupAnteprima" hidden></div>
+
+<!-- Cambio orario di un modello: aggiornare anche i giorni già nel calendario? -->
+<div class="overlay" id="overlaySimboli" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Simboli del calendario</h2><button class="btn-icona" id="btnChiudiSimboli" type="button" aria-label="Chiudi">✕</button></div>
+    <div class="modale-corpo">
+      <small class="sotto-titolo">Con l'interruttore spento il simbolo non compare nelle caselle, ma l'indennità viene sempre contata nei calcoli.</small>
+      <div class="lista-simboli" id="listaSimboli"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayAggiornaTurni" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Aggiornare il calendario?</h2></div>
+    <div class="modale-corpo">
+      <p id="testoAggiornaTurni" style="margin:0;"></p>
+      <div class="scelte-aggiorna-turni">
+        <button class="btn-primario" id="btnAggTurniFuturi" type="button">Aggiorna da oggi in poi</button>
+        <button class="btn-secondario" id="btnAggTurniTutti" type="button">Aggiorna tutti, anche il passato</button>
+        <button class="btn-secondario" id="btnAggTurniNessuno" type="button">Solo per i turni che inserirò</button>
+      </div>
+      <small class="sotto-titolo">Cambiando i turni passati cambiano anche ore e importi dei mesi già trascorsi.</small>
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="overlayPersonalizzaReport" hidden>
   <div class="modale">
     <div class="modale-header"><h2>Personalizza Report</h2><button class="btn-icona" id="btnChiudiPersonalizzaReport" aria-label="Chiudi">✕</button></div>
     <div class="modale-corpo">
       <p class="sotto-titolo" style="margin:0 0 4px;">Scegli quali blocchi vedere in Report. Puoi riattivarli in qualsiasi momento.</p>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportProssimoTurno"> ⏭️ Prossimo turno</label>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoMese"> 📊 Riepilogo mese (compatto)</label>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoOre"> 🕐 Riepilogo Ore del Mese (dettagliato)</label>
+      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoOre"> 🕐 Il mese</label>
       <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportStatistiche"> 📈 Statistiche (grafici annuali)</label>
       <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportCedolino"> 💶 Cedolino</label>
     </div>

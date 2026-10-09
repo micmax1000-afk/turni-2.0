@@ -37,7 +37,7 @@ function aggiornaStatoBackup(){
   const cEDati = Object.keys(AppState.turni).length > 0;
   if(!dataStr){
     box.innerHTML = cEDati
-      ? '⚠ Non hai ancora fatto nessun backup. Esportane uno per non rischiare di perdere i tuoi dati.'
+      ? '⚠ Non hai ancora fatto un backup: esportane uno per non perdere i dati.'
       : 'Nessun backup ancora effettuato.';
     box.className = cEDati ? 'sotto-titolo avviso-backup' : 'sotto-titolo';
     return;
@@ -45,11 +45,11 @@ function aggiornaStatoBackup(){
   const giorni = Math.floor((new Date() - new Date(dataStr)) / 86400000);
   const dataFormattata = formattaDataBreve(dataStr.slice(0, 10));
   if(giorni >= 14){
-    box.innerHTML = `⚠ Ultimo backup: ${dataFormattata} (${giorni} giorni fa). Ti conviene farne uno nuovo.`;
+    box.innerHTML = `⚠ Ultimo backup: ${dataFormattata} (${giorni} giorni fa): conviene farne uno nuovo.`;
     box.className = 'sotto-titolo avviso-backup';
   } else {
     box.innerHTML = `✓ Ultimo backup: ${dataFormattata} (${giorni === 0 ? 'oggi' : giorni === 1 ? '1 giorno fa' : giorni + ' giorni fa'}).`;
-    box.className = 'sotto-titolo';
+    box.className = 'sotto-titolo backup-ok';
   }
 }
 
@@ -68,7 +68,9 @@ async function esportaBackup(){
     modelliTurno: AppState.modelliTurno,
     pattern: AppState.pattern,
     eventiGiorno: AppState.eventiGiorno,
-    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
+    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null,
+    sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
+    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null
   };
   // coloriTurni: solo nel backup Drive a pagamento (costruisciDatiBackup) e export colori dedicato
   await salvaOCondividiFile(`backup-simulatore-cedolino-${dataISO(new Date())}.json`, JSON.stringify(dati, null, 2), 'application/json');
@@ -94,7 +96,11 @@ function costruisciDatiBackup(){
     modelliTurno: Array.isArray(AppState.modelliTurno) ? AppState.modelliTurno : null,
     calendarioAColori: (TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1'),
     stileCalendario: TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) === 'moderno' ? 'moderno' : 'classico',
-    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
+    tema: TurniPSStorage.getItem(CHIAVE_TEMA) || 'auto',
+    indennitaNascoste: TurniPSStorage.getItem(CHIAVE_INDENNITA_NASCOSTE) || null,
+    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null,
+    sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
+    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null
   };
 }
 
@@ -736,6 +742,8 @@ function importaBackup(file, datiGiaLetti){
       if(dati.sequenzaTurni) AppState.sequenzaTurni = dati.sequenzaTurni;
       if(dati.noteGiorni){ AppState.noteGiorni = dati.noteGiorni; salvaNoteGiorniStorage(); }
       if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
+      if(typeof dati.sequenzaUltimoGiorno === 'string') TurniPSStorage.setItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO, dati.sequenzaUltimoGiorno);
+      if(typeof dati.sequenzaPattern === 'string') TurniPSStorage.setItem(CHIAVE_SEQUENZA_PATTERN, dati.sequenzaPattern);
       if(dati.eventiGiorno && typeof dati.eventiGiorno === 'object' && !Array.isArray(dati.eventiGiorno)){
         const eventiPrima = AppState.eventiGiorno || {};
         AppState.eventiGiorno = dati.eventiGiorno;
@@ -760,6 +768,8 @@ function importaBackup(file, datiGiaLetti){
       if(typeof dati.calendarioAColori === 'boolean'){
         TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, dati.calendarioAColori ? '1' : '0');
         if(dati.stileCalendario === 'moderno' || dati.stileCalendario === 'classico') TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, dati.stileCalendario);
+        if(typeof dati.indennitaNascoste === 'string'){ try{ if(Array.isArray(JSON.parse(dati.indennitaNascoste))) TurniPSStorage.setItem(CHIAVE_INDENNITA_NASCOSTE, dati.indennitaNascoste); }catch(e){} }
+        if(['auto', 'chiaro', 'scuro'].includes(dati.tema)){ TurniPSStorage.setItem(CHIAVE_TEMA, dati.tema); if(typeof applicaTema === 'function') applicaTema(); }
         if(typeof aggiornaClasseCalendarioColori === 'function') aggiornaClasseCalendarioColori();
       }
       if(dati.coloriTurni && typeof dati.coloriTurni === 'object'){

@@ -35,7 +35,10 @@ function escapeHtml(s){
 
 function euro(n){
   const v = Number.isFinite(n) ? n : 0;
-  return v.toLocaleString('it-IT', { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' €';
+  // Separatore delle migliaia sempre presente (1.767,28 €): toLocaleString in italiano lo
+  // omette per i numeri di quattro cifre ("1767,28").
+  const [intera, decimali] = Math.abs(v).toFixed(2).split('.');
+  return (v < 0 ? '-' : '') + intera.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + decimali + ' €';
 }
 
 function formattaDataBreve(iso){
