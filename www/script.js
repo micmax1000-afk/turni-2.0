@@ -1581,21 +1581,53 @@ function aggiornaVistaRipetiEvento(){
 }
 
 // Notifiche dell'app spente: lo diciamo subito nel modulo, con un tasto per riattivarle.
+// Lo stato si legge dal modulo nativo (lo stesso interruttore delle impostazioni di Android);
+// il permesso di Capacitor è solo il ripiego.
+async function notificheAttive(){
+  const avviso = pluginAvvisoEvento();
+  if(avviso){ try{ const r = await avviso.statoNotifiche(); if(r && typeof r.attive === 'boolean') return r.attive; }catch(e){} }
+  const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+  if(!plugin) return true;
+  try{ const p = await plugin.checkPermissions(); return p.display === 'granted'; }catch(e){ return true; }
+}
+let timerPermessiEvento = null;
 async function controllaPermessiPromemoria(){
   const box = el('avvisoPermessiEvento'); if(!box) return;
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
-  if(!plugin || !el('listaPromemoriaEvento').children.length){ box.hidden = true; return; }
-  try{ const p = await plugin.checkPermissions(); box.hidden = p.display === 'granted'; }catch(e){ box.hidden = true; }
+  const aperto = el('overlayEvento') && !el('overlayEvento').hidden;
+  if(!plugin || !aperto || !el('listaPromemoriaEvento').children.length){ box.hidden = true; }
+  else box.hidden = await notificheAttive();
+  // Finché l'avviso è visibile si ricontrolla ogni 2 secondi: tornando dalle impostazioni di
+  // Android sparisce da solo, anche sui telefoni che non segnalano il ritorno nell'app.
+  clearTimeout(timerPermessiEvento);
+  if(!box.hidden) timerPermessiEvento = setTimeout(controllaPermessiPromemoria, 2000);
 }
 async function attivaNotifichePromemoria(){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return;
-  let p = null;
-  try{ p = await plugin.requestPermissions(); }catch(e){}
-  if(p && p.display === 'granted'){ el('avvisoPermessiEvento').hidden = true; mostraToast('Notifiche attivate', 'successo'); return; }
-  // Android non ripropone la richiesta dopo un "no": si aprono le impostazioni delle notifiche dell'app.
+  // 1) Se Android può ancora mostrare la richiesta, la mostriamo (con un limite di tempo: dopo un
+  //    "no" definitivo alcuni telefoni non rispondono proprio).
+  try{
+    const stato = await plugin.checkPermissions();
+    if(stato && String(stato.display).startsWith('prompt')){
+      const r = await Promise.race([plugin.requestPermissions(), new Promise(ok => setTimeout(() => ok(null), 5000))]);
+      if(r && r.display === 'granted' && await notificheAttive()){
+        el('avvisoPermessiEvento').hidden = true;
+        mostraToast('Notifiche attivate', 'successo');
+        return;
+      }
+    }
+  }catch(e){}
+  if(await notificheAttive()){ el('avvisoPermessiEvento').hidden = true; mostraToast('Notifiche attivate', 'successo'); return; }
+  // 2) Altrimenti si aprono le impostazioni delle notifiche dell'app.
   const avviso = pluginAvvisoEvento();
-  if(avviso){ try{ await avviso.apriImpostazioniNotifiche(); return; }catch(e){} }
+  if(avviso){
+    try{
+      mostraToast('Attiva «Mostra notifiche» e poi torna nell\'app.', 'info', 5000);
+      await avviso.apriImpostazioniNotifiche();
+      return;
+    }catch(e){ console.warn('Impostazioni notifiche non aperte:', e); }
+  }
   mostraAvviso('Apri Impostazioni di Android → App → Turni → Notifiche e attivale.', 'Notifiche disattivate');
 }
 

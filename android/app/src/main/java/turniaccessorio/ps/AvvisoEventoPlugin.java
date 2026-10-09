@@ -8,7 +8,6 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.Settings;
 
 import org.json.JSONObject;
@@ -51,20 +50,35 @@ public class AvvisoEventoPlugin extends Plugin {
         }
     }
 
+    /** Notifiche dell'app attive? (lo stesso interruttore che si vede nelle impostazioni di Android) */
+    @PluginMethod
+    public void statoNotifiche(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("attive", androidx.core.app.NotificationManagerCompat.from(getContext()).areNotificationsEnabled());
+        call.resolve(r);
+    }
+
     /** Apre le impostazioni delle notifiche dell'app (dopo un "no", Android non le richiede più). */
     @PluginMethod
     public void apriImpostazioniNotifiche(PluginCall call) {
+        String pacchetto = getContext().getPackageName();
+        android.content.Context ctx = getActivity() != null ? getActivity() : getContext();
         try {
-            Intent i;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
-                i.putExtra(Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
-            } else {
-                i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.fromParts("package", getContext().getPackageName(), null));
-            }
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(i);
+            Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+            i.putExtra(Settings.EXTRA_APP_PACKAGE, pacchetto);
+            i.putExtra("app_package", pacchetto);                         // alcuni telefoni (vecchi Xiaomi/Huawei)
+            i.putExtra("app_uid", getContext().getApplicationInfo().uid);
+            if (getActivity() == null) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(i);
+            call.resolve(new JSObject());
+            return;
+        } catch (Exception ignored) {
+        }
+        try {
+            // Ripiego: la scheda "Informazioni app", da cui si arriva a Notifiche.
+            Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", pacchetto, null));
+            if (getActivity() == null) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(i);
             call.resolve(new JSObject());
         } catch (Exception e) {
             call.reject("Impostazioni non aperte: " + e.getMessage());

@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V154 (v2.51.0 — eventi: titolo nel calendario, ripetizioni, prossimi 7 giorni, Posticipa) */
+/* Turni & Accessorio PS — Service Worker V155 (v2.51.1 — avviso notifiche: si nasconde quando sono attive, tasto che apre le impostazioni) */
 'use strict';
-const CACHE='turni-ps-v154';
+const CACHE='turni-ps-v155';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
