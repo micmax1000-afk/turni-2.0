@@ -1842,3 +1842,28 @@ html[data-tema="scuro"] .anteprima-classificazione.anteprima-giorno .et-str{back
 .riga-assenza-giorno.attiva{background:#DCE7FF}
 html[data-tema="scuro"] .riga-assenza-giorno.attiva{background:#22305A}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .riga-assenza-giorno.attiva{background:#22305A}}
+
+/* v2.67 — Riquadro del giorno sotto il calendario, compatto */
+.riepilogo-giorno-selezionato-v2{display:flex;align-items:center;gap:12px;padding:2px 0 4px}
+.giorno-v3-barra{flex:0 0 6px;align-self:stretch;min-height:44px;border-radius:4px}
+.giorno-v3-testi{display:flex;flex-direction:column;flex:1;min-width:0}
+.giorno-v3-data{font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--testo-tenue)}
+.giorno-v3-nome{font-size:1.05rem;font-weight:800;color:var(--testo);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.giorno-v3-orario{font-size:.8rem;color:var(--testo-tenue);font-variant-numeric:tabular-nums}
+.giorno-v3-ore{flex:0 0 auto;background:var(--bordo);color:var(--testo);border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:800;font-variant-numeric:tabular-nums}
+.riepilogo-giorno-selezionato-box-v2 .indennita-giorno-selezionato-v2{margin:4px 0 6px}
+.campo-servizio-svolto{width:100%;box-sizing:border-box;margin:6px 0 8px;padding:10px 12px;border:1px solid var(--bordo);border-radius:10px;background:var(--sfondo, var(--carta));color:var(--testo);font:inherit;font-size:.86rem}
+.azioni-giorno-v3{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.azioni-giorno-v3>button{margin:0;width:100%;min-width:0}
+.riepilogo-giorno-selezionato-box-v2 .lista-eventi-giorno-v2{margin:8px 0 0}
+.lista-eventi-giorno-v2:empty{display:none}
+#btnCancellaTurniMese{margin:6px auto 0;font-size:.8rem}
+/* v2.67 — "Cosa vuoi aggiungere?" → Assenze: stesso elenco di "Modifica il giorno" */
+.elenco-assenze-menu{border:1px solid var(--bordo);border-radius:12px;overflow:hidden;background:var(--carta)}
+.assenze-menu-non-usate{margin-top:8px}
+.assenze-menu-non-usate>summary{cursor:pointer;padding:8px 4px;font-size:.8rem;font-weight:700;color:var(--testo-tenue);list-style:none}
+.assenze-menu-non-usate>summary::-webkit-details-marker{display:none}
+.assenze-menu-non-usate>summary::before{content:'▸ '}
+.assenze-menu-non-usate[open]>summary::before{content:'▾ '}
+html[data-tema="scuro"] #btnCancellaTurniMese{color:#FF8A80}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #btnCancellaTurniMese{color:#FF8A80}}

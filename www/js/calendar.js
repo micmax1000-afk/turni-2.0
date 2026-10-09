@@ -518,6 +518,8 @@ function calcolaFineAssolutaTurno(iso, oraInizio, oraFine){
 
 function renderCalendario(){
   el('etichettaMese').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
+  const linkCancellaMese = el('btnCancellaTurniMese');
+  if(linkCancellaMese) linkCancellaMese.textContent = `Cancella i turni di ${NOMI_MESI[meseCorrente].toLowerCase()}…`;
   el('campoConguagliMese').value = AppState.conguagliPerMese[chiaveMese(annoCorrente, meseCorrente)] || 0;
   const griglia = el('calendarioGriglia');
   griglia.innerHTML = '';

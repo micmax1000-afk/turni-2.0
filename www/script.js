@@ -1628,11 +1628,21 @@ function renderListaModelliAssenzeV2(){
     host.innerHTML = '<p class="sotto-titolo" style="padding:8px 2px;">Nessuna assenza configurata. Aggiungine una dalla scheda Turni.</p>';
     return;
   }
-  host.innerHTML = assenze.map(a => `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-assenza="${escapeHtml(a.id)}">
-    <span class="cerchio-modello cerchio-modello-assenza">${escapeHtml(siglaAssenza(a.nome || '??'))}</span>
-    <span class="riga-modello-testo"><strong>${escapeHtml(a.nome)}</strong></span>
-    <span class="riga-modello-freccia" aria-hidden="true">›</span>
-  </button>`).join('');
+  // Stesso elenco di "Modifica il giorno": icona, nome e quanto resta; le voci a zero e mai
+  // usate stanno in "Non usate", chiuso.
+  const t = giornoPerPopupV2 ? AppState.turni[giornoPerPopupV2] : null;
+  const scelta = t && t.assenzaTipo;
+  const info = a => (typeof saldoAssenza === 'function' ? saldoAssenza(a) : null);
+  const riga = a => {
+    const x = info(a);
+    const saldo = x && x.spettanti ? `${numeroIt(x.rimangono)} <small>/ ${numeroIt(x.spettanti)} ${x.unita}</small>` : '';
+    const attiva = a.id === scelta;
+    return `<button type="button" class="riga-assenza-giorno${attiva ? ' attiva' : ''}" data-assenza="${escapeHtml(a.id)}"><span>${ICONE_ASSENZE[a.nome] || (a.unita === 'h' ? '⏱️' : '📅')}</span><b>${escapeHtml(a.nome)}</b><em>${saldo}</em>${attiva ? '<i aria-hidden="true">✓</i>' : ''}</button>`;
+  };
+  const nonUsata = a => { const x = info(a); return x && !x.spettanti && !x.usate && a.id !== scelta; };
+  const usate = assenze.filter(a => !nonUsata(a)), ferme = assenze.filter(nonUsata);
+  host.innerHTML = `<div class="elenco-assenze-giorno elenco-assenze-menu">${usate.map(riga).join('')}</div>`
+    + (ferme.length ? `<details class="assenze-menu-non-usate"><summary>Non usate (${ferme.length})</summary><div class="elenco-assenze-giorno elenco-assenze-menu">${ferme.map(riga).join('')}</div></details>` : '');
 }
 
 // Le indennità restano fisse (non modificabili, come deciso): qui solo etichetta+chiave del
@@ -2559,20 +2569,34 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   const boxIndennita = el('indennitaGiornoSelezionatoV2');
   if(!box || !giornoSelezionato) return;
   const d = new Date(giornoSelezionato + 'T00:00:00');
-  const dataLeggibile = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const GIORNI = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+  const dataLunga = `${GIORNI[d.getDay()]} ${d.getDate()} ${NOMI_MESI[d.getMonth()].toLowerCase()}`;
   const t = AppState.turni[giornoSelezionato];
-  let testo;
-  if(!t) testo = `${dataLeggibile} — nessun turno`;
-  else if(t.riposo) testo = `${dataLeggibile} — Riposo`;
-  else if(t.assenzaTipo){
+  let nome = 'Nessun turno', orario = '', colore = 'var(--bordo)', ore = '';
+  if(t && t.riposo){ nome = 'Riposo'; colore = coloreCategoria('riposo'); }
+  else if(t && t.assenzaTipo){
     const voce = (AppState.assenze || []).find(a => a.id === t.assenzaTipo);
-    testo = `${dataLeggibile} — ${voce ? voce.nome : 'Assenza'}`;
-  } else if(t.oraInizio && t.oraFine){
-    testo = `${dataLeggibile} — ${t.oraInizio} - ${t.oraFine}`;
-    if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine) testo += ` / ${t.secondoOraInizio} - ${t.secondoOraFine}`;
-  }
-  else testo = `${dataLeggibile} — turno incompleto`;
-  box.textContent = testo;
+    nome = voce ? voce.nome : 'Assenza';
+    colore = coloreCategoria('assenza');
+  } else if(t && t.oraInizio && t.oraFine){
+    const modelli = AppState.modelliTurno || [];
+    const m = modelli.find(x => !x.riposo && turnoUsaModello(t, x));
+    const cat = categoriaTurno(t.oraInizio, t.oraFine, giornoSelezionato);
+    nome = m ? m.nome : (cat.charAt(0).toUpperCase() + cat.slice(1));
+    colore = m ? coloreModelloV2(m) : coloreCategoria(cat);
+    orario = `${t.oraInizio} – ${t.oraFine}`;
+    if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine) orario += ` · rientro ${t.secondoOraInizio} – ${t.secondoOraFine}`;
+    if(typeof classificaTurno === 'function'){
+      const tot = classificaTurno(t).oreTotali;
+      if(tot > 0) ore = formatOreMinuti(tot);
+    }
+  } else if(t) nome = 'Turno incompleto';
+  box.innerHTML = `<span class="giorno-v3-barra" style="background:${escapeHtml(colore)}"></span>
+    <span class="giorno-v3-testi"><span class="giorno-v3-data">${escapeHtml(dataLunga)}</span>
+    <span class="giorno-v3-nome">${escapeHtml(nome)}</span>${orario ? `<span class="giorno-v3-orario">${escapeHtml(orario)}</span>` : ''}</span>
+    ${ore ? `<span class="giorno-v3-ore">${escapeHtml(ore)}</span>` : ''}`;
+  const linkCancella = el('btnCancellaTurniMese');
+  if(linkCancella) linkCancella.textContent = `Cancella i turni di ${NOMI_MESI[meseCorrente].toLowerCase()}…`;
   renderListaEventiGiornoV2();
   if(!boxIndennita) return;
   if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }

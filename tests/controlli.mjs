@@ -442,6 +442,36 @@ sezione('Stampa / Esporta PDF nell\'app Android');
   await ctx.close();
 }
 
+// ─────────────────────────────────────────────────────────────
+sezione('Riquadro del giorno e assenze nel menu');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.evaluate(() => selezionaGiorno('2026-10-09'));
+  const r = await p.evaluate(() => ({
+    data: document.querySelector('.giorno-v3-data')?.textContent,
+    nome: document.querySelector('.giorno-v3-nome')?.textContent,
+    orario: document.querySelector('.giorno-v3-orario')?.textContent || '',
+    link: document.getElementById('btnCancellaTurniMese').textContent
+  }));
+  ok('il riquadro dice giorno della settimana e nome del turno', r.data === 'Venerdì 9 ottobre' && !!r.nome && r.nome !== 'Nessun turno', JSON.stringify(r));
+  ok('"Cancella i turni" dice il mese visualizzato', r.link === 'Cancella i turni di ottobre…', r.link);
+  await p.evaluate(() => { giornoPerPopupV2 = '2026-10-09'; apriSelettoreModelliV2('assenze'); });
+  const m = await p.evaluate(() => ({
+    righe: document.querySelectorAll('#listaModelliAssenze .riga-assenza-giorno[data-assenza]').length,
+    saldo: !!document.querySelector('#listaModelliAssenze .riga-assenza-giorno em small'),
+    nonUsate: document.querySelector('#listaModelliAssenze .assenze-menu-non-usate summary')?.textContent || '',
+    chiuso: !document.querySelector('#listaModelliAssenze .assenze-menu-non-usate')?.open
+  }));
+  ok('Assenze nel menu: elenco con quanto resta', m.righe > 3 && m.saldo, JSON.stringify(m));
+  ok('voci a zero in "Non usate", chiuso', /^Non usate \(\d+\)$/.test(m.nonUsate) && m.chiuso, JSON.stringify(m));
+  const co = await p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').id);
+  await p.click(`#listaModelliAssenze [data-assenza="${co}"]`);
+  ok('toccando un\'assenza si applica al giorno', await p.evaluate(id => AppState.turni['2026-10-09'].assenzaTipo === id, co));
+  ok('il riquadro mostra l\'assenza', await p.evaluate(() => document.querySelector('.giorno-v3-nome').textContent === 'Congedo ordinario'));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(`\n${superati} controlli superati, ${falliti} falliti`);
