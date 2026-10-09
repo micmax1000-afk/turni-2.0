@@ -331,6 +331,19 @@ function inizializza(){
   aggiornaIconaCalendarioOggi();
   document.addEventListener('visibilitychange', () => { if(!document.hidden) aggiornaIconaCalendarioOggi(); });
   inizializzaBarraETastiera();
+  // La finestra "Modifica turno" stava dentro la scheda Calendario: aperta dalla scheda Turni
+  // restava invisibile. Spostata in fondo alla pagina, si apre da qualunque scheda.
+  const overlayModello = el('overlayModificaModello');
+  if(overlayModello) document.body.appendChild(overlayModello);
+  renderModelliTabTurni();
+  aggiornaRiassuntoAnagraficaAltro();
+  on('tabTurni', 'click', renderModelliTabTurni);
+  on('tabAltro', 'click', aggiornaRiassuntoAnagraficaAltro);
+  const listaModelliTab = el('listaModelliTabTurni');
+  if(listaModelliTab) listaModelliTab.addEventListener('click', e => {
+    const b = e.target.closest('[data-modello-tab]');
+    if(b) apriModificaModelloV2(b.dataset.modelloTab || null);
+  });
   // Promemoria degli eventi: si rimettono quelli che Android potrebbe aver cancellato e si
   // programmano le prossime volte degli eventi che si ripetono. Con calma, dopo l'avvio.
   setTimeout(() => { riprogrammaPromemoriaEventi(); }, 4000);
@@ -981,9 +994,10 @@ function apriSelettoreModelliV2(scheda){
 
 function coloreModelloV2(m){
   if(typeof coloreCategoria !== 'function') return '#E8ECF0';
-  if(m.riposo) return coloreCategoria('riposo');
-  const categoria = (typeof categoriaTurno === 'function' && m.oraInizio && m.oraFine) ? categoriaTurno(m.oraInizio, m.oraFine) : null;
-  return coloreCategoria(categoria || 'mattina');
+  // Colore scelto a mano per il modello, altrimenti quello della sua categoria (Sera, Notte...).
+  // Prima categoriaTurno veniva chiamata senza data e il risultato ricadeva sempre su "Mattina".
+  if(m.colore) return m.colore;
+  return coloreAutomaticoPerModello(m);
 }
 
 // Lista visiva dei pattern: ogni riga si tocca per aprire subito l'editor (ciclo + indennità +
@@ -1263,7 +1277,33 @@ function eliminaPatternSempliceV2(){
 }
 
 
+// Scheda Turni: i modelli di turno con il loro colore e orario, toccandone uno si modifica.
+function renderModelliTabTurni(){
+  const host = el('listaModelliTabTurni');
+  if(!host) return;
+  const righe = (AppState.modelliTurno || []).map(m => {
+    const colore = coloreModelloV2(m);
+    const forte = typeof scurisciColore === 'function' ? scurisciColore(colore, 0.35) : colore;
+    const sigla = m.sigla || (m.nome || '??').slice(0, 2).toUpperCase();
+    const sotto = m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}`;
+    return `<button type="button" class="riga-strumento-turni riga-modello-tab" data-modello-tab="${escapeHtml(m.id)}">
+      <span class="chip-modello-tab"><b style="background:${escapeHtml(forte)};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</b>${m.riposo ? '' : `<em style="background:${escapeHtml(colore)};color:${testoSuColore(colore)}">${escapeHtml(m.oraInizio || '')}</em>`}</span>
+      <i>${escapeHtml(m.nome)}<small>${escapeHtml(sotto)}</small></i><b>›</b>
+    </button>`;
+  }).join('');
+  host.innerHTML = righe + `<button type="button" class="riga-strumento-turni riga-modello-nuovo-tab" data-modello-tab=""><span>＋</span><i>Nuovo modello di turno</i></button>`;
+}
+// Scheda Altro: sotto "Anagrafica" un riassunto (qualifica · regione).
+function aggiornaRiassuntoAnagraficaAltro(){
+  const box = el('riassuntoAnagraficaAltro');
+  if(!box) return;
+  const a = AppState.anagrafica || {};
+  const parti = [a.qualifica, a.regione].filter(Boolean);
+  box.textContent = parti.length ? parti.join(' · ') : 'Da compilare: serve per il cedolino';
+}
+
 function renderListaModelliTurniV2(){
+  renderModelliTabTurni();
   const host = el('listaModelliTurni');
   if(!host) return;
   const tGiornoCorrente = giornoPerPopupV2 ? (AppState.turni[giornoPerPopupV2] || {}) : {};

@@ -445,16 +445,19 @@
   <div id="vistaAssenze" hidden>
   <section class="scheda" id="sezioneStrumentiTurni">
     <h2>Turni</h2>
-    <p class="sotto-titolo">Modelli, sequenza automatica, colori e assenze.</p>
+    <p class="sotto-titolo">I tuoi modelli di turno, sequenza automatica, colori e assenze.</p>
+
+    <p class="strumenti-turni-titolo">I tuoi turni</p>
+    <div class="lista-strumenti-turni lista-modelli-tab-turni" id="listaModelliTabTurni"></div>
 
     <div class="legenda-colori" id="legendaColoriTurni">
     </div>
 
     <p class="strumenti-turni-titolo">Strumenti</p>
     <div class="lista-strumenti-turni">
-      <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span> Genera turni automaticamente <b>›</b></button>
-      <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span> Colori turni <b>›</b></button>
-      <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span> Assenze e permessi <b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span><i>Genera turni automaticamente<small>Ripete una sequenza sul calendario</small></i><b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span><i>Colori e stile calendario<small>Colori dei turni, stile Classico o Moderno</small></i><b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span><i>Assenze e permessi<small>Congedi, permessi e saldi</small></i><b>›</b></button>
     </div>
 
     <div id="sezioneSequenzaHost" class="impostazioni-sottosezione"></div>
@@ -738,16 +741,19 @@
 </div>
 
   <section class="scheda" id="sezioneBackup" hidden>
-    <h2>Backup Dati</h2>
-    <p class="sotto-titolo">Tutti i dati sono salvati solo su questo dispositivo/browser. Esporta un backup periodicamente per non perderli in caso di cambio telefono o cancellazione dati.</p>
+    <h2>💾 Backup dei dati</h2>
     <p class="sotto-titolo" id="statoBackup"></p>
     <div class="barra-backup">
-      <button class="btn-secondario" id="btnEsportaBackup" type="button">💾 Esporta Backup (JSON)</button>
+      <button class="btn-primario" id="btnEsportaBackup" type="button">💾 Esporta backup</button>
       <button class="btn-secondario" id="btnImportaBackup" type="button">📥 Importa Backup</button>
       <button class="btn-secondario" id="btnAnnullaRipristino" type="button">↩️ Annulla ultimo ripristino</button>
       <input type="file" id="campoImportaBackup" accept="application/json" hidden>
     </div>
-    <p class="sotto-titolo" style="margin-top:8px;">📌 Il file esportato finisce di solito nella cartella Download del telefono — che <strong>non è al sicuro</strong>, perché è sullo stesso dispositivo. Per un backup vero, spostalo o condividilo su un servizio cloud (Google Drive, iCloud, Dropbox) oppure inviatelo via email o un'altra app: se il file resta solo nel telefono, un guasto, un furto o un ripristino di fabbrica lo cancellano insieme a tutto il resto.</p>
+    <details class="spiegazione-backup">
+      <summary>Perché è importante?</summary>
+      <p class="sotto-titolo">Tutti i dati sono salvati solo su questo dispositivo. Esporta un backup ogni tanto per non perderli se cambi telefono o se i dati vengono cancellati.</p>
+      <p class="sotto-titolo">📌 Il file esportato finisce di solito nella cartella Download del telefono — che <strong>non è al sicuro</strong>, perché è sullo stesso dispositivo. Per un backup vero, spostalo o condividilo su un servizio cloud (Google Drive, iCloud, Dropbox) oppure inviatelo via email o un'altra app: se il file resta solo nel telefono, un guasto, un furto o un ripristino di fabbrica lo cancellano insieme a tutto il resto.</p>
+    </details>
   </section>
 
   <section class="scheda" id="sezioneBackupDrive" hidden>
@@ -758,13 +764,16 @@
     <section class="scheda">
       <h2>Altro</h2>
       <div id="statoConnessioneV23" class="stato-connessione-v23" role="status" aria-live="polite"></div>
-      <div class="impostazioni-lista" style="display:flex;flex-direction:column;gap:8px;margin:12px 0;">
-        <button type="button" class="btn-secondario" id="settingsAnagrafica">🪪 Anagrafica</button>
-        <button type="button" class="btn-secondario" id="settingsTabelle">📊 Tabelle ufficiali</button>
-        <button type="button" class="btn-secondario" id="settingsBackup">💾 Backup locale</button>
-        <button type="button" class="btn-secondario" id="settingsDrive">☁ Backup Drive</button>
-        <button type="button" class="btn-secondario" id="btnInstallaAppV23" hidden>📲 Installa l'app</button>
+      <p class="strumenti-turni-titolo">Impostazioni</p>
+      <div class="lista-strumenti-turni">
+        <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span>🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="btnInstallaAppV23" hidden><span>📲</span><i>Installa l'app<small>Aggiungila alla schermata Home</small></i><b>›</b></button>
       </div>
+      <!-- I backup sono sempre visibili qui sotto: questi due tasti restano solo per compatibilità -->
+      <button type="button" id="settingsBackup" hidden>Backup locale</button>
+      <button type="button" id="settingsDrive" hidden>Backup Drive</button>
+      <p class="strumenti-turni-titolo">Backup</p>
   <section class="scheda" id="sezioneSequenza">
     <div class="intestazione-scheda">
       <h2>🔁 Genera turni automaticamente</h2>
@@ -786,8 +795,7 @@
         <button type="button" class="btn-secondario" id="btnChiudiSettingsBackup">Chiudi</button>
       </div>
     </section>
-    <p class="sotto-titolo" style="text-align:center;margin:0;"><a href="https://micmax-apps.netlify.app/privacy-turni.html" target="_blank" rel="noopener" id="linkPrivacy">Informativa sulla privacy</a></p>
-    <p class="sotto-titolo" style="text-align:center;margin:-8px 0 0;" id="versioneAppTesto"></p>
+    <p class="piede-altro"><a href="https://micmax-apps.netlify.app/privacy-turni.html" target="_blank" rel="noopener" id="linkPrivacy">Informativa sulla privacy</a> · <span id="versioneAppTesto"></span></p>
   </div>
 
   <div id="vistaStatistiche" hidden>

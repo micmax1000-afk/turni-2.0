@@ -1593,3 +1593,26 @@ body.scrittura-in-corso .barra-schede{display:none}
 /* Messaggi a comparsa: prima finivano in fondo alla pagina, fuori dallo schermo */
 .toast-container.toast-container-v20{position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom));width:auto;max-width:520px;margin:0 auto;z-index:9999}
 @media print{.barra-schede{display:none!important}}
+
+
+/* Schede Turni e Altro (v2.54.0): elenchi uniformi con icona, testo, sottotitolo e freccia */
+.riga-strumento-turni i{font-style:normal;display:flex;flex-direction:column;gap:2px;text-align:left;flex:1;min-width:0}
+.riga-strumento-turni i small{font-size:.74rem;font-weight:500;color:var(--testo-tenue)}
+.riga-modello-tab .chip-modello-tab{width:46px;border-radius:8px;overflow:hidden;text-align:center;flex-shrink:0;display:flex;flex-direction:column}
+.riga-modello-tab .chip-modello-tab b{display:block;margin:0;opacity:1;font:700 .62rem/1 var(--font-corpo);padding:4px 0}
+.riga-modello-tab .chip-modello-tab em{display:block;font:600 .6rem/1 var(--font-cifre);font-style:normal;padding:3px 0}
+.riga-modello-nuovo-tab{color:#155EEF}
+.riga-modello-nuovo-tab span{width:34px;height:34px;border-radius:10px;background:#EEF3FF;display:grid;place-items:center}
+.stato-connessione-v23{display:inline-flex!important;align-items:center;gap:6px;font-size:.75rem;font-weight:600;border-radius:20px;padding:3px 10px;margin:0 0 4px;width:auto!important;height:auto!important}
+.stato-connessione-v23.online{color:#19733b;background:#E9F7EF}
+.stato-connessione-v23.offline{color:#8a5a00;background:#FFF4D8}
+#sezioneBackup .barra-backup{display:flex;flex-direction:column;gap:8px}
+#sezioneBackup .barra-backup button{width:100%;min-height:46px;border-radius:14px}
+#statoBackup:not(:empty){background:#FDECEA;border-radius:14px;padding:10px 12px}
+.spiegazione-backup{margin-top:10px}
+.spiegazione-backup summary{cursor:pointer;font-weight:600;font-size:.85rem;padding:6px 0}
+.piede-altro{text-align:center;font-size:.78rem;color:var(--testo-tenue);margin:16px 0 0}
+.piede-altro a{color:var(--inchiostro);font-weight:600;text-decoration:none}
+
+.riga-strumento-turni[hidden]{display:none}
+#vistaImpostazioni #sezioneBackup,#vistaImpostazioni #sezioneBackupDrive{border-radius:18px}

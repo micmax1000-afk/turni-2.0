@@ -6,7 +6,7 @@ function renderStatoConnessione(){
   const host=document.getElementById('statoConnessioneV23'); if(!host) return;
   const online=navigator.onLine !== false;
   host.className=`stato-connessione-v23 ${online?'online':'offline'}`;
-  host.innerHTML=`<span class="stato-connessione-dot" aria-hidden="true"></span>`;
+  host.innerHTML=`<span class="stato-connessione-dot" aria-hidden="true"></span>${online?'Online · dati salvati sul telefono':'Offline · i dati restano disponibili'}`;
   host.title=online?'Connessione disponibile':'Sei offline: i dati locali restano disponibili';
   host.setAttribute('aria-label',online?'Connessione online':'Modalità offline');
 }
