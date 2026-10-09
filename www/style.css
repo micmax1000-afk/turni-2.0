@@ -1578,3 +1578,18 @@ body.calendario-moderno .mod-evento i{color:#2196F3;font-style:normal;margin-rig
 .stile-mini-moderno i{background:#fff;border-bottom:1px solid #ccc;border-radius:0;position:relative}
 .stile-mini-moderno i:after{content:'';position:absolute;left:2px;right:2px;bottom:4px;height:7px;border-radius:2px;background:var(--c)}
 .stile-calendario-scelta small{display:block;margin-top:8px;color:var(--testo-tenue);font-size:.75rem}
+
+
+/* Barra di navigazione in basso (v2.53.0): icone e nomi, sempre a portata di pollice */
+.barra-schede{position:fixed;top:auto;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:90;max-width:none;margin:0;padding:6px;background:color-mix(in srgb,var(--pannello,#fff) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--bordo);border-bottom:1px solid var(--bordo);border-radius:24px;box-shadow:0 8px 28px rgba(27,36,64,.14)}
+.barra-schede .riga-schede-icone{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0;padding:0}
+.barra-schede .riga-schede-icone .scheda-nav{height:56px;min-height:56px;padding:0!important;border:0;border-radius:18px;background:transparent;color:var(--testo-tenue);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:none;font-size:inherit}
+.barra-schede .riga-schede-icone .scheda-nav.attiva{background:#E8ECF7;color:var(--inchiostro)}
+.barra-schede .scheda-nav svg{pointer-events:none;flex-shrink:0}
+.barra-schede .scheda-nav small{pointer-events:none;font:600 .7rem/1 var(--font-corpo)}
+body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+body.scrittura-in-corso .barra-schede{display:none}
+@media(min-width:760px){.barra-schede{left:50%;right:auto;transform:translateX(-50%);width:min(560px,calc(100% - 24px))}}
+/* Messaggi a comparsa: prima finivano in fondo alla pagina, fuori dallo schermo */
+.toast-container.toast-container-v20{position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom));width:auto;max-width:520px;margin:0 auto;z-index:9999}
+@media print{.barra-schede{display:none!important}}
