@@ -567,8 +567,7 @@
   <div id="vistaAssenze" hidden>
   <section class="scheda" id="sezioneStrumentiTurni">
     <h2>Turni</h2>
-    <p class="sotto-titolo">I tuoi modelli di turno, sequenza automatica, colori e assenze.</p>
-
+    
     <p class="strumenti-turni-titolo">I tuoi turni</p>
     <div class="lista-strumenti-turni lista-modelli-tab-turni" id="listaModelliTabTurni"></div>
 
@@ -577,13 +576,11 @@
 
     <p class="strumenti-turni-titolo">Strumenti</p>
     <div class="lista-strumenti-turni">
-      <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span><i>Genera turni automaticamente<small>Ripete una sequenza sul calendario</small></i><b>›</b></button>
-      <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span><i>Colori e stile calendario<small>Colori dei turni, stile Classico o Moderno</small></i><b>›</b></button>
-      <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span><i>Assenze e permessi<small>Congedi, permessi e saldi</small></i><b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span><i>Genera turni automaticamente<small id="statoSequenzaTurni">Ripete una sequenza sul calendario</small></i><b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span><i>Colori e stile calendario<small id="statoColoriTurni">Colori dei turni, stile Classico o Moderno</small></i><b>›</b></button>
     </div>
 
-    <div id="sezioneSequenzaHost" class="impostazioni-sottosezione"></div>
-
+    
     <div id="pannelloColoriTurni" class="pannello-colori-turni" hidden>
       <div class="pannello-colori-header">
         <div>
@@ -622,10 +619,14 @@
 
   </section>
 
-  <section class="scheda" id="sezioneAssenze" hidden>
+  </div>
+
+  <!-- Assenze e permessi: pagina a sé, si apre da Altro -->
+  <div id="vistaGestioneAssenze" hidden>
+  <section class="scheda" id="sezioneAssenze">
     <div class="intestazione-scheda">
       <h2>Assenze dal Servizio</h2>
-      <button class="btn-mini-icona" id="btnChiudiAssenze" title="Torna alle impostazioni" aria-label="Torna alle impostazioni">✕</button>
+      <button class="btn-mini-icona" id="btnChiudiAssenze" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
     </div>
     <p class="sotto-titolo">Elenco personalizzabile, solo informativo (non incide sul cedolino). Si salva da solo.</p>
     <details class="info-richiudibile-assenze">
@@ -654,6 +655,25 @@
     <button type="button" class="btn-secondario" id="btnAggiungiAssenzaPersonalizzata" style="margin-top:10px;">+ Aggiungi assenza personalizzata</button>
   </section>
   </div>
+
+<!-- Genera turni automaticamente: pagina a sé, si apre dalla scheda Turni -->
+<div id="vistaSequenza" hidden>
+  <section class="scheda" id="sezioneSequenza">
+    <div class="intestazione-scheda">
+      <h2>🔁 Genera turni automaticamente</h2>
+      <button class="btn-mini-icona" id="btnChiudiSequenza" title="Torna a Turni" aria-label="Torna a Turni">✕</button>
+    </div>
+    <p class="sotto-titolo">Tocca una sequenza per modificarla o generarla sul calendario.</p>
+
+    <div id="listaPatternSempliceV2" class="lista-sequenze"></div>
+
+    <!-- Campi di appoggio per la generazione: l'editor del pattern (aperto toccando una riga
+         sopra) li imposta lui stesso prima di generare — non servono più campi visibili qui,
+         dato che "Da quando/Per quanto/Genera turni" vivono ora dentro l'editor. -->
+    <input type="date" id="campoSequenzaDataInizio" hidden>
+    <input type="number" id="campoSequenzaGiorni" min="1" max="366" value="30" hidden>
+  </section>
+</div>
 
 <div id="vistaAnagrafica" hidden>
   <section class="scheda" id="sezioneAnagrafica">
@@ -740,71 +760,75 @@
      aprendola, si passa alla scheda Turni — se vivesse dentro il Calendario si nasconderebbe
      insieme ad esso, anche restando tecnicamente "aperta". -->
 <div class="overlay" id="overlayEditorPatternV2" hidden>
-  <div class="modale">
-    <div class="modale-header"><h2 id="titoloEditorPatternV2">Ciclo del pattern</h2><button class="btn-icona" id="btnChiudiEditorPatternV2" aria-label="Chiudi">✕</button></div>
+  <div class="modale modale-sequenza">
+    <div class="modale-header"><h2 id="titoloEditorPatternV2">Sequenza</h2><button class="btn-icona" id="btnChiudiEditorPatternV2" aria-label="Chiudi">✕</button></div>
     <div class="modale-corpo">
-      <label class="campo-modale">Nome<input type="text" id="campoEditorPatternNome" placeholder="es. Turno in quinta"></label>
-      <p class="sotto-titolo" style="margin-top:0;">Tocca un giorno per selezionarlo, poi scegli un turno dalla tavolozza qui sotto.</p>
-      <div class="ciclo-pattern-v2" id="cicloPatternV2"></div>
-      <div style="display:flex;gap:16px;margin:-6px 0 8px;">
-        <button type="button" class="riga-modello-nuovo" id="btnAggiungiGiornoEditorPatternV2" style="flex:1;border-top:1px dashed var(--bordo);margin-top:0;">＋ Aggiungi giorno</button>
-        <button type="button" class="riga-modello-nuovo" id="btnRimuoviGiornoEditorPatternV2" style="flex:1;border-top:1px dashed var(--bordo);margin-top:0;color:#B3261E;">🗑️ Rimuovi questo giorno</button>
-      </div>
-      <div class="tavolozza-pattern-v2" id="tavolozzaPatternV2"></div>
-      <div id="indennitaGiornoPatternV2" class="indennita-giorno-pattern-v2" hidden>
-        <p class="sotto-titolo" style="margin:0 0 4px;font-weight:700;">Indennità fisse per questo giorno del ciclo</p>
-        <div id="corpoIndennitaGiornoPatternV2"></div>
-
-        <div style="height:1px;background:var(--bordo);margin:10px 0;"></div>
-        <label class="campo-modale campo-riga">
-          <input type="checkbox" id="campoPatternStraordinarioAttivo"> ⏱️ Straordinario programmato
-        </label>
-        <div id="campiPatternStraordinario" hidden>
-          <label class="campo-modale">Quando
-            <select id="campoPatternStraordinarioQuando">
-              <option value="prima">Prima del turno</option>
-              <option value="dopo">Dopo il turno</option>
-            </select>
+      <div class="passo-sequenza">
+        <h3><span class="numero-passo-seq">1</span>Il ciclo</h3>
+        <label class="campo-modale">Nome<input type="text" id="campoEditorPatternNome" placeholder="es. Turno in quinta"></label>
+        <p class="sotto-titolo" style="margin:0 0 8px;">Tocca un giorno e scegli il turno. Il numero dice in che punto del ciclo sei.</p>
+        <div class="ciclo-pattern-v3" id="cicloPatternV2"></div>
+        <button type="button" class="link-rimuovi-giorno" id="btnRimuoviGiornoEditorPatternV2">Togli il giorno selezionato</button>
+        <button type="button" id="btnAggiungiGiornoEditorPatternV2" hidden></button>
+        <div class="tavolozza-seq" id="tavolozzaPatternV2"></div>
+        <div id="indennitaGiornoPatternV2" class="indennita-giorno-pattern-v3" hidden>
+          <p class="titolo-indennita-giorno" id="titoloIndennitaGiornoPatternV2">Cosa c'è sempre in questo giorno</p>
+          <div id="corpoIndennitaGiornoPatternV2" class="chips-indennita-pattern"></div>
+          <label class="campo-modale campo-riga" style="margin-top:8px;">
+            <input type="checkbox" id="campoPatternStraordinarioAttivo"> Straordinario programmato
           </label>
-          <div class="riga-straordinario-ore">
-            <label class="campo-modale">Dalle<input type="time" id="campoPatternStraordinarioInizio"></label>
-            <label class="campo-modale">Alle<input type="time" id="campoPatternStraordinarioFine"></label>
+          <div id="campiPatternStraordinario" hidden>
+            <label class="campo-modale">Quando
+              <select id="campoPatternStraordinarioQuando">
+                <option value="prima">Prima del turno</option>
+                <option value="dopo">Dopo il turno</option>
+              </select>
+            </label>
+            <div class="riga-straordinario-ore">
+              <label class="campo-modale">Dalle<input type="time" id="campoPatternStraordinarioInizio"></label>
+              <label class="campo-modale">Alle<input type="time" id="campoPatternStraordinarioFine"></label>
+            </div>
+          </div>
+          <label class="campo-modale campo-riga">
+            <input type="checkbox" id="campoPatternRientroAttivo"> Rientro (secondo turno lo stesso giorno)
+          </label>
+          <div id="campiPatternRientro" hidden class="riga-straordinario-ore">
+            <label class="campo-modale">Dalle<input type="time" id="campoPatternRientroInizio"></label>
+            <label class="campo-modale">Alle<input type="time" id="campoPatternRientroFine"></label>
           </div>
         </div>
+      </div>
 
-        <div style="height:1px;background:var(--bordo);margin:10px 0;"></div>
-        <label class="campo-modale campo-riga">
-          <input type="checkbox" id="campoPatternRientroAttivo"> 🔁 Rientro (secondo turno lo stesso giorno)
-        </label>
-        <div id="campiPatternRientro" hidden class="riga-straordinario-ore">
-          <label class="campo-modale">Dalle<input type="time" id="campoPatternRientroInizio"></label>
-          <label class="campo-modale">Alle<input type="time" id="campoPatternRientroFine"></label>
+      <div class="passo-sequenza">
+        <h3><span class="numero-passo-seq">2</span>Da quando</h3>
+        <input type="date" id="campoEditorPatternDataInizio" class="campo-data-sequenza" aria-label="Primo giorno da generare">
+        <p class="etichetta-scelte">Quel giorno fai:</p>
+        <div class="scelte-sequenza" id="sceltaFaseSequenza"></div>
+        <p class="sotto-titolo" style="margin:6px 0 0;">Così l'app sa da che punto del ciclo partire, senza fare conti.</p>
+        <p class="etichetta-scelte">Fino a quando:</p>
+        <div class="scelte-sequenza" id="sceltaDurataSequenza">
+          <button type="button" data-durata="mese">1 mese</button>
+          <button type="button" data-durata="mese3">3 mesi</button>
+          <button type="button" data-durata="mese6">6 mesi</button>
+          <button type="button" data-durata="fineanno">Fino a fine anno</button>
+          <button type="button" data-durata="data">Fino al…</button>
         </div>
+        <input type="date" id="campoEditorPatternFino" class="campo-data-sequenza" aria-label="Ultimo giorno da generare" hidden>
       </div>
 
-      <div style="height:1px;background:var(--bordo);margin:12px 0;"></div>
-      <p class="sotto-titolo" style="margin:0 0 6px;font-weight:700;">Genera sul calendario</p>
-      <label class="campo-modale">📅 Da quando?
-        <input type="date" id="campoEditorPatternDataInizio">
-      </label>
-      <label class="campo-modale">📆 Per quanto tempo?
-        <select id="campoEditorPatternDurataPreset">
-          <option value="settimana">1 settimana</option>
-          <option value="mese" selected>1 mese</option>
-          <option value="mese3">3 mesi</option>
-          <option value="mese6">6 mesi</option>
-          <option value="anno">1 anno</option>
-          <option value="personalizzato">Numero di giorni personalizzato</option>
-        </select>
-      </label>
-      <label class="campo-modale durata-personalizzata" id="contenitoreEditorPatternGiorniPersonalizzati" hidden>Numero di giorni
-        <input type="number" id="campoEditorPatternGiorni" min="1" max="366" value="30" inputmode="numeric">
-      </label>
-      <div class="generatore-azioni" style="margin-top:8px;">
-        <button class="btn-primario btn-genera-grande" id="btnGeneraEditorPatternV2" type="button">🚀 Genera turni</button>
-        <button class="btn-secondario" id="btnContinuaEditorPatternV2" type="button">▶️ Continua da dove sei arrivato</button>
+      <div class="passo-sequenza">
+        <h3><span class="numero-passo-seq">3</span>Controlla e genera</h3>
+        <div class="anteprima-mese-seq-nav">
+          <button type="button" class="btn-freccia" id="btnAnteprimaSeqPrec" aria-label="Mese precedente">‹</button>
+          <strong id="anteprimaSeqMese"></strong>
+          <button type="button" class="btn-freccia" id="btnAnteprimaSeqSucc" aria-label="Mese successivo">›</button>
+        </div>
+        <div class="anteprima-mese-seq" id="anteprimaSeqGriglia"></div>
+        <p class="sotto-titolo" id="anteprimaSeqNota" style="margin:6px 0 0;"></p>
+        <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoSeqProteggiAssenze" checked><span>Non toccare ferie, permessi e assenze già inseriti</span></label>
+        <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoSeqSovrascrivi" checked><span id="testoSeqSovrascrivi">Sovrascrivi i turni già presenti</span></label>
+        <button class="btn-primario btn-genera-grande" id="btnGeneraEditorPatternV2" type="button">Genera</button>
       </div>
-      <p class="avviso-tabelle">⚠ Se nei giorni scelti esistono già turni, l'app ti chiederà conferma prima di sovrascriverli.</p>
     </div>
     <div class="modale-footer">
       <button class="btn-secondario" id="btnEliminaPatternV2" type="button">🗑️ Elimina</button>
@@ -890,6 +914,7 @@
       <div class="lista-strumenti-turni">
         <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span>🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span><i>Assenze e permessi<small id="riassuntoAssenzeAltro">Congedi, permessi e saldi</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Indennità nel calendario<small>Simboli e quali mostrare</small></i><b>›</b></button>
         <div class="riga-strumento-turni riga-tema">
           <span>🌓</span><i>Tema<small id="descrizioneTema">Come il telefono</small></i>
@@ -905,21 +930,7 @@
       <button type="button" id="settingsBackup" hidden>Backup locale</button>
       <button type="button" id="settingsDrive" hidden>Backup Drive</button>
       <p class="strumenti-turni-titolo">Backup</p>
-  <section class="scheda" id="sezioneSequenza">
-    <div class="intestazione-scheda">
-      <h2>🔁 Genera turni automaticamente</h2>
-      <button class="btn-mini-icona" id="btnChiudiSequenza" title="Torna alle impostazioni" aria-label="Torna alle impostazioni">✕</button>
-    </div>
-    <p class="sotto-titolo">Tocca un pattern per vederlo, modificarlo o generarlo sul calendario.</p>
 
-    <div id="listaPatternSempliceV2" class="lista-modelli-selettore" style="border:1px solid var(--bordo);border-radius:12px;"></div>
-
-    <!-- Campi di appoggio per la generazione: l'editor del pattern (aperto toccando una riga
-         sopra) li imposta lui stesso prima di generare — non servono più campi visibili qui,
-         dato che "Da quando/Per quanto/Genera turni" vivono ora dentro l'editor. -->
-    <input type="date" id="campoSequenzaDataInizio" hidden>
-    <input type="number" id="campoSequenzaGiorni" min="1" max="366" value="30" hidden>
-  </section>
       <div id="impostazioniBackupContainer"></div>
       <div id="impostazioniBackupPanel" hidden>
         <p class="sotto-titolo">Sezioni backup spostate qui sotto.</p>

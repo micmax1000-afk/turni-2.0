@@ -16,6 +16,7 @@ window.TurniPSConfig = Object.freeze({
     CHIAVE_NOTE_GIORNI: 'simCedolino_noteGiorni_v1',
     CHIAVE_SEQUENZA_ANCORA: 'simCedolino_sequenzaAncora_v1',
     CHIAVE_SEQUENZA_ULTIMO_GIORNO: 'simCedolino_sequenzaUltimoGiorno_v1',
+    CHIAVE_SEQUENZA_PATTERN: 'simCedolino_sequenzaPattern_v1',
     CHIAVE_ULTIMO_BACKUP: 'simCedolino_ultimoBackup_v1',
     CHIAVE_ASPETTATIVA_MIGRATA: 'simCedolino_aspettativaMigrata_v1',
     CHIAVE_DISCLAIMER_MOSTRATO: 'simCedolino_disclaimerMostrato_v1',

@@ -278,6 +278,63 @@ function applicaModelloSettimanaLunga(){
   renderSequenza();
 }
 
+// Il turno di un giorno a partire da un passo della sequenza (null se il passo è incompleto).
+function turnoDaPassoSequenza(passo, iso){
+  if(passo.tipo === 'riposo') return { data: iso, riposo: true, generatoAutomaticamente: true };
+  const oraInizio = passo.tipo === 'personalizzato' ? (passo.oraInizio || '') : MODELLI_TURNO[passo.tipo].oraInizio;
+  const oraFine = passo.tipo === 'personalizzato' ? (passo.oraFine || '') : MODELLI_TURNO[passo.tipo].oraFine;
+  if(!oraInizio || !oraFine) return null;
+  const extra = passo.extra || {};
+  return {
+    data: iso, riposo: false, assenzaTipo: null,
+    oraInizio, oraFine, generatoAutomaticamente: true,
+    servizioSvolto: extra.servizioSvolto || '',
+    straordinarioPrimaInizio: extra.straordinarioProgrammato ? (extra.strPrimaInizio || '') : '',
+    straordinarioPrimaFine: extra.straordinarioProgrammato ? (extra.strPrimaFine || '') : '',
+    straordinarioDopoInizio: extra.straordinarioProgrammato ? (extra.strDopoInizio || '') : '',
+    straordinarioDopoFine: extra.straordinarioProgrammato ? (extra.strDopoFine || '') : '',
+    secondoAttivo: !!extra.secondoAttivo, secondoOraInizio: extra.secondoOraInizio || '', secondoOraFine: extra.secondoOraFine || '',
+    reperibilita: !!extra.reperibilita, missione: !!extra.missione, servizioEsterno: !!extra.servizioEsterno,
+    ordinePubblico: !!extra.ordinePubblico, controlloTerritorio: !!extra.controlloTerritorio, cambioTurno: !!extra.cambioTurno,
+    buonoPasto: !!extra.buonoPasto,
+    compensazioneRiposo: !!extra.compensazioneRiposo, recuperoFestivoLavorato: !!extra.recuperoFestivoLavorato,
+    aggiornamentoProfessionale: !!extra.aggiornamentoProfessionale, addestramentoTiro: !!extra.addestramentoTiro,
+    modelloId: extra.modelloId || null
+  };
+}
+
+// Giorno del ciclo (0 = primo) in cui cade "iso", dato il giorno in cui il ciclo è partito dal primo.
+function faseCicloIl(ancoraIso, iso, lunghezza){
+  const giorni = Math.round((new Date(iso + 'T12:00:00') - new Date(ancoraIso + 'T12:00:00')) / 86400000);
+  return ((giorni % lunghezza) + lunghezza) % lunghezza;
+}
+
+// Genera i turni di una sequenza da "dataInizioIso" per "numeroGiorni", partendo dal giorno
+// "fase" del ciclo. Con proteggiAssenze le assenze già inserite restano; senza sovrascrivi
+// restano anche i turni già presenti. Ricorda la sequenza usata e fin dove arriva.
+function generaTurniDaCiclo({ sequenza, dataInizioIso, numeroGiorni, fase, proteggiAssenze, sovrascrivi, patternId }){
+  let scritti = 0;
+  const d = new Date(dataInizioIso + 'T12:00:00');
+  for(let i = 0; i < numeroGiorni; i++){
+    const iso = dataISO(d);
+    d.setDate(d.getDate() + 1);
+    const esistente = AppState.turni[iso];
+    if(esistente && esistente.assenzaTipo && proteggiAssenze) continue;
+    if(esistente && !esistente.assenzaTipo && !sovrascrivi) continue;
+    const turno = turnoDaPassoSequenza(sequenza[(fase + i) % sequenza.length], iso);
+    if(turno){ AppState.turni[iso] = turno; scritti++; }
+  }
+  const ancora = new Date(dataInizioIso + 'T12:00:00'); ancora.setDate(ancora.getDate() - fase);
+  const ultimo = new Date(dataInizioIso + 'T12:00:00'); ultimo.setDate(ultimo.getDate() + numeroGiorni - 1);
+  TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dataISO(ancora));
+  TurniPSStorage.setItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO, dataISO(ultimo));
+  if(patternId) TurniPSStorage.setItem(CHIAVE_SEQUENZA_PATTERN, patternId);
+  AppState.sequenzaTurni = sequenza;
+  salvaTurniStorage();
+  salvaSequenzaStorage();
+  return scritti;
+}
+
 function generaSequenzaTurni(indiceInizialeForzato){
   const dataInizioStr = el('campoSequenzaDataInizio').value;
   const numeroGiorni = Math.max(1, Math.min(366, Number(el('campoSequenzaGiorni').value) || 1));
@@ -299,30 +356,8 @@ function generaSequenzaTurni(indiceInizialeForzato){
       const d = new Date(dataInizio); d.setDate(d.getDate() + i);
       const iso = dataISO(d);
       const passo = AppState.sequenzaTurni[(indiceIniziale + i) % AppState.sequenzaTurni.length];
-      if(passo.tipo === 'riposo'){
-        AppState.turni[iso] = { data: iso, riposo: true, generatoAutomaticamente: true };
-      } else {
-        const oraInizio = passo.tipo === 'personalizzato' ? (passo.oraInizio || '') : MODELLI_TURNO[passo.tipo].oraInizio;
-        const oraFine = passo.tipo === 'personalizzato' ? (passo.oraFine || '') : MODELLI_TURNO[passo.tipo].oraFine;
-        if(!oraInizio || !oraFine) continue; // passo personalizzato incompleto: salta il giorno
-        const extra = passo.extra || {};
-        AppState.turni[iso] = {
-          data: iso, riposo: false, assenzaTipo: null,
-          oraInizio, oraFine, generatoAutomaticamente: true,
-          servizioSvolto: extra.servizioSvolto || '',
-          straordinarioPrimaInizio: extra.straordinarioProgrammato ? (extra.strPrimaInizio || '') : '',
-          straordinarioPrimaFine: extra.straordinarioProgrammato ? (extra.strPrimaFine || '') : '',
-          straordinarioDopoInizio: extra.straordinarioProgrammato ? (extra.strDopoInizio || '') : '',
-          straordinarioDopoFine: extra.straordinarioProgrammato ? (extra.strDopoFine || '') : '',
-          secondoAttivo: !!extra.secondoAttivo, secondoOraInizio: extra.secondoOraInizio || '', secondoOraFine: extra.secondoOraFine || '',
-          reperibilita: !!extra.reperibilita, missione: !!extra.missione, servizioEsterno: !!extra.servizioEsterno,
-          ordinePubblico: !!extra.ordinePubblico, controlloTerritorio: !!extra.controlloTerritorio, cambioTurno: !!extra.cambioTurno,
-          buonoPasto: !!extra.buonoPasto,
-          compensazioneRiposo: !!extra.compensazioneRiposo, recuperoFestivoLavorato: !!extra.recuperoFestivoLavorato,
-          aggiornamentoProfessionale: !!extra.aggiornamentoProfessionale, addestramentoTiro: !!extra.addestramentoTiro,
-          modelloId: extra.modelloId || null
-        };
-      }
+      const turno = turnoDaPassoSequenza(passo, iso);
+      if(turno) AppState.turni[iso] = turno;
     }
     // L'ancora di rotazione si registra solo quando si genera "da zero" (indice 0),
     // così "Continua turnazione" può sempre calcolare la fase corretta rispetto a questo punto.

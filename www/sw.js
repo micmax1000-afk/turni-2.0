@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V167 (v2.61.0 — simboli delle indennità, eventi colorati, netto automatico) */
+/* Turni & Accessorio PS — Service Worker V168 (v2.62.0 — scheda Turni a tessere, sequenza automatica in 3 passi, assenze in Altro) */
 'use strict';
-const CACHE='turni-ps-v167';
+const CACHE='turni-ps-v168';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

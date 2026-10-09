@@ -238,7 +238,11 @@ sezione('Turni: cambio orario di un modello');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   await p.click('#tabTurni');
-  ok('i modelli hanno colori diversi', await p.evaluate(() => new Set([...document.querySelectorAll('.chip-modello-tab b')].map(b => b.style.background)).size >= 4));
+  const tab = await p.evaluate(() => ({ tessere: [...document.querySelectorAll('.griglia-modelli-tab [data-modello-tab]:not(.tessera-nuovo)')].map(b => b.dataset.modelloTab).join(), altri: [...document.querySelectorAll('.altri-modelli [data-modello-tab]')].map(b => b.dataset.modelloTab).join(), sera: document.querySelector('[data-modello-tab="sera"]').innerText, assenzeQui: !!document.querySelector('#vistaAssenze #btnApriAssenzeV64') }));
+  ok('Turni: in alto i 5 modelli usati, gli altri 3 in "Altri modelli"', tab.tessere === 'sera,pomeriggio,mattina,notte,riposo' && tab.altri.split(',').length === 3, tab.tessere + ' | ' + tab.altri);
+  ok('tessera con orario, durata e volte nel mese', /19:00 – 01:00 · 6 h/.test(tab.sera) && /6 volte a ottobre/.test(tab.sera), tab.sera);
+  ok('"Assenze e permessi" non è più in Turni', !tab.assenzeQui);
+  ok('i modelli hanno colori diversi', await p.evaluate(() => new Set([...document.querySelectorAll('.tessera-modello > b')].map(b => b.style.background)).size >= 4));
   await p.locator('#listaModelliTabTurni [data-modello-tab="sera"]').click();
   ok('la finestra "Modifica turno" si apre dalla scheda Turni', await p.locator('#overlayModificaModello').isVisible());
   await p.fill('#campoModModelloInizio', '18:40');
@@ -248,6 +252,36 @@ sezione('Turni: cambio orario di un modello');
   await p.click('#btnAggTurniFuturi');
   const r = await p.evaluate(() => ({ futuro: AppState.turni['2026-10-11'].oraInizio, passato: AppState.turni['2026-10-06'].oraInizio }));
   ok('"da oggi in poi": l\'11/10 diventa 18:40, il 6/10 resta 19:00', r.futuro === '18:40' && r.passato === '19:00');
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Assenze in Altro e sequenza automatica');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.click('#tabAltro');
+  await p.click('#btnApriAssenzeV64');
+  ok('Altro → Assenze e permessi apre la pagina delle assenze', await p.evaluate(() => !!document.getElementById('sezioneAssenze').offsetParent && document.getElementById('tabAltro').classList.contains('attiva')));
+  await p.click('#btnChiudiAssenze');
+  await p.evaluate(() => { const v = AppState.assenze.find(a => a.nome === 'Congedo ordinario'); AppState.turni['2026-10-20'] = { data: '2026-10-20', assenzaTipo: v.id }; salvaTurniStorage(); });
+  await p.click('#tabTurni'); await p.click('#settingsSequenza');
+  ok('la sequenza si apre a pagina intera', await p.evaluate(() => !document.getElementById('vistaSequenza').hidden && document.getElementById('vistaAssenze').hidden));
+  await p.locator('[data-modifica-pattern="pattern_quinta5"]').click();
+  await p.locator('#sceltaFaseSequenza [data-fase="3"]').click();
+  const etichetta = await p.locator('#btnGeneraEditorPatternV2').innerText();
+  ok('pulsante: "Genera 92 giorni · fino al 08/01/2027"', etichetta === 'Genera 92 giorni · fino al 08/01/2027', etichetta);
+  ok('anteprima: il 20 (ferie) resta tratteggiato', await p.evaluate(() => [...document.querySelectorAll('#anteprimaSeqGriglia .g-resta em')].map(e => e.textContent).join() === '20'));
+  await p.click('#btnGeneraEditorPatternV2');
+  const r = await p.evaluate(() => ({ g9: AppState.turni['2026-10-09'].modelloId, g10: !!AppState.turni['2026-10-10'].riposo, g11: AppState.turni['2026-10-11'].modelloId, g20: !!AppState.turni['2026-10-20'].assenzaTipo, g21: AppState.turni['2026-10-21'].modelloId, gen8: !!AppState.turni['2027-01-08']?.riposo, gen9: !!AppState.turni['2027-01-09'] }));
+  ok('"Quel giorno fai: Notte": 9/10 Notte, 10 Riposo, 11 Sera', r.g9 === 'notte' && r.g10 && r.g11 === 'sera');
+  ok('le ferie del 20 restano, il 21 continua il ciclo; si ferma l\'8 gennaio', r.g20 && r.g21 === 'sera' && r.gen8 && !r.gen9, JSON.stringify(r));
+  await p.click('#tabTurni');
+  ok('in Turni: "In uso: Turno in quinta · fino al 08/01/2027"', await p.evaluate(() => document.getElementById('statoSequenzaTurni').textContent === 'In uso: Turno in quinta · fino al 08/01/2027'));
+  await p.click('#settingsSequenza');
+  await p.click('[data-continua-pattern="pattern_quinta5"]');
+  const c = await p.evaluate(() => ({ da: document.getElementById('campoEditorPatternDataInizio').value, fase: document.querySelector('#sceltaFaseSequenza .attivo').textContent }));
+  ok('"Continua": riparte dal 9 gennaio con Sera (dopo il Riposo dell\'8: il ciclo non si sfasa)', c.da === '2027-01-09' && c.fase === 'Sera', JSON.stringify(c));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

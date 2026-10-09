@@ -68,7 +68,9 @@ async function esportaBackup(){
     modelliTurno: AppState.modelliTurno,
     pattern: AppState.pattern,
     eventiGiorno: AppState.eventiGiorno,
-    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
+    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null,
+    sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
+    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null
   };
   // coloriTurni: solo nel backup Drive a pagamento (costruisciDatiBackup) e export colori dedicato
   await salvaOCondividiFile(`backup-simulatore-cedolino-${dataISO(new Date())}.json`, JSON.stringify(dati, null, 2), 'application/json');
@@ -96,7 +98,9 @@ function costruisciDatiBackup(){
     stileCalendario: TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) === 'moderno' ? 'moderno' : 'classico',
     tema: TurniPSStorage.getItem(CHIAVE_TEMA) || 'auto',
     indennitaNascoste: TurniPSStorage.getItem(CHIAVE_INDENNITA_NASCOSTE) || null,
-    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
+    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null,
+    sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
+    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null
   };
 }
 
@@ -738,6 +742,8 @@ function importaBackup(file, datiGiaLetti){
       if(dati.sequenzaTurni) AppState.sequenzaTurni = dati.sequenzaTurni;
       if(dati.noteGiorni){ AppState.noteGiorni = dati.noteGiorni; salvaNoteGiorniStorage(); }
       if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
+      if(typeof dati.sequenzaUltimoGiorno === 'string') TurniPSStorage.setItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO, dati.sequenzaUltimoGiorno);
+      if(typeof dati.sequenzaPattern === 'string') TurniPSStorage.setItem(CHIAVE_SEQUENZA_PATTERN, dati.sequenzaPattern);
       if(dati.eventiGiorno && typeof dati.eventiGiorno === 'object' && !Array.isArray(dati.eventiGiorno)){
         const eventiPrima = AppState.eventiGiorno || {};
         AppState.eventiGiorno = dati.eventiGiorno;

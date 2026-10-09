@@ -1831,3 +1831,80 @@ body.calendario-moderno .mod-evento{color:#fff;font-weight:700;border-radius:4px
 .interruttore:checked{background:#1D5FE0}
 .interruttore:checked::after{left:21px}
 .cerchio-icona{min-width:56px}
+
+/* =========================================================
+   v2.62.0 — Scheda Turni a tessere, sequenza automatica in 3 passi
+   =========================================================*/
+.lista-modelli-tab-turni{border:0!important;background:none!important;box-shadow:none!important;overflow:visible!important}
+.griglia-modelli-tab{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tessera-modello{display:flex;flex-direction:column;border:1px solid var(--bordo);border-radius:14px;overflow:hidden;padding:0;text-align:left;background:var(--pannello);cursor:pointer;font:inherit;color:inherit}
+.tessera-modello>b{display:block;font:800 .78rem/1 var(--font-corpo);letter-spacing:.04em;padding:6px 10px}
+.tessera-modello>span{display:flex;flex-direction:column;flex:1;padding:8px 10px 9px}
+.tessera-modello strong{font-size:.98rem;line-height:1.2}
+.tessera-modello small{font-size:.76rem;margin-top:2px;opacity:.9}
+.tessera-modello em{font-style:normal;font-size:.7rem;margin-top:4px;opacity:.8}
+.tessera-nuovo{align-items:center;justify-content:center;min-height:96px;border:1.5px dashed #9DB3E8;background:#F4F7FF;color:#1D5FE0;font-weight:700;font-size:.9rem}
+.tessera-nuovo span{font-size:1.4rem;line-height:1}
+.altri-modelli{margin-top:10px;border:1px solid var(--bordo);border-radius:16px;overflow:hidden;background:var(--pannello)}
+.altri-modelli summary{list-style:none;display:flex;align-items:center;gap:8px;padding:12px 14px;font-weight:600;font-size:.92rem;cursor:pointer}
+.altri-modelli summary::-webkit-details-marker{display:none}
+.altri-modelli summary b{margin-left:auto;color:var(--testo-tenue,#9CA3AF);transition:transform .15s}
+.altri-modelli[open] summary b{transform:rotate(180deg)}
+.altri-modelli .lista-strumenti-turni{border:0;border-top:1px solid var(--bordo);border-radius:0;margin:0}
+.sigla-modello-tab{font:800 .72rem/1 var(--font-corpo);border-radius:8px;padding:6px 7px;min-width:34px;text-align:center;flex-shrink:0}
+.riga-strumento-turni small.stato-attivo,.stato-attivo{color:#1E7A46!important;font-weight:600}
+html[data-tema="scuro"] .stato-attivo{color:#8EE0B1!important}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .stato-attivo{color:#8EE0B1!important}html:not([data-tema="chiaro"]) .tessera-nuovo,html:not([data-tema="chiaro"]) .card-sequenza-nuova{background:#1E2A44;border-color:#3A5BA8;color:#8FB0FF}}
+html[data-tema="scuro"] .tessera-nuovo,html[data-tema="scuro"] .card-sequenza-nuova{background:#1E2A44;border-color:#3A5BA8;color:#8FB0FF}
+/* Elenco delle sequenze */
+.lista-sequenze{display:flex;flex-direction:column;gap:8px}
+.card-sequenza{display:block;position:relative;border:1px solid var(--bordo);border-radius:14px;padding:12px;background:var(--pannello);cursor:pointer;text-align:left;font:inherit;color:inherit}
+.card-sequenza.in-uso{border:2px solid #1D5FE0}
+.card-sequenza strong{font-size:.98rem}
+.badge-in-uso{float:right;background:#E3ECFF;color:#1D4FC4;font-size:.66rem;font-weight:800;border-radius:6px;padding:2px 7px}
+.striscia-sequenza{display:flex;gap:3px;margin:8px 0}
+.striscia-sequenza i{flex:1;height:8px;border-radius:4px}
+.stato-sequenza{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.8rem}
+.stato-sequenza small{font-size:.8rem;color:var(--testo-tenue,#6B7280)}
+.continua-seq{margin-left:auto;background:#1D5FE0;color:#fff;border-radius:10px;padding:5px 10px;font-weight:700;font-size:.78rem}
+.card-sequenza-nuova{text-align:center;border:1.5px dashed #9DB3E8;background:#F4F7FF;color:#1D5FE0;font-weight:700}
+/* Editor della sequenza */
+.modale-sequenza{max-width:520px}
+.passo-sequenza{border:1px solid var(--bordo);border-radius:14px;padding:12px;margin-bottom:12px}
+.passo-sequenza h3{display:flex;align-items:center;gap:8px;font-size:.98rem;margin:0 0 10px}
+.numero-passo-seq{width:22px;height:22px;border-radius:50%;background:var(--inchiostro);color:var(--pannello);font-size:.75rem;display:grid;place-items:center;flex-shrink:0}
+.ciclo-pattern-v3{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+.giorno-ciclo-v3{display:flex;flex-direction:column;border:2px solid transparent;border-radius:10px;overflow:hidden;padding:0;background:none;cursor:pointer;font:inherit;text-align:center}
+.giorno-ciclo-v3 small{font-size:.64rem;font-weight:700;color:var(--testo-tenue,#6B7280);padding:1px 0}
+.giorno-ciclo-v3 b{font-size:.68rem;padding:4px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.giorno-ciclo-v3 span{display:flex;justify-content:center;gap:2px;font-size:.7rem;padding:2px 0;min-height:18px}
+.giorno-ciclo-v3.selezionato{border-color:var(--testo)}
+.giorno-ciclo-aggiungi{border:1.5px dashed #9DB3E8;color:#1D5FE0;font-size:1.2rem;justify-content:center;align-items:center;min-height:52px;background:#F4F7FF}
+.link-rimuovi-giorno{background:none;border:0;color:#B3261E;font-size:.8rem;font-weight:600;padding:6px 0;cursor:pointer}
+.tavolozza-pattern-v3{border:0;border-radius:16px;padding:5px 11px;font-weight:700;font-size:.78rem;margin:0 6px 6px 0;cursor:pointer}
+.indennita-giorno-pattern-v3{background:var(--carta);border-radius:12px;padding:10px;margin-top:6px}
+.titolo-indennita-giorno{font-weight:700;font-size:.85rem;margin:0 0 8px}
+.chips-indennita-pattern{display:flex;flex-wrap:wrap;gap:6px}
+.chips-indennita-pattern button{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--bordo);background:var(--pannello);color:var(--testo);border-radius:14px;padding:5px 10px;font:inherit;font-size:.78rem;cursor:pointer}
+.chips-indennita-pattern button .icona-indennita{font-size:.95rem}
+.chips-indennita-pattern button.attivo{background:#DCE7FF;border-color:#9DB3E8;color:#1D4FC4;font-weight:700}
+.campo-data-sequenza{width:100%;border:1px solid var(--bordo);border-radius:10px;padding:10px;font:inherit;background:var(--carta);color:var(--testo)}
+.etichetta-scelte{font-weight:600;font-size:.85rem;margin:12px 0 6px}
+.scelte-sequenza{display:flex;flex-wrap:wrap;gap:6px}
+.scelte-sequenza button{border:1.5px solid var(--bordo);background:var(--pannello);color:var(--testo);border-radius:16px;padding:6px 12px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
+#sceltaDurataSequenza button.attivo{background:var(--inchiostro);border-color:var(--inchiostro);color:var(--pannello)}
+#campoEditorPatternFino{margin-top:8px}
+.anteprima-mese-seq-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.anteprima-mese-seq-nav .btn-freccia{width:34px;height:34px}
+.anteprima-mese-seq{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.anteprima-mese-seq i{font-style:normal;text-align:center;font-size:.65rem;font-weight:700;color:var(--testo-tenue,#6B7280)}
+.anteprima-mese-seq span{border-radius:6px;min-height:36px;font-size:.6rem;font-weight:700;text-align:center;padding-top:2px;line-height:1.2}
+.anteprima-mese-seq span em{display:block;font-style:normal;font-size:.7rem}
+.anteprima-mese-seq span:empty{background:none}
+.anteprima-mese-seq .g-fuori{background:var(--carta);color:var(--testo-tenue,#AAA);padding-top:8px}
+.anteprima-mese-seq .g-resta{background:var(--carta);outline:2px dashed #888;outline-offset:-2px;color:var(--testo)}
+.riga-opzione-seq{display:flex;align-items:center;gap:10px;font-size:.88rem;padding:8px 0;cursor:pointer}
+.riga-opzione-seq small{color:var(--testo-tenue,#6B7280)}
+.btn-genera-grande:disabled{opacity:.5}
+.tessera-nuovo>span{flex:0 0 auto!important;padding:0!important}
+.tavolozza-seq{margin-top:4px}

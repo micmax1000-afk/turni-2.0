@@ -99,16 +99,18 @@ function mostraScheda(nome){
     turni: ['vistaAssenze'],
     altro: ['vistaImpostazioni'],
     anagrafica: ['vistaAnagrafica'],
-    tabelle: ['vistaTabelle']
+    tabelle: ['vistaTabelle'],
+    assenze: ['vistaGestioneAssenze'],
+    sequenza: ['vistaSequenza']
   };
   // Anagrafica e Tabelle sono "sotto-pagine" raggiunte da Altro: il tasto evidenziato in barra
   // resta "Altro" anche quando si sta guardando una di queste due, non essendoci un tasto proprio.
   // Gli altri alias mappano i vecchi nomi di scheda (ancora richiamati altrove nel codice) ai
   // nuovi 4 gruppi, senza dover cambiare ogni singola chiamata a mostraScheda(...).
-  const tabAttivoPerNome = { anagrafica: 'altro', tabelle: 'altro', sequenza: 'turni', cedolino: 'report', statistiche: 'report', impostazioni: 'altro', assenze: 'turni' };
+  const tabAttivoPerNome = { anagrafica: 'altro', tabelle: 'altro', sequenza: 'turni', cedolino: 'report', statistiche: 'report', impostazioni: 'altro', assenze: 'altro' };
   const tabAttivo = tabAttivoPerNome[nome] || nome;
   const vistaDaMostrare = gruppi[nome] ? nome : tabAttivo;
-  const tuttiIDiv = ['vistaTurni', 'vistaStatistiche', 'vistaCedolino', 'vistaAssenze', 'vistaImpostazioni', 'vistaAnagrafica', 'vistaTabelle'];
+  const tuttiIDiv = ['vistaTurni', 'vistaStatistiche', 'vistaCedolino', 'vistaAssenze', 'vistaImpostazioni', 'vistaAnagrafica', 'vistaTabelle', 'vistaGestioneAssenze', 'vistaSequenza'];
   const daMostrare = gruppi[vistaDaMostrare] || [];
   tuttiIDiv.forEach(id => { const n = el(id); if(n) n.hidden = !daMostrare.includes(id); });
   const tabId = { calendario: 'tabCalendario', report: 'tabReport', turni: 'tabTurni', altro: 'tabAltro' };
@@ -116,18 +118,10 @@ function mostraScheda(nome){
   if(nome === 'assenze' || nome === 'turni') renderAssenze();
   if(nome === 'tabelle') renderTabelle();
   if(nome === 'anagrafica') popolaFormAnagrafica();
-  if(nome === 'sequenza'){
-    const host = el('sezioneSequenzaHost');
-    const seq = el('sezioneSequenza');
-    if(host && seq && seq.parentElement !== host) host.appendChild(seq);
-    if(seq) seq.hidden = false;
-    renderSequenza();
-  } else {
-    const seq = el('sezioneSequenza');
-    if(seq) seq.hidden = true;
-  }
+  if(nome === 'sequenza') renderSequenza();
+  if(nome === 'turni' && typeof renderModelliTabTurni === 'function') renderModelliTabTurni();
   if(nome === 'statistiche' || nome === 'report'){ const a=el('campoAnnoStatistiche'); if(a && !a.value) a.value=new Date().getFullYear(); renderStatistiche(); if(typeof aggiornaRiepilogoMensile === 'function') aggiornaRiepilogoMensile(); if(typeof applicaVisibilitaReportBlocchi === 'function') applicaVisibilitaReportBlocchi(); }
-  if(nome === 'impostazioni' || nome === 'altro') inizializzaImpostazioni();
+  if(nome === 'impostazioni' || nome === 'altro'){ inizializzaImpostazioni(); if(typeof aggiornaRiassuntoAssenzeAltro === 'function') aggiornaRiassuntoAssenzeAltro(); }
   window.scrollTo({ top:0, behavior:'instant' });
 }
 
