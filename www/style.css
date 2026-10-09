@@ -29,7 +29,8 @@
   --badge-notte: #DDEAFF;
   --badge-riposo: #E8F4EA;
   --badge-assenza: #E7E9ED;
-  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  /* Titoli con lo stesso carattere del testo (prima era un carattere con le grazie, diverso dal resto) */
+  --font-display: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-corpo: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-cifre: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, Consolas, monospace;
   --raggio: 3px;
@@ -43,7 +44,7 @@
 
 *{ box-sizing: border-box; }
 body{ margin:0; background: var(--carta); color: var(--testo); font-family: var(--font-corpo); line-height:1.55; }
-h2{ font-family: var(--font-display); font-weight:600; font-size:1.2rem; margin:0 0 4px; color: var(--inchiostro); letter-spacing:-0.01em; }
+h2{ font-family: var(--font-display); font-weight:700; font-size:1.2rem; margin:0 0 4px; color: var(--inchiostro); letter-spacing:-0.01em; }
 h3{ font-family: var(--font-display); font-weight:600; }
 .sotto-titolo{ margin:0 0 16px; color: var(--testo-tenue); font-size:0.9rem; line-height:1.5; }
 
@@ -1674,3 +1675,61 @@ body.scrittura-in-corso .barra-schede{display:none}
 .scelte-aggiorna-turni{display:flex;flex-direction:column;gap:8px;margin:14px 0 10px}
 .scelte-aggiorna-turni button{width:100%;min-height:46px;border-radius:14px}
 .scelte-aggiorna-turni button[hidden]{display:none}
+
+
+/* v2.58.0 — etichette del calendario Moderno più leggibili sui telefoni più larghi */
+@media (min-width:380px){
+  body.calendario-moderno .mod-turno b{font-size:.68rem}
+  body.calendario-moderno .mod-turno span{font-size:.66rem}
+  body.calendario-moderno .mod-evento{font-size:.6rem}
+}
+@media (min-width:420px){
+  body.calendario-moderno .mod-turno b{font-size:.72rem}
+  body.calendario-moderno .mod-turno span{font-size:.7rem}
+}
+
+/* =========================================================
+   Tema scuro (v2.58.0): segue l'impostazione del telefono.
+   Le variabili coprono quasi tutto; sotto, i componenti che
+   avevano colori chiari scritti direttamente.
+   =========================================================*/
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --carta:#12151C; --sfondo:#12151C;
+    --pannello:#1B1F29; --superficie:#1B1F29; --sfondo-card:#1B1F29; --card:#1B1F29;
+    --sfondo-secondario:#232835; --superficie-secondaria:#232835; --surface-2:#232835;
+    --testo:#E6E8EE; --testo-tenue:#9AA1AE;
+    --bordo:#2F3545;
+    --inchiostro:#D3DCF5; --inchiostro-chiaro:#B4C3EC;
+    --gallone:#8D9BB3; --gallone-chiaro:#5D6B82;
+    --rosso-bollo:#F08A80;
+    --ombra: 0 1px 2px rgba(0,0,0,.4);
+  }
+  body{ background:var(--carta); color:var(--testo); }
+  /* Pulsanti e selezioni che usavano l'inchiostro come sfondo: blu pieno con testo bianco */
+  .btn-primario,.scheda-nav.attiva,.stat-switch-btn.attivo,.switch-turno-assenza-btn.attivo,.popup-rapido-giorno,.avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
+  .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#2A3556 !important; color:#E6ECFF !important; }
+  .barra-schede{ background:color-mix(in srgb,#1B1F29 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+  .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
+  input,select,textarea{ color:var(--testo); }
+  .overlay{ background:rgba(0,0,0,.7); }
+  /* Report */
+  .report-hero{ background:linear-gradient(135deg,#1E2A55,#33509E); }
+  #statoBackup:not(:empty){ background:#3A1F1D; color:#F3B3AC; }
+  .stato-connessione-v23.online{ background:#173226; color:#8EE0B1; }
+  .stato-connessione-v23.offline{ background:#3A2F14; color:#F2CD7A; }
+  .avviso-permessi-evento{ background:#3A2F14; color:#F2CD7A; }
+  .stile-calendario-pulsanti button.attivo{ background:#22305A; border-color:#5C7FE0; }
+  .riga-modello-nuovo-tab{ color:#8FB0FF; }
+  .riga-modello-nuovo-tab span{ background:#22305A; }
+  /* Calendario Classico: le caselle restano colorate (colori chiari scelti dall'utente),
+     quindi il loro testo resta scuro. */
+  body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella:not(.vuota),
+  body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella:not(.vuota) .giorno-numero{ color:#1E2129; }
+  body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella.festivo .giorno-numero{ color:#B3261E; }
+  /* Calendario Moderno */
+  body.calendario-moderno .giorno-cella.sabato,body.calendario-moderno .giorno-cella.domenica{ background:rgba(255,255,255,.04) !important; }
+  body.calendario-moderno .festivo .mod-numero{ color:#F08A80; }
+  body.calendario-moderno .giorno-cella:hover{ background:rgba(255,255,255,.05) !important; }
+}

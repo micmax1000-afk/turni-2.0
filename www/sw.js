@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V163 (v2.57.0 — accredito del mese visualizzato, aggiornamento turni dal modello) */
+/* Turni & Accessorio PS — Service Worker V164 (v2.58.0 — tema scuro, titoli uniformi, controlli automatici) */
 'use strict';
-const CACHE='turni-ps-v163';
+const CACHE='turni-ps-v164';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

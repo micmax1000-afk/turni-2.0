@@ -598,7 +598,7 @@ function renderCalendario(){
       // sfondo colorato (serve quando i colori sono accesi), quindi senza un bianco scritto qui
       // in riga esplicitamente quella regola resterebbe comunque visibile. Il bianco deve vincere
       // allo stesso modo con cui il colore vince quando è acceso.
-      cella.style.background = '#FFFFFF';
+      cella.style.background = 'var(--pannello, #FFFFFF)'; // bianco, o grigio scuro col tema scuro
     }
 
     if(t && t.generatoAutomaticamente) classi += ' auto-generato';

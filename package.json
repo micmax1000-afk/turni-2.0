@@ -3,7 +3,8 @@
   "version": "2.45.2",
   "description": "Turni & Accessorio PS - app per la gestione turni Polizia di Stato",
   "scripts": {
-    "sync": "npx cap sync android"
+    "sync": "npx cap sync android",
+    "test": "node tests/controlli.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
@@ -14,5 +15,8 @@
     "@capacitor/share": "^8.0.2",
     "@capawesome/capacitor-google-sign-in": "^0.1.4",
     "capacitor-plugin-cdv-purchase": "^13.18.0"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
   }
 }

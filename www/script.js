@@ -347,13 +347,7 @@ function inizializza(){
   };
   on('btnAnnoStatPrec', 'click', () => cambiaAnnoStatistiche(-1));
   on('btnAnnoStatSucc', 'click', () => cambiaAnnoStatistiche(1));
-  // Stampa dell'anno: calcola il riepilogo annuale (non più sullo schermo) e lo stampa.
-  on('btnStampaAnnoStatistiche', 'click', () => {
-    const anno = Number(el('campoAnnoStatistiche').value) || new Date().getFullYear();
-    el('campoAnnoRiepilogo').value = anno;
-    renderRiepilogoAnnuale(anno);
-    stampaSezione('contenitoreRiepilogoAnnuale');
-  });
+
   on('tabTurni', 'click', renderModelliTabTurni);
   on('tabAltro', 'click', aggiornaRiassuntoAnagraficaAltro);
   const listaModelliTab = el('listaModelliTabTurni');
