@@ -1908,3 +1908,56 @@ html[data-tema="scuro"] .tessera-nuovo,html[data-tema="scuro"] .card-sequenza-nu
 .btn-genera-grande:disabled{opacity:.5}
 .tessera-nuovo>span{flex:0 0 auto!important;padding:0!important}
 .tavolozza-seq{margin-top:4px}
+
+/* =========================================================
+   v2.63.0 — Anagrafica a gruppi (si salva da sola), Assenze compatte
+   =========================================================*/
+.testata-anagrafica{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#1E2A55,#33509E);color:#fff;border-radius:16px;padding:14px;margin:4px 0 6px}
+.testata-anagrafica #visualizzaGrado svg{width:54px;height:30px;display:block}
+.testata-anagrafica div{min-width:0;flex:1}
+.testata-anagrafica strong{display:block;font-size:1.02rem;line-height:1.2}
+.testata-anagrafica small{opacity:.85;font-size:.8rem}
+.testata-anagrafica em{font-style:normal;font-size:.72rem;font-weight:700;background:rgba(255,255,255,.18);border-radius:8px;padding:4px 8px;white-space:nowrap}
+.testata-anagrafica em.da-completare{background:#FFE58A;color:#5A4500}
+.gruppo-anagrafica{border:1px solid var(--bordo);border-radius:16px;overflow:hidden;background:var(--pannello)}
+.riga-anagrafica{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--bordo);margin:0;font-size:.92rem}
+.riga-anagrafica:first-child{border-top:0}
+.riga-anagrafica>span{flex:1;min-width:0}
+.riga-anagrafica select{width:auto;max-width:58%;border:0;border-radius:9px;background:var(--carta);color:var(--inchiostro);font:600 .88rem var(--font-corpo);padding:7px 8px;margin:0;text-align:right}
+.contatore-anagrafica{display:flex;align-items:center;gap:6px}
+.contatore-anagrafica button{width:34px;height:34px;border:1px solid var(--bordo);border-radius:9px;background:var(--pannello);color:var(--testo);font-size:1.1rem;font-weight:700;cursor:pointer;padding:0}
+.contatore-anagrafica input{width:52px;text-align:center;border:0;border-radius:9px;background:var(--carta);color:var(--inchiostro);font:600 .95rem var(--font-corpo);padding:7px 2px;margin:0;-moz-appearance:textfield}
+.contatore-anagrafica input::-webkit-outer-spin-button,.contatore-anagrafica input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+#sezioneAnagrafica .info-richiudibile{margin-top:12px}
+.link-cancella-anagrafica{display:block;margin:16px auto 0;background:none;border:0;color:#B3261E;font-weight:600;font-size:.86rem;cursor:pointer;padding:8px}
+/* Assenze */
+.assenze-riepilogo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 12px}
+.assenza-riepilogo{background:var(--carta);border-radius:12px;padding:10px}
+.assenza-riepilogo b{display:block;font-size:1.25rem;line-height:1.2}
+.assenza-riepilogo small{display:block;font-size:.7rem;color:var(--testo-tenue,#555);line-height:1.25;margin-top:2px}
+.assenze-filtri-seg{display:flex;background:var(--carta);border-radius:12px;padding:3px;gap:0}
+.assenze-filtri-seg .filtro-assenze{flex:1;border:0;background:none;padding:7px;border-radius:9px;font:600 .84rem var(--font-corpo);color:var(--testo-tenue,#555);cursor:pointer}
+.assenze-filtri-seg .filtro-assenze.attivo{background:var(--pannello);color:var(--testo);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.gruppo-assenze{border:1px solid var(--bordo);border-radius:16px;overflow:hidden;background:var(--pannello)}
+#gruppoAssenzeNonUsate{margin-top:10px}
+#gruppoAssenzeNonUsate>div{border-top:1px solid var(--bordo)}
+.gruppo-assenze .card-assenza,.gruppo-assenze .card-assenza.positivo,.gruppo-assenze .card-assenza.attenzione,.gruppo-assenze .card-assenza.zero,.gruppo-assenze .card-assenza.esaurito{margin:0;border:0;border-top:1px solid var(--bordo);border-radius:0;box-shadow:none;background:none;padding:0}
+.gruppo-assenze .card-assenza:first-child{border-top:0}
+.gruppo-assenze .card-assenza-aperta{padding:0 12px 12px}
+.gruppo-assenze .card-assenza-compact{background:none;padding:11px 14px 4px;gap:10px}
+.gruppo-assenze .card-assenza-aperta .card-assenza-compact{padding:11px 2px 4px}
+.gruppo-assenze .card-assenza-compact .card-assenza-icon{width:auto;height:auto;background:none;font-size:1.05rem}
+.gruppo-assenze .card-assenza-compact-nome strong{font-size:.92rem}
+.gruppo-assenze .card-assenza-compact strong{font-size:.98rem}
+.barra-residuo-assenza{display:block;height:6px;border-radius:3px;background:var(--carta);margin:4px 14px 11px;overflow:hidden}
+.card-assenza-aperta .barra-residuo-assenza{margin:4px 2px 8px}
+.barra-residuo-assenza i{display:block;height:100%;border-radius:3px}
+.btn-aggiungi-tratteggiato{display:block;width:100%;margin-top:12px;border:1.5px dashed #9DB3E8;background:#F4F7FF;color:#1D5FE0;border-radius:14px;padding:12px;font:700 .92rem var(--font-corpo);cursor:pointer}
+html[data-tema="scuro"] .btn-aggiungi-tratteggiato{background:#1E2A44;border-color:#3A5BA8;color:#8FB0FF}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .btn-aggiungi-tratteggiato{background:#1E2A44;border-color:#3A5BA8;color:#8FB0FF}}
+#sezioneAssenze .info-richiudibile-assenze{margin-top:12px}
+.gruppo-assenze .card-assenza.card-assenza-aperta{padding:0 12px 12px}
+.gruppo-assenze .card-assenza-aperta .card-assenza-compact-nome{display:block}
+.gruppo-assenze .card-assenza-head .card-assenza-icon,.gruppo-assenze .card-assenza-head strong,.gruppo-assenze .saldo-progress{display:none}
+.gruppo-assenze .card-assenza-head{margin-top:2px}
+.gruppo-assenze .card-assenza-main{margin-top:6px}

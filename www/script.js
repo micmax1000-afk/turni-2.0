@@ -490,7 +490,16 @@ function inizializza(){
   el('btnAnagrafica').addEventListener('click', () => mostraScheda('anagrafica'));
   on('btnStatistiche','click', () => mostraScheda('statistiche'));
   on('campoAnnoStatistiche','change', renderStatistiche);
-  el('btnSalvaAnagrafica').addEventListener('click', salvaAnagraficaDaModale);
+  // Anagrafica: si salva da sola a ogni modifica; − e + per anni di servizio e figli.
+  on('sezioneAnagrafica','change', e => { if(e.target.matches('select, input')) salvaAnagraficaDaModale(); });
+  on('sezioneAnagrafica','click', e => {
+    const b = e.target.closest('[data-passo]');
+    if(!b) return;
+    const campo = el(b.dataset.passo);
+    campo.value = Math.max(0, (Number(campo.value) || 0) + Number(b.dataset.delta));
+    salvaAnagraficaDaModale();
+  });
+  on('btnChiudiAnagrafica','click', () => mostraScheda('altro'));
   el('btnCancellaAnagrafica').addEventListener('click', () => {
     mostraConferma(
       'Questo cancellerà i dati anagrafici salvati (qualifica, anni di servizio, sede, regione, ecc.) e riporterà il form ai valori predefiniti. Turni, assenze, tabelle e cedolini generati non vengono toccati. Continuare?',

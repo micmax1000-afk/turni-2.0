@@ -625,12 +625,27 @@
   <div id="vistaGestioneAssenze" hidden>
   <section class="scheda" id="sezioneAssenze">
     <div class="intestazione-scheda">
-      <h2>Assenze dal Servizio</h2>
+      <h2>Assenze e permessi</h2>
       <button class="btn-mini-icona" id="btnChiudiAssenze" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
     </div>
-    <p class="sotto-titolo">Elenco personalizzabile, solo informativo (non incide sul cedolino). Si salva da solo.</p>
+    <p class="sotto-titolo" id="sottotitoloAssenze">Quanto ti resta. Solo informativo: non cambia il cedolino.</p>
+    <div id="assenzeSummaryGrid" class="assenze-riepilogo" aria-live="polite"></div>
+    <div class="assenze-filtri-seg" role="group" aria-label="Filtra assenze">
+      <button type="button" class="filtro-assenze attivo" data-filtro-assenze="tutte">Tutte</button>
+      <button type="button" class="filtro-assenze" data-filtro-assenze="gg">Giorni</button>
+      <button type="button" class="filtro-assenze" data-filtro-assenze="h">Ore</button>
+    </div>
+    <p class="strumenti-turni-titolo">Le tue assenze</p>
+    <div id="corpoAssenze" class="gruppo-assenze"></div>
+    <details class="gruppo-assenze altri-modelli" id="gruppoAssenzeNonUsate" hidden>
+      <summary><span id="titoloAssenzeNonUsate">Non usate</span><b aria-hidden="true">⌄</b></summary>
+      <div id="corpoAssenzeNonUsate"></div>
+    </details>
+    <p class="strumenti-turni-titolo">Tue personalizzate</p>
+    <div id="corpoAssenzePersonalizzate" class="gruppo-assenze"></div>
+    <button type="button" class="btn-aggiungi-tratteggiato" id="btnAggiungiAssenzaPersonalizzata">＋ Aggiungi assenza personalizzata</button>
     <details class="info-richiudibile-assenze">
-      <summary>ℹ️ Come funzionano queste voci ▾</summary>
+      <summary>ℹ️ Come funzionano queste voci</summary>
       <div class="info-richiudibile-assenze-corpo">
         <p>📌 <strong>Congedo ordinario</strong>: varia con anni di servizio e orario (5 o 6 giorni). Su 6gg: 30/32/37/45gg (1-3 / 4-15 / oltre 15 / oltre 25 anni). Su 5gg: 26/28/32/39gg. Imposta il valore giusto per te.</p>
         <p>📌 <strong>Riposo compensativo</strong>: ore automatiche (non modificabili qui). Si accumulano convertendo lo straordinario in riposo; si consumano selezionando questa assenza sul giorno e indicando il turno sostituito.</p>
@@ -638,21 +653,6 @@
         <p>📌 <strong>Maternità/Paternità</strong> e <strong>Congedo parentale</strong>: solo tracciamento date, nessun importo calcolato (la retribuzione reale varia nel tempo). Imposta tu i giorni.</p>
       </div>
     </details>
-    <div class="assenze-toolbar-v38">
-      <div class="assenze-toolbar-title"><strong>Saldi e utilizzo</strong><span>Controlla rapidamente le disponibilità dell'anno corrente.</span></div>
-      <div class="assenze-filtri-v38" role="group" aria-label="Filtra assenze">
-        <button type="button" class="filtro-assenze attivo" data-filtro-assenze="tutte">Tutte</button>
-        <button type="button" class="filtro-assenze" data-filtro-assenze="gg">Giorni</button>
-        <button type="button" class="filtro-assenze" data-filtro-assenze="h">Ore</button>
-      </div>
-    </div>
-    <div class="assenze-search-wrap" role="search"><span aria-hidden="true">🔎</span><input id="cercaAssenza" type="search" autocomplete="off" placeholder="Cerca un tipo di assenza…" aria-label="Cerca assenza"></div>
-    <div id="assenzeSummaryGrid" class="assenze-summary-grid" aria-live="polite"></div>
-    <div id="corpoAssenze"></div>
-
-    <p class="sotto-titolo" style="margin:14px 0 4px;font-weight:700;text-transform:uppercase;font-size:.72rem;letter-spacing:.04em;">🎁 Tue personalizzate</p>
-    <div id="corpoAssenzePersonalizzate"></div>
-    <button type="button" class="btn-secondario" id="btnAggiungiAssenzaPersonalizzata" style="margin-top:10px;">+ Aggiungi assenza personalizzata</button>
   </section>
   </div>
 
@@ -677,9 +677,20 @@
 
 <div id="vistaAnagrafica" hidden>
   <section class="scheda" id="sezioneAnagrafica">
-    <h2>Anagrafica</h2>
-    <label class="campo-modale">Qualifica
-      <select id="campoQualifica">
+    <div class="intestazione-scheda">
+      <h2>Anagrafica</h2>
+      <button class="btn-mini-icona" id="btnChiudiAnagrafica" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
+    </div>
+    <p class="sotto-titolo" id="statoSalvataggioAnagrafica">Le modifiche si salvano da sole.</p>
+    <div class="testata-anagrafica" aria-live="polite">
+      <span id="visualizzaGrado"></span>
+      <div><strong id="testataQualifica">—</strong><small>Parametro <span id="visualizzaParametro">—</span> · <span id="testataRegione">—</span></small></div>
+      <em id="testataCompleta">Da completare</em>
+    </div>
+
+    <p class="strumenti-turni-titolo">Servizio</p>
+    <div class="gruppo-anagrafica">
+      <label class="riga-anagrafica"><span>Qualifica</span><select id="campoQualifica">
         <option>Agente</option><option>Agente Scelto</option><option>Assistente</option>
         <option>Assistente Capo</option><option>Assistente Capo Coordinatore</option>
         <option>Vice Sovrintendente</option><option>Sovrintendente</option><option>Sovrintendente Capo</option>
@@ -687,55 +698,33 @@
         <option>Vice Ispettore</option><option>Ispettore</option><option>Ispettore Capo</option><option>Ispettore Superiore</option>
         <option>Sostituto Commissario</option><option>Sostituto Commissario Coordinatore</option>
         <option>Vice Commissario</option><option>Commissario</option><option>Commissario Capo</option>
-      </select>
-    </label>
-    <div class="grado-visuale" aria-live="polite">
-      <div class="grado-visuale-titolo">Distintivo del grado</div>
-      <div class="grado-visuale-contenuto" id="visualizzaGrado">
-        <span class="grado-visuale-placeholder">Seleziona una qualifica</span>
-      </div>
-    </div>
-    <div class="campo-modale">
-      <span>Parametro stipendiale</span>
-      <div class="valore-automatico" id="visualizzaParametro">—</div>
-    </div>
-
-    <div class="anagrafica-griglia-compatta">
-      <label class="campo-modale">Anni di servizio
-        <input type="number" id="campoAnni" min="0" step="1">
-      </label>
-      <label class="campo-modale">Regione
-        <select id="campoRegione">
+      </select></label>
+      <div class="riga-anagrafica"><span>Anni di servizio</span><div class="contatore-anagrafica"><button type="button" data-passo="campoAnni" data-delta="-1" aria-label="Meno">−</button><input type="number" id="campoAnni" min="0" step="1" inputmode="numeric" aria-label="Anni di servizio"><button type="button" data-passo="campoAnni" data-delta="1" aria-label="Più">+</button></div></div>
+      <label class="riga-anagrafica"><span>Regione</span><select id="campoRegione">
           <option>Abruzzo</option><option>Basilicata</option><option>Calabria</option><option>Campania</option>
           <option>Emilia-Romagna</option><option>Friuli Venezia Giulia</option><option>Lazio</option><option>Liguria</option>
           <option>Lombardia</option><option>Marche</option><option>Molise</option><option>Piemonte</option>
           <option>Provincia di Trento</option><option>Provincia di Bolzano</option>
           <option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option>
           <option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
-        </select>
-      </label>
-      <label class="campo-modale">Coniuge a carico
-        <select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select>
-      </label>
-      <label class="campo-modale">Figli over 21 a carico (numero)
-        <input type="number" id="campoFigliOver21" min="0" step="1" value="0">
-      </label>
-      <label class="campo-modale">Iscrizione sindacale
-        <select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select>
-      </label>
+        </select></label>
+    </div>
+
+    <p class="strumenti-turni-titolo">Famiglia e tasse</p>
+    <div class="gruppo-anagrafica">
+      <label class="riga-anagrafica"><span>Coniuge a carico</span><select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select></label>
+      <div class="riga-anagrafica"><span>Figli over 21 a carico</span><div class="contatore-anagrafica"><button type="button" data-passo="campoFigliOver21" data-delta="-1" aria-label="Meno">−</button><input type="number" id="campoFigliOver21" min="0" step="1" value="0" inputmode="numeric" aria-label="Figli over 21 a carico"><button type="button" data-passo="campoFigliOver21" data-delta="1" aria-label="Più">+</button></div></div>
+      <label class="riga-anagrafica"><span>Iscritto al sindacato</span><select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select></label>
     </div>
 
     <div class="info-richiudibile">
-      <button type="button" class="info-richiudibile-toggle" id="toggleInfoFigliUnder21" aria-expanded="false">ℹ️ Figli under 21 a carico? <span class="info-richiudibile-freccia" aria-hidden="true">▾</span></button>
+      <button type="button" class="info-richiudibile-toggle" id="toggleInfoFigliUnder21" aria-expanded="false">ℹ️ Figli under 21: non vanno qui. Perché? <span class="info-richiudibile-freccia" aria-hidden="true">▾</span></button>
       <div class="info-richiudibile-corpo" id="corpoInfoFigliUnder21" hidden>
         <p>Dal marzo 2022 la detrazione fiscale per i figli under 21 è sostituita dall'<strong>Assegno Unico e Universale</strong> (INPS), che questa app non gestisce. Non c'è quindi un campo da compilare qui: verifica l'importo dell'Assegno Unico direttamente sul cedolino ufficiale o sull'app INPS.</p>
       </div>
     </div>
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-      <button class="btn-primario" id="btnSalvaAnagrafica" type="button">Salva</button>
-      <button class="btn-secondario" id="btnCancellaAnagrafica" type="button">🗑️ Cancella Anagrafica</button>
-    </div>
+    <button class="link-cancella-anagrafica" id="btnCancellaAnagrafica" type="button">Cancella anagrafica</button>
   </section>
   </div>
 

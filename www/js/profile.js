@@ -47,6 +47,8 @@ function aggiornaRiassuntoAnagrafica(){
 }
 
 function popolaFormAnagrafica(){
+  const stato = el('statoSalvataggioAnagrafica');
+  if(stato) stato.textContent = 'Le modifiche si salvano da sole.';
   if(AppState.anagrafica){
     el('campoQualifica').value = AppState.anagrafica.qualifica || 'Agente';
     el('campoAnni').value = AppState.anagrafica.anni || '';
@@ -63,9 +65,16 @@ function aggiornaVisualizzazioneParametro(){
   const qualifica = el('campoQualifica').value;
   const parametro = PARAMETRO_STIPENDIALE[qualifica];
   el('visualizzaParametro').textContent = parametro !== undefined ? parametro.toFixed(2).replace('.', ',') : '—';
+  // Testata della pagina Anagrafica: distintivo, qualifica, parametro, regione, se è completa.
   const grado = el('visualizzaGrado');
-  if(grado){
-    grado.innerHTML = `${svgBadgeGrado(qualifica)}<strong>${qualifica}</strong>`;
+  if(grado) grado.innerHTML = svgBadgeGrado(qualifica);
+  const q = el('testataQualifica'); if(q) q.textContent = qualifica;
+  const r = el('testataRegione'); if(r) r.textContent = el('campoRegione').value;
+  const c = el('testataCompleta');
+  if(c){
+    const completa = !!AppState.anagrafica && Number(el('campoAnni').value) > 0;
+    c.textContent = completa ? 'Completa' : 'Da completare';
+    c.classList.toggle('da-completare', !completa);
   }
 }
 
@@ -106,6 +115,7 @@ function cancellaAnagrafica(){
   aggiornaVisualizzazioneParametro();
   aggiornaRiassuntoAnagrafica();
   aggiornaProfiloAnagrafica();
+  if(typeof aggiornaRiassuntoAnagraficaAltro === 'function') aggiornaRiassuntoAnagraficaAltro();
 }
 
 function salvaAnagraficaDaModale(){
@@ -123,7 +133,10 @@ function salvaAnagraficaDaModale(){
   salvaAnagraficaStorage();
   aggiornaRiassuntoAnagrafica();
   aggiornaProfiloAnagrafica();
-  mostraScheda('turni');
+  aggiornaVisualizzazioneParametro();
+  if(typeof aggiornaRiassuntoAnagraficaAltro === 'function') aggiornaRiassuntoAnagraficaAltro();
+  const stato = el('statoSalvataggioAnagrafica');
+  if(stato) stato.innerHTML = '<span class="stato-attivo">✓ Salvato</span> · le modifiche si salvano da sole';
 }
 
 const PARAMETRO_STIPENDIALE = {

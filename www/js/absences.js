@@ -119,30 +119,47 @@ function elencoDateDisponibiliCredito(nomeVoce, campoFonte){
   return dateGuadagnate.slice(usate);
 }
 
+// Quanto spetta, quanto è stato usato e quanto resta di una voce (stesse regole di sempre:
+// congedo ordinario con il riporto, L104 al mese, alcune voci all'anno, recuperi automatici).
+const NOMI_ANNUALI_SEMPLICI = ['Congedo straordinario', 'Riposo legge', 'Donazione sangue', 'Ore studio', 'Permesso breve', 'Permesso sindacale'];
+function saldoAssenza(a){
+  const eRiposoCompensativo = a.nome === 'Riposo compensativo';
+  const eRecuperoRiposo = a.nome === 'Recupero riposo';
+  const eRecuperoFestivo = a.nome === 'Recupero festivo';
+  const eL104 = a.nome === 'L104';
+  const eCongedoOrdinario = a.nome === 'Congedo ordinario';
+  const eAnnualeSemplice = NOMI_ANNUALI_SEMPLICI.includes(a.nome);
+  const unita = eRiposoCompensativo ? 'h' : a.unita;
+  const saldoCO = eCongedoOrdinario ? calcolaSaldoCongedoOrdinario(annoCorrente) : null;
+  const spettanti = eRiposoCompensativo ? calcolaOreCompensateAccumulate()
+    : eRecuperoRiposo ? calcolaGiorniRecuperoAccumulati()
+    : eRecuperoFestivo ? calcolaGiorniRecuperoFestivoAccumulati()
+    : eCongedoOrdinario ? saldoCO.valoreEffettivo
+    : a.valore;
+  const usate = eCongedoOrdinario ? saldoCO.usate
+    : unita === 'h' ? (a.nome === 'Permesso breve' ? calcolaOrePermessoBreveUsateAnno(annoCorrente) : eAnnualeSemplice ? calcolaOreAssenzaUsateNelAnno(a.id, annoCorrente) : calcolaOreAssenzaUsate(a.id))
+    : eL104 ? contaGiorniUsatiAssenzaNelMese(a.id, annoCorrente, meseCorrente)
+    : eAnnualeSemplice ? contaGiorniUsatiAssenzaNelAnno(a.id, annoCorrente)
+    : contaGiorniUsatiAssenza(a.id);
+  return { spettanti, usate, rimangono: round2(spettanti - usate), unita, saldoCO, eRiposoCompensativo, eRecuperoRiposo, eRecuperoFestivo, eL104, eCongedoOrdinario, eAnnualeSemplice };
+}
+const ICONE_ASSENZE = { 'Congedo ordinario':'🌴', 'Congedo straordinario':'📋', 'Riposo legge':'🏛️', 'Riposo festivo':'🎉', 'Recupero festivo':'🔄', 'Recupero riposo':'🔄', 'Riposo compensativo':'♻️', 'Aspettativa':'🕰️', 'Maternità/Paternità':'👶', 'Congedo parentale':'🧸', 'L104':'♿', 'Donazione sangue':'🩸', 'Ore studio':'🎓', 'Permesso breve':'⏱️', 'Permesso sindacale':'🤝' };
+const numeroIt = n => String(round2(n)).replace('.', ',');
+
+// In cima: le tre cose che servono davvero (congedo, permesso breve, recuperi).
 function renderDashboardAssenze(){
   const box = el('assenzeSummaryGrid');
   if(!box) return;
-  const anno = annoCorrente;
-  const mese = meseCorrente;
-  const annuali = AppState.assenze.filter(a => !['Riposo compensativo','Recupero riposo','Recupero festivo'].includes(a.nome));
-  const totaleGiorni = Object.entries(AppState.turni).filter(([iso,t]) => iso.startsWith(`${anno}-`) && t.assenzaTipo).length;
-  const totaleOre = annuali.reduce((sum,a) => sum + (a.unita === 'h' ? calcolaOreAssenzaUsateNelAnno(a.id, anno) : 0), 0);
-  const esaurite = annuali.filter(a => {
-    const usate = a.unita === 'h' ? calcolaOreAssenzaUsateNelAnno(a.id,anno) : (a.nome === 'L104' ? contaGiorniUsatiAssenzaNelMese(a.id,anno,mese) : contaGiorniUsatiAssenzaNelAnno(a.id,anno));
-    const disponibile = a.nome === 'Congedo ordinario' ? calcolaSaldoCongedoOrdinario(anno).valoreEffettivo : a.valore;
-    return disponibile - usate <= 0;
-  }).length;
-  const compensative = calcolaOreCompensateAccumulate();
-  const recuperi = calcolaGiorniRecuperoAccumulati() + calcolaGiorniRecuperoFestivoAccumulati();
-  const stats = [
-    ['📅','Giorni usati',totaleGiorni,"nell'anno"],
-    ['⏱️','Ore usate',round2(totaleOre),"nell'anno"],
-    ['♻️','Ore compensative',compensative,'disponibili'],
-    ['🔄','Recuperi',recuperi,'giorni disponibili'],
-    ['⚠️','Assenze esaurite',esaurite,'voci'],
-    ['📆','Mese',NOMI_MESI[mese],`${anno}`]
+  const voce = nome => AppState.assenze.find(a => a.nome === nome);
+  const resto = nome => { const v = voce(nome); return v ? saldoAssenza(v).rimangono : 0; };
+  const tiles = [
+    [numeroIt(resto('Congedo ordinario')), 'giorni di congedo'],
+    [`${numeroIt(resto('Permesso breve'))} h`, 'permesso breve'],
+    [numeroIt(resto('Recupero riposo') + resto('Recupero festivo')), 'recuperi']
   ];
-  box.innerHTML = stats.map(([ic,label,val,extra]) => `<div class="assenza-stat"><span class="stat-label">${ic} ${label}</span><span class="stat-value">${val}</span><span class="stat-extra">${extra}</span></div>`).join('');
+  box.innerHTML = tiles.map(([v, t]) => `<div class="assenza-riepilogo"><b>${v}</b><small>${t}</small></div>`).join('');
+  const sotto = el('sottotitoloAssenze');
+  if(sotto) sotto.textContent = `Quanto ti resta nel ${annoCorrente}. Solo informativo: non cambia il cedolino.`;
 }
 
 function inizializzaFiltriAssenze(){
@@ -151,7 +168,7 @@ function inizializzaFiltriAssenze(){
   let unita = 'tutte';
   const applica = () => {
     const q = (search?.value || '').trim().toLowerCase();
-    document.querySelectorAll('#corpoAssenze .card-assenza, #corpoAssenzePersonalizzate .card-assenza').forEach(r => {
+    document.querySelectorAll('#corpoAssenze .card-assenza, #corpoAssenzeNonUsate .card-assenza, #corpoAssenzePersonalizzate .card-assenza').forEach(r => {
       const voce = AppState.assenze.find(a => a.id === r.dataset.id);
       const okTesto = !q || (voce?.nome || '').toLowerCase().includes(q);
       const okUnita = unita === 'tutte' || voce?.unita === unita;
@@ -189,7 +206,17 @@ function aggiornaCardAssenza(riga, voce){
   if(boxes[1]) boxes[1].textContent = usate;
   if(boxes[2]) boxes[2].textContent = spettanti || 0;
   const residuoCompatto = riga.querySelector('.card-assenza-compact-residuo');
-  if(residuoCompatto) residuoCompatto.textContent = rimangono;
+  if(residuoCompatto){
+    residuoCompatto.textContent = numeroIt(rimangono);
+    const totale = residuoCompatto.nextElementSibling;
+    if(totale) totale.textContent = `/ ${numeroIt(spettanti || 0)} ${unita}`;
+  }
+  const barra = riga.querySelector('.barra-residuo-assenza i');
+  if(barra){
+    const resto = spettanti > 0 ? Math.min(100, Math.max(0, rimangono / spettanti * 100)) : 0;
+    barra.style.width = `${resto}%`;
+    barra.style.background = rimangono < 0 ? '#D9534F' : (spettanti > 0 && resto <= 20) ? '#E08A00' : unita === 'h' ? '#2E7DD7' : '#2E9E5B';
+  }
   const progress = riga.querySelector('.saldo-progress');
   if(progress){ progress.setAttribute('aria-valuenow', String(Math.round(percentuale))); const bar=progress.querySelector('span'); if(bar) bar.style.width=`${percentuale}%`; }
   const meta=riga.querySelector('.card-assenza-meta');
@@ -199,27 +226,8 @@ function aggiornaCardAssenza(riga, voce){
 }
 
 function renderCardAssenzaItem(a){
-  const NOMI_ANNUALI_SEMPLICI = ['Congedo straordinario', 'Riposo legge', 'Donazione sangue', 'Ore studio', 'Permesso breve', 'Permesso sindacale'];
-    const eRiposoCompensativo = a.nome === 'Riposo compensativo';
-    const eRecuperoRiposo = a.nome === 'Recupero riposo';
-    const eRecuperoFestivo = a.nome === 'Recupero festivo';
-    const eL104 = a.nome === 'L104';
-    const eCongedoOrdinario = a.nome === 'Congedo ordinario';
-    const eAnnualeSemplice = NOMI_ANNUALI_SEMPLICI.includes(a.nome);
+    const { spettanti: valoreEffettivo, usate, rimangono, unita: unitaEffettiva, saldoCO, eRiposoCompensativo, eRecuperoRiposo, eRecuperoFestivo, eL104, eCongedoOrdinario, eAnnualeSemplice } = saldoAssenza(a);
     const automatica = eRiposoCompensativo || eRecuperoRiposo || eRecuperoFestivo;
-    const unitaEffettiva = eRiposoCompensativo ? 'h' : a.unita;
-    const saldoCO = eCongedoOrdinario ? calcolaSaldoCongedoOrdinario(annoCorrente) : null;
-    const valoreEffettivo = eRiposoCompensativo ? calcolaOreCompensateAccumulate()
-      : eRecuperoRiposo ? calcolaGiorniRecuperoAccumulati()
-      : eRecuperoFestivo ? calcolaGiorniRecuperoFestivoAccumulati()
-      : eCongedoOrdinario ? saldoCO.valoreEffettivo
-      : a.valore;
-    const usate = eCongedoOrdinario ? saldoCO.usate
-      : unitaEffettiva === 'h' ? (a.nome === 'Permesso breve' ? calcolaOrePermessoBreveUsateAnno(annoCorrente) : eAnnualeSemplice ? calcolaOreAssenzaUsateNelAnno(a.id, annoCorrente) : calcolaOreAssenzaUsate(a.id))
-      : eL104 ? contaGiorniUsatiAssenzaNelMese(a.id, annoCorrente, meseCorrente)
-      : eAnnualeSemplice ? contaGiorniUsatiAssenzaNelAnno(a.id, annoCorrente)
-      : contaGiorniUsatiAssenza(a.id);
-    const rimangono = round2(valoreEffettivo - usate);
 
     // Congedo ordinario: i giorni riportati dall'anno prima si consumano per primi (FIFO)
     let dettaglioRiporto = '';
@@ -261,16 +269,19 @@ function renderCardAssenzaItem(a){
       : '';
     const percentuale = valoreEffettivo > 0 ? Math.min(100, Math.max(0, (usate / valoreEffettivo) * 100)) : (rimangono <= 0 ? 100 : 0);
     const statoSaldo = rimangono < 0 ? 'esaurito' : (rimangono === 0 ? 'zero' : (percentuale >= 80 ? 'attenzione' : 'positivo'));
-    const icona = eL104 ? '♿' : eCongedoOrdinario ? '🌴' : eRiposoCompensativo ? '♻️' : eRecuperoRiposo || eRecuperoFestivo ? '🔄' : unitaEffettiva === 'h' ? '⏱️' : '📅';
+    const icona = ICONE_ASSENZE[a.nome] || (unitaEffettiva === 'h' ? '⏱️' : '📅');
+    const resto = valoreEffettivo > 0 ? Math.min(100, Math.max(0, rimangono / valoreEffettivo * 100)) : 0;
+    const coloreResto = rimangono < 0 ? '#D9534F' : (valoreEffettivo > 0 && resto <= 20) ? '#E08A00' : unitaEffettiva === 'h' ? '#2E7DD7' : '#2E9E5B';
     const valoreVisuale = valoreEffettivo || 0;
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
       <div class="card-assenza-compact" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
         <span class="card-assenza-icon" aria-hidden="true">${icona}</span>
         <div class="card-assenza-compact-nome"><strong>${a.personalizzata ? (a.nome || 'Nuova voce') : a.nome}</strong></div>
-        <div><strong class="card-assenza-compact-residuo">${rimangono}</strong><small>${unitaEffettiva}</small></div>
+        <div><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small>/ ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small></div>
         <span class="card-assenza-apri" aria-hidden="true">⌄</span>
       </div>
+      <span class="barra-residuo-assenza" aria-hidden="true"><i style="width:${resto}%;background:${coloreResto}"></i></span>
       <div class="card-assenza-head">
         <div class="card-assenza-title">
           <span class="card-assenza-icon" aria-hidden="true">${icona}</span>
@@ -312,17 +323,27 @@ function renderAssenze(){
   renderDashboardAssenze();
   const box = el('corpoAssenze');
   const boxPersonalizzate = el('corpoAssenzePersonalizzate');
-  box.innerHTML = AppState.assenze.filter(a => !a.personalizzata).map(renderCardAssenzaItem).join('');
+  // Le voci a zero e mai usate (es. Riposo festivo, Maternità) stanno in "Non usate", chiuso.
+  const nonUsata = a => { const x = saldoAssenza(a); return !x.spettanti && !x.usate; };
+  const ufficiali = AppState.assenze.filter(a => !a.personalizzata);
+  box.innerHTML = ufficiali.filter(a => !nonUsata(a)).map(renderCardAssenzaItem).join('');
+  const boxNonUsate = el('corpoAssenzeNonUsate'), gruppoNonUsate = el('gruppoAssenzeNonUsate');
+  if(boxNonUsate && gruppoNonUsate){
+    const nonUsate = ufficiali.filter(nonUsata);
+    boxNonUsate.innerHTML = nonUsate.map(renderCardAssenzaItem).join('');
+    gruppoNonUsate.hidden = !nonUsate.length;
+    el('titoloAssenzeNonUsate').textContent = `Non usate (${nonUsate.length})`;
+  }
   if(boxPersonalizzate){
     const personalizzate = AppState.assenze.filter(a => a.personalizzata);
     boxPersonalizzate.innerHTML = personalizzate.length
       ? personalizzate.map(renderCardAssenzaItem).join('')
-      : '<p class="sotto-titolo" style="padding:8px 2px;">Nessuna assenza personalizzata. Aggiungine una con il pulsante qui sotto.</p>';
+      : '<p class="sotto-titolo" style="padding:10px 14px;margin:0;">Nessuna: aggiungine una con il pulsante qui sotto.</p>';
   }
 
   if(!window.__filtriAssenzeInizializzati){ inizializzaFiltriAssenze(); window.__filtriAssenzeInizializzati = true; }
 
-  [box, boxPersonalizzate].filter(Boolean).forEach(contenitore => wireEventiCardAssenza(contenitore));
+  [box, el('corpoAssenzeNonUsate'), boxPersonalizzate].filter(Boolean).forEach(contenitore => wireEventiCardAssenza(contenitore));
 }
 
 // Collega gli eventi (modifica campo, apri/chiudi date, rimuovi) alle card già renderizzate in un
@@ -401,7 +422,7 @@ const ASSENZE_PREDEFINITE = [
 
 
 function inizializzaCardAssenzeV45(){
-  document.querySelectorAll('#corpoAssenze .card-assenza, #corpoAssenzePersonalizzate .card-assenza').forEach(card=>{
+  document.querySelectorAll('#corpoAssenze .card-assenza, #corpoAssenzeNonUsate .card-assenza, #corpoAssenzePersonalizzate .card-assenza').forEach(card=>{
     const trigger=card.querySelector('.card-assenza-compact');
     if(!trigger || trigger.dataset.v45Bound) return;
     trigger.dataset.v45Bound='1';
