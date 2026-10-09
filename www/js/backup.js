@@ -736,14 +736,26 @@ function importaBackup(file, datiGiaLetti){
       if(dati.noteGiorni){ AppState.noteGiorni = dati.noteGiorni; salvaNoteGiorniStorage(); }
       if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
       if(dati.eventiGiorno && typeof dati.eventiGiorno === 'object' && !Array.isArray(dati.eventiGiorno)){
+        const eventiPrima = AppState.eventiGiorno || {};
         AppState.eventiGiorno = dati.eventiGiorno;
         salvaEventiGiornoStorage();
-        // Gli allarmi di Android non fanno parte del backup: si riprogrammano i promemoria futuri.
-        try{
-          Object.keys(AppState.eventiGiorno).forEach(iso => (AppState.eventiGiorno[iso] || []).forEach(ev => {
-            if(ev && typeof promemoriaDiEvento === 'function' && promemoriaDiEvento(ev).length && typeof schedulaPromemoriaEvento === 'function') schedulaPromemoriaEvento(iso, ev);
-          }));
-        }catch(e){}
+        // Gli allarmi di Android non fanno parte del backup: si annullano quelli degli eventi
+        // di prima e si riprogrammano i promemoria futuri, uno alla volta e senza messaggi.
+        if(typeof schedulaPromemoriaEvento === 'function' && typeof annullaPromemoriaEvento === 'function'){
+          (async () => {
+            try{
+              for(const iso of Object.keys(eventiPrima)) for(const ev of (eventiPrima[iso] || [])){
+                if(ev && ev.id) await annullaPromemoriaEvento(ev.id);
+              }
+              const adesso = Date.now();
+              for(const iso of Object.keys(AppState.eventiGiorno)) for(const ev of (AppState.eventiGiorno[iso] || [])){
+                if(!ev || !ev.id) continue;
+                const futuro = promemoriaDiEvento(ev).some(p => { const q = quandoPromemoria(iso, ev, p); return q && q.getTime() > adesso; });
+                if(futuro) await schedulaPromemoriaEvento(iso, ev, { silenzioso: true });
+              }
+            }catch(e){ console.warn('Promemoria del backup non riprogrammati:', e); }
+          })();
+        }
       }
       if(Array.isArray(dati.modelliTurno) && dati.modelliTurno.length){
         AppState.modelliTurno = dati.modelliTurno;

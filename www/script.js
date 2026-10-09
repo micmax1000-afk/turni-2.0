@@ -1515,7 +1515,7 @@ function orariPredefinitiEvento(iso){
   let h = 9;
   const ora = new Date();
   const oggi = `${ora.getFullYear()}-${due(ora.getMonth() + 1)}-${due(ora.getDate())}`;
-  if(iso === oggi) h = Math.min(ora.getHours() + 1, 22);
+  if(iso === oggi) h = Math.min(ora.getHours() + 1, 23);
   return { inizio: `${due(h)}:00`, fine: h >= 23 ? '23:59' : `${due(h + 1)}:00` };
 }
 function aggiornaVistaOrariEvento(){
@@ -1584,7 +1584,7 @@ function aggiornaTestoPromemoriaEvento(){
   const n = el('listaPromemoriaEvento').children.length;
   el('hintPromemoriaEvento').textContent = !n
     ? 'Nessun promemoria: tocca «Aggiungi promemoria» se ne vuoi uno.'
-    : (tutt ? "Evento senza orario: i promemoria arrivano all'ora scelta qui sopra." : 'Puoi aggiungerne più di uno (massimo ' + MAX_PROMEMORIA_EVENTO + ').');
+    : (tutt ? "Evento senza orario: i promemoria arrivano all'ora scelta qui sopra (tranne «La sera prima», alle 20:00)." : 'Puoi aggiungerne più di uno (massimo ' + MAX_PROMEMORIA_EVENTO + ').');
   el('btnAggiungiPromemoria').hidden = n >= MAX_PROMEMORIA_EVENTO;
   aggiornaCampiAvvisoEvento();
 }
@@ -1611,7 +1611,9 @@ async function annullaNotificheEvento(idEvento, plugin, avviso){
   if(avviso){ for(const id of ids){ try{ await avviso.annulla({ id }); }catch(e){} } }
 }
 
-async function schedulaPromemoriaEvento(iso, evento){
+// opzioni.silenzioso: nessun messaggio a schermo (es. ripristino di un backup con tanti eventi).
+async function schedulaPromemoriaEvento(iso, evento, opzioni = {}){
+  const avvisa = (testo) => { if(!opzioni.silenzioso) mostraToast(testo, 'avviso'); };
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return; // sul sito normale (o fuori dall'app) i promemoria non sono disponibili
   const avviso = pluginAvvisoEvento();
@@ -1627,8 +1629,10 @@ async function schedulaPromemoriaEvento(iso, evento){
     if(quando.getTime() <= adesso){ passati++; return; }
     futuri.push({ indice, quando, p });
   });
-  if(passati){
-    mostraToast(futuri.length ? 'Qualche promemoria è già passato: non verrà inviato.' : "L'orario del promemoria è già passato: non verrà inviato.", 'avviso');
+  // Evento già passato (es. annotato dopo): niente avviso, non c'è nulla da ricordare.
+  const inizioEvento = new Date(`${iso}T${evento.tuttoIlGiorno || !evento.oraInizio ? '23:59' : evento.oraInizio}:00`);
+  if(passati && inizioEvento.getTime() > adesso){
+    avvisa(futuri.length ? 'Qualche promemoria è già passato: non verrà inviato.' : "L'orario del promemoria è già passato: non verrà inviato.");
   }
   if(!futuri.length) return;
   const giornoTesto = `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
@@ -1643,7 +1647,7 @@ async function schedulaPromemoriaEvento(iso, evento){
       let perm = await plugin.checkPermissions();
       if(perm.display !== 'granted') perm = await plugin.requestPermissions();
       if(perm.display !== 'granted'){
-        mostraToast('Notifiche disattivate per l\'app: attivale dalle impostazioni di Android.', 'avviso');
+        avvisa('Notifiche disattivate per l\'app: attivale dalle impostazioni di Android.');
         return;
       }
     }catch(e){ console.warn('Permesso notifiche non verificabile:', e); }
@@ -1696,7 +1700,7 @@ async function schedulaPromemoriaEvento(iso, evento){
     })) });
   }catch(e){
     console.warn('Promemoria non programmato:', e);
-    mostraToast('Non è stato possibile programmare il promemoria.', 'avviso');
+    avvisa('Non è stato possibile programmare il promemoria.');
   }
 }
 
