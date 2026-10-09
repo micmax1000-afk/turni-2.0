@@ -726,7 +726,8 @@ function renderCalendario(){
       // Nome per esteso dove ci sta (Sera, Notte, Mattina...), sigla per i nomi lunghi.
       let nomeEtichetta = categoria === 'assenza' ? tipoLabel
         : (t && (t.aggiornamentoProfessionale || t.addestramentoTiro || t.compensazioneRiposo || t.recuperoFestivoLavorato)) ? etichetta
-        : categoria === 'pomeriggio' && !modelloUsato ? 'Pomer.'
+        // Turni di base: nomi brevi fissi, che entrano sempre nella casella.
+        : NOME_BREVE_CATEGORIA[categoria] && (!modelloUsato || NOME_BREVE_CATEGORIA[modelloUsato.id]) ? NOME_BREVE_CATEGORIA[categoria]
         : nomeCategoria;
       if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
       const oraEtichetta = t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? t.oraInizio : '';
@@ -835,6 +836,7 @@ const MODELLI_TURNO = {
   pomeridiano: { oraInizio:'14:00', oraFine:'20:00', etichetta:'Turno 14:00–20:00' }
 };
 
+const NOME_BREVE_CATEGORIA = { mattina:'Matt.', pomeriggio:'Pom.', sera:'Sera', notte:'Notte', riposo:'Riposo' };
 const INIZIALE_CATEGORIA = { mattina:'Mattina', pomeriggio:'Pomeriggio', sera:'Sera', notte:'Notte', riposo:'Riposo' };
 const CODICE_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
 const ICONA_CATEGORIA = { mattina:'☀️', pomeriggio:'🌤️', sera:'🌇', notte:'🌙', riposo:'💤', assenza:'🏖️' };

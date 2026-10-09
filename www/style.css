@@ -1667,3 +1667,10 @@ body.scrittura-in-corso .barra-schede{display:none}
 .anno-nav b{font:700 1rem var(--font-corpo)}
 .anno-nav .btn-freccia{width:36px;height:36px}
 .btn-stampa-anno{width:100%;margin-top:12px;min-height:44px;border-radius:14px}
+
+
+/* v2.57.0 */
+.nascosta-report{display:none!important}
+.scelte-aggiorna-turni{display:flex;flex-direction:column;gap:8px;margin:14px 0 10px}
+.scelte-aggiorna-turni button{width:100%;min-height:46px;border-radius:14px}
+.scelte-aggiorna-turni button[hidden]{display:none}

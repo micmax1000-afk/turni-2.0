@@ -489,7 +489,7 @@
     </div>
   </section>
 
-  <details class="cedolino-sezione-secondaria">
+  <details class="cedolino-sezione-secondaria nascosta-report">
     <summary>💰 Cosa arriva sul conto ▾</summary>
     <section class="scheda" id="sezioneAccreditoConto">
     <p class="sotto-titolo">Il Cedolino Simulato più sotto mostra quanto <strong>maturi</strong> lavorando nel mese selezionato. Questa scheda invece ricostruisce quanto ti <strong>arriva davvero sul conto</strong> in quel mese, tenendo conto dei tempi reali di accredito NoiPA: lo stipendio base del mese lavorato arriva il mese dopo, le indennità accessorie con un mese di ritardo ulteriore. La tredicesima invece non è sfasata, arriva a dicembre.</p>
@@ -914,6 +914,22 @@
   <div id="appAlerts" class="app-alerts-v20" hidden></div>
   <div id="toastContainer" class="toast-container toast-container-v20" aria-live="polite"></div>
   <div id="backupAnteprima" hidden></div>
+
+<!-- Cambio orario di un modello: aggiornare anche i giorni già nel calendario? -->
+<div class="overlay" id="overlayAggiornaTurni" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Aggiornare il calendario?</h2></div>
+    <div class="modale-corpo">
+      <p id="testoAggiornaTurni" style="margin:0;"></p>
+      <div class="scelte-aggiorna-turni">
+        <button class="btn-primario" id="btnAggTurniFuturi" type="button">Aggiorna da oggi in poi</button>
+        <button class="btn-secondario" id="btnAggTurniTutti" type="button">Aggiorna tutti, anche il passato</button>
+        <button class="btn-secondario" id="btnAggTurniNessuno" type="button">Solo per i turni che inserirò</button>
+      </div>
+      <small class="sotto-titolo">Cambiando i turni passati cambiano anche ore e importi dei mesi già trascorsi.</small>
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="overlayPersonalizzaReport" hidden>
   <div class="modale">

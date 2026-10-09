@@ -1302,8 +1302,8 @@ function renderReportHero(){
   el('reportMeseEtichetta').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
   try{
     const euroFmt = v => typeof euro === 'function' ? euro(v) : `${Number(v || 0).toFixed(2)} €`;
-    const prossimo = (meseCorrente + 1) % 12, annoProssimo = meseCorrente === 11 ? annoCorrente + 1 : annoCorrente;
-    const acc = generaAccreditoConto(annoProssimo, prossimo);
+    // Quanto arriva sul conto NEL mese visualizzato: stipendio del mese prima + accessorie di due mesi prima.
+    const acc = generaAccreditoConto(annoCorrente, meseCorrente);
     const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
     const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
     const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
@@ -1315,10 +1315,11 @@ function renderReportHero(){
       el('meseTileStraordinario').textContent = `${String(Math.round(strOre * 100) / 100).replace('.', ',')} h`;
     }
     const precedente = NOMI_MESI[(meseCorrente + 11) % 12].toLowerCase();
+    const dueMesiPrima = NOMI_MESI[(meseCorrente + 10) % 12].toLowerCase();
     box.innerHTML = `
-      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[prossimo].toLowerCase()}</div>
+      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()}</div>
       <div class="report-hero-cifra">${euroFmt(acc.netto)}</div>
-      <div class="report-hero-det">Stipendio di ${NOMI_MESI[meseCorrente].toLowerCase()} + accessorie di ${precedente} · stima</div>
+      <div class="report-hero-det">Stipendio di ${precedente} + accessorie di ${dueMesiPrima} · stima</div>
       <div class="report-hero-tiles">
         <div><b>${String(Math.round(ore * 10) / 10).replace('.', ',')}</b><span>ore lavorate</span></div>
         <div><b class="${ns.netto > 0 ? 'pos' : ''}">${ns.netto > 0 ? '+' : ''}${euroFmt(ns.netto)}</b><span>netto straordinario</span></div>
@@ -1535,6 +1536,7 @@ function salvaModificaModelloV2(){
   // Campo bloccato (turni di base): la sigla memorizzata resta com'è, non la sostituiamo con la lettera.
   if(el('campoModModelloSigla').disabled && esistente && esistente.sigla) sigla = esistente.sigla;
   const isRiposo = !!(esistente && esistente.riposo); // il tipo "riposo" non si crea da qui, solo si rinomina se già esistente
+  const orarioPrima = esistente && !isRiposo ? { inizio: esistente.oraInizio, fine: esistente.oraFine } : null;
   let modelloSalvato;
   if(!isRiposo){
     const oraInizio = el('campoModModelloInizio').value, oraFine = el('campoModModelloFine').value;
@@ -1556,6 +1558,40 @@ function salvaModificaModelloV2(){
   renderListaModelliTurniV2();
   renderCalendario();
   mostraToast(`"${nome}" salvato`, 'successo');
+  if(orarioPrima && (orarioPrima.inizio !== modelloSalvato.oraInizio || orarioPrima.fine !== modelloSalvato.oraFine)){
+    proponiAggiornamentoTurniDelModello(modelloSalvato, orarioPrima);
+  }
+}
+
+// Ogni giorno del calendario conserva il proprio orario (copiato dal modello quando il turno è
+// stato inserito): cambiare il modello non tocca i giorni già inseriti. Qui si chiede se farlo.
+// Giorni coinvolti: quelli inseriti con questo modello e quelli senza modello con l'orario di prima.
+function proponiAggiornamentoTurniDelModello(modello, orarioPrima){
+  const oggi = dataISO(new Date());
+  const giorni = Object.keys(AppState.turni || {}).filter(iso => {
+    const t = AppState.turni[iso];
+    if(!t || t.riposo || t.assenzaTipo || !t.oraInizio) return false;
+    if(t.modelloId) return t.modelloId === modello.id;
+    return t.oraInizio === orarioPrima.inizio && t.oraFine === orarioPrima.fine;
+  });
+  if(!giorni.length) return;
+  const futuri = giorni.filter(iso => iso >= oggi);
+  el('testoAggiornaTurni').textContent =
+    `Hai cambiato l'orario di "${modello.nome}" (${orarioPrima.inizio}–${orarioPrima.fine} → ${modello.oraInizio}–${modello.oraFine}). ` +
+    `Nel calendario ci sono ${giorni.length} giorni con questo turno, di cui ${futuri.length} da oggi in poi.`;
+  el('btnAggTurniFuturi').hidden = !futuri.length;
+  const chiudi = () => { el('overlayAggiornaTurni').hidden = true; };
+  const applica = elenco => {
+    elenco.forEach(iso => { AppState.turni[iso].oraInizio = modello.oraInizio; AppState.turni[iso].oraFine = modello.oraFine; });
+    salvaTurniStorage();
+    chiudi();
+    renderCalendario();
+    mostraToast(`Aggiornati ${elenco.length} giorni del calendario`, 'successo');
+  };
+  el('btnAggTurniFuturi').onclick = () => applica(futuri);
+  el('btnAggTurniTutti').onclick = () => applica(giorni);
+  el('btnAggTurniNessuno').onclick = chiudi;
+  el('overlayAggiornaTurni').hidden = false;
 }
 function eliminaModelloV2(){
   if(!modelloInModificaV2) return;
