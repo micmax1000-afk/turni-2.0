@@ -149,6 +149,30 @@ function finestraDaOrari(dataBase, oraInizioStr, oraFineStr){
   return { ore: round2(ore), classificazione: classificaFinestra(inizio, fine) };
 }
 
+// Giorno di calendario a cui ancorare una finestra oraria legata al turno (straordinario prima/dopo,
+// permesso breve). Gli orari sono salvati senza data: con un turno che passa la mezzanotte (es.
+// notte 22-06) uno straordinario "dopo" 06-08 cade il giorno DOPO, e un permesso breve 02-03 pure.
+// Prima di questa correzione venivano datati al giorno di inizio del turno: se il giorno dopo era
+// domenica o festivo, le ore finivano nella categoria sbagliata (diurne invece che festive).
+//   posizione 'dopo' / 'dentro': la finestra inizia dopo l'inizio del turno
+//   posizione 'prima': la finestra finisce entro l'inizio del turno
+function giornoFinestraTurno(t, oraInizioFinestra, oraFineFinestra, posizione){
+  const giorno = t.data;
+  if(!giorno || !t.oraInizio || !t.oraFine || !oraInizioFinestra || !oraFineFinestra) return giorno;
+  const minuti = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+  const spostaGiorno = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return dataISO(d); };
+  const inizioTurno = minuti(t.oraInizio), fineTurno = minuti(t.oraFine);
+  const turnoOltreMezzanotte = fineTurno <= inizioTurno;
+  if(posizione === 'prima'){
+    // Finestra che scavalca la mezzanotte e termina all'inizio del turno (es. 23:00-01:00 prima di
+    // un turno che inizia all'01:00): è cominciata la sera precedente.
+    const inizioF = minuti(oraInizioFinestra), fineF = minuti(oraFineFinestra);
+    return fineF <= inizioF && fineF <= inizioTurno ? spostaGiorno(giorno, -1) : giorno;
+  }
+  if(turnoOltreMezzanotte && minuti(oraInizioFinestra) < inizioTurno) return spostaGiorno(giorno, 1);
+  return giorno;
+}
+
 // Restituisce l'intervallo assoluto {inizio, fine} di una coppia orario-inizio/orario-fine,
 // gestendo lo stesso attraversamento di mezzanotte usato altrove (fine <= inizio => giorno dopo).
 // null se manca uno dei due orari. Usata per rilevare sovrapposizioni fra finestre orarie.
@@ -173,8 +197,8 @@ function finestreSovrapposte(a, b){
 function rilevaSovrapposizioneStraordinario(t){
   if(!t || !t.data || !t.oraInizio || !t.oraFine) return false;
   const turno = finestraAssoluta(t.data, t.oraInizio, t.oraFine);
-  const prima = finestraAssoluta(t.data, t.straordinarioPrimaInizio, t.straordinarioPrimaFine);
-  const dopo = finestraAssoluta(t.data, t.straordinarioDopoInizio, t.straordinarioDopoFine);
+  const prima = finestraAssoluta(giornoFinestraTurno(t, t.straordinarioPrimaInizio, t.straordinarioPrimaFine, 'prima'), t.straordinarioPrimaInizio, t.straordinarioPrimaFine);
+  const dopo = finestraAssoluta(giornoFinestraTurno(t, t.straordinarioDopoInizio, t.straordinarioDopoFine, 'dopo'), t.straordinarioDopoInizio, t.straordinarioDopoFine);
   return finestreSovrapposte(turno, prima) || finestreSovrapposte(turno, dopo);
 }
 
@@ -198,7 +222,7 @@ function classificaTurno(t){
   const base = classificaFinestra(inizio, fine);
 
   // Permesso breve durante il turno: le ore si tolgono dalle ore lavorative (non contano come lavorate/pagate)
-  const permessoBreveCalc = t.permessoBreveAttivo ? finestraDaOrari(t.data, t.permessoBreveOraInizio, t.permessoBreveOraFine) : { ore:0, classificazione:{ ordinarie:0, notturne:0, festive:0, domenicali:0, notturneFestive:0, serali:0 } };
+  const permessoBreveCalc = t.permessoBreveAttivo ? finestraDaOrari(giornoFinestraTurno(t, t.permessoBreveOraInizio, t.permessoBreveOraFine, 'dentro'), t.permessoBreveOraInizio, t.permessoBreveOraFine) : { ore:0, classificazione:{ ordinarie:0, notturne:0, festive:0, domenicali:0, notturneFestive:0, serali:0 } };
   const fpb = permessoBreveCalc.classificazione;
   const baseNetta = {
     ordinarie: round2(Math.max(0, base.ordinarie - fpb.ordinarie)),
@@ -231,8 +255,8 @@ function classificaTurno(t){
 
   // Straordinario prima/dopo: finestre orarie indipendenti (dalle-alle), veri prolungamenti extra
   // del turno (non contrattuali), a differenza del rientro sopra.
-  const primaCalc = finestraDaOrari(t.data, t.straordinarioPrimaInizio, t.straordinarioPrimaFine);
-  const dopoCalc = finestraDaOrari(t.data, t.straordinarioDopoInizio, t.straordinarioDopoFine);
+  const primaCalc = finestraDaOrari(giornoFinestraTurno(t, t.straordinarioPrimaInizio, t.straordinarioPrimaFine, 'prima'), t.straordinarioPrimaInizio, t.straordinarioPrimaFine);
+  const dopoCalc = finestraDaOrari(giornoFinestraTurno(t, t.straordinarioDopoInizio, t.straordinarioDopoFine, 'dopo'), t.straordinarioDopoInizio, t.straordinarioDopoFine);
   const finestraPrima = primaCalc.classificazione, finestraDopo = dopoCalc.classificazione;
   const strPrimaOre = primaCalc.ore, strDopoOre = dopoCalc.ore;
 
