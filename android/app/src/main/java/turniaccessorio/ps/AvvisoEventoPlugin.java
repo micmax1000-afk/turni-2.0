@@ -135,4 +135,34 @@ public class AvvisoEventoPlugin extends Plugin {
             }
         });
     }
+
+    /** Widget: l'app passa i giorni già pronti da mostrare (o {"attivo":false} se è spento). */
+    @PluginMethod
+    public void aggiornaWidget(PluginCall call) {
+        try {
+            TurnoWidgetProvider.salvaDati(getContext(), call.getString("dati", "{}"));
+            TurnoWidgetProvider.aggiornaTutti(getContext());
+            call.resolve(new JSObject());
+        } catch (Exception e) {
+            call.reject("Widget non aggiornato: " + e.getMessage());
+        }
+    }
+
+    /** Chiede ad Android di aggiungere il widget alla schermata Home (Android 8+, se il launcher lo permette). */
+    @PluginMethod
+    public void aggiungiWidget(PluginCall call) {
+        JSObject r = new JSObject();
+        boolean ok = false;
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                android.appwidget.AppWidgetManager m = android.appwidget.AppWidgetManager.getInstance(getContext());
+                if (m.isRequestPinAppWidgetSupported()) {
+                    ok = m.requestPinAppWidget(new android.content.ComponentName(getContext(), TurnoWidgetProvider.class), null, null);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        r.put("ok", ok);
+        call.resolve(r);
+    }
 }

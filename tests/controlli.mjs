@@ -327,6 +327,44 @@ sezione('Modifica il giorno, Tabelle, avvisi');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
+{
+  // Installazione nuova: niente anagrafica, niente turni → si apre la guida.
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome' });
+  const p = await ctx.newPage();
+  const errori = []; p.on('pageerror', e => errori.push(e.message));
+  await p.clock.setFixedTime(new Date('2026-10-09T10:00:00+02:00'));
+  await p.goto(URL_APP); await p.waitForFunction(() => typeof renderCalendario === 'function' && document.querySelector('.giorno-cella'));
+  ok('installazione nuova: si apre il primo avvio guidato', await p.evaluate(() => !document.getElementById('overlayBenvenuto').hidden));
+  await p.selectOption('#benvenutoQualifica', 'Sovrintendente');
+  await p.click('#btnBenvenutoAvanti');
+  await p.click('[data-benvenuto-pattern="pattern_quinta5"]');
+  await p.click('[data-benvenuto-fase="1"]');
+  await p.click('#btnBenvenutoAvanti');
+  await p.click('#btnBenvenutoAvanti');
+  const b = await p.evaluate(() => ({ q: AppState.anagrafica.qualifica, oggi: AppState.turni['2026-10-09']?.modelloId, n: Object.keys(AppState.turni).length, chiuso: document.getElementById('overlayBenvenuto').hidden }));
+  ok('guida: anagrafica salvata, "Oggi fai: Pom." e 3 mesi di turni', b.q === 'Sovrintendente' && b.oggi === 'pomeriggio' && b.n === 92 && b.chiuso, JSON.stringify(b));
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('la guida non si riapre', await p.evaluate(() => document.getElementById('overlayBenvenuto').hidden));
+  // Promemoria del turno e widget: spenti all'inizio.
+  const spenti = await p.evaluate(() => ({ prom: impostazioniPromemoriaTurno().attivo, lista: promemoriaTurnoDaProgrammare().length, widget: datiWidget().attivo }));
+  ok('promemoria del turno e widget partono spenti', spenti.prom === false && spenti.lista === 0 && spenti.widget === false, JSON.stringify(spenti));
+  await p.click('#tabAltro');
+  await p.click('#campoPromemoriaTurno');
+  const prom = await p.evaluate(() => promemoriaTurnoDaProgrammare()[0]);
+  ok('acceso: "Domani: Mattino" la sera prima alle 20:00', prom.title === 'Domani: Mattino' && prom.body === '07:00 – 13:00' && new Date(prom.quando).toISOString() === '2026-10-09T18:00:00.000Z', JSON.stringify(prom));
+  await p.click('#campoWidget');
+  const w = await p.evaluate(() => datiWidget());
+  ok('widget acceso: oggi Pomeriggio 13:00 – 19:00', w.attivo && w.giorni['2026-10-09'].nome === 'Pomeriggio' && w.giorni['2026-10-09'].orario === '13:00 – 19:00', JSON.stringify(w.giorni['2026-10-09']));
+  await p.click('#tabTurni'); await p.click('#btnApriEsportaCalendario');
+  const ics = await p.evaluate(() => creaIcsTurni(false).testo);
+  ok('file .ics: turni con orari di Roma, la Sera finisce il giorno dopo', /BEGIN:VCALENDAR/.test(ics) && /DTSTART;TZID=Europe\/Rome:20261009T130000/.test(ics) && /DTSTART;TZID=Europe\/Rome:20261013T190000\r\nDTEND;TZID=Europe\/Rome:20261014T010000/.test(ics) && !/SUMMARY:Riposo/.test(ics));
+  ok('con "Includi riposi": i riposi come giornata intera', await p.evaluate(() => /DTSTART;VALUE=DATE:\d{8}\r\nDTEND;VALUE=DATE:\d{8}\r\nSUMMARY:Riposo/.test(creaIcsTurni(true).testo)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Report');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva() });

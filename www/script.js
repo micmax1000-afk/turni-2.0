@@ -360,6 +360,10 @@ function inizializza(){
   renderModelliTabTurni();
   aggiornaRiassuntoAnagraficaAltro();
   aggiornaRiassuntoAssenzeAltro();
+  inizializzaPromemoriaTurno();
+  inizializzaWidget();
+  inizializzaEsportaCalendario();
+  inizializzaBenvenuto();
   on('btnReportMesePrec', 'click', () => el('btnMesePrec').click());
   on('btnReportMeseSucc', 'click', () => el('btnMeseSucc').click());
   on('tabReport', 'click', renderReportHero);
@@ -731,6 +735,13 @@ function inizializza(){
   });
 
   el('btnChiudiTurno').addEventListener('click', () => { el('pannelloTurno').hidden = true; });
+  on('overlayStraordinarioRapido','click', e => {
+    const passo = e.target.closest('[data-passo-ore]');
+    if(passo){ const c = el(passo.dataset.passoOre); c.value = Math.max(0, (Number(c.value) || 0) + Number(passo.dataset.delta)) || ''; aggiornaStrRapidoV2(); return; }
+    const pd = e.target.closest('.scelta-prima-dopo [data-valore]');
+    if(pd){ el('campoStrRapidoPosizione').value = pd.dataset.valore; aggiornaStrRapidoV2(); }
+  });
+  on('overlayStraordinarioRapido','input', () => aggiornaStrRapidoV2());
   // Finestra "Modifica il giorno": pulsanti che comandano i campi di sempre.
   on('btnSalvaTurnoTesta','click', () => el('btnSalvaTurno').click());
   on('pannelloTurno','click', e => {
@@ -2441,7 +2452,22 @@ function apriStraordinarioRapidoV2(){
   el('campoStrRapidoPosizione').value = 'prima';
   el('campoStrRapidoOrarioInizio').value = '';
   el('campoStrRapidoOrarioFine').value = '';
+  el('campoStrRapidoPosizione').value = 'dopo';
+  aggiornaStrRapidoV2();
   el('overlayStraordinarioRapido').hidden = false;
+}
+// Mostra subito l'orario che verrà salvato (es. "19:00 → 21:00 · 2 h").
+function aggiornaStrRapidoV2(){
+  const t = AppState.turni[giornoPerPopupV2] || {};
+  const box = el('anteprimaStrRapido');
+  document.querySelectorAll('#overlayStraordinarioRapido .scelta-prima-dopo [data-valore]').forEach(b => b.classList.toggle('attivo', b.dataset.valore === el('campoStrRapidoPosizione').value));
+  if(!box) return;
+  const mi = el('campoStrRapidoOrarioInizio').value, mf = el('campoStrRapidoOrarioFine').value;
+  const ore = Number(el('campoStrRapidoOre').value) || 0;
+  let r = null;
+  if(mi && mf) r = { inizio: mi, fine: mf };
+  else if(ore > 0 && t.oraInizio && t.oraFine) r = calcolaOrarioStraordinarioDaOre(t.oraInizio, t.oraFine, ore, el('campoStrRapidoPosizione').value);
+  box.textContent = r && r.inizio ? `${r.inizio} → ${r.fine}` + (ore > 0 && !(mi && mf) ? ` · ${String(ore).replace('.', ',')} h` : '') : '';
 }
 function salvaStraordinarioRapidoV2(){
   if(!giornoPerPopupV2) return;
@@ -2641,4 +2667,348 @@ function mostraAvvisoNuovaVersione(worker){
     setTimeout(() => window.location.reload(), 300);
   });
   document.body.appendChild(banner);
+}
+
+// ===================== Primo avvio guidato =====================
+// Solo per chi installa l'app adesso: nessuna anagrafica, nessun turno, guida non ancora vista.
+const benvenuto = { passo: 1, pattern: null, fase: 0 };
+function deveMostrareBenvenuto(){
+  return !TurniPSStorage.getItem(CHIAVE_BENVENUTO) && !AppState.anagrafica && !Object.keys(AppState.turni || {}).length;
+}
+function sequenzeDisponibiliBenvenuto(){
+  const presenti = AppState.pattern || [];
+  return presenti.concat(PATTERN_BASE_V2.filter(b => !presenti.some(p => p.id === b.id)));
+}
+function apriBenvenuto(){
+  el('benvenutoQualifica').innerHTML = el('campoQualifica').innerHTML;
+  el('benvenutoQualifica').value = 'Agente';
+  el('benvenutoRegione').innerHTML = el('campoRegione').innerHTML;
+  el('benvenutoRegione').value = 'Lazio';
+  benvenuto.passo = 1; benvenuto.pattern = null; benvenuto.fase = 0;
+  renderSequenzeBenvenuto();
+  mostraPassoBenvenuto(1);
+  el('overlayBenvenuto').hidden = false;
+}
+function renderSequenzeBenvenuto(){
+  const modelli = AppState.modelliTurno || [];
+  el('benvenutoSequenze').innerHTML = sequenzeDisponibiliBenvenuto().map(p => {
+    const striscia = p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return `<i style="background:${m ? coloreModelloV2(m) : '#E8ECF0'}"></i>`; }).join('');
+    return `<button type="button" class="card-sequenza${benvenuto.pattern === p.id ? ' in-uso' : ''}" data-benvenuto-pattern="${escapeHtml(p.id)}"><strong>${escapeHtml(p.nome)}</strong><span class="striscia-sequenza">${striscia}</span><span class="stato-sequenza"><small>${p.giorni.length} giorni a rotazione</small></span></button>`;
+  }).join('') + `<button type="button" class="card-sequenza${benvenuto.pattern === '' ? ' in-uso' : ''}" data-benvenuto-pattern=""><strong>Li inserisco a mano</strong><span class="stato-sequenza"><small>Tocchi i giorni sul calendario</small></span></button>`;
+  const p = sequenzeDisponibiliBenvenuto().find(x => x.id === benvenuto.pattern);
+  el('benvenutoFaseBox').hidden = !p;
+  if(p){
+    const oggi = new Date().toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long' });
+    el('benvenutoFaseTitolo').textContent = `Oggi (${oggi}) fai:`;
+    el('benvenutoFase').innerHTML = p.giorni.map((g, i) => {
+      const m = modelli.find(x => x.id === g.modelloId);
+      const scelto = i === benvenuto.fase;
+      const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
+      return `<button type="button" data-benvenuto-fase="${i}" class="${scelto ? 'attivo' : ''}" ${scelto ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
+    }).join('');
+  }
+}
+function mostraPassoBenvenuto(n){
+  benvenuto.passo = n;
+  document.querySelectorAll('[data-passo-benvenuto]').forEach(x => { x.hidden = Number(x.dataset.passoBenvenuto) !== n; });
+  el('benvenutoPunti').querySelectorAll('i').forEach((x, i) => x.classList.toggle('attivo', i < n));
+  el('btnBenvenutoIndietro').hidden = n === 1;
+  el('btnBenvenutoAvanti').textContent = n === 3 ? 'Inizia' : 'Avanti';
+  el('overlayBenvenuto').scrollTop = 0;
+}
+function chiudiBenvenuto(){
+  TurniPSStorage.setItem(CHIAVE_BENVENUTO, '1');
+  el('overlayBenvenuto').hidden = true;
+  mostraScheda('calendario');
+  renderCalendario();
+  renderAvvisiApp();
+}
+function avantiBenvenuto(){
+  if(benvenuto.passo === 1){
+    AppState.anagrafica = Object.assign({ addComunale: 0.8, coniugeACarico: 'no', figliOver21: 0, sindacato: 'no' }, AppState.anagrafica || {}, {
+      qualifica: el('benvenutoQualifica').value, anni: el('benvenutoAnni').value, regione: el('benvenutoRegione').value
+    });
+    salvaAnagraficaStorage();
+    aggiornaRiassuntoAnagrafica();
+    aggiornaRiassuntoAnagraficaAltro();
+    mostraPassoBenvenuto(2);
+    return;
+  }
+  if(benvenuto.passo === 2){
+    if(benvenuto.pattern === null){ mostraToast('Scegli come lavori (o "Li inserisco a mano").', 'avviso'); return; }
+    if(benvenuto.pattern){
+      // Le sequenze di base, se mancano, si ricreano come nell'editor.
+      if(!(AppState.pattern || []).some(p => p.id === benvenuto.pattern)){
+        const seme = PATTERN_BASE_V2.find(x => x.id === benvenuto.pattern);
+        if(seme){ AppState.pattern.push({ id: seme.id, nome: seme.nome, giorni: seme.giorni.map(g => ({ modelloId: g.modelloId, indennita: g.indennita || [], secondoTurno: g.secondoTurno || null })) }); salvaPatternStorage(); }
+      }
+      const sequenza = sequenzaDaPatternV2(benvenuto.pattern);
+      const oggi = new Date();
+      const fine = new Date(oggi.getFullYear(), oggi.getMonth() + 3, oggi.getDate() - 1, 12);
+      const giorni = Math.round((fine - new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate(), 12)) / 86400000) + 1;
+      if(sequenza && sequenza.length){
+        const scritti = generaTurniDaCiclo({ sequenza, dataInizioIso: dataISO(oggi), numeroGiorni: giorni, fase: benvenuto.fase, proteggiAssenze: true, sovrascrivi: true, patternId: benvenuto.pattern });
+        mostraToast(`${scritti} giorni di turni inseriti`, 'successo');
+      }
+    }
+    mostraPassoBenvenuto(3);
+    aggiornaStatoNotificheBenvenuto();
+    return;
+  }
+  chiudiBenvenuto();
+}
+async function aggiornaStatoNotificheBenvenuto(){
+  const nativo = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications);
+  const box = el('benvenutoStatoNotifiche');
+  if(!nativo){ box.textContent = 'Le notifiche si attivano nell\'app per Android.'; el('btnBenvenutoNotifiche').hidden = true; return; }
+  const attive = await notificheAttive();
+  el('btnBenvenutoNotifiche').hidden = attive;
+  box.textContent = attive ? '✓ Notifiche attive' : '';
+}
+function inizializzaBenvenuto(){
+  on('btnSaltaBenvenuto', 'click', chiudiBenvenuto);
+  on('btnBenvenutoAvanti', 'click', avantiBenvenuto);
+  on('btnBenvenutoIndietro', 'click', () => mostraPassoBenvenuto(Math.max(1, benvenuto.passo - 1)));
+  on('btnBenvenutoNotifiche', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(aggiornaStatoNotificheBenvenuto, 600); });
+  on('overlayBenvenuto', 'click', e => {
+    const anni = e.target.closest('[data-passo-benvenuto-anni]');
+    if(anni){ const c = el('benvenutoAnni'); c.value = Math.max(0, (Number(c.value) || 0) + Number(anni.dataset.passoBenvenutoAnni)); return; }
+    const seq = e.target.closest('[data-benvenuto-pattern]');
+    if(seq){ benvenuto.pattern = seq.dataset.benvenutoPattern; benvenuto.fase = 0; renderSequenzeBenvenuto(); return; }
+    const fase = e.target.closest('[data-benvenuto-fase]');
+    if(fase){ benvenuto.fase = Number(fase.dataset.benvenutoFase); renderSequenzeBenvenuto(); }
+  });
+  if(deveMostrareBenvenuto()) apriBenvenuto();
+}
+
+// ===================== Promemoria del turno =====================
+// Spento all'inizio. Acceso: una notifica la sera prima (a un'ora scelta) oppure prima dell'inizio,
+// per i turni di lavoro dei prossimi 14 giorni. Si riprogramma all'apertura e quando cambiano i turni.
+const ID_BASE_PROMEMORIA_TURNO = 2100000000;
+function impostazioniPromemoriaTurno(){
+  const base = { attivo: false, modo: 'sera', ora: '20:00', minuti: 60 };
+  try{ return Object.assign(base, JSON.parse(TurniPSStorage.getItem(CHIAVE_PROMEMORIA_TURNO) || '{}')); }catch(e){ return base; }
+}
+function salvaImpostazioniPromemoriaTurno(imp){ TurniPSStorage.setItem(CHIAVE_PROMEMORIA_TURNO, JSON.stringify(imp)); }
+function nomeTurnoPerAvviso(t){
+  const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
+  return m ? m.nome : 'Turno';
+}
+// Le notifiche da programmare (anche senza Android: servono ai controlli automatici).
+function promemoriaTurnoDaProgrammare(adesso = new Date()){
+  const imp = impostazioniPromemoriaTurno();
+  if(!imp.attivo) return [];
+  const out = [];
+  const epoca = new Date(2020, 0, 1, 12);
+  for(let i = 0; i <= 14; i++){
+    const g = new Date(adesso.getFullYear(), adesso.getMonth(), adesso.getDate() + i, 12);
+    const iso = dataISO(g);
+    const t = AppState.turni[iso];
+    if(!t || t.riposo || t.assenzaTipo || !t.oraInizio || !t.oraFine) continue;
+    const nome = nomeTurnoPerAvviso(t);
+    let quando, titolo;
+    if(imp.modo === 'prima'){
+      const [h, m] = t.oraInizio.split(':').map(Number);
+      quando = new Date(g.getFullYear(), g.getMonth(), g.getDate(), h, m - Number(imp.minuti || 60));
+      const min = Number(imp.minuti || 60);
+      titolo = `Tra ${min >= 60 ? (min / 60) + (min === 60 ? ' ora' : ' ore') : min + ' minuti'}: ${nome}`;
+    } else {
+      const [h, m] = (imp.ora || '20:00').split(':').map(Number);
+      quando = new Date(g.getFullYear(), g.getMonth(), g.getDate() - 1, h, m);
+      titolo = `Domani: ${nome}`;
+    }
+    if(quando <= adesso) continue;
+    out.push({ id: ID_BASE_PROMEMORIA_TURNO + Math.round((g - epoca) / 86400000), title: titolo, body: `${t.oraInizio} – ${t.oraFine}`, quando });
+  }
+  return out;
+}
+async function riprogrammaPromemoriaTurni(){
+  const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+  if(!plugin) return;
+  let prima = [];
+  try{ prima = JSON.parse(localStorage.getItem('turni_promemoria_turno_ids') || '[]'); }catch(e){}
+  if(prima.length){ try{ await plugin.cancel({ notifications: prima.map(id => ({ id })) }); }catch(e){} }
+  const lista = promemoriaTurnoDaProgrammare();
+  localStorage.setItem('turni_promemoria_turno_ids', JSON.stringify(lista.map(x => x.id)));
+  if(!lista.length) return;
+  try{
+    const perm = await plugin.checkPermissions();
+    if(perm.display !== 'granted') return;
+    try{ await plugin.createChannel({ id: 'promemoria_turno', name: 'Promemoria del turno', description: 'Il turno di domani o tra poco', importance: 4, visibility: 1, vibration: true }); }catch(e){}
+    await plugin.schedule({ notifications: lista.map(x => ({ id: x.id, title: x.title, body: x.body, channelId: 'promemoria_turno', schedule: { at: x.quando, allowWhileIdle: true } })) });
+  }catch(e){ console.warn('Promemoria del turno non programmati:', e); }
+}
+function aggiornaVistaPromemoriaTurno(){
+  const imp = impostazioniPromemoriaTurno();
+  el('campoPromemoriaTurno').checked = imp.attivo;
+  el('opzioniPromemoriaTurno').hidden = !imp.attivo;
+  el('sceltaModoPromemoriaTurno').querySelectorAll('[data-modo-promemoria]').forEach(b => b.classList.toggle('attivo', b.dataset.modoPromemoria === imp.modo));
+  el('rigaOraPromemoriaTurno').hidden = imp.modo !== 'sera';
+  el('rigaMinutiPromemoriaTurno').hidden = imp.modo !== 'prima';
+  el('campoOraPromemoriaTurno').value = imp.ora;
+  el('campoMinutiPromemoriaTurno').value = String(imp.minuti);
+  const nativo = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications);
+  const d = el('descrizionePromemoriaTurno');
+  d.textContent = !imp.attivo ? 'Spento' : !nativo ? 'Funziona nell\'app per Android'
+    : imp.modo === 'sera' ? `La sera prima alle ${imp.ora}` : `${el('campoMinutiPromemoriaTurno').selectedOptions[0].textContent} prima dell'inizio`;
+  d.classList.toggle('stato-attivo', imp.attivo);
+}
+function cambiaPromemoriaTurno(modifica){
+  const imp = Object.assign(impostazioniPromemoriaTurno(), modifica);
+  salvaImpostazioniPromemoriaTurno(imp);
+  aggiornaVistaPromemoriaTurno();
+  riprogrammaPromemoriaTurni();
+}
+function inizializzaPromemoriaTurno(){
+  aggiornaVistaPromemoriaTurno();
+  on('campoPromemoriaTurno', 'change', async e => {
+    const acceso = e.target.checked;
+    if(acceso){
+      const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+      if(plugin){ try{ const p = await plugin.checkPermissions(); if(p.display !== 'granted') await plugin.requestPermissions(); }catch(err){} }
+    }
+    cambiaPromemoriaTurno({ attivo: acceso });
+    if(acceso) mostraToast('Promemoria del turno acceso', 'successo');
+  });
+  on('sceltaModoPromemoriaTurno', 'click', e => { const b = e.target.closest('[data-modo-promemoria]'); if(b) cambiaPromemoriaTurno({ modo: b.dataset.modoPromemoria }); });
+  on('campoOraPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ ora: e.target.value || '20:00' }));
+  on('campoMinutiPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ minuti: Number(e.target.value) || 60 }));
+  setTimeout(riprogrammaPromemoriaTurni, 5000);
+}
+
+// Dopo ogni salvataggio dei turni: promemoria del turno e widget si aggiornano (con calma).
+let timerDopoTurni = null;
+const _salvaTurniStorageOriginale = salvaTurniStorage;
+salvaTurniStorage = function(){
+  const r = _salvaTurniStorageOriginale.apply(this, arguments);
+  clearTimeout(timerDopoTurni);
+  timerDopoTurni = setTimeout(() => {
+    riprogrammaPromemoriaTurni();
+    if(typeof aggiornaWidget === 'function') aggiornaWidget();
+  }, 1500);
+  return r;
+};
+
+// ===================== Widget nella schermata Home =====================
+// Spento all'inizio: finché è spento al widget non arriva nessun dato (mostra come accenderlo).
+function widgetAttivo(){ return TurniPSStorage.getItem(CHIAVE_WIDGET) === '1'; }
+// I prossimi 14 giorni già pronti da mostrare: nome, orario e colore.
+function datiWidget(adesso = new Date()){
+  if(!widgetAttivo()) return { attivo: false };
+  const giorni = {};
+  for(let i = -1; i <= 14; i++){
+    const g = new Date(adesso.getFullYear(), adesso.getMonth(), adesso.getDate() + i, 12);
+    const iso = dataISO(g);
+    const t = AppState.turni[iso];
+    if(!t) continue;
+    if(t.assenzaTipo){
+      const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo);
+      giorni[iso] = { nome: v ? v.nome : 'Assenza', orario: '', colore: coloreCategoria('assenza') };
+    } else if(t.riposo){
+      giorni[iso] = { nome: 'Riposo', orario: '', colore: coloreCategoria('riposo') };
+    } else if(t.oraInizio && t.oraFine){
+      const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
+      giorni[iso] = { nome: m ? m.nome : 'Turno', orario: `${t.oraInizio} – ${t.oraFine}`, colore: m ? coloreModelloV2(m) : coloreCategoria(categoriaTurno(t.oraInizio, t.oraFine, iso)) };
+    }
+  }
+  return { attivo: true, giorni };
+}
+async function aggiornaWidget(){
+  const avviso = pluginAvvisoEvento();
+  if(!avviso || !avviso.aggiornaWidget) return;
+  try{ await avviso.aggiornaWidget({ dati: JSON.stringify(datiWidget()) }); }catch(e){ console.warn('Widget non aggiornato:', e); }
+}
+function aggiornaVistaWidget(){
+  const attivo = widgetAttivo();
+  el('campoWidget').checked = attivo;
+  el('opzioniWidget').hidden = !attivo;
+  const nativo = !!pluginAvvisoEvento();
+  const d = el('descrizioneWidget');
+  d.textContent = !attivo ? 'Spento' : nativo ? 'Acceso: turno di oggi e domani' : 'Funziona nell\'app per Android';
+  d.classList.toggle('stato-attivo', attivo);
+}
+function inizializzaWidget(){
+  aggiornaVistaWidget();
+  on('campoWidget', 'change', e => {
+    TurniPSStorage.setItem(CHIAVE_WIDGET, e.target.checked ? '1' : '0');
+    aggiornaVistaWidget();
+    aggiornaWidget();
+  });
+  on('btnAggiungiWidget', 'click', async () => {
+    const avviso = pluginAvvisoEvento();
+    let ok = false;
+    if(avviso && avviso.aggiungiWidget){ try{ ok = !!(await avviso.aggiungiWidget()).ok; }catch(e){} }
+    el('aiutoWidget').hidden = ok;
+    if(!ok && !avviso) mostraToast('Il widget c\'è solo nell\'app per Android.', 'info');
+  });
+  setTimeout(aggiornaWidget, 3000);
+  // Riaprendo l'app (anche il giorno dopo) il widget si rinfresca.
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) aggiornaWidget(); });
+}
+
+// ===================== Esporta i turni (file .ics per Google Calendar) =====================
+const esportaCal = { periodo: 'mesi3' };
+function intervalloEsporta(){
+  const oggi = new Date();
+  if(esportaCal.periodo === 'mese') return [new Date(annoCorrente, meseCorrente, 1, 12), new Date(annoCorrente, meseCorrente + 1, 0, 12)];
+  if(esportaCal.periodo === 'anno') return [new Date(annoCorrente, 0, 1, 12), new Date(annoCorrente, 11, 31, 12)];
+  return [new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate(), 12), new Date(oggi.getFullYear(), oggi.getMonth() + 3, oggi.getDate() - 1, 12)];
+}
+function testoIcs(v){ return String(v).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+// Il file: un evento per turno (orari con il fuso di Roma), riposi e assenze come giornate intere.
+function creaIcsTurni(conRiposi, adesso = new Date()){
+  const [da, a] = intervalloEsporta();
+  const compatto = iso => iso.replace(/-/g, '');
+  const stamp = adesso.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+  const righe = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Turni e Accessorio PS//IT', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Turni', 'X-WR-TIMEZONE:Europe/Rome',
+    'BEGIN:VTIMEZONE', 'TZID:Europe/Rome',
+    'BEGIN:DAYLIGHT', 'TZOFFSETFROM:+0100', 'TZOFFSETTO:+0200', 'TZNAME:CEST', 'DTSTART:19700329T020000', 'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU', 'END:DAYLIGHT',
+    'BEGIN:STANDARD', 'TZOFFSETFROM:+0200', 'TZOFFSETTO:+0100', 'TZNAME:CET', 'DTSTART:19701025T030000', 'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU', 'END:STANDARD',
+    'END:VTIMEZONE'];
+  let quanti = 0;
+  for(const g = new Date(da); g <= a; g.setDate(g.getDate() + 1)){
+    const iso = dataISO(g);
+    const t = AppState.turni[iso];
+    if(!t) continue;
+    const domani = dataISO(new Date(g.getFullYear(), g.getMonth(), g.getDate() + 1, 12));
+    const evento = ['BEGIN:VEVENT', `UID:turno-${iso}@turni-accessorio-ps`, `DTSTAMP:${stamp}`];
+    if(t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo){
+      const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
+      const fineGiorno = t.oraFine <= t.oraInizio ? domani : iso;
+      const extra = [];
+      ELENCO_INDENNITA.forEach(x => { if(x.chiave !== 'straordinario' && x.chiave !== 'servizioSvolto' && t[x.chiave]) extra.push(x.nome); });
+      if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) extra.push(`Straordinario ${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}`);
+      if(t.straordinarioDopoInizio && t.straordinarioDopoFine) extra.push(`Straordinario ${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}`);
+      evento.push(`DTSTART;TZID=Europe/Rome:${compatto(iso)}T${t.oraInizio.replace(':', '')}00`, `DTEND;TZID=Europe/Rome:${compatto(fineGiorno)}T${t.oraFine.replace(':', '')}00`, `SUMMARY:${testoIcs(m ? m.nome : 'Turno')}`);
+      if(extra.length) evento.push(`DESCRIPTION:${testoIcs(extra.join(', '))}`);
+    } else if(conRiposi && (t.riposo || t.assenzaTipo)){
+      const v = t.assenzaTipo ? (AppState.assenze || []).find(x => x.id === t.assenzaTipo) : null;
+      evento.push(`DTSTART;VALUE=DATE:${compatto(iso)}`, `DTEND;VALUE=DATE:${compatto(domani)}`, `SUMMARY:${testoIcs(t.riposo ? 'Riposo' : (v ? v.nome : 'Assenza'))}`, 'TRANSP:TRANSPARENT');
+    } else continue;
+    evento.push('END:VEVENT');
+    righe.push(...evento);
+    quanti++;
+  }
+  righe.push('END:VCALENDAR');
+  return { testo: righe.join('\r\n') + '\r\n', quanti };
+}
+function aggiornaVistaEsporta(){
+  el('sceltaPeriodoEsporta').querySelectorAll('[data-periodo-esporta]').forEach(b => b.classList.toggle('attivo', b.dataset.periodoEsporta === esportaCal.periodo));
+  const { quanti } = creaIcsTurni(el('campoEsportaRiposi').checked);
+  const [da, a] = intervalloEsporta();
+  el('anteprimaEsporta').textContent = `${quanti} ${quanti === 1 ? 'giorno' : 'giorni'} dal ${dataBreve(dataISO(da))} al ${dataBreve(dataISO(a))}`;
+  el('btnCreaFileCalendario').disabled = !quanti;
+}
+function inizializzaEsportaCalendario(){
+  on('btnApriEsportaCalendario', 'click', () => { aggiornaVistaEsporta(); el('overlayEsportaCalendario').hidden = false; });
+  on('btnChiudiEsportaCalendario', 'click', () => { el('overlayEsportaCalendario').hidden = true; });
+  on('sceltaPeriodoEsporta', 'click', e => { const b = e.target.closest('[data-periodo-esporta]'); if(b){ esportaCal.periodo = b.dataset.periodoEsporta; aggiornaVistaEsporta(); } });
+  on('campoEsportaRiposi', 'change', aggiornaVistaEsporta);
+  on('btnCreaFileCalendario', 'click', async () => {
+    const { testo, quanti } = creaIcsTurni(el('campoEsportaRiposi').checked);
+    if(!quanti) return;
+    const [da] = intervalloEsporta();
+    await salvaOCondividiFile(`turni-${dataISO(da).slice(0, 7)}.ics`, testo, 'text/calendar');
+    mostraToast(`File con ${quanti} giorni pronto`, 'successo');
+  });
 }

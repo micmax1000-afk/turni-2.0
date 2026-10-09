@@ -140,13 +140,15 @@
       <div class="modale">
         <div class="modale-header"><h2>Straordinario</h2><button class="btn-icona" id="btnChiudiStraordinarioRapido" aria-label="Chiudi">✕</button></div>
         <div class="modale-corpo">
-          <p class="sotto-titolo" style="margin-top:0;">Indica solo quante ore e se sono prima o dopo il turno: calcoliamo noi l'orario esatto per la tariffa giusta.</p>
-          <div class="riga-straordinario-ore">
-            <label class="campo-modale">Ore<input type="number" id="campoStrRapidoOre" min="0" step="0.25" placeholder="es. 2"></label>
-            <label class="campo-modale">Quando<select id="campoStrRapidoPosizione"><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select></label>
+          <div class="riga-ore-straordinario">
+            <span>Ore</span>
+            <div class="contatore-anagrafica"><button type="button" data-passo-ore="campoStrRapidoOre" data-delta="-0.5" aria-label="Meno mezz'ora">−</button><input type="number" id="campoStrRapidoOre" min="0" step="0.25" placeholder="0" inputmode="decimal" aria-label="Ore di straordinario"><button type="button" data-passo-ore="campoStrRapidoOre" data-delta="0.5" aria-label="Più mezz'ora">+</button></div>
           </div>
+          <select id="campoStrRapidoPosizione" hidden><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select>
+          <div class="scelta-prima-dopo" data-per="campoStrRapidoPosizione"><button type="button" data-valore="prima">Prima del turno</button><button type="button" data-valore="dopo">Dopo il turno</button></div>
+          <p class="anteprima-giorno" id="anteprimaStrRapido"></p>
           <details class="orario-preciso-facoltativo">
-            <summary>Preferisci inserire l'orario esatto? ▾</summary>
+            <summary>Orario esatto (facoltativo)</summary>
             <div class="riga-straordinario-ore">
               <label class="campo-modale">Dalle<input type="time" id="campoStrRapidoOrarioInizio"></label>
               <label class="campo-modale">Alle<input type="time" id="campoStrRapidoOrarioFine"></label>
@@ -163,14 +165,15 @@
       <div class="modale">
         <div class="modale-header"><h2>Rientro</h2><button class="btn-icona" id="btnChiudiRientroRapido" aria-label="Chiudi">✕</button></div>
         <div class="modale-corpo">
-          <p class="sotto-titolo" style="margin-top:0;">Un secondo turno nella stessa giornata, con il suo orario — es. rientri la sera dopo il turno del mattino.</p>
-          <div class="riga-straordinario-ore">
-            <label class="campo-modale">Dalle<input type="time" id="campoRientroRapidoInizio"></label>
-            <label class="campo-modale">Alle<input type="time" id="campoRientroRapidoFine"></label>
+          <p class="sotto-titolo" style="margin-top:0;">Un secondo turno nello stesso giorno, ad esempio la sera dopo il turno del mattino.</p>
+          <div class="orari-giorno">
+            <label class="campo-orario-giorno"><small>Dalle</small><input type="time" id="campoRientroRapidoInizio"></label>
+            <span aria-hidden="true">→</span>
+            <label class="campo-orario-giorno"><small>Alle</small><input type="time" id="campoRientroRapidoFine"></label>
           </div>
         </div>
         <div class="modale-footer">
-          <button class="btn-secondario" id="btnRimuoviRientroRapido" type="button" hidden>🗑️ Rimuovi</button>
+          <button class="btn-secondario editor-giorno-elimina" id="btnRimuoviRientroRapido" type="button" hidden>Rimuovi</button>
           <button class="btn-primario" id="btnSalvaRientroRapido" type="button">Salva</button>
         </div>
       </div>
@@ -598,6 +601,7 @@
     <p class="strumenti-turni-titolo">Strumenti</p>
     <div class="lista-strumenti-turni">
       <button type="button" class="riga-strumento-turni" id="settingsSequenza"><span>🔁</span><i>Genera turni automaticamente<small id="statoSequenzaTurni">Ripete una sequenza sul calendario</small></i><b>›</b></button>
+      <button type="button" class="riga-strumento-turni" id="btnApriEsportaCalendario"><span>📤</span><i>Esporta in Google Calendar<small>I turni in un file da importare</small></i><b>›</b></button>
       <button type="button" class="riga-strumento-turni" id="settingsColori"><span>🎨</span><i>Colori e stile calendario<small id="statoColoriTurni">Colori dei turni, stile Classico o Moderno</small></i><b>›</b></button>
     </div>
 
@@ -930,6 +934,24 @@
         <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span><i>Assenze e permessi<small id="riassuntoAssenzeAltro">Congedi, permessi e saldi</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Indennità nel calendario<small>Simboli e quali mostrare</small></i><b>›</b></button>
+        <div class="riga-strumento-turni riga-interruttore">
+          <span>⏰</span><i>Promemoria del turno<small id="descrizionePromemoriaTurno">Spento</small></i>
+          <input type="checkbox" class="interruttore" id="campoPromemoriaTurno" aria-label="Promemoria del turno">
+        </div>
+        <div class="opzioni-riga-altro" id="opzioniPromemoriaTurno" hidden>
+          <div class="scelta-prima-dopo" id="sceltaModoPromemoriaTurno"><button type="button" data-modo-promemoria="sera">La sera prima</button><button type="button" data-modo-promemoria="prima">Prima dell'inizio</button></div>
+          <label class="riga-anagrafica" id="rigaOraPromemoriaTurno"><span>Alle</span><input type="time" id="campoOraPromemoriaTurno" value="20:00"></label>
+          <label class="riga-anagrafica" id="rigaMinutiPromemoriaTurno" hidden><span>Quanto prima</span><select id="campoMinutiPromemoriaTurno"><option value="30">30 minuti</option><option value="60" selected>1 ora</option><option value="120">2 ore</option></select></label>
+        </div>
+        <div class="riga-strumento-turni riga-interruttore">
+          <span>📱</span><i>Widget nella schermata Home<small id="descrizioneWidget">Spento</small></i>
+          <input type="checkbox" class="interruttore" id="campoWidget" aria-label="Widget nella schermata Home">
+        </div>
+        <div class="opzioni-riga-altro" id="opzioniWidget" hidden>
+          <p class="sotto-titolo" style="margin:8px 0;">Mostra il turno di oggi e di domani senza aprire l'app.</p>
+          <button type="button" class="btn-secondario" id="btnAggiungiWidget" style="width:100%;">＋ Aggiungi alla schermata Home</button>
+          <p class="sotto-titolo" id="aiutoWidget" style="margin:8px 0 0;font-size:.78rem;" hidden>Se non compare: tieni premuto su uno spazio vuoto della schermata Home → Widget → Turni &amp; Accessorio PS.</p>
+        </div>
         <div class="riga-strumento-turni riga-tema">
           <span>🌓</span><i>Tema<small id="descrizioneTema">Come il telefono</small></i>
           <div class="scelta-tema" role="group" aria-label="Tema">
@@ -983,14 +1005,79 @@
   </div>
 </div>
 
+<!-- Primo avvio guidato: solo per chi installa l'app (nessuna anagrafica e nessun turno) -->
+<div class="benvenuto" id="overlayBenvenuto" hidden>
+  <div class="benvenuto-testa">
+    <div class="benvenuto-punti" id="benvenutoPunti"><i></i><i></i><i></i></div>
+    <button type="button" class="benvenuto-salta" id="btnSaltaBenvenuto">Salta</button>
+  </div>
+  <div class="benvenuto-passo" data-passo-benvenuto="1">
+    <h2>Benvenuto! 👋</h2>
+    <p class="sotto-titolo">Tre passaggi e l'app è pronta. I dati restano solo sul tuo telefono.</p>
+    <p class="titolo-sezione-giorno">Chi sei</p>
+    <div class="gruppo-anagrafica">
+      <label class="riga-anagrafica"><span>Qualifica</span><select id="benvenutoQualifica"></select></label>
+      <div class="riga-anagrafica"><span>Anni di servizio</span><div class="contatore-anagrafica"><button type="button" data-passo-benvenuto-anni="-1" aria-label="Meno">−</button><input type="number" id="benvenutoAnni" min="0" value="0" inputmode="numeric" aria-label="Anni di servizio"><button type="button" data-passo-benvenuto-anni="1" aria-label="Più">+</button></div></div>
+      <label class="riga-anagrafica"><span>Regione</span><select id="benvenutoRegione"></select></label>
+    </div>
+    <p class="sotto-titolo" style="margin-top:10px;">Servono per stimare stipendio e tasse. Il resto (famiglia, sindacato) lo trovi in Altro → Anagrafica.</p>
+  </div>
+  <div class="benvenuto-passo" data-passo-benvenuto="2" hidden>
+    <h2>I tuoi turni</h2>
+    <p class="sotto-titolo">Scegli come lavori: l'app riempie il calendario dei prossimi 3 mesi. Potrai cambiare tutto quando vuoi.</p>
+    <div class="lista-sequenze" id="benvenutoSequenze"></div>
+    <div id="benvenutoFaseBox" hidden>
+      <p class="etichetta-scelte" id="benvenutoFaseTitolo">Oggi fai:</p>
+      <div class="scelte-sequenza" id="benvenutoFase"></div>
+    </div>
+  </div>
+  <div class="benvenuto-passo" data-passo-benvenuto="3" hidden>
+    <h2>Notifiche</h2>
+    <p class="sotto-titolo">Servono per i promemoria degli eventi che aggiungi al calendario (visite, corsi…).</p>
+    <button type="button" class="btn-primario btn-genera-grande" id="btnBenvenutoNotifiche">🔔 Attiva le notifiche</button>
+    <p class="sotto-titolo" id="benvenutoStatoNotifiche" style="margin-top:8px;"></p>
+    <div class="nota-giorno" style="margin-top:14px;">💡 In Altro puoi accendere anche il <b>promemoria del turno</b> (la sera prima) e il <b>widget</b> per la schermata Home: all'inizio sono spenti.</div>
+  </div>
+  <div class="benvenuto-piede">
+    <button type="button" class="btn-secondario" id="btnBenvenutoIndietro" hidden>Indietro</button>
+    <button type="button" class="btn-primario" id="btnBenvenutoAvanti">Avanti</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlayEsportaCalendario" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Esporta i turni</h2><button class="btn-icona" id="btnChiudiEsportaCalendario" aria-label="Chiudi">✕</button></div>
+    <div class="modale-corpo">
+      <p class="sotto-titolo" style="margin-top:0;">Crea un file di calendario (.ics) con i tuoi turni, da importare in Google Calendar o in un altro calendario.</p>
+      <p class="etichetta-scelte">Quali turni</p>
+      <div class="scelte-sequenza" id="sceltaPeriodoEsporta">
+        <button type="button" data-periodo-esporta="mese">Mese visualizzato</button>
+        <button type="button" data-periodo-esporta="mesi3">Prossimi 3 mesi</button>
+        <button type="button" data-periodo-esporta="anno">Tutto l'anno</button>
+      </div>
+      <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoEsportaRiposi"><span>Includi riposi e assenze</span></label>
+      <p class="anteprima-giorno" id="anteprimaEsporta"></p>
+      <details class="riquadro-giorno altro-giorno" style="margin-top:12px;">
+        <summary>Come importarlo in Google Calendar<b aria-hidden="true">⌄</b></summary>
+        <p class="sotto-titolo" style="margin:0;">1. Salva il file (o mandalo a te stesso per email). 2. Dal computer apri <b>calendar.google.com</b> → ⚙️ Impostazioni → <b>Importa ed esporta</b> → Importa, e scegli il file. I turni compaiono anche sul telefono. Alcuni calendari (es. Samsung) aprono il file direttamente.</p>
+      </details>
+    </div>
+    <div class="modale-footer">
+      <button class="btn-primario" id="btnCreaFileCalendario" type="button" style="width:100%;">Crea il file</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="overlayPersonalizzaReport" hidden>
   <div class="modale">
-    <div class="modale-header"><h2>Personalizza Report</h2><button class="btn-icona" id="btnChiudiPersonalizzaReport" aria-label="Chiudi">✕</button></div>
+    <div class="modale-header"><h2>Cosa vedere nel Report</h2><button class="btn-icona" id="btnChiudiPersonalizzaReport" aria-label="Chiudi">✕</button></div>
     <div class="modale-corpo">
-      <p class="sotto-titolo" style="margin:0 0 4px;">Scegli quali blocchi vedere in Report. Puoi riattivarli in qualsiasi momento.</p>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoOre"> 🕐 Il mese</label>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportStatistiche"> 📈 Statistiche (grafici annuali)</label>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportCedolino"> 💶 Cedolino</label>
+      <p class="sotto-titolo" style="margin:0 0 8px;">Scegli cosa vedere nel Report. Puoi cambiarlo quando vuoi.</p>
+      <div class="lista-simboli">
+        <label class="riga-simbolo"><span>🕐 Il mese</span><input type="checkbox" class="interruttore" id="toggleReportRiepilogoOre"></label>
+        <label class="riga-simbolo"><span>📈 Statistiche dell'anno</span><input type="checkbox" class="interruttore" id="toggleReportStatistiche"></label>
+        <label class="riga-simbolo"><span>💶 Cedolino</span><input type="checkbox" class="interruttore" id="toggleReportCedolino"></label>
+      </div>
     </div>
     <div class="modale-footer">
       <button class="btn-primario" id="btnFattoPersonalizzaReport" type="button">Fatto</button>

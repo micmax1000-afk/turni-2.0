@@ -1803,3 +1803,30 @@ html[data-tema="scuro"] .anteprima-classificazione.anteprima-giorno .et-str{back
 }
 .azioni-cedolino{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.azioni-cedolino button{margin:0;min-height:44px}.azioni-cedolino button[hidden]{display:none}
 @media screen{#contenitoreCedolino .cedolino-v39-riepilogo{display:none}}
+/* Primo avvio guidato */
+.benvenuto{position:fixed;inset:0;z-index:97;background:var(--pannello);overflow-y:auto;display:flex;flex-direction:column;padding:0 18px}
+.benvenuto[hidden]{display:none}
+@media(min-width:700px){.benvenuto{left:50%;width:560px;transform:translateX(-50%);box-shadow:0 0 0 100vmax rgba(0,0,0,.35)}}
+.benvenuto-testa{display:flex;align-items:center;justify-content:space-between;padding:16px 0 6px;position:sticky;top:0;background:var(--pannello);z-index:1}
+.benvenuto-punti{display:flex;gap:6px}
+.benvenuto-punti i{width:28px;height:6px;border-radius:3px;background:var(--bordo)}
+.benvenuto-punti i.attivo{background:#1D5FE0}
+.benvenuto-salta{background:none;border:0;color:var(--testo-tenue,#6B7280);font:600 .9rem var(--font-corpo);cursor:pointer;padding:6px}
+.benvenuto-passo{flex:1;padding-bottom:16px}
+.benvenuto-passo h2{font-size:1.5rem;margin:14px 0 6px}
+.benvenuto-passo[hidden]{display:none}
+.benvenuto-piede{position:sticky;bottom:0;display:grid;grid-template-columns:auto 1fr;gap:10px;padding:12px 0 calc(14px + env(safe-area-inset-bottom));background:var(--pannello);border-top:1px solid var(--bordo)}
+.benvenuto-piede button{min-height:48px;margin:0}
+.benvenuto-piede #btnBenvenutoIndietro[hidden]+#btnBenvenutoAvanti{grid-column:1/-1}
+.benvenuto-piede button[hidden]{display:none}
+#benvenutoFase button.attivo{font-weight:700}
+/* Altro: righe con interruttore e opzioni sotto */
+.riga-strumento-turni.riga-interruttore{cursor:default}
+.riga-strumento-turni.riga-interruttore .interruttore{margin-left:auto}
+.opzioni-riga-altro{padding:4px 14px 12px;border-top:1px dashed var(--bordo)}
+.opzioni-riga-altro[hidden]{display:none}
+.opzioni-riga-altro .scelta-prima-dopo{margin-top:8px}
+.opzioni-riga-altro .riga-anagrafica{padding:10px 0 0;border:0}
+.opzioni-riga-altro .riga-anagrafica[hidden]{display:none}
+.opzioni-riga-altro input[type=time]{width:auto;border:0;border-radius:9px;background:var(--carta);color:var(--inchiostro);font:600 .95rem var(--font-corpo);padding:7px 10px;margin:0}
+#sceltaPeriodoEsporta button.attivo{background:var(--inchiostro);border-color:var(--inchiostro);color:var(--pannello)}
