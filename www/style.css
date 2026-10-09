@@ -1538,3 +1538,6 @@ body.calendario-senza-colori .giorno-cella.riposo-giorno .giorno-numero{ color: 
 .avviso-permessi-evento .btn-secondario{align-self:flex-start}
 .hint-evento{color:var(--testo-tenue);margin-top:-4px}
 .gruppo-elimina-evento{display:flex;flex-direction:column;gap:6px}
+#overlayAvviso{z-index:110}
+/* Le regole display:flex qui sopra scavalcano l'attributo hidden: va ribadito. */
+.avviso-permessi-evento[hidden],.prossimi-eventi-v2[hidden]{display:none !important}
