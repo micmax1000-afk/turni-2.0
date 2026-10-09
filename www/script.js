@@ -509,15 +509,23 @@ function inizializza(){
   el('campoQualifica').addEventListener('change', aggiornaVisualizzazioneParametro);
 
   on('btnTabelle','click', () => mostraScheda('tabelle'));
-  el('btnSalvaTabelle').addEventListener('click', () => {
+  // Tabelle: si salvano da sole a ogni modifica.
+  on('corpoTabelle','change', e => {
+    if(e.target.id === 'toggleTabelleAvanzate' || !e.target.matches('input, select')) return;
     leggiTabelleDaModale();
-    mostraScheda('turni');
+    segnaTabelleSalvate();
     aggiornaRiepilogoMensile();
     if(!el('contenitoreCedolino').hidden) renderCedolino();
   });
+  el('btnSalvaTabelle').addEventListener('click', () => { leggiTabelleDaModale(); segnaTabelleSalvate(); });
+  on('btnChiudiTabelle','click', () => { leggiTabelleDaModale(); mostraScheda('altro'); });
   el('btnResetTabelle').addEventListener('click', () => {
-    AppState.tabelle = clonaTabelleConSoglie(TABELLE_PREDEFINITE);
-    renderTabelle();
+    mostraConferma('Riportare tutte le tabelle ai valori predefiniti?', () => {
+      AppState.tabelle = clonaTabelleConSoglie(TABELLE_PREDEFINITE);
+      salvaTabelleStorage();
+      renderTabelle();
+      segnaTabelleSalvate();
+    });
   });
 
   on('btnAggiungiAssenzaPersonalizzata','click', () => {
@@ -723,11 +731,54 @@ function inizializza(){
   });
 
   el('btnChiudiTurno').addEventListener('click', () => { el('pannelloTurno').hidden = true; });
+  // Finestra "Modifica il giorno": pulsanti che comandano i campi di sempre.
+  on('btnSalvaTurnoTesta','click', () => el('btnSalvaTurno').click());
+  on('pannelloTurno','click', e => {
+    const tipo = e.target.closest('[data-tipo-giorno]');
+    if(tipo){
+      modoGiornoEditor = tipo.dataset.tipoGiorno;
+      el('campoRiposo').checked = modoGiornoEditor === 'riposo';
+      if(modoGiornoEditor !== 'assenza') el('campoAssenzaTipo').value = '';
+      aggiornaVisibilitaCampiOrario(); aggiornaAnteprima(); aggiornaEditorGiornoV3();
+      return;
+    }
+    const mod = e.target.closest('[data-modello-giorno]');
+    if(mod){
+      const m = (AppState.modelliTurno || []).find(x => x.id === mod.dataset.modelloGiorno);
+      if(m){ el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; aggiornaAnteprima(); aggiornaEditorGiornoV3(); }
+      return;
+    }
+    const ind = e.target.closest('[data-indennita-giorno]');
+    if(ind){
+      const casella = el(ind.dataset.indennitaGiorno);
+      casella.checked = !casella.checked;
+      casella.dispatchEvent(new Event('change'));
+      aggiornaAnteprima(); aggiornaEditorGiornoV3();
+      return;
+    }
+    const passo = e.target.closest('[data-passo-ore]');
+    if(passo){
+      const campo = el(passo.dataset.passoOre);
+      campo.value = Math.max(0, (Number(campo.value) || 0) + Number(passo.dataset.delta)) || '';
+      campo.dispatchEvent(new Event('input'));
+      return;
+    }
+    const pd = e.target.closest('.scelta-prima-dopo [data-valore]');
+    if(pd){
+      const sel = el(pd.closest('.scelta-prima-dopo').dataset.per);
+      sel.value = pd.dataset.valore;
+      sel.dispatchEvent(new Event('input'));
+      aggiornaEditorGiornoV3();
+    }
+  });
+  on('pannelloTurno','input', () => aggiornaEditorGiornoV3());
+  on('pannelloTurno','change', () => aggiornaEditorGiornoV3());
 
   el('btnAggiungiSecondoStraordinario').addEventListener('click', () => {
-    el('blocchStrSecondo').hidden = false;
-    el('btnAggiungiSecondoStraordinario').hidden = true;
-    el('campoStrOre2')?.focus();
+    const primo = el('bloccoStrPrimo');
+    if(primo && primo.hidden){ primo.hidden = false; el('campoStrOre1')?.focus(); }
+    else { el('blocchStrSecondo').hidden = false; el('campoStrOre2')?.focus(); }
+    el('btnAggiungiSecondoStraordinario').hidden = !el('blocchStrSecondo').hidden && !(primo && primo.hidden);
     aggiornaAnteprima();
   });
   el('btnRimuoviSecondoStraordinario').addEventListener('click', () => {

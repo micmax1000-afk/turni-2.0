@@ -116,7 +116,7 @@ function mostraScheda(nome){
   const tabId = { calendario: 'tabCalendario', report: 'tabReport', turni: 'tabTurni', altro: 'tabAltro' };
   Object.keys(tabId).forEach(k => { const n = el(tabId[k]); if(n) n.classList.toggle('attiva', k === tabAttivo); });
   if(nome === 'assenze' || nome === 'turni') renderAssenze();
-  if(nome === 'tabelle') renderTabelle();
+  if(nome === 'tabelle'){ renderTabelle(); const st = el('statoSalvataggioTabelle'); if(st) st.textContent = 'Le modifiche si salvano da sole.'; }
   if(nome === 'anagrafica') popolaFormAnagrafica();
   if(nome === 'sequenza') renderSequenza();
   if(nome === 'turni' && typeof renderModelliTabTurni === 'function') renderModelliTabTurni();
@@ -174,7 +174,9 @@ function aggiornaAvvisiApp(){
       const testoAvviso = giorniRimasti < 0
         ? `La tua turnazione automatica è terminata il ${dataLeggibile}.`
         : `La tua turnazione automatica finisce il ${dataLeggibile}.`;
-      out.push({ tipo:'info', testo: testoAvviso, azione:{ label:'🔁 Continua per un altro mese', onClick: () => {
+      const inUso = typeof patternInUsoV2 === 'function' ? patternInUsoV2() : null;
+      if(inUso) out.push({ tipo:'info', testo: testoAvviso, azione:{ label:'🔁 Continua la sequenza', onClick: () => apriEditorPatternSempliceV2(inUso.id, true) } });
+      else out.push({ tipo:'info', testo: testoAvviso, azione:{ label:'🔁 Continua per un altro mese', onClick: () => {
         const campoGiorni = el('campoSequenzaGiorni');
         if(campoGiorni) campoGiorni.value = '30';
         if(typeof continuaSequenzaTurni === 'function') continuaSequenzaTurni();

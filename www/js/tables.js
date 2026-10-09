@@ -78,7 +78,7 @@ function renderTabelle(){
 
   el('corpoTabelle').innerHTML = `<div class="tabelle-v17"><div class="tabelle-hero-v17"><div><span class="tabella-eyebrow">CENTRO PARAMETRI</span><h3>Tabelle per ${esc(qualifica)}</h3><p>I valori ufficiali predefiniti sono già impostati correttamente per la tua qualifica e regione.</p></div><div class="tabella-hero-badge"><strong id="tabellaCountModificati">0</strong><small>modificati</small></div></div>
   <label class="switch-avanzate-v17">
-    <input type="checkbox" id="toggleTabelleAvanzate" ${mostraTabelleAvanzate ? 'checked' : ''}>
+    <input type="checkbox" class="interruttore" id="toggleTabelleAvanzate" ${mostraTabelleAvanzate ? 'checked' : ''}>
     <span class="switch-avanzate-v17-testo"><strong>Mostra impostazioni avanzate</strong><small>Attivalo solo se hai bisogno di modificare manualmente stipendi, indennità, IRPEF o addizionali.</small></span>
   </label>
   ${mostraTabelleAvanzate ? `<div class="tabelle-toolbar-v17"><label class="tabella-search-v17"><span>⌕</span><input id="ricercaTabelle" type="search" placeholder="Cerca una voce…" autocomplete="off"></label><div class="tabella-filtri-v17" role="group" aria-label="Filtra tabelle"><button type="button" class="tabella-filtro-v17 attivo" data-table-filter="tutte">Tutte</button><button type="button" class="tabella-filtro-v17" data-table-filter="modificati">Modificate</button><button type="button" class="tabella-filtro-v17" data-table-filter="predefiniti">Predefinite</button></div></div><div class="tabella-notice-v17"><span>ⓘ</span><p><strong>Attenzione ai valori economici.</strong> I parametri modificati possono cambiare il netto stimato. Verifica sempre il cedolino ufficiale prima di usare i risultati.</p></div>${section('fisse','Voci fisse','💶','Stipendio e indennità pensionabile',bodyFisse)}${section('straordinario','Straordinario','⏱️','Tariffe orarie in vigore',bodyStra)}${section('straordinario27','Straordinario 2027','📅','Valori proiettati, non ancora in vigore',bodyStra27,'proiezione')}${section('assegno','Assegno di funzione','🎖️',`${NOMI_RUOLO[catRuolo]} — soglie di servizio`,bodyAssegno,catRuolo==='funz'?'attenzione':'')}${section('indennita','Indennità e trasferte','🚓','Servizi, missioni e accessorie',bodyInd)}${section('fiscale','Fiscale e previdenziale','🧾','Parametri utilizzati per la stima',bodyFisc)}${section('irpef','IRPEF nazionale','🧮','Scaglioni e aliquote — Legge di Bilancio',bodyIrpef)}${section('regionale','Addizionale regionale','🗺️',`${esc(regione)} — aggiorna quando cambia la delibera regionale`,bodyRegionale)}${section('comunale','Addizionale comunale','🏛️','Dipende dal tuo Comune di residenza',bodyComunale)}${section('buono','Buono pasto','🍽️','Valore informativo',bodyBuono)}${section('personalizzate','Indennità personalizzate','🎁','Voci libere non coperte dalle tabelle (es. Vacanza contrattuale)',bodyPersonalizzate + '<button type="button" class="btn-secondario" id="btnAggiungiIndennitaPersonalizzata" style="margin-top:10px;">+ Aggiungi indennità</button>')}<div class="tabelle-v17-footer"><button type="button" class="btn-secondario" id="btnResetTabelleV17">↺ Ripristina tutto</button><span>Le modifiche restano in memoria solo dopo <strong>Salva</strong>.</span></div>` : ''}</div>`;
@@ -101,10 +101,10 @@ function renderTabelle(){
   };
   el('corpoTabelle').querySelectorAll('.tabella-head-v17').forEach(b=>b.addEventListener('click',()=>{const open=b.getAttribute('aria-expanded')==='true';b.setAttribute('aria-expanded',String(!open));b.nextElementSibling.hidden=open;b.querySelector('b').textContent=open?'⌄':'⌃';}));
   el('corpoTabelle').querySelectorAll('input[data-t]').forEach(i=>i.addEventListener('input',updateStatus));
-  el('corpoTabelle').querySelectorAll('[data-reset-table]').forEach(b=>b.addEventListener('click',()=>{const d=val(defs,b.dataset.resetTable);if(d!==undefined){const i=el('corpoTabelle').querySelector(`input[data-t="${CSS.escape(b.dataset.resetTable)}"]`);if(i){i.value=d;updateStatus();}}}));
+  el('corpoTabelle').querySelectorAll('[data-reset-table]').forEach(b=>b.addEventListener('click',()=>{const d=val(defs,b.dataset.resetTable);if(d!==undefined){const i=el('corpoTabelle').querySelector(`input[data-t="${CSS.escape(b.dataset.resetTable)}"]`);if(i){i.value=d;updateStatus();leggiTabelleDaModale();segnaTabelleSalvate();}}}));
   el('corpoTabelle').querySelector('#ricercaTabelle').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>r.classList.toggle('tabella-nascosta',q && !r.dataset.label.toLowerCase().includes(q)));});
   el('corpoTabelle').querySelectorAll('[data-table-filter]').forEach(b=>b.addEventListener('click',()=>{el('corpoTabelle').querySelectorAll('[data-table-filter]').forEach(x=>x.classList.remove('attivo'));b.classList.add('attivo');const f=b.dataset.tableFilter;el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>{const hide=f!=='tutte' && r.dataset.state!==(f==='modificati'?'modificato':'predefinito');r.classList.toggle('tabella-nascosta',hide);});}));
-  el('btnResetTabelleV17').addEventListener('click',()=>{AppState.tabelle=clonaTabelleConSoglie(defs);renderTabelle();});
+  el('btnResetTabelleV17').addEventListener('click',()=>mostraConferma('Riportare tutte le tabelle ai valori predefiniti?',()=>{AppState.tabelle=clonaTabelleConSoglie(defs);salvaTabelleStorage();renderTabelle();segnaTabelleSalvate();}));
 
   // Indennità personalizzate: prima di aggiungere/rimuovere una voce, sincronizziamo dal DOM
   // le modifiche non ancora salvate alle altre righe, così un "+ Aggiungi" o "🗑️ Rimuovi" non
@@ -165,4 +165,10 @@ function leggiTabelleDaModale(){
     AppState.anagrafica.addComunale = Number(campoComunale.value) || 0;
     salvaAnagraficaStorage();
   }
+}
+
+// Le Tabelle si salvano da sole: dopo ogni modifica un "✓ Salvato" in alto.
+function segnaTabelleSalvate(){
+  const stato = el('statoSalvataggioTabelle');
+  if(stato) stato.innerHTML = '<span class="stato-attivo">✓ Salvato</span> · le modifiche si salvano da sole';
 }

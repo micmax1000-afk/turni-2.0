@@ -397,7 +397,7 @@ function popolaSelectAssenze(){
   const sel = el('campoAssenzaTipo');
   const valorePrecedente = sel.value;
   // Permesso breve ha una sua modalità dedicata dentro il turno (dalle-alle), non va più selezionato qui come assenza a giornata intera
-  sel.innerHTML = '<option value="">— nessuna (turno di lavoro o riposo) —</option>' +
+  sel.innerHTML = '<option value="">— scegli —</option>' +
     AppState.assenze.filter(a => a.nome !== 'Permesso breve').map(a => `<option value="${a.id}">${a.nome} (${a.unita})</option>`).join('');
   sel.value = valorePrecedente;
 }

@@ -128,12 +128,65 @@ function renderColoriTurni(){
   });
 }
 
+// Finestra "Modifica il giorno": Turno / Riposo / Assenza.
+let modoGiornoEditor = 'turno';
 function aggiornaVisibilitaCampiOrario(){
-  const assente = el('campoRiposo').checked || !!el('campoAssenzaTipo').value;
-  el('campiOrario').style.display = assente ? 'none' : '';
+  const assenza = modoGiornoEditor === 'assenza' || !!el('campoAssenzaTipo').value;
+  const riposo = !assenza && el('campoRiposo').checked;
+  el('campiOrario').style.display = (assenza || riposo) ? 'none' : '';
+  const blocco = el('bloccoAssenzaGiorno'); if(blocco) blocco.hidden = !assenza;
+  const testoRiposo = el('testoRiposoGiorno'); if(testoRiposo) testoRiposo.hidden = !riposo;
   const voceSelezionata = AppState.assenze.find(a => a.id === el('campoAssenzaTipo').value);
   const eOraria = voceSelezionata && voceSelezionata.unita === 'h';
   el('campiRiposoCompensativo').style.display = eOraria ? '' : 'none';
+}
+
+// Indennità della griglia → casella (nascosta) che il salvataggio legge, come prima.
+const CASELLE_INDENNITA_GIORNO = [
+  ['reperibilita', 'campoReperibilita'], ['missione', 'campoMissione'], ['servizioEsterno', 'campoServizioEsterno'],
+  ['ordinePubblico', 'campoOrdinePubblico'], ['controlloTerritorio', 'campoControlloTerritorio'], ['buonoPasto', 'campoBuonoPasto'],
+  ['cambioTurno', 'campoCambioTurno'], ['compensazioneRiposo', 'campoCompensazioneRiposo'], ['recuperoFestivoLavorato', 'campoRecuperoFestivo']
+];
+// Il modello del turno: quello che ha esattamente questi orari (se era già quello, resta).
+function modelloDaOrariGiorno(){
+  const inizio = el('campoOraInizio').value, fine = el('campoOraFine').value;
+  if(!inizio || !fine) return null;
+  const adatti = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio === inizio && m.oraFine === fine);
+  const prima = (AppState.turni[giornoSelezionato] || {}).modelloId;
+  return (adatti.find(m => m.id === prima) || adatti[0] || {}).id || null;
+}
+function aggiornaEditorGiornoV3(){
+  if(!el('sceltaTipoGiorno')) return;
+  const modo = el('campoAssenzaTipo').value ? 'assenza' : modoGiornoEditor === 'assenza' ? 'assenza' : el('campoRiposo').checked ? 'riposo' : 'turno';
+  el('sceltaTipoGiorno').querySelectorAll('[data-tipo-giorno]').forEach(b => b.classList.toggle('attivo', b.dataset.tipoGiorno === modo));
+  // Sottotitolo: cosa c'è in questo momento
+  const inizio = el('campoOraInizio').value, fine = el('campoOraFine').value;
+  const idModello = modelloDaOrariGiorno();
+  const modello = (AppState.modelliTurno || []).find(m => m.id === idModello);
+  const voce = AppState.assenze.find(a => a.id === el('campoAssenzaTipo').value);
+  el('sottotitoloModaleTurno').textContent = modo === 'riposo' ? 'Riposo'
+    : modo === 'assenza' ? (voce ? voce.nome : 'Assenza')
+    : inizio && fine ? `${modello ? modello.nome + ' · ' : ''}${inizio} – ${fine}` : 'Turno da completare';
+  // Modelli
+  el('sceltaModelloGiorno').innerHTML = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine).map(m => {
+    const colore = scurisciColore(coloreModelloV2(m), 0.35);
+    const attivo = m.id === idModello;
+    return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};` : `color:${colore};`}border-color:${colore}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
+  }).join('');
+  // Indennità
+  const attive = CASELLE_INDENNITA_GIORNO.filter(([, id]) => el(id).checked).length;
+  el('grigliaIndennitaGiorno').innerHTML = CASELLE_INDENNITA_GIORNO.map(([chiave, id]) => {
+    const voceInd = ELENCO_INDENNITA.find(x => x.chiave === chiave);
+    const on = el(id).checked;
+    return `<button type="button" data-indennita-giorno="${id}" class="${on ? 'attivo' : ''}" aria-pressed="${on}">${iconaIndennita(chiave)}<span>${voceInd ? voceInd.nome : chiave}</span></button>`;
+  }).join('');
+  el('contaIndennitaGiorno').textContent = attive ? `${attive} ${attive === 1 ? 'attiva' : 'attive'}` : '';
+  el('notaControlloTerritorio').hidden = !el('campoControlloTerritorio').checked;
+  // Prima / dopo il turno
+  document.querySelectorAll('#pannelloTurno .scelta-prima-dopo').forEach(g => {
+    const valore = el(g.dataset.per).value;
+    g.querySelectorAll('[data-valore]').forEach(b => b.classList.toggle('attivo', b.dataset.valore === valore));
+  });
 }
 
 // Calcola gli orari nascosti di straordinario (dalle/alle) a partire dai due campi visibili
@@ -215,7 +268,8 @@ function leggiTurnoDalModale(){
     cambioTurno: el('campoCambioTurno').checked,
     compensazioneRiposo: el('campoCompensazioneRiposo').checked,
     recuperoFestivoLavorato: el('campoRecuperoFestivo').checked,
-    buonoPasto: el('campoBuonoPasto').checked
+    buonoPasto: el('campoBuonoPasto').checked,
+    modelloId: el('campoRiposo').checked || el('campoAssenzaTipo').value ? null : modelloDaOrariGiorno()
   };
 }
 
@@ -306,6 +360,7 @@ function apriModaleTurno(iso){
   el('pannelloTurno').dataset.iso = iso;
   el('titoloModaleTurno').textContent = 'Turno del ' + iso.split('-').reverse().join('/');
   el('campoRiposo').checked = !!t.riposo;
+  modoGiornoEditor = t.assenzaTipo ? 'assenza' : t.riposo ? 'riposo' : 'turno';
   popolaSelectAssenze();
   el('campoAssenzaTipo').value = t.assenzaTipo || '';
   el('campoRCOraInizio').value = t.riposoCompensativoOraInizio || '';
@@ -327,7 +382,11 @@ function apriModaleTurno(iso){
   const blocchStrSecondo = el('blocchStrSecondo');
   if(blocchStrSecondo) blocchStrSecondo.hidden = !secondoStrPresente;
   const btnAggiungiStr = el('btnAggiungiSecondoStraordinario');
-  if(btnAggiungiStr) btnAggiungiStr.hidden = secondoStrPresente;
+  // Se c'è solo il secondo straordinario (salvato "dopo"), il primo vuoto non si mostra.
+  const primoStrPresente = !!(t.straordinarioPrimaInizio || t.straordinarioPrimaFine);
+  const bloccoPrimo = el('bloccoStrPrimo');
+  if(bloccoPrimo) bloccoPrimo.hidden = secondoStrPresente && !primoStrPresente;
+  if(btnAggiungiStr) btnAggiungiStr.hidden = secondoStrPresente && primoStrPresente;
   el('campoCompensaStraordinario').checked = !!t.compensaStraordinario;
   el('campoPermessoBreveAttivo').checked = !!t.permessoBreveAttivo;
   el('campoPermessoBreveInizio').value = t.permessoBreveOraInizio || '';
@@ -364,8 +423,11 @@ function apriModaleTurno(iso){
   if(pannelloIndennita) pannelloIndennita.open = true;
   const sezioniEditor = el('pannelloTurno').querySelectorAll('.editor-sezione');
   sezioniEditor.forEach((sezione, i) => { sezione.open = i < 2; });
+  const dataTitolo = new Date(iso + 'T12:00:00').toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long' });
+  el('titoloModaleTurno').textContent = dataTitolo.charAt(0).toUpperCase() + dataTitolo.slice(1);
+  aggiornaEditorGiornoV3();
   el('pannelloTurno').hidden = false;
-  el('pannelloTurno').scrollIntoView({ behavior:'smooth', block:'start' });
+  el('pannelloTurno').scrollTop = 0;
 }
 
 

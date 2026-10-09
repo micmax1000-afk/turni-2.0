@@ -37,7 +37,7 @@ function aggiornaStatoBackup(){
   const cEDati = Object.keys(AppState.turni).length > 0;
   if(!dataStr){
     box.innerHTML = cEDati
-      ? '⚠ Non hai ancora fatto nessun backup. Esportane uno per non rischiare di perdere i tuoi dati.'
+      ? '⚠ Non hai ancora fatto un backup: esportane uno per non perdere i dati.'
       : 'Nessun backup ancora effettuato.';
     box.className = cEDati ? 'sotto-titolo avviso-backup' : 'sotto-titolo';
     return;
@@ -45,11 +45,11 @@ function aggiornaStatoBackup(){
   const giorni = Math.floor((new Date() - new Date(dataStr)) / 86400000);
   const dataFormattata = formattaDataBreve(dataStr.slice(0, 10));
   if(giorni >= 14){
-    box.innerHTML = `⚠ Ultimo backup: ${dataFormattata} (${giorni} giorni fa). Ti conviene farne uno nuovo.`;
+    box.innerHTML = `⚠ Ultimo backup: ${dataFormattata} (${giorni} giorni fa): conviene farne uno nuovo.`;
     box.className = 'sotto-titolo avviso-backup';
   } else {
     box.innerHTML = `✓ Ultimo backup: ${dataFormattata} (${giorni === 0 ? 'oggi' : giorni === 1 ? '1 giorno fa' : giorni + ' giorni fa'}).`;
-    box.className = 'sotto-titolo';
+    box.className = 'sotto-titolo backup-ok';
   }
 }
 

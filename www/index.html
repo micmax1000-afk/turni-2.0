@@ -242,60 +242,97 @@
     </div>
   </section>
 
-  <div class="pannello-turno-inline" id="pannelloTurno" hidden>
-      <div class="pannello-turno-header"><h2 id="titoloModaleTurno">Turno del giorno</h2><button class="btn-icona" id="btnChiudiTurno" aria-label="Chiudi">✕</button></div>
+  <!-- Avvisi (benvenuto, turni finiti...): solo nel Calendario -->
+  <div id="appAlerts" class="app-alerts-v20" hidden></div>
+  <div class="pannello-turno-inline editor-giorno" id="pannelloTurno" hidden>
+      <div class="pannello-turno-header editor-giorno-testa">
+        <button class="btn-icona" id="btnChiudiTurno" aria-label="Chiudi">✕</button>
+        <div class="editor-giorno-titolo"><h2 id="titoloModaleTurno">Turno del giorno</h2><small id="sottotitoloModaleTurno"></small></div>
+        <button class="btn-primario editor-giorno-salva" id="btnSalvaTurnoTesta" type="button">Salva</button>
+      </div>
       <div class="pannello-turno-corpo">
-        <label class="campo-modale campo-riga">
-          <input type="checkbox" id="campoRiposo"> Giorno di riposo
-        </label>
-        <label class="campo-modale">Assenza dal servizio
-          <select id="campoAssenzaTipo">
-            <option value="">— nessuna (turno di lavoro o riposo) —</option>
-          </select>
-        </label>
-        <div id="campiRiposoCompensativo" style="display:none;">
-          <label class="campo-modale">Turno sostituito — dalle<input type="time" id="campoRCOraInizio"></label>
-          <label class="campo-modale">alle<input type="time" id="campoRCOraFine"></label>
-          <p class="sotto-titolo" id="anteprimaRiposoCompensativo" style="margin:-4px 0 6px;"></p>
+        <div class="scelta-tipo-giorno" id="sceltaTipoGiorno" role="group" aria-label="Tipo di giorno">
+          <button type="button" data-tipo-giorno="turno">Turno</button>
+          <button type="button" data-tipo-giorno="riposo">Riposo</button>
+          <button type="button" data-tipo-giorno="assenza">Assenza</button>
         </div>
-        <div id="campiOrario">
-          <label class="campo-modale">Ora inizio<input type="time" id="campoOraInizio"></label>
-          <label class="campo-modale">Ora fine<input type="time" id="campoOraFine"></label>
-
-          <details class="pannello-indennita-straordinario" open>
-            <summary>+ Aggiungi indennità o straordinario</summary>
-            <div class="pannello-indennita-straordinario-corpo">
-          <label class="campo-modale campo-riga">
-            <input type="checkbox" id="campoSecondoAttivo"> Rientro / turno spezzato con pausa
+        <input type="checkbox" id="campoRiposo" hidden>
+        <div id="bloccoAssenzaGiorno" hidden>
+          <label class="campo-modale">Quale assenza
+            <select id="campoAssenzaTipo">
+              <option value="">— scegli —</option>
+            </select>
           </label>
-          <div id="campiSecondoSegmento" class="griglia-check" style="display:none;">
-            <label class="campo-modale">Ora inizio (dopo la pausa)<input type="time" id="campoSecondoOraInizio"></label>
-            <label class="campo-modale">Ora fine<input type="time" id="campoSecondoOraFine"></label>
+          <div id="campiRiposoCompensativo" style="display:none;">
+            <div class="riga-straordinario-ore">
+              <label class="campo-modale">Turno sostituito — dalle<input type="time" id="campoRCOraInizio"></label>
+              <label class="campo-modale">alle<input type="time" id="campoRCOraFine"></label>
+            </div>
+            <p class="sotto-titolo" id="anteprimaRiposoCompensativo" style="margin:-4px 0 6px;"></p>
           </div>
-          <p class="sotto-titolo" style="margin:-4px 0 6px;">Esempio: turno 08:00–14:00, pausa, poi rientro 15:00–18:00 — il periodo di pausa non viene conteggiato.</p>
+        </div>
+        <p class="sotto-titolo" id="testoRiposoGiorno" hidden>Giorno di riposo: nessuna ora da contare.</p>
+        <div id="campiOrario">
+          <p class="titolo-sezione-giorno">Turno</p>
+          <div class="scelta-modello-giorno" id="sceltaModelloGiorno"></div>
+          <div class="orari-giorno">
+            <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoOraInizio"></label>
+            <span aria-hidden="true">→</span>
+            <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoOraFine"></label>
+          </div>
+          <div id="anteprimaClassificazione" class="anteprima-classificazione anteprima-giorno"></div>
 
-          <p style="margin:6px 0 -2px; font-weight:700;">Straordinario</p>
-          <p class="sotto-titolo" style="margin:-2px 0 6px;">Indica solo quante ore e se sono prima o dopo il turno: calcoliamo noi l'orario esatto per la tariffa giusta.</p>
-          <div class="riga-straordinario-ore">
-            <label class="campo-modale">Ore<input type="number" id="campoStrOre1" min="0" step="0.25" placeholder="es. 2"></label>
-            <label class="campo-modale">Quando<select id="campoStrPosizione1"><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select></label>
+          <p class="titolo-sezione-giorno">Indennità <em id="contaIndennitaGiorno"></em></p>
+          <div class="griglia-indennita-giorno" id="grigliaIndennitaGiorno"></div>
+          <p class="nota-giorno" id="notaControlloTerritorio" hidden>📍 Controllo territorio: serve almeno 3 h continuative di sera/notte, e non va insieme all'Ordine pubblico (con entrambi non viene calcolato).</p>
+          <div class="caselle-indennita-nascoste" hidden>
+            <input type="checkbox" id="campoReperibilita"><input type="checkbox" id="campoMissione"><input type="checkbox" id="campoServizioEsterno">
+            <input type="checkbox" id="campoOrdinePubblico"><input type="checkbox" id="campoControlloTerritorio"><input type="checkbox" id="campoCambioTurno">
+            <input type="checkbox" id="campoCompensazioneRiposo"><input type="checkbox" id="campoRecuperoFestivo"><input type="checkbox" id="campoBuonoPasto">
           </div>
-          <details class="orario-preciso-facoltativo">
-            <summary>Preferisci inserire l'orario esatto? ▾</summary>
-            <div class="riga-straordinario-ore">
-              <label class="campo-modale">Dalle<input type="time" id="campoStrOrarioInizio1"></label>
-              <label class="campo-modale">Alle<input type="time" id="campoStrOrarioFine1"></label>
+          <div id="campoDurataMissioneBox" style="display:none; margin-top:6px;">
+            <label class="campo-modale">Durata missione (ore)
+              <input type="number" id="campoDurataMissione" min="0" step="0.5" value="0">
+            </label>
+            <p class="sotto-titolo" style="margin:2px 0 0;">Indennità oraria di trasferta: 0€ fino a 4h, tariffa piena 4-8h, ridotta al 40% oltre le 8h (fonte SIULP). Il rimborso pasti su ricevuta non è calcolato automaticamente.</p>
+          </div>
+          <div id="campoOrdinePubblicoBox" style="display:none; margin-top:6px;">
+            <label class="campo-modale">Sede del servizio di ordine pubblico
+              <select id="campoOPSede"><option value="in">In sede</option><option value="fuori">Fuori sede</option></select>
+            </label>
+            <label class="campo-modale campo-riga" id="campoOPPernottamentoBox" style="margin-top:4px; display:none;">
+              <input type="checkbox" id="campoOPPernottamento" checked> Con pernottamento fuori sede
+            </label>
+            <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore (fonte SIULP); sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
+          </div>
+
+          <p class="titolo-sezione-giorno">Straordinario</p>
+          <div class="riquadro-giorno">
+            <div id="bloccoStrPrimo">
+            <div class="riga-ore-straordinario">
+              <span>Ore</span>
+              <div class="contatore-anagrafica"><button type="button" data-passo-ore="campoStrOre1" data-delta="-0.5" aria-label="Meno mezz'ora">−</button><input type="number" id="campoStrOre1" min="0" step="0.25" placeholder="0" inputmode="decimal" aria-label="Ore di straordinario"><button type="button" data-passo-ore="campoStrOre1" data-delta="0.5" aria-label="Più mezz'ora">+</button></div>
             </div>
-          </details>
-          <input type="hidden" id="campoStrPrimaInizio"><input type="hidden" id="campoStrPrimaFine">
-          <button type="button" class="link-aggiungi-straordinario" id="btnAggiungiSecondoStraordinario">+ Aggiungi un altro straordinario</button>
-          <div id="blocchStrSecondo" hidden>
-            <div class="riga-straordinario-ore">
-              <label class="campo-modale">Ore<input type="number" id="campoStrOre2" min="0" step="0.25" placeholder="es. 1"></label>
-              <label class="campo-modale">Quando<select id="campoStrPosizione2"><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select></label>
-            </div>
+            <select id="campoStrPosizione1" hidden><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select>
+            <div class="scelta-prima-dopo" data-per="campoStrPosizione1"><button type="button" data-valore="prima">Prima del turno</button><button type="button" data-valore="dopo">Dopo il turno</button></div>
             <details class="orario-preciso-facoltativo">
-              <summary>Preferisci inserire l'orario esatto? ▾</summary>
+              <summary>Orario esatto (facoltativo)</summary>
+              <div class="riga-straordinario-ore">
+                <label class="campo-modale">Dalle<input type="time" id="campoStrOrarioInizio1"></label>
+                <label class="campo-modale">Alle<input type="time" id="campoStrOrarioFine1"></label>
+              </div>
+            </details>
+            </div>
+            <input type="hidden" id="campoStrPrimaInizio"><input type="hidden" id="campoStrPrimaFine">
+          <div id="blocchStrSecondo" hidden>
+            <div class="riga-ore-straordinario">
+              <span>Ore</span>
+              <div class="contatore-anagrafica"><button type="button" data-passo-ore="campoStrOre2" data-delta="-0.5" aria-label="Meno mezz'ora">−</button><input type="number" id="campoStrOre2" min="0" step="0.25" placeholder="0" inputmode="decimal" aria-label="Ore del secondo straordinario"><button type="button" data-passo-ore="campoStrOre2" data-delta="0.5" aria-label="Più mezz'ora">+</button></div>
+            </div>
+            <select id="campoStrPosizione2" hidden><option value="prima">Prima del turno</option><option value="dopo">Dopo il turno</option></select>
+            <div class="scelta-prima-dopo" data-per="campoStrPosizione2"><button type="button" data-valore="prima">Prima del turno</button><button type="button" data-valore="dopo">Dopo il turno</button></div>
+            <details class="orario-preciso-facoltativo">
+              <summary>Orario esatto (facoltativo)</summary>
               <div class="riga-straordinario-ore">
                 <label class="campo-modale">Dalle<input type="time" id="campoStrOrarioInizio2"></label>
                 <label class="campo-modale">Alle<input type="time" id="campoStrOrarioFine2"></label>
@@ -304,11 +341,20 @@
             <input type="hidden" id="campoStrDopoInizio"><input type="hidden" id="campoStrDopoFine">
             <button type="button" class="link-rimuovi-straordinario" id="btnRimuoviSecondoStraordinario">✕ Rimuovi questo straordinario</button>
           </div>
-          <p class="sotto-titolo" id="anteprimaStraordinario" style="margin:-4px 0 6px;"></p>
-          <label class="campo-modale campo-riga">
-            <input type="checkbox" id="campoCompensaStraordinario"> Converti lo straordinario di oggi in riposo compensativo (non entra nel calcolo della paga)
-          </label>
+            <p class="anteprima-giorno" id="anteprimaStraordinario"></p>
+            <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoCompensaStraordinario"><span>Mettilo a riposo compensativo (non in paga)</span></label>
+            <button type="button" class="link-aggiungi-straordinario" id="btnAggiungiSecondoStraordinario">＋ Un altro straordinario</button>
+          </div>
 
+          <details class="riquadro-giorno altro-giorno">
+            <summary>Altro: rientro, permesso breve, recupero<b aria-hidden="true">⌄</b></summary>
+            <label class="campo-modale campo-riga">
+              <input type="checkbox" id="campoSecondoAttivo"> Rientro / turno spezzato con pausa
+            </label>
+            <div id="campiSecondoSegmento" class="griglia-check" style="display:none;">
+              <label class="campo-modale">Ora inizio (dopo la pausa)<input type="time" id="campoSecondoOraInizio"></label>
+              <label class="campo-modale">Ora fine<input type="time" id="campoSecondoOraFine"></label>
+            </div>
           <label class="campo-modale campo-riga">
             <input type="checkbox" id="campoPermessoBreveAttivo"> Permesso breve durante questo turno
           </label>
@@ -330,43 +376,12 @@
             </div>
             <p class="sotto-titolo" id="anteprimaRecuperoPermessoBreve" style="margin:-4px 0 6px;">Queste ore, a differenza del permesso breve, entrano nel calcolo della paga (ore retribuite in più), ma non si sommano al totale ore del turno né toccano il saldo rimanente di Permesso breve: scalano solo il debito di "ore da recuperare".</p>
           </div>
-
-          <div class="griglia-check">
-            <p class="sotto-titolo" style="grid-column:1/-1; margin:8px 0 -2px; font-weight:700; color:var(--inchiostro);">🍽️ Servizi e indennità extra del giorno</p>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoReperibilita"> Reperibilità</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoMissione"> Missione</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoServizioEsterno"> Servizio esterno</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoOrdinePubblico"> Ordine pubblico</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoControlloTerritorio"> Controllo del territorio</label>
-            <p class="sotto-titolo" style="grid-column:1/-1; margin:-4px 0 4px;">Spetta solo con almeno 3h continuative in fascia serale/notturna, e non è cumulabile con l'Ordine pubblico: se spunti entrambe su questo turno non verrà calcolata.</p>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoCambioTurno"> Cambio turno</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoCompensazioneRiposo"> Lavorato sul riposo (diritto a recupero riposo)</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoRecuperoFestivo"> Lavorato in giorno festivo (diritto a recupero festivo)</label>
-            <label class="campo-modale campo-riga"><input type="checkbox" id="campoBuonoPasto"> Buono pasto</label>
-          </div>
-          <div id="campoDurataMissioneBox" style="display:none; margin-top:6px;">
-            <label class="campo-modale">Durata missione (ore)
-              <input type="number" id="campoDurataMissione" min="0" step="0.5" value="0">
-            </label>
-            <p class="sotto-titolo" style="margin:2px 0 0;">Indennità oraria di trasferta: 0€ fino a 4h, tariffa piena 4-8h, ridotta al 40% oltre le 8h (fonte SIULP). Il rimborso pasti su ricevuta non è calcolato automaticamente.</p>
-          </div>
-          <div id="campoOrdinePubblicoBox" style="display:none; margin-top:6px;">
-            <label class="campo-modale">Sede del servizio di ordine pubblico
-              <select id="campoOPSede"><option value="in">In sede</option><option value="fuori">Fuori sede</option></select>
-            </label>
-            <label class="campo-modale campo-riga" id="campoOPPernottamentoBox" style="margin-top:4px; display:none;">
-              <input type="checkbox" id="campoOPPernottamento" checked> Con pernottamento fuori sede
-            </label>
-            <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore (fonte SIULP); sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
-          </div>
-            </div>
           </details>
         </div>
-        <div id="anteprimaClassificazione" class="anteprima-classificazione"></div>
       </div>
       <div class="pannello-turno-footer">
-        <button class="btn-secondario" id="btnRimuoviTurno" type="button">Rimuovi turno</button>
-        <button class="btn-primario" id="btnSalvaTurno" type="button">Salva turno</button>
+        <button class="btn-secondario editor-giorno-elimina" id="btnRimuoviTurno" type="button">Elimina</button>
+        <button class="btn-primario" id="btnSalvaTurno" type="button">Salva</button>
       </div>
     </div>
   </div>
@@ -732,12 +747,16 @@
 
 <div id="vistaTabelle" hidden>
   <section class="scheda" id="sezioneTabelle">
-    <h2>Tabelle Ufficiali</h2>
-    <p class="avviso-tabelle">⚠ Valori indicativi tratti da fonti pubbliche (rinnovo CCNL 2022-2024 e Legge di Bilancio 2026). <strong>Verificali e correggili confrontandoli con il tuo cedolino NoiPA reale</strong> prima di usarli per decisioni economiche: stipendi, indennità e aliquote possono cambiare con i rinnovi contrattuali.</p>
+    <div class="intestazione-scheda">
+      <h2>Tabelle ufficiali</h2>
+      <button class="btn-mini-icona" id="btnChiudiTabelle" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
+    </div>
+    <p class="sotto-titolo" id="statoSalvataggioTabelle">Le modifiche si salvano da sole.</p>
+    <p class="nota-tabelle">⚠ Valori indicativi da fonti pubbliche (CCNL 2022-2024, Legge di Bilancio 2026): confrontali con il tuo cedolino NoiPA prima di usarli per decisioni economiche.</p>
     <div id="corpoTabelle"></div>
-    <div id="footerTabelleEsterno" style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-      <button class="btn-secondario" id="btnResetTabelle" type="button">Ripristina predefiniti</button>
-      <button class="btn-primario" id="btnSalvaTabelle" type="button">Salva</button>
+    <div id="footerTabelleEsterno">
+      <button class="link-cancella-anagrafica" id="btnResetTabelle" type="button">Ripristina i valori predefiniti</button>
+      <button class="btn-primario" id="btnSalvaTabelle" type="button" hidden>Salva</button>
     </div>
   </section>
   </div>
@@ -876,12 +895,12 @@
 </div>
 
   <section class="scheda" id="sezioneBackup" hidden>
-    <h2>💾 Backup dei dati</h2>
+    <h2>💾 Backup sul telefono</h2>
     <p class="sotto-titolo" id="statoBackup"></p>
     <div class="barra-backup">
       <button class="btn-primario" id="btnEsportaBackup" type="button">💾 Esporta backup</button>
-      <button class="btn-secondario" id="btnImportaBackup" type="button">📥 Importa Backup</button>
-      <button class="btn-secondario" id="btnAnnullaRipristino" type="button">↩️ Annulla ultimo ripristino</button>
+      <button class="btn-secondario" id="btnImportaBackup" type="button">📥 Importa</button>
+      <button class="btn-secondario" id="btnAnnullaRipristino" type="button">↩️ Annulla ripristino</button>
       <input type="file" id="campoImportaBackup" accept="application/json" hidden>
     </div>
     <details class="spiegazione-backup">
@@ -929,7 +948,6 @@
     <p class="piede-altro"><a href="https://micmax-apps.netlify.app/privacy-turni.html" target="_blank" rel="noopener" id="linkPrivacy">Informativa sulla privacy</a> · <span id="versioneAppTesto"></span></p>
   </div>
 
-  <div id="appAlerts" class="app-alerts-v20" hidden></div>
   <div id="toastContainer" class="toast-container toast-container-v20" aria-live="polite"></div>
   <div id="backupAnteprima" hidden></div>
 

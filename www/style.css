@@ -1961,3 +1961,79 @@ html[data-tema="scuro"] .btn-aggiungi-tratteggiato{background:#1E2A44;border-col
 .gruppo-assenze .card-assenza-head .card-assenza-icon,.gruppo-assenze .card-assenza-head strong,.gruppo-assenze .saldo-progress{display:none}
 .gruppo-assenze .card-assenza-head{margin-top:2px}
 .gruppo-assenze .card-assenza-main{margin-top:6px}
+
+/* =========================================================
+   v2.64.0 — "Modifica il giorno" a pagina intera
+   =========================================================*/
+#pannelloTurno.editor-giorno:not([hidden]){position:fixed;inset:0;z-index:95;margin:0;border:0;border-radius:0;background:var(--pannello);overflow-y:auto;display:flex;flex-direction:column;max-width:none}
+@media(min-width:700px){#pannelloTurno.editor-giorno:not([hidden]){left:50%;width:560px;transform:translateX(-50%);box-shadow:0 0 0 100vmax rgba(0,0,0,.35)}}
+.editor-giorno-testa{position:sticky;top:0;z-index:2;background:var(--pannello);gap:10px;justify-content:flex-start!important}
+.editor-giorno-titolo{flex:1;min-width:0}
+.editor-giorno-titolo h2{font-size:1.02rem!important;margin:0}
+.editor-giorno-titolo small{display:block;color:var(--testo-tenue,#6B7280);font-size:.8rem;margin-top:1px}
+.editor-giorno-salva{padding:8px 14px!important;min-height:0!important;font-size:.88rem!important}
+.editor-giorno .pannello-turno-corpo{flex:1;gap:0}
+.editor-giorno .pannello-turno-footer{margin-top:auto;display:grid;grid-template-columns:auto 1fr;gap:10px}
+.editor-giorno-elimina{color:#B3261E!important;border-color:#F0C9C6!important}
+.scelta-tipo-giorno{display:flex;background:var(--carta);border-radius:12px;padding:3px}
+.scelta-tipo-giorno button{flex:1;border:0;background:none;padding:9px;border-radius:9px;font:600 .9rem var(--font-corpo);color:var(--testo-tenue,#555);cursor:pointer}
+.scelta-tipo-giorno button.attivo{background:var(--pannello);color:var(--testo);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+#bloccoAssenzaGiorno,#testoRiposoGiorno{margin-top:12px}
+.titolo-sezione-giorno{display:flex;justify-content:space-between;font-size:.72rem;letter-spacing:.06em;color:var(--testo-tenue,#6B7280);text-transform:uppercase;margin:18px 0 8px;font-weight:700}
+.titolo-sezione-giorno em{font-style:normal;text-transform:none;letter-spacing:0;color:#1E7A46;font-weight:600}
+.scelta-modello-giorno{display:flex;gap:6px;flex-wrap:wrap}
+.scelta-modello-giorno button{border:1.5px solid;border-radius:16px;padding:6px 12px;font:700 .82rem var(--font-corpo);background:var(--pannello);cursor:pointer}
+.orari-giorno{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:10px}
+.orari-giorno>span{color:var(--testo-tenue,#999)}
+.campo-orario-giorno{display:block;background:var(--carta);border-radius:12px;padding:8px 12px;margin:0}
+.campo-orario-giorno small{display:block;font-size:.7rem;color:var(--testo-tenue,#6B7280)}
+.campo-orario-giorno input{border:0;background:none;padding:0;margin:0;font:700 1.15rem var(--font-corpo);color:var(--testo);width:100%}
+.anteprima-giorno{margin:8px 0 0;font-size:.8rem;color:var(--testo);background:var(--carta);border-radius:10px;padding:8px 10px;white-space:pre-line}
+.anteprima-giorno:empty{display:none}
+.griglia-indennita-giorno{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.griglia-indennita-giorno button{display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid var(--bordo);border-radius:12px;padding:9px 4px;background:var(--pannello);color:var(--testo);cursor:pointer;font:600 .68rem/1.15 var(--font-corpo)}
+.griglia-indennita-giorno button .icona-indennita{font-size:1.15rem}
+.griglia-indennita-giorno button.attivo{background:#DCE7FF;border-color:#9DB3E8;color:#1D4FC4}
+html[data-tema="scuro"] .griglia-indennita-giorno button.attivo{background:#22305A;border-color:#5C7FE0;color:#B4C8FF}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .griglia-indennita-giorno button.attivo{background:#22305A;border-color:#5C7FE0;color:#B4C8FF}}
+.nota-giorno{font-size:.76rem;color:#8A5A00;background:#FFF6DC;border-radius:10px;padding:7px 10px;margin:8px 0 0}
+#campoDurataMissioneBox,#campoOrdinePubblicoBox{background:var(--carta);border-radius:12px;padding:10px;margin-top:8px!important}
+.riquadro-giorno{border:1px solid var(--bordo);border-radius:14px;padding:12px}
+.riga-ore-straordinario{display:flex;align-items:center;gap:10px}
+.riga-ore-straordinario>span{flex:1;font-weight:600}
+.scelta-prima-dopo{display:flex;gap:6px;margin-top:10px}
+.scelta-prima-dopo button{flex:1;border:1.5px solid var(--bordo);background:var(--pannello);color:var(--testo);border-radius:10px;padding:7px;font:600 .82rem var(--font-corpo);cursor:pointer}
+.scelta-prima-dopo button.attivo{background:var(--inchiostro);border-color:var(--inchiostro);color:var(--pannello)}
+.riquadro-giorno .orario-preciso-facoltativo{margin-top:8px;font-size:.82rem}
+.riquadro-giorno #blocchStrSecondo{border-top:1px dashed var(--bordo);margin-top:10px;padding-top:10px}
+.riquadro-giorno .link-aggiungi-straordinario{background:none;border:0;color:#1D5FE0;font-weight:700;padding:6px 0 0;cursor:pointer}
+.altro-giorno{margin-top:14px}
+.altro-giorno summary{list-style:none;display:flex;align-items:center;font-weight:600;font-size:.9rem;cursor:pointer}
+.altro-giorno summary::-webkit-details-marker{display:none}
+.altro-giorno summary b{margin-left:auto;color:var(--testo-tenue,#999)}
+.altro-giorno[open] summary{margin-bottom:8px}
+#bloccoStrPrimo[hidden] ~ #blocchStrSecondo{border-top:0;margin-top:0;padding-top:0}
+.nota-tabelle{font-size:.78rem;line-height:1.4;color:#8A5A00;background:#FFF6DC;border-radius:10px;padding:8px 10px;margin:4px 0 12px}
+html[data-tema="scuro"] .nota-tabelle{background:#3A2F14;color:#F2CD7A}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .nota-tabelle{background:#3A2F14;color:#F2CD7A}}
+#footerTabelleEsterno{display:block;margin-top:6px}
+/* Backup compatto */
+#sezioneBackup,#sezioneBackupDrive{border:1px solid var(--bordo)!important;border-radius:16px!important;padding:14px!important;box-shadow:none!important;margin:0 0 10px!important}
+#sezioneBackup h2,#sezioneBackupDrive h2,#sezioneBackupDrive h3{font-size:1rem!important;margin:0 0 6px!important}
+#statoBackup:not(:empty){background:none!important;padding:0!important;border-radius:0!important;margin:0 0 10px!important;font-size:.84rem}
+#statoBackup.avviso-backup{color:#B26A00!important}
+#statoBackup.backup-ok{color:#1E7A46!important}
+html[data-tema="scuro"] #statoBackup.avviso-backup{color:#F2CD7A!important}
+html[data-tema="scuro"] #statoBackup.backup-ok{color:#8EE0B1!important}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #statoBackup.avviso-backup{color:#F2CD7A!important}html:not([data-tema="chiaro"]) #statoBackup.backup-ok{color:#8EE0B1!important}}
+#sezioneBackup .barra-backup{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+#sezioneBackup .barra-backup #btnEsportaBackup{grid-column:1/-1}
+#sezioneBackup .barra-backup button{min-height:44px;margin:0!important;width:100%;font-size:.88rem}
+#sezioneBackup .spiegazione-backup{margin-top:10px;font-size:.84rem}
+#footerTabelleEsterno[hidden]{display:none!important}
+/* Calendario Classico: piccole icone delle indennità accanto al numero del giorno */
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-badge-list{display:flex!important;gap:1px;align-items:center}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-badge-list .badge-assenza{display:none}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-badge.badge-icona,body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-badge.badge-more{background:none!important;border:0!important;box-shadow:none!important;min-width:0;height:auto;padding:0;font-size:.62rem;color:inherit;opacity:.85}
+html[data-tema="scuro"] .nota-giorno{background:#3A2F14;color:#F2CD7A}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .nota-giorno{background:#3A2F14;color:#F2CD7A}}

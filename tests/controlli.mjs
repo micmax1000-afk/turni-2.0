@@ -298,6 +298,35 @@ sezione('Assenze in Altro e sequenza automatica');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Modifica il giorno, Tabelle, avvisi');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.evaluate(() => { giornoSelezionato = '2026-10-01'; renderCalendario(); });
+  await p.click('#btnModificaGiornoSelezionatoV2');
+  const e = await p.evaluate(() => { const r = document.getElementById('pannelloTurno').getBoundingClientRect(); return { pieno: !document.getElementById('pannelloTurno').hidden && r.top <= 1 && r.height >= innerHeight - 1, sotto: document.getElementById('sottotitoloModaleTurno').textContent, tipo: document.querySelector('#sceltaTipoGiorno .attivo')?.dataset.tipoGiorno }; });
+  ok('"Modifica il giorno" a pagina intera, con il turno in alto (Sera · 19:00 – 01:00)', e.pieno && e.tipo === 'turno' && e.sotto === 'Sera · 19:00 – 01:00', JSON.stringify(e));
+  await p.click('[data-modello-giorno="notte"]');
+  await p.click('[data-indennita-giorno="campoReperibilita"]');
+  await p.click('[data-passo-ore="campoStrOre1"][data-delta="0.5"]');
+  await p.click('[data-passo-ore="campoStrOre1"][data-delta="0.5"]');
+  await p.click('#bloccoStrPrimo [data-valore="dopo"]');
+  await p.click('#btnSalvaTurnoTesta');
+  const t = await p.evaluate(() => AppState.turni['2026-10-01']);
+  ok('salvato: Notte 01–07, reperibilità, 1 h di straordinario dopo (07–08)', t.oraInizio === '01:00' && t.oraFine === '07:00' && t.modelloId === 'notte' && t.reperibilita && t.straordinarioPrimaInizio === '07:00' && t.straordinarioPrimaFine === '08:00', JSON.stringify(t));
+  await p.click('#btnModificaGiornoSelezionatoV2');
+  await p.click('[data-tipo-giorno="riposo"]');
+  await p.click('#btnSalvaTurno');
+  ok('"Riposo" salva il giorno come riposo', await p.evaluate(() => AppState.turni['2026-10-01'].riposo === true));
+  ok('l\'avviso sta solo nel Calendario', await p.evaluate(() => !!document.querySelector('#vistaTurni #appAlerts')));
+  await p.click('#tabAltro'); await p.click('#settingsTabelle');
+  await p.click('#toggleTabelleAvanzate');
+  await p.evaluate(() => { const i = document.querySelector('input[data-t="buonoPastoValore"]'); i.value = '8'; i.dispatchEvent(new Event('change', { bubbles: true })); });
+  ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Report');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva() });
