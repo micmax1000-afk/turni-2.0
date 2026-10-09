@@ -6,6 +6,11 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+
 import org.json.JSONObject;
 
 /** Ponte tra la pagina web dell'app e l'avviso nativo (suono/vibrazione per pochi secondi). */
@@ -43,6 +48,26 @@ public class AvvisoEventoPlugin extends Plugin {
             call.resolve(new JSObject());
         } catch (Exception e) {
             call.reject("Avviso non annullato: " + e.getMessage());
+        }
+    }
+
+    /** Apre le impostazioni delle notifiche dell'app (dopo un "no", Android non le richiede più). */
+    @PluginMethod
+    public void apriImpostazioniNotifiche(PluginCall call) {
+        try {
+            Intent i;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                i.putExtra(Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
+            } else {
+                i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", getContext().getPackageName(), null));
+            }
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(i);
+            call.resolve(new JSObject());
+        } catch (Exception e) {
+            call.reject("Impostazioni non aperte: " + e.getMessage());
         }
     }
 }

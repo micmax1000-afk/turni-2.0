@@ -63,6 +63,11 @@
       </div>
     </div>
 
+    <div class="prossimi-eventi-v2" id="prossimiEventiV2" hidden>
+      <strong class="prossimi-eventi-titolo">📅 Prossimi 7 giorni</strong>
+      <div class="lista-eventi-giorno-v2" id="listaProssimiEventiV2"></div>
+    </div>
+
     <button class="fab-aggiungi-v2" id="btnFabAggiungiV2" type="button" aria-label="Aggiungi turno o evento">✏️</button>
 
     <!-- Popup rapido "+ Turno / + Evento" al tocco di un giorno vuoto -->
@@ -173,12 +178,27 @@
             <label class="campo-modale">Inizio<input type="time" id="campoEventoOraInizio"></label>
             <label class="campo-modale">Fine<input type="time" id="campoEventoOraFine"></label>
           </div>
+          <label class="campo-modale">Ripeti
+            <select id="campoEventoRipeti">
+              <option value="" selected>Non si ripete</option>
+              <option value="settimana">Ogni settimana</option>
+              <option value="2settimane">Ogni 2 settimane</option>
+              <option value="mese">Ogni mese, stesso giorno</option>
+              <option value="anno">Ogni anno</option>
+            </select>
+          </label>
+          <label class="campo-modale" id="campoEventoRipetiFinoWrap" hidden>Fino al (facoltativo)<input type="date" id="campoEventoRipetiFino"></label>
+          <small id="hintRipetiEvento" class="hint-evento" hidden>Le modifiche valgono per tutte le ripetizioni.</small>
           <label class="campo-modale" id="campoEventoOraPromemoriaWrap" hidden>Il promemoria arriva alle<input type="time" id="campoEventoOraPromemoria" value="08:00"></label>
           <div class="campo-modale" id="campoEventoPromemoriaWrap">
             <strong>🔔 Promemoria</strong>
             <div id="listaPromemoriaEvento"></div>
             <button type="button" class="btn-testo-evento" id="btnAggiungiPromemoria">＋ Aggiungi promemoria</button>
             <small id="hintPromemoriaEvento"></small>
+            <div class="avviso-permessi-evento" id="avvisoPermessiEvento" hidden>
+              <span>⚠️ Le notifiche dell'app sono disattivate: i promemoria non arriveranno.</span>
+              <button type="button" class="btn-secondario" id="btnAttivaNotificheEvento">Attiva notifiche</button>
+            </div>
           </div>
           <div class="campo-modale" id="campoEventoAvvisoWrap" hidden>
             <strong>⏰ Avviso forte (facoltativo)</strong>
@@ -198,13 +218,16 @@
                 <option value="bip">Solo bip</option>
               </select>
             </label>
-            <small>Suona/vibra anche in silenzioso, poi si ferma da sola. La notifica resta con i tasti Spegni e Posticipa 5 min.</small>
+            <small>Suona/vibra anche in silenzioso, poi si ferma da sola. La notifica resta con i tasti Spegni e Posticipa 5 min (che ci sono anche senza avviso forte).</small>
           </div>
           <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
           <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
         </div>
-        <div class="modale-footer" style="justify-content:space-between;">
-          <button class="btn-secondario" id="btnEliminaEvento" type="button">🗑️ Elimina</button>
+        <div class="modale-footer" style="justify-content:space-between;align-items:flex-end;gap:8px;">
+          <div class="gruppo-elimina-evento">
+            <button class="btn-secondario" id="btnEliminaEventoGiorno" type="button" hidden>🗑️ Solo questo giorno</button>
+            <button class="btn-secondario" id="btnEliminaEvento" type="button">🗑️ Elimina</button>
+          </div>
           <button class="btn-primario" id="btnSalvaEvento" type="button">Salva</button>
         </div>
       </div>

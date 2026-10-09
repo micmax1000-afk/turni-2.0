@@ -683,14 +683,20 @@ function renderCalendario(){
     cella.setAttribute('aria-label', `${g} ${NOMI_MESI[meseCorrente]} ${annoCorrente}: ${nomeCategoria}${orario ? ', ' + t.oraInizio + '–' + t.oraFine : ''}${haStraordinario ? ', straordinario' : ''}${haMissione ? ', missione' : ''}${haAssenza ? ', assenza' : ''}`);
     cella.title = `${g} ${NOMI_MESI[meseCorrente]} — ${nomeCategoria}${haStraordinario ? ' · Straordinario' : ''}${haMissione ? ' · Missione' : ''}`;
 
+    // Eventi del giorno: il titolo del primo in una striscia in fondo alla casella, "+N" se sono di più.
+    const eventiCella = typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : (AppState.eventiGiorno[iso] || []).map(ev => ({ ev }));
+    const strisciaEvento = eventiCella.length
+      ? `<span class="giorno-evento-titolo" title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}"><span class="giorno-evento-testo">${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}</span>${eventiCella.length > 1 ? `<b>+${eventiCella.length - 1}</b>` : ''}</span>`
+      : '';
+
     cella.innerHTML = `
       <span class="giorno-topline">
         <span class="giorno-numero">${g}</span>
-        ${(AppState.eventiGiorno[iso] || []).length ? '<span class="giorno-pallino-evento" title="Hai un evento questo giorno" aria-hidden="true">●</span>' : ''}
         <span class="giorno-badge-list">${badgeVisibili.join('')}</span>
       </span>
       <span class="giorno-turno-badge" style="background:transparent" title="${escapeHtml(nomeCategoria)}"><span class="giorno-turno-codice">${escapeHtml(codiceCategoria)}</span><span class="giorno-turno-nome"${siglaGrande ? ' data-sigla-singola="1"' : ''}>${escapeHtml(tipoLabel)}</span></span>
       ${orario || oreLabel ? `<span class="giorno-meta">${orario}${oreLabel}</span>` : '<span class="giorno-meta giorno-meta-vuoto">—</span>'}
+      ${strisciaEvento}
     `;
 
     // Una regola CSS con !important altrove tiene questo testo fisso e piccolo (pensata per nomi
@@ -718,6 +724,7 @@ function renderCalendario(){
   if(typeof aggiornaDashboard === 'function') aggiornaDashboard();
   if(typeof aggiornaRiepilogoVisualeMese === 'function') aggiornaRiepilogoVisualeMese();
   if(typeof aggiornaRiepilogoGiornoSelezionatoV2 === 'function') aggiornaRiepilogoGiornoSelezionatoV2();
+  if(typeof renderProssimiEventiV2 === 'function') renderProssimiEventiV2();
 }
 
 function selezionaGiorno(iso){
