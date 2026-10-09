@@ -348,10 +348,13 @@ function aggiornaAnteprima(){
   }
   if(c.errore){ box.textContent = '⚠ ' + c.errore; return; }
   if(!t.oraInizio || !t.oraFine){ box.textContent = 'Inserisci ora inizio e ora fine per vedere la classificazione automatica.'; return; }
-  box.textContent =
-    `Ore totali: ${c.oreTotali}\n` +
-    `Ordinarie: ${c.ordinarie} · Notturne: ${c.notturne} · Festive: ${c.festive} · Domenicali: ${c.domenicali} · Notturne festive: ${c.notturneFestive}\n` +
-    `Straordinario — Diurno: ${c.strDiurno} · Notturno: ${c.strNotturno} · Festivo: ${c.strFestivo} · Notturno festivo: ${c.strNotturnoFestivo}`;
+  // Etichette solo per le voci che ci sono (niente lunghe file di zeri).
+  const n = v => String(round2(v)).replace('.', ',');
+  const voci = [[c.ordinarie, 'ordinarie'], [c.notturne, 'notturne'], [c.festive, 'festive'], [c.domenicali, 'domenicali'], [c.notturneFestive, 'notturne festive']]
+    .filter(([v]) => v > 0).map(([v, t]) => `<span>${n(v)} ${t}</span>`);
+  const str = [[c.strDiurno, 'diurno'], [c.strNotturno, 'notturno'], [c.strFestivo, 'festivo'], [c.strNotturnoFestivo, 'notturno festivo']]
+    .filter(([v]) => v > 0).map(([v, t]) => `<span class="et-str">${n(v)} h straord. ${t}</span>`);
+  box.innerHTML = `<b>${n(c.oreTotali)} h</b>${voci.join('')}${str.join('')}`;
 }
 
 function apriModaleTurno(iso){

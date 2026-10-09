@@ -944,6 +944,8 @@ function inizializza(){
   on('btnImpostazioni','click', () => mostraScheda('impostazioni'));
   on('btnChiudiModificaModello','click', () => { el('overlayModificaModello').hidden = true; });
   on('btnSalvaModello','click', salvaModificaModelloV2);
+  on('overlayModificaModello','input', () => aggiornaAnteprimaModelloV2());
+  on('overlayModificaModello','click', e => { if(e.target.closest('#btnModModelloColoreAutomatico')) setTimeout(aggiornaAnteprimaModelloV2, 0); });
   el('campoModModelloColore').addEventListener('input', () => {
     modelloColoreForzatoV2 = el('campoModModelloColore').value;
     dipingiSwatchModelloV2();
@@ -1731,7 +1733,7 @@ function apriModificaModelloV2(id){
   const campoSigla = el('campoModModelloSigla');
   campoSigla.disabled = !!lettera;
   campoSigla.value = lettera ? lettera : (m ? String(m.sigla || '').slice(0, 2) : '');
-  el('testoEtichettaSigla').textContent = lettera ? 'Sigla (fissa)' : 'Sigla (2 lettere, per i turni che crei tu)';
+  el('testoEtichettaSigla').textContent = lettera ? 'Sigla (fissa)' : 'Sigla';
   const isRiposo = !!(m && m.riposo);
   el('campiModModelloOrario').hidden = isRiposo;
   el('campoModModelloInizio').value = m ? (m.oraInizio || '') : '';
@@ -1742,7 +1744,22 @@ function apriModificaModelloV2(id){
   aggiornaStatoColoreModelloV2();
   // "Elimina" ha senso solo per un turno che già esiste, non per uno nuovo che stai ancora creando.
   el('btnEliminaModello').hidden = !m;
+  aggiornaAnteprimaModelloV2();
   el('overlayModificaModello').hidden = false;
+}
+// In cima alla finestra: la tessera del turno come apparirà nella scheda Turni.
+function aggiornaAnteprimaModelloV2(){
+  const box = el('anteprimaModello');
+  if(!box) return;
+  const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
+  const finto = { id: m ? m.id : 'nuovo', riposo: !!(m && m.riposo), nome: el('campoModModelloNome').value.trim() || 'Nuovo turno',
+    oraInizio: el('campoModModelloInizio').value, oraFine: el('campoModModelloFine').value };
+  const colore = el('campoModModelloColore').value || '#E4E7EC';
+  const forte = scurisciColore(colore, 0.35);
+  const sigla = (el('campoModModelloSigla').value || finto.nome.slice(0, 2)).toUpperCase();
+  const durata = durataModelloTesto(finto);
+  const orario = finto.riposo ? 'Giornata libera' : finto.oraInizio && finto.oraFine ? `${finto.oraInizio} – ${finto.oraFine}${durata ? ' · ' + durata : ''}` : 'Orario da scegliere';
+  box.innerHTML = `<span class="tessera-modello"><b style="background:${forte};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</b><span style="background:${colore};color:${testoSuColore(colore)}"><strong>${escapeHtml(finto.nome)}</strong><small>${escapeHtml(orario)}</small></span></span>`;
 }
 function salvaModificaModelloV2(){
   const nome = el('campoModModelloNome').value.trim();
@@ -1937,6 +1954,8 @@ function apriModificaEventoV2(id, isoOrigine){
   el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
   impostaColoreEventoForm(ev ? coloreEvento(ev) : COLORI_EVENTO[0]);
   el('campoEventoNote').value = ev ? (ev.note || '') : '';
+  const dettagli = document.querySelector('#overlayEvento .dettagli-evento');
+  if(dettagli) dettagli.open = !!(ev && (ev.luogo || ev.note));
   el('campoEventoOraPromemoria').value = ev && ev.oraPromemoria ? ev.oraPromemoria : '08:00';
   el('campoEventoRipeti').value = ev && ev.ripeti ? ev.ripeti : '';
   el('campoEventoRipetiFino').value = ev && ev.ripetiFino ? ev.ripetiFino : '';

@@ -109,25 +109,27 @@
       <div class="modale">
         <div class="modale-header"><h2 id="titoloModificaModello">Nuovo turno</h2><button class="btn-icona" id="btnChiudiModificaModello" aria-label="Chiudi">✕</button></div>
         <div class="modale-corpo">
-          <label class="campo-modale">Nome<input type="text" id="campoModModelloNome" placeholder="es. Turno spezzato"></label>
-          <label class="campo-modale"><span id="testoEtichettaSigla">Sigla (2 lettere, per i turni che crei tu)</span><input type="text" id="campoModModelloSigla" placeholder="es. PA" maxlength="2" style="text-transform:uppercase;"></label>
-          <div class="campo-modale">
-            <span>Colore sul calendario</span>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <label class="swatch-colore-libero" title="Scegli un colore">
-                <input type="color" id="campoModModelloColore">
-              </label>
-              <button type="button" class="btn-secondario" id="btnModModelloColoreAutomatico" style="padding:7px 11px;font-size:.78rem;">Usa colore automatico</button>
-            </div>
-            <p class="sotto-titolo" id="modModelloColoreStato" style="margin:6px 0 0;font-size:.72rem;"></p>
+          <div class="anteprima-modello" id="anteprimaModello" aria-hidden="true"></div>
+          <div class="nome-sigla-modello">
+            <label class="campo-modale">Nome<input type="text" id="campoModModelloNome" placeholder="es. Turno spezzato"></label>
+            <label class="campo-modale"><span id="testoEtichettaSigla">Sigla</span><input type="text" id="campoModModelloSigla" placeholder="PA" maxlength="2" style="text-transform:uppercase;"></label>
           </div>
-          <div id="campiModModelloOrario">
-            <label class="campo-modale">Ora inizio<input type="time" id="campoModModelloInizio"></label>
-            <label class="campo-modale">Ora fine<input type="time" id="campoModModelloFine"></label>
+          <div id="campiModModelloOrario" class="orari-giorno">
+            <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoModModelloInizio"></label>
+            <span aria-hidden="true">→</span>
+            <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoModModelloFine"></label>
           </div>
+          <div class="riga-colore-modello">
+            <span>Colore</span>
+            <label class="swatch-colore-libero" title="Scegli un colore">
+              <input type="color" id="campoModModelloColore">
+            </label>
+            <button type="button" class="btn-secondario" id="btnModModelloColoreAutomatico">Automatico</button>
+          </div>
+          <p class="sotto-titolo" id="modModelloColoreStato" style="margin:4px 0 0;font-size:.74rem;"></p>
         </div>
         <div class="modale-footer" style="justify-content:space-between;">
-          <button class="btn-secondario" id="btnEliminaModello" type="button">🗑️ Elimina</button>
+          <button class="btn-secondario editor-giorno-elimina" id="btnEliminaModello" type="button">Elimina</button>
           <button class="btn-primario" id="btnSalvaModello" type="button">Salva</button>
         </div>
       </div>
@@ -181,10 +183,11 @@
         <div class="modale-corpo">
           <label class="campo-modale">Titolo<input type="text" id="campoEventoTitolo" placeholder="es. Visita medica, Palestra..."></label>
           <div class="campo-modale">Colore<div class="scelta-colore-evento" id="sceltaColoreEvento" role="radiogroup" aria-label="Colore dell'evento"></div></div>
-          <label class="campo-modale campo-riga"><input type="checkbox" id="campoEventoTuttoIlGiorno"> Tutto il giorno</label>
-          <div id="campiEventoOrario" class="riga-straordinario-ore">
-            <label class="campo-modale">Inizio<input type="time" id="campoEventoOraInizio"></label>
-            <label class="campo-modale">Fine<input type="time" id="campoEventoOraFine"></label>
+          <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoEventoTuttoIlGiorno"><span>Tutto il giorno</span></label>
+          <div id="campiEventoOrario" class="orari-giorno">
+            <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoEventoOraInizio"></label>
+            <span aria-hidden="true">→</span>
+            <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoEventoOraFine"></label>
           </div>
           <label class="campo-modale">Ripeti
             <select id="campoEventoRipeti">
@@ -228,8 +231,11 @@
             </label>
             <small>Suona/vibra anche in silenzioso, poi si ferma da sola. La notifica resta con i tasti Spegni e Posticipa 5 min (che ci sono anche senza avviso forte).</small>
           </div>
-          <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
-          <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
+          <details class="riquadro-giorno altro-giorno dettagli-evento">
+            <summary>Luogo e note<b aria-hidden="true">⌄</b></summary>
+            <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
+            <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
+          </details>
         </div>
         <div class="modale-footer" style="justify-content:space-between;align-items:flex-end;gap:8px;">
           <div class="gruppo-elimina-evento">
@@ -501,15 +507,15 @@
   <div id="vistaCedolino" hidden>
   <section class="scheda" id="sezioneCedolino">
     <h2>🧾 Cedolino simulato</h2>
-    <p class="sotto-titolo">Genera il cedolino del mese visualizzato a partire da anagrafica, turni e tabelle ufficiali. A dicembre la tredicesima viene aggiunta automaticamente.</p>
+    <p class="sotto-titolo">Il cedolino del mese visualizzato, da anagrafica, turni e tabelle. A dicembre c'è anche la tredicesima.</p>
     <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
       <input type="number" id="campoConguagliMese" step="0.01" value="0">
     </label>
     <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
     <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
-      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / Esporta PDF</button>
-      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>🗑️ Cancella Cedolino</button>
+    <div class="azioni-cedolino">
+      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / PDF</button>
+      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>Chiudi cedolino</button>
     </div>
   </section>
 
@@ -599,13 +605,13 @@
     <div id="pannelloColoriTurni" class="pannello-colori-turni" hidden>
       <div class="pannello-colori-header">
         <div>
-          <strong class="pannello-colori-titolo">Colori turni</strong>
-          <p class="sotto-titolo" style="margin:4px 0 0;">Il colore si applica a tutta la casella (turni, riposo e assenze). Tocca il quadrato per cambiare.</p>
+          <strong class="pannello-colori-titolo">Colori e stile</strong>
+          <p class="sotto-titolo" style="margin:4px 0 0;">Tocca un colore per cambiarlo.</p>
         </div>
         <button type="button" class="btn-icona" id="btnChiudiColoriTurni" aria-label="Chiudi tavolozza" title="Chiudi">✕</button>
       </div>
       <div class="stile-calendario-scelta">
-        <strong>🗓️ Stile calendario</strong>
+        <strong>Stile del calendario</strong>
         <div class="stile-calendario-pulsanti">
           <button type="button" data-stile-calendario="classico" aria-pressed="true">
             <span class="stile-mini" aria-hidden="true"><i style="background:#F5A0C0"></i><i style="background:#FFAB76"></i><i style="background:#FFD98A"></i></span>Classico
@@ -614,19 +620,19 @@
             <span class="stile-mini stile-mini-moderno" aria-hidden="true"><i style="--c:#C2489A"></i><i style="--c:#E8803A"></i><i style="--c:#7E5BD6"></i></span>Moderno
           </button>
         </div>
-        <small>Classico: casella tutta colorata con la sigla. Moderno: sfondo chiaro, etichetta con nome e ora di inizio, eventi scritti sotto.</small>
+        <small>Classico: casella tutta colorata con la lettera del turno. Moderno: etichetta colorata con il nome, eventi sotto.</small>
       </div>
       <label class="switch-avanzate-v17" style="margin-bottom:12px;">
-        <input type="checkbox" id="toggleCalendarioAColori">
-        <span class="switch-avanzate-v17-testo"><strong>🎨 Calendario a colori</strong><small>Disattivato: celle bianche invece che colorate.</small></span>
+        <input type="checkbox" class="interruttore" id="toggleCalendarioAColori">
+        <span class="switch-avanzate-v17-testo"><strong>Calendario a colori</strong><small>Spento: caselle bianche.</small></span>
       </label>
       <div id="corpoColoriTurniWrap">
       <div id="corpoColoriTurni"></div>
       <div class="pannello-colori-azioni">
-        <button class="btn-secondario" id="btnEsportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Esporta colori (Drive)</button>
-        <button class="btn-secondario" id="btnImportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Importa colori (Drive)</button>
+        <button class="btn-secondario" id="btnEsportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Esporta (Drive)</button>
+        <button class="btn-secondario" id="btnImportaColoriTurni" type="button" title="Richiede Backup Drive (1,99€)">☁ Importa (Drive)</button>
         <input type="file" id="campoImportaColoriTurni" accept="application/json,.json" hidden>
-        <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">↺ Ripristina predefiniti</button>
+        <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">↺ Predefiniti</button>
         <button class="btn-primario" id="btnChiudiColoriTurni2" type="button">Fatto</button>
       </div>
       </div>
