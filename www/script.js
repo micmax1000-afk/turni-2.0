@@ -284,6 +284,12 @@ let tokenAccessoDriveCorrente = null;
 
 function aggiornaClasseCalendarioColori(){
   document.body.classList.toggle('calendario-senza-colori', !calendarioAColoriAttivo());
+  document.body.classList.toggle('calendario-moderno', calendarioModernoAttivo());
+  document.querySelectorAll('[data-stile-calendario]').forEach(b => {
+    const attivo = b.dataset.stileCalendario === (calendarioModernoAttivo() ? 'moderno' : 'classico');
+    b.classList.toggle('attivo', attivo);
+    b.setAttribute('aria-pressed', attivo ? 'true' : 'false');
+  });
 }
 
 // Numero di versione mostrato in Impostazioni — letto da manifest.json, la stessa fonte
@@ -295,6 +301,19 @@ function mostraVersioneApp(){
   fetch('manifest.json').then(r => r.json()).then(m => {
     if(m && m.version) box.textContent = `Versione ${m.version}`;
   }).catch(() => {});
+}
+
+// Barra in basso: l'icona del Calendario mostra il giorno di oggi.
+function aggiornaIconaCalendarioOggi(){
+  const t = document.getElementById('iconaCalendarioGiorno');
+  if(t) t.textContent = String(new Date().getDate());
+}
+// Su Android, con la tastiera aperta una barra fissa in basso sale sopra la tastiera e copre il
+// campo in cui si scrive: mentre si scrive in un campo di testo la nascondiamo.
+function inizializzaBarraETastiera(){
+  const campoTesto = e => e && e.matches && e.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=file]), textarea, select, [contenteditable="true"]');
+  document.addEventListener('focusin', e => { if(campoTesto(e.target)) document.body.classList.add('scrittura-in-corso'); });
+  document.addEventListener('focusout', e => { if(campoTesto(e.target)) setTimeout(() => { if(!campoTesto(document.activeElement)) document.body.classList.remove('scrittura-in-corso'); }, 120); });
 }
 
 function inizializza(){
@@ -309,6 +328,9 @@ function inizializza(){
   inizializzaPlayBilling().then(() => renderSezioneBackupDrive());
   mostraVersioneApp();
   aggiornaClasseCalendarioColori();
+  aggiornaIconaCalendarioOggi();
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) aggiornaIconaCalendarioOggi(); });
+  inizializzaBarraETastiera();
   // Promemoria degli eventi: si rimettono quelli che Android potrebbe aver cancellato e si
   // programmano le prossime volte degli eventi che si ripetono. Con calma, dopo l'avvio.
   setTimeout(() => { riprogrammaPromemoriaEventi(); }, 4000);
@@ -618,6 +640,11 @@ function inizializza(){
     aggiornaAspettoBlocCoCloriPersonalizzati();
     renderCalendario();
   });
+  document.querySelectorAll('[data-stile-calendario]').forEach(b => b.addEventListener('click', () => {
+    TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, b.dataset.stileCalendario);
+    aggiornaClasseCalendarioColori();
+    renderCalendario();
+  }));
   el('btnApriColoriTurni')?.addEventListener('click', () => {
     const p = el('pannelloColoriTurni');
     if(!p) return;

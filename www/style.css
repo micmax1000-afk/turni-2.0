@@ -1541,3 +1541,55 @@ body.calendario-senza-colori .giorno-cella.riposo-giorno .giorno-numero{ color: 
 #overlayAvviso{z-index:110}
 /* Le regole display:flex qui sopra scavalcano l'attributo hidden: va ribadito. */
 .avviso-permessi-evento[hidden],.prossimi-eventi-v2[hidden]{display:none !important}
+
+/* Stile calendario "Moderno" (v2.52.0): casella chiara, colore solo nell'etichetta del turno */
+body.calendario-moderno .calendario-griglia{gap:0;border-top:1px solid var(--bordo)}
+body.calendario-moderno .giorno-cella{aspect-ratio:auto!important;min-height:86px!important;padding:6px 2px 5px!important;border:0!important;border-bottom:1px solid var(--bordo)!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;transform:none!important;gap:3px!important;align-items:center!important;justify-content:flex-start!important;position:relative}
+body.calendario-moderno .scheda-calendario-v2 .giorno-cella.vuota{background:transparent!important;border-radius:0!important}
+body.calendario-moderno .mod-badge .badge-assenza{display:none}
+body.calendario-moderno .giorno-cella.sabato,body.calendario-moderno .giorno-cella.domenica{background:rgba(27,36,64,.045)!important}
+body.calendario-moderno .giorno-cella:before,body.calendario-moderno .giorno-cella:after{display:none!important}
+body.calendario-moderno .giorno-cella:hover{background:var(--carta)!important}
+body.calendario-moderno .giorno-cella.selezionata{box-shadow:inset 0 0 0 2px #155EEF!important;border-radius:10px!important}
+body.calendario-moderno .mod-numero{font:600 1rem/1 var(--font-cifre);color:var(--testo);width:26px;height:26px;display:grid;place-items:center;border-radius:50%;flex-shrink:0}
+body.calendario-moderno .festivo .mod-numero{color:#C62828}
+body.calendario-moderno .oggi .mod-numero{background:#155EEF;color:#fff}
+body.calendario-moderno .mod-badge{position:absolute;top:3px;right:2px;display:flex;gap:1px}
+body.calendario-moderno .mod-badge .giorno-badge{min-width:12px;height:12px;padding:0 2px;font-size:.42rem;border-radius:3px}
+body.calendario-moderno .mod-turno{width:calc(100% - 4px);border-radius:6px;overflow:hidden;text-align:center;font-family:var(--font-corpo);flex-shrink:0}
+body.calendario-moderno .mod-turno b{display:block;font-size:.62rem;font-weight:700;padding:3px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.calendario-moderno .mod-turno span{display:block;font:600 .6rem/1.2 var(--font-cifre);padding:2px 0}
+body.calendario-moderno .mod-evento{align-self:stretch;font:600 .56rem/1.2 var(--font-corpo);color:var(--testo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;text-align:left}
+body.calendario-moderno .mod-evento i{color:#2196F3;font-style:normal;margin-right:2px}
+@media(min-width:700px){
+  body.calendario-moderno .giorno-cella{min-height:104px!important}
+  body.calendario-moderno .mod-turno b{font-size:.75rem}
+  body.calendario-moderno .mod-turno span{font-size:.72rem}
+  body.calendario-moderno .mod-evento{font-size:.68rem}
+}
+/* Scelta dello stile in "Colori turni" */
+.stile-calendario-scelta{margin:0 0 14px;padding:12px;border:1px solid var(--bordo);border-radius:14px;background:var(--pannello)}
+.stile-calendario-scelta strong{display:block;font-size:.92rem;margin-bottom:8px}
+.stile-calendario-pulsanti{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stile-calendario-pulsanti button{border:2px solid var(--bordo);border-radius:12px;background:var(--carta);padding:8px;font:600 .85rem var(--font-corpo);color:var(--testo);display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+.stile-calendario-pulsanti button.attivo{border-color:#155EEF;background:#EEF3FF}
+.stile-mini{display:grid;grid-template-columns:repeat(3,18px);gap:3px}
+.stile-mini i{height:22px;border-radius:4px}
+.stile-mini-moderno i{background:#fff;border-bottom:1px solid #ccc;border-radius:0;position:relative}
+.stile-mini-moderno i:after{content:'';position:absolute;left:2px;right:2px;bottom:4px;height:7px;border-radius:2px;background:var(--c)}
+.stile-calendario-scelta small{display:block;margin-top:8px;color:var(--testo-tenue);font-size:.75rem}
+
+
+/* Barra di navigazione in basso (v2.53.0): icone e nomi, sempre a portata di pollice */
+.barra-schede{position:fixed;top:auto;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:90;max-width:none;margin:0;padding:6px;background:color-mix(in srgb,var(--pannello,#fff) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--bordo);border-bottom:1px solid var(--bordo);border-radius:24px;box-shadow:0 8px 28px rgba(27,36,64,.14)}
+.barra-schede .riga-schede-icone{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0;padding:0}
+.barra-schede .riga-schede-icone .scheda-nav{height:56px;min-height:56px;padding:0!important;border:0;border-radius:18px;background:transparent;color:var(--testo-tenue);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:none;font-size:inherit}
+.barra-schede .riga-schede-icone .scheda-nav.attiva{background:#E8ECF7;color:var(--inchiostro)}
+.barra-schede .scheda-nav svg{pointer-events:none;flex-shrink:0}
+.barra-schede .scheda-nav small{pointer-events:none;font:600 .7rem/1 var(--font-corpo)}
+body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+body.scrittura-in-corso .barra-schede{display:none}
+@media(min-width:760px){.barra-schede{left:50%;right:auto;transform:translateX(-50%);width:min(560px,calc(100% - 24px))}}
+/* Messaggi a comparsa: prima finivano in fondo alla pagina, fuori dallo schermo */
+.toast-container.toast-container-v20{position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom));width:auto;max-width:520px;margin:0 auto;z-index:9999}
+@media print{.barra-schede{display:none!important}}
