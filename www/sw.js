@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V165 (v2.59.0 — tema a scelta, indennità nelle etichette) */
+/* Turni & Accessorio PS — Service Worker V166 (v2.60.0 — Stampa / Esporta PDF nell'app Android) */
 'use strict';
-const CACHE='turni-ps-v165';
+const CACHE='turni-ps-v166';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

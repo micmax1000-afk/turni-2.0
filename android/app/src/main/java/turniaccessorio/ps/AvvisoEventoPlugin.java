@@ -6,7 +6,15 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.ParcelFileDescriptor;
+import android.print.PageRange;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
 import android.net.Uri;
 import android.provider.Settings;
 
@@ -83,5 +91,48 @@ public class AvvisoEventoPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Impostazioni non aperte: " + e.getMessage());
         }
+    }
+
+    /**
+     * Stampa / Salva come PDF: nella WebView di Android window.print() non fa nulla,
+     * quindi si apre la finestra di stampa di Android (che offre anche "Salva come PDF").
+     * La risposta arriva quando la finestra si chiude, così la pagina può rimettersi com'era.
+     */
+    @PluginMethod
+    public void stampa(PluginCall call) {
+        String titolo = call.getString("titolo", "Turni & Accessorio PS");
+        if (getActivity() == null) {
+            call.reject("Stampa non disponibile");
+            return;
+        }
+        getActivity().runOnUiThread(() -> {
+            try {
+                PrintManager pm = (PrintManager) getActivity().getSystemService(Context.PRINT_SERVICE);
+                PrintDocumentAdapter base = getBridge().getWebView().createPrintDocumentAdapter(titolo);
+                PrintDocumentAdapter adattatore = new PrintDocumentAdapter() {
+                    @Override
+                    public void onStart() { base.onStart(); }
+
+                    @Override
+                    public void onLayout(PrintAttributes vecchi, PrintAttributes nuovi, CancellationSignal annulla, LayoutResultCallback cb, Bundle extra) {
+                        base.onLayout(vecchi, nuovi, annulla, cb, extra);
+                    }
+
+                    @Override
+                    public void onWrite(PageRange[] pagine, ParcelFileDescriptor destinazione, CancellationSignal annulla, WriteResultCallback cb) {
+                        base.onWrite(pagine, destinazione, annulla, cb);
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        base.onFinish();
+                        call.resolve(new JSObject());
+                    }
+                };
+                pm.print(titolo, adattatore, new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).build());
+            } catch (Exception e) {
+                call.reject("Stampa non avviata: " + e.getMessage());
+            }
+        });
     }
 }

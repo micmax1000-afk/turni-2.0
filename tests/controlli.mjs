@@ -60,7 +60,8 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
       const f = (nome, risposta) => a => { window.__log.push([nome, JSON.parse(JSON.stringify(a || {}))]); return Promise.resolve(risposta || {}); };
       window.Capacitor = { isNativePlatform: () => true, Plugins: {
         LocalNotifications: { cancel: f('ln.cancel'), schedule: f('ln.schedule'), checkPermissions: f('ln.check', { display: 'granted' }), requestPermissions: f('ln.req', { display: 'granted' }), createChannel: f('x'), deleteChannel: f('x'), checkExactNotificationSetting: f('x', { exact_alarm: 'granted' }) },
-        AvvisoEvento: { programma: f('av.programma'), annulla: f('av.annulla'), statoNotifiche: f('stato', { attive: true }), apriImpostazioniNotifiche: f('impostazioni') } } };
+        AvvisoEvento: { programma: f('av.programma'), annulla: f('av.annulla'), statoNotifiche: f('stato', { attive: true }), apriImpostazioniNotifiche: f('impostazioni'),
+          stampa: a => { window.__log.push(['stampa', a, document.documentElement.getAttribute('data-tema'), !document.getElementById('contenitoreCedolino').hidden]); return new Promise(r => setTimeout(r, 300)); } } } };
     }
   }, [JSON.stringify(turni), JSON.stringify(eventi), stile, colori, nativo]);
   await p.goto(URL_APP);
@@ -284,6 +285,23 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(18, 21, 28)');
   await p.click('.scelta-tema [data-tema="auto"]');
   ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Stampa / Esporta PDF nell\'app Android');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true, scuro: true });
+  await p.click('#tabReport');
+  await p.click('#btnGeneraCedolino');
+  await p.click('#btnStampaCedolino');
+  await p.waitForFunction(() => window.__log.some(x => x[0] === 'stampa'), null, { timeout: 3000 }).catch(() => {});
+  const s = await p.evaluate(() => window.__log.find(x => x[0] === 'stampa'));
+  ok('si apre la finestra di stampa di Android (non window.print)', !!s && s[1].titolo === 'Cedolino stimato' && s[3]);
+  ok('durante la stampa il foglio è chiaro anche col tema scuro', !!s && s[2] === 'chiaro');
+  await p.waitForTimeout(500);
+  ok('chiusa la stampa, il tema torna come prima', await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

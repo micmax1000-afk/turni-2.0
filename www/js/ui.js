@@ -21,11 +21,29 @@ function stampaSezione(idDaMostrare){
     if(!antenato.open){ antenato.open = true; dettagliDaRichiudere.push(antenato); }
     antenato = antenato.parentElement ? antenato.parentElement.closest('details') : null;
   }
+  // Il foglio si stampa sempre chiaro, anche con il tema scuro attivo.
+  const temaPrima = document.documentElement.getAttribute('data-tema');
+  document.documentElement.setAttribute('data-tema', 'chiaro');
+  let ripristinato = false;
   const ripristina = () => {
+    if(ripristinato) return;
+    ripristinato = true;
     nascostiTemporaneamente.forEach(elemento => { elemento.hidden = false; });
     dettagliDaRichiudere.forEach(d => { d.open = false; });
+    if(temaPrima) document.documentElement.setAttribute('data-tema', temaPrima);
+    else document.documentElement.removeAttribute('data-tema');
     window.removeEventListener('afterprint', ripristina);
   };
+  // Nell'app Android window.print() non fa nulla: si usa la finestra di stampa di Android.
+  const nativo = typeof pluginAvvisoEvento === 'function' ? pluginAvvisoEvento() : null;
+  if(nativo && nativo.stampa){
+    const titolo = idDaMostrare === 'contenitoreCedolino' ? 'Cedolino stimato' : 'Riepilogo annuale';
+    // Si aspetta un attimo che la pagina si ridisegni in chiaro prima di fotografarla.
+    setTimeout(() => {
+      nativo.stampa({ titolo }).then(ripristina, () => { ripristina(); mostraToast('Stampa non disponibile su questo telefono', 'errore'); });
+    }, 150);
+    return;
+  }
   window.addEventListener('afterprint', ripristina);
   window.print();
 }
