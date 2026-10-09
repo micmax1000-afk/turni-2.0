@@ -859,7 +859,11 @@ function inizializza(){
     if(el('listaPromemoriaEvento').children.length >= MAX_PROMEMORIA_EVENTO){
       mostraToast('Puoi aggiungere al massimo ' + MAX_PROMEMORIA_EVENTO + ' promemoria.', 'avviso'); return;
     }
-    aggiungiRigaPromemoria({ min: tutt ? 0 : 10 });
+    // Propone il primo orario non ancora usato (un doppione verrebbe scartato al salvataggio).
+    const usati = new Set(leggiPromemoriaDalForm().map(p => p.min));
+    const preferiti = tutt ? [0, -1, 1440, 2880, 10080] : [10, 30, 60, 1440, 0, 5, 15, 120];
+    const min = preferiti.find(m => !usati.has(m));
+    aggiungiRigaPromemoria({ min: min === undefined ? (tutt ? 0 : 10) : min });
     aggiornaTestoPromemoriaEvento();
   });
   on('campoEventoAvvisoDurata','change', aggiornaCampiAvvisoEvento);
