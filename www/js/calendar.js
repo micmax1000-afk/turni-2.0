@@ -579,7 +579,16 @@ function renderCalendario(){
     // la cascata a mano) — uno stile scritto in riga qui ha sempre l'ultima parola, senza
     // eccezioni, e risolve il problema alla radice invece di rincorrere l'ennesima regola CSS
     // dimenticata da qualche versione precedente.
+    // Stile moderno: la casella resta chiara (il colore va solo nell'etichetta del turno, sotto).
+    const moderno = typeof calendarioModernoAttivo === 'function' && calendarioModernoAttivo();
+    let coloreTurno = '';
     if(calendarioAColoriAttivo()){
+      const modelloColoreCustomM = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+      coloreTurno = modelloColoreCustomM && modelloColoreCustomM.colore ? modelloColoreCustomM.colore : (categoria ? coloreCategoria(categoria) : '');
+    }
+    if(moderno){
+      cella.style.background = '';
+    } else if(calendarioAColoriAttivo()){
       const modelloColoreCustom = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
       if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
       else if(categoria) cella.style.background = coloreCategoria(categoria);
@@ -712,6 +721,33 @@ function renderCalendario(){
     const strisciaEvento = eventiCella.length
       ? `<span class="giorno-evento-titolo" title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}"><span class="giorno-evento-testo">${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}</span>${eventiCella.length > 1 ? `<b>+${eventiCella.length - 1}</b>` : ''}</span>`
       : '';
+
+    if(moderno){
+      // Nome per esteso dove ci sta (Sera, Notte, Mattina...), sigla per i nomi lunghi.
+      let nomeEtichetta = categoria === 'assenza' ? tipoLabel
+        : (t && (t.aggiornamentoProfessionale || t.addestramentoTiro || t.compensazioneRiposo || t.recuperoFestivoLavorato)) ? etichetta
+        : categoria === 'pomeriggio' && !modelloUsato ? 'Pomer.'
+        : nomeCategoria;
+      if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
+      const oraEtichetta = t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? t.oraInizio : '';
+      const sfondo = coloreTurno || '#E4E7EC';
+      const sfondoForte = coloreTurno ? scurisciColore(coloreTurno, 0.35) : '#C9CED6';
+      const etichettaTurno = t && categoria
+        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoForte)};color:${testoSuColore(sfondoForte)}">${escapeHtml(nomeEtichetta)}</b>${oraEtichetta ? `<span style="background:${escapeHtml(sfondo)};color:${testoSuColore(sfondo)}">${escapeHtml(oraEtichetta)}</span>` : ''}</span>`
+        : '';
+      const rigaEvento = eventiCella.length
+        ? `<span class="mod-evento" title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}"><i aria-hidden="true">●</i>${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}${eventiCella.length > 1 ? ` <b>+${eventiCella.length - 1}</b>` : ''}</span>`
+        : '';
+      cella.innerHTML = `
+        <span class="mod-numero">${g}</span>
+        ${badgeVisibili.length ? `<span class="mod-badge">${badgeVisibili.join('')}</span>` : ''}
+        ${etichettaTurno}
+        ${rigaEvento}
+      `;
+      cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
+      griglia.appendChild(cella);
+      continue;
+    }
 
     cella.innerHTML = `
       <span class="giorno-topline">

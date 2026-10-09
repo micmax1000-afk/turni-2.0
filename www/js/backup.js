@@ -93,6 +93,7 @@ function costruisciDatiBackup(){
     eventiGiorno: AppState.eventiGiorno || {},
     modelliTurno: Array.isArray(AppState.modelliTurno) ? AppState.modelliTurno : null,
     calendarioAColori: (TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1'),
+    stileCalendario: TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) === 'moderno' ? 'moderno' : 'classico',
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null
   };
 }
@@ -758,6 +759,7 @@ function importaBackup(file, datiGiaLetti){
       }
       if(typeof dati.calendarioAColori === 'boolean'){
         TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, dati.calendarioAColori ? '1' : '0');
+        if(dati.stileCalendario === 'moderno' || dati.stileCalendario === 'classico') TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, dati.stileCalendario);
         if(typeof aggiornaClasseCalendarioColori === 'function') aggiornaClasseCalendarioColori();
       }
       if(dati.coloriTurni && typeof dati.coloriTurni === 'object'){

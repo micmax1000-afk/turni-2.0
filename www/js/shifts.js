@@ -19,6 +19,43 @@ function calendarioAColoriAttivo(){
   return TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1';
 }
 
+// Stile del calendario: 'classico' (casella tutta colorata con la sigla, predefinito) oppure
+// 'moderno' (sfondo chiaro, etichetta colorata con nome e ora di inizio, eventi scritti sotto).
+function calendarioModernoAttivo(){
+  return TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) === 'moderno';
+}
+
+// Per l'etichetta dello stile moderno: una versione più scura del colore scelto per il turno
+// (parte alta, col nome) e il colore del testo più leggibile sopra di essa.
+function scurisciColore(hex, fattore){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if(!m) return hex;
+  const n = parseInt(m[1], 16);
+  let [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map(v => v / 255);
+  // In HSL: più scuro e più saturo (i colori pastello scuriti e basta diventano spenti).
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+  if(max !== min){
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h /= 6;
+  }
+  if(s > 0.2) s = Math.min(0.6, Math.max(0.35, s)); // i grigi restano grigi
+  l = Math.max(0, l * (1 - fattore));
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  const canale = t => { t = (t + 1) % 1; return t < 1/6 ? p + (q - p) * 6 * t : t < 1/2 ? q : t < 2/3 ? p + (q - p) * (2/3 - t) * 6 : p; };
+  const out = s === 0 ? [l, l, l] : [canale(h + 1/3), canale(h), canale(h - 1/3)];
+  return '#' + out.map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('');
+}
+function testoSuColore(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if(!m) return '#1E2129';
+  const n = parseInt(m[1], 16);
+  const luminanza = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return luminanza > 0.62 ? '#1E2129' : '#FFFFFF';
+}
+
 const SIGLA_SINGOLA_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
 
 function coloreCategoria(chiave){

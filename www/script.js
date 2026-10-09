@@ -284,6 +284,12 @@ let tokenAccessoDriveCorrente = null;
 
 function aggiornaClasseCalendarioColori(){
   document.body.classList.toggle('calendario-senza-colori', !calendarioAColoriAttivo());
+  document.body.classList.toggle('calendario-moderno', calendarioModernoAttivo());
+  document.querySelectorAll('[data-stile-calendario]').forEach(b => {
+    const attivo = b.dataset.stileCalendario === (calendarioModernoAttivo() ? 'moderno' : 'classico');
+    b.classList.toggle('attivo', attivo);
+    b.setAttribute('aria-pressed', attivo ? 'true' : 'false');
+  });
 }
 
 // Numero di versione mostrato in Impostazioni — letto da manifest.json, la stessa fonte
@@ -618,6 +624,11 @@ function inizializza(){
     aggiornaAspettoBlocCoCloriPersonalizzati();
     renderCalendario();
   });
+  document.querySelectorAll('[data-stile-calendario]').forEach(b => b.addEventListener('click', () => {
+    TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, b.dataset.stileCalendario);
+    aggiornaClasseCalendarioColori();
+    renderCalendario();
+  }));
   el('btnApriColoriTurni')?.addEventListener('click', () => {
     const p = el('pannelloColoriTurni');
     if(!p) return;
