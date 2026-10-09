@@ -144,7 +144,23 @@ for(const stile of ['classico', 'moderno']){
   });
   ok(`${stile}: 31 giorni nel calendario`, c.celle === 31);
   ok(`${stile}: stile applicato`, c.moderno === (stile === 'moderno'));
-  if(stile === 'moderno') ok('moderno: etichetta del 1/10 "Sera"', c.etichetta1 === 'Sera');
+  if(stile === 'moderno'){
+    ok('moderno: etichetta del 1/10 "Sera"', c.etichetta1 === 'Sera');
+    const m = await p.evaluate(() => {
+      AppState.turni['2026-10-02'] = Object.assign({}, AppState.turni['2026-10-02'], { missione: true, durataMissioneOre: 6, reperibilita: true });
+      renderCalendario();
+      const q = d => document.querySelector(`.giorno-cella[data-data="${d}"]`);
+      return {
+        orari: [...document.querySelectorAll('.mod-turno')].some(e => /\d{1,2}:\d{2}/.test(e.textContent)),
+        indennita: q('2026-10-02').querySelector('.mod-indennita')?.textContent || '',
+        senzaIndennita: !q('2026-10-03').querySelector('.mod-indennita'),
+        badgeInAlto: !!document.querySelector('.giorno-cella .mod-badge')
+      };
+    });
+    ok('moderno: nessun orario nelle etichette', !m.orari);
+    ok('moderno: indennità (◆ ★) nell\'etichetta al posto dell\'orario', m.indennita.includes('◆') && m.indennita.includes('★'), m.indennita);
+    ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
+  }
   ok(`${stile}: barra in basso con Calendario/Report/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Turni,Altro' && c.oggiIcona === '9');
   ok(`${stile}: matita tolta`, !c.matita);
   if(stile === 'moderno'){
@@ -247,6 +263,28 @@ for(const scuro of [false, true]){
   const sfondo = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
   ok(`tema ${scuro ? 'scuro' : 'chiaro'}: sfondo ${sfondo}`, scuro ? sfondo === 'rgb(18, 21, 28)' : sfondo !== 'rgb(18, 21, 28)');
   ok(`tema ${scuro ? 'scuro' : 'chiaro'}: tutte le schede si aprono senza errori`, !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  const sfondo = () => p.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await p.click('#tabAltro');
+  ok('pulsanti del tema visibili, "Auto" attivo', await p.evaluate(() => document.querySelector('.scelta-tema [data-tema="auto"]').classList.contains('attivo') && !!document.querySelector('.scelta-tema [data-tema="scuro"]').offsetParent));
+  await p.click('.scelta-tema [data-tema="scuro"]');
+  ok('"Scuro" con il telefono in chiaro: sfondo scuro', await sfondo() === 'rgb(18, 21, 28)');
+  await p.reload();
+  await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('"Scuro" resta dopo la riapertura', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
+  await p.emulateMedia({ colorScheme: 'dark' });
+  await p.click('#tabAltro');
+  await p.click('.scelta-tema [data-tema="chiaro"]');
+  ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(18, 21, 28)');
+  await p.click('.scelta-tema [data-tema="auto"]');
+  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
 

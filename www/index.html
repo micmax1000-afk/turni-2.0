@@ -6,6 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Turni & Accessorio PS</title>
 <link rel="stylesheet" href="style.css">
+<script>
+  // Tema scelto in Altro (automatico/chiaro/scuro): applicato subito, prima di disegnare la pagina,
+  // così non si vede un lampo di tema sbagliato all'apertura.
+  try{ var t = localStorage.getItem('simCedolino_tema_v1'); if(t === 'chiaro' || t === 'scuro') document.documentElement.setAttribute('data-tema', t); }catch(e){}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
@@ -881,6 +886,14 @@
       <div class="lista-strumenti-turni">
         <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span>🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
+        <div class="riga-strumento-turni riga-tema">
+          <span>🌓</span><i>Tema<small id="descrizioneTema">Come il telefono</small></i>
+          <div class="scelta-tema" role="group" aria-label="Tema">
+            <button type="button" data-tema="auto">Auto</button>
+            <button type="button" data-tema="chiaro">Chiaro</button>
+            <button type="button" data-tema="scuro">Scuro</button>
+          </div>
+        </div>
         <button type="button" class="riga-strumento-turni" id="btnInstallaAppV23" hidden><span>📲</span><i>Installa l'app<small>Aggiungila alla schermata Home</small></i><b>›</b></button>
       </div>
       <!-- I backup sono sempre visibili qui sotto: questi due tasti restano solo per compatibilità -->

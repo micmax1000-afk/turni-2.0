@@ -1693,8 +1693,9 @@ body.scrittura-in-corso .barra-schede{display:none}
    Le variabili coprono quasi tutto; sotto, i componenti che
    avevano colori chiari scritti direttamente.
    =========================================================*/
+/* Tema: Automatico (segue il telefono), Chiaro o Scuro — attributo data-tema su <html>. */
 @media (prefers-color-scheme: dark){
-  :root{
+  html:not([data-tema="chiaro"]){
     color-scheme: dark;
     --carta:#12151C; --sfondo:#12151C;
     --pannello:#1B1F29; --superficie:#1B1F29; --sfondo-card:#1B1F29; --card:#1B1F29;
@@ -1706,30 +1707,97 @@ body.scrittura-in-corso .barra-schede{display:none}
     --rosso-bollo:#F08A80;
     --ombra: 0 1px 2px rgba(0,0,0,.4);
   }
-  body{ background:var(--carta); color:var(--testo); }
+  html:not([data-tema="chiaro"]) body{ background:var(--carta); color:var(--testo); }
   /* Pulsanti e selezioni che usavano l'inchiostro come sfondo: blu pieno con testo bianco */
-  .btn-primario,.scheda-nav.attiva,.stat-switch-btn.attivo,.switch-turno-assenza-btn.attivo,.popup-rapido-giorno,.avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
-  .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#2A3556 !important; color:#E6ECFF !important; }
-  .barra-schede{ background:color-mix(in srgb,#1B1F29 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
-  .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
-  input,select,textarea{ color:var(--testo); }
-  .overlay{ background:rgba(0,0,0,.7); }
+  html:not([data-tema="chiaro"]) .btn-primario,
+  html:not([data-tema="chiaro"]) .scheda-nav.attiva,
+  html:not([data-tema="chiaro"]) .stat-switch-btn.attivo,
+  html:not([data-tema="chiaro"]) .switch-turno-assenza-btn.attivo,
+  html:not([data-tema="chiaro"]) .popup-rapido-giorno,
+  html:not([data-tema="chiaro"]) .avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
+  html:not([data-tema="chiaro"]) .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#2A3556 !important; color:#E6ECFF !important; }
+  html:not([data-tema="chiaro"]) .barra-schede{ background:color-mix(in srgb,#1B1F29 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+  html:not([data-tema="chiaro"]) .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
+  html:not([data-tema="chiaro"]) input,
+  html:not([data-tema="chiaro"]) select,
+  html:not([data-tema="chiaro"]) textarea{ color:var(--testo); }
+  html:not([data-tema="chiaro"]) .overlay{ background:rgba(0,0,0,.7); }
   /* Report */
-  .report-hero{ background:linear-gradient(135deg,#1E2A55,#33509E); }
-  #statoBackup:not(:empty){ background:#3A1F1D; color:#F3B3AC; }
-  .stato-connessione-v23.online{ background:#173226; color:#8EE0B1; }
-  .stato-connessione-v23.offline{ background:#3A2F14; color:#F2CD7A; }
-  .avviso-permessi-evento{ background:#3A2F14; color:#F2CD7A; }
-  .stile-calendario-pulsanti button.attivo{ background:#22305A; border-color:#5C7FE0; }
-  .riga-modello-nuovo-tab{ color:#8FB0FF; }
-  .riga-modello-nuovo-tab span{ background:#22305A; }
+  html:not([data-tema="chiaro"]) .report-hero{ background:linear-gradient(135deg,#1E2A55,#33509E); }
+  html:not([data-tema="chiaro"]) #statoBackup:not(:empty){ background:#3A1F1D; color:#F3B3AC; }
+  html:not([data-tema="chiaro"]) .stato-connessione-v23.online{ background:#173226; color:#8EE0B1; }
+  html:not([data-tema="chiaro"]) .stato-connessione-v23.offline{ background:#3A2F14; color:#F2CD7A; }
+  html:not([data-tema="chiaro"]) .avviso-permessi-evento{ background:#3A2F14; color:#F2CD7A; }
+  html:not([data-tema="chiaro"]) .stile-calendario-pulsanti button.attivo{ background:#22305A; border-color:#5C7FE0; }
+  html:not([data-tema="chiaro"]) .riga-modello-nuovo-tab{ color:#8FB0FF; }
+  html:not([data-tema="chiaro"]) .riga-modello-nuovo-tab span{ background:#22305A; }
   /* Calendario Classico: le caselle restano colorate (colori chiari scelti dall'utente),
      quindi il loro testo resta scuro. */
-  body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella:not(.vuota),
-  body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella:not(.vuota) .giorno-numero{ color:#1E2129; }
-  body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella.festivo .giorno-numero{ color:#B3261E; }
+  html:not([data-tema="chiaro"]) body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella:not(.vuota),
+  html:not([data-tema="chiaro"]) body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella:not(.vuota) .giorno-numero{ color:#1E2129; }
+  html:not([data-tema="chiaro"]) body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella.festivo .giorno-numero{ color:#B3261E; }
   /* Calendario Moderno */
-  body.calendario-moderno .giorno-cella.sabato,body.calendario-moderno .giorno-cella.domenica{ background:rgba(255,255,255,.04) !important; }
-  body.calendario-moderno .festivo .mod-numero{ color:#F08A80; }
-  body.calendario-moderno .giorno-cella:hover{ background:rgba(255,255,255,.05) !important; }
+  html:not([data-tema="chiaro"]) body.calendario-moderno .giorno-cella.sabato,
+  html:not([data-tema="chiaro"]) body.calendario-moderno .giorno-cella.domenica{ background:rgba(255,255,255,.04) !important; }
+  html:not([data-tema="chiaro"]) body.calendario-moderno .festivo .mod-numero{ color:#F08A80; }
+  html:not([data-tema="chiaro"]) body.calendario-moderno .giorno-cella:hover{ background:rgba(255,255,255,.05) !important; }
 }
+html[data-tema="scuro"]{
+    color-scheme: dark;
+    --carta:#12151C; --sfondo:#12151C;
+    --pannello:#1B1F29; --superficie:#1B1F29; --sfondo-card:#1B1F29; --card:#1B1F29;
+    --sfondo-secondario:#232835; --superficie-secondaria:#232835; --surface-2:#232835;
+    --testo:#E6E8EE; --testo-tenue:#9AA1AE;
+    --bordo:#2F3545;
+    --inchiostro:#D3DCF5; --inchiostro-chiaro:#B4C3EC;
+    --gallone:#8D9BB3; --gallone-chiaro:#5D6B82;
+    --rosso-bollo:#F08A80;
+    --ombra: 0 1px 2px rgba(0,0,0,.4);
+  }
+html[data-tema="scuro"] body{ background:var(--carta); color:var(--testo); }
+/* Pulsanti e selezioni che usavano l'inchiostro come sfondo: blu pieno con testo bianco */
+html[data-tema="scuro"] .btn-primario,
+  html[data-tema="scuro"] .scheda-nav.attiva,
+  html[data-tema="scuro"] .stat-switch-btn.attivo,
+  html[data-tema="scuro"] .switch-turno-assenza-btn.attivo,
+  html[data-tema="scuro"] .popup-rapido-giorno,
+  html[data-tema="scuro"] .avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
+html[data-tema="scuro"] .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#2A3556 !important; color:#E6ECFF !important; }
+html[data-tema="scuro"] .barra-schede{ background:color-mix(in srgb,#1B1F29 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+html[data-tema="scuro"] .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
+html[data-tema="scuro"] input,
+  html[data-tema="scuro"] select,
+  html[data-tema="scuro"] textarea{ color:var(--testo); }
+html[data-tema="scuro"] .overlay{ background:rgba(0,0,0,.7); }
+/* Report */
+html[data-tema="scuro"] .report-hero{ background:linear-gradient(135deg,#1E2A55,#33509E); }
+html[data-tema="scuro"] #statoBackup:not(:empty){ background:#3A1F1D; color:#F3B3AC; }
+html[data-tema="scuro"] .stato-connessione-v23.online{ background:#173226; color:#8EE0B1; }
+html[data-tema="scuro"] .stato-connessione-v23.offline{ background:#3A2F14; color:#F2CD7A; }
+html[data-tema="scuro"] .avviso-permessi-evento{ background:#3A2F14; color:#F2CD7A; }
+html[data-tema="scuro"] .stile-calendario-pulsanti button.attivo{ background:#22305A; border-color:#5C7FE0; }
+html[data-tema="scuro"] .riga-modello-nuovo-tab{ color:#8FB0FF; }
+html[data-tema="scuro"] .riga-modello-nuovo-tab span{ background:#22305A; }
+/* Calendario Classico: le caselle restano colorate (colori chiari scelti dall'utente),
+     quindi il loro testo resta scuro. */
+html[data-tema="scuro"] body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella:not(.vuota),
+  html[data-tema="scuro"] body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella:not(.vuota) .giorno-numero{ color:#1E2129; }
+html[data-tema="scuro"] body:not(.calendario-moderno):not(.calendario-senza-colori) .giorno-cella.festivo .giorno-numero{ color:#B3261E; }
+/* Calendario Moderno */
+html[data-tema="scuro"] body.calendario-moderno .giorno-cella.sabato,
+  html[data-tema="scuro"] body.calendario-moderno .giorno-cella.domenica{ background:rgba(255,255,255,.04) !important; }
+html[data-tema="scuro"] body.calendario-moderno .festivo .mod-numero{ color:#F08A80; }
+html[data-tema="scuro"] body.calendario-moderno .giorno-cella:hover{ background:rgba(255,255,255,.05) !important; }
+html[data-tema="chiaro"]{color-scheme:light}
+
+
+
+/* v2.59.0 — Moderno: indennità dentro l'etichetta, al posto dell'orario */
+body.calendario-moderno .mod-turno .mod-indennita{display:flex;justify-content:center;gap:2px;padding:2px 0;line-height:1}
+body.calendario-moderno .mod-indennita .giorno-badge{background:none!important;border:0!important;box-shadow:none!important;padding:0 1px;min-width:0;height:auto;font:700 .58rem/1.2 var(--font-corpo);color:inherit!important}
+
+/* Scelta del tema in Altro */
+.riga-tema{cursor:default;flex-wrap:wrap}
+.scelta-tema{display:grid;grid-template-columns:repeat(3,auto);gap:3px;background:var(--carta);border-radius:10px;padding:3px;margin-left:auto}
+.scelta-tema button{border:0;background:transparent;border-radius:8px;padding:6px 9px;font:600 .74rem var(--font-corpo);color:var(--testo-tenue);cursor:pointer}
+.scelta-tema button.attivo{background:var(--pannello);color:var(--testo);box-shadow:0 1px 3px rgba(0,0,0,.15)}

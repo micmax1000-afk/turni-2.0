@@ -730,18 +730,20 @@ function renderCalendario(){
         : NOME_BREVE_CATEGORIA[categoria] && (!modelloUsato || NOME_BREVE_CATEGORIA[modelloUsato.id]) ? NOME_BREVE_CATEGORIA[categoria]
         : nomeCategoria;
       if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
-      const oraEtichetta = t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? t.oraInizio : '';
+      // Sotto il nome, al posto dell'orario (che si vede toccando il giorno): le indennità del
+      // giorno, al massimo 3 più "+N". L'assenza non serve: è già scritta nell'etichetta.
+      const indennita = badge.filter(b => !b.includes('badge-assenza'));
+      const indennitaVisibili = indennita.slice(0, 3).join('') + (indennita.length > 3 ? `<span class="giorno-badge">+${indennita.length - 3}</span>` : '');
       const sfondo = coloreTurno || '#E4E7EC';
       const sfondoForte = coloreTurno ? scurisciColore(coloreTurno, 0.35) : '#C9CED6';
       const etichettaTurno = t && categoria
-        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoForte)};color:${testoSuColore(sfondoForte)}">${escapeHtml(nomeEtichetta)}</b>${oraEtichetta ? `<span style="background:${escapeHtml(sfondo)};color:${testoSuColore(sfondo)}">${escapeHtml(oraEtichetta)}</span>` : ''}</span>`
+        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoForte)};color:${testoSuColore(sfondoForte)}">${escapeHtml(nomeEtichetta)}</b>${indennita.length ? `<span class="mod-indennita" style="background:${escapeHtml(sfondo)};color:${testoSuColore(sfondo)}">${indennitaVisibili}</span>` : ''}</span>`
         : '';
       const rigaEvento = eventiCella.length
         ? `<span class="mod-evento" title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}"><i aria-hidden="true">●</i>${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}${eventiCella.length > 1 ? ` <b>+${eventiCella.length - 1}</b>` : ''}</span>`
         : '';
       cella.innerHTML = `
         <span class="mod-numero">${g}</span>
-        ${badgeVisibili.length ? `<span class="mod-badge">${badgeVisibili.join('')}</span>` : ''}
         ${etichettaTurno}
         ${rigaEvento}
       `;

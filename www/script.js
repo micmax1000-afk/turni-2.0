@@ -303,6 +303,23 @@ function mostraVersioneApp(){
   }).catch(() => {});
 }
 
+// Tema: 'auto' (segue il telefono, predefinito), 'chiaro' o 'scuro'.
+function temaScelto(){
+  const t = TurniPSStorage.getItem(CHIAVE_TEMA);
+  return t === 'chiaro' || t === 'scuro' ? t : 'auto';
+}
+function applicaTema(){
+  const t = temaScelto();
+  const descrizione = document.getElementById('descrizioneTema');
+  if(descrizione) descrizione.textContent = { auto: 'Come il telefono', chiaro: 'Sempre chiaro', scuro: 'Sempre scuro' }[t];
+  if(t === 'auto') document.documentElement.removeAttribute('data-tema');
+  else document.documentElement.setAttribute('data-tema', t);
+  document.querySelectorAll('.scelta-tema [data-tema]').forEach(b => {
+    b.classList.toggle('attivo', b.dataset.tema === t);
+    b.setAttribute('aria-pressed', b.dataset.tema === t ? 'true' : 'false');
+  });
+}
+
 // Barra in basso: l'icona del Calendario mostra il giorno di oggi.
 function aggiornaIconaCalendarioOggi(){
   const t = document.getElementById('iconaCalendarioGiorno');
@@ -331,6 +348,11 @@ function inizializza(){
   aggiornaIconaCalendarioOggi();
   document.addEventListener('visibilitychange', () => { if(!document.hidden) aggiornaIconaCalendarioOggi(); });
   inizializzaBarraETastiera();
+  applicaTema();
+  document.querySelectorAll('[data-tema]').forEach(b => { if(b.tagName === 'BUTTON') b.addEventListener('click', () => {
+    TurniPSStorage.setItem(CHIAVE_TEMA, b.dataset.tema);
+    applicaTema();
+  }); });
   // La finestra "Modifica turno" stava dentro la scheda Calendario: aperta dalla scheda Turni
   // restava invisibile. Spostata in fondo alla pagina, si apre da qualunque scheda.
   const overlayModello = el('overlayModificaModello');
