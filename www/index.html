@@ -410,14 +410,18 @@
     </section>
 
     <section class="scheda" id="sezioneRiepilogo">
-      <h2>Riepilogo Ore del Mese</h2>
-      <p class="sotto-titolo">Ore riconosciute dal motore in base ai turni inseriti (mese visualizzato nel calendario) — nessun importo, solo classificazione.</p>
+      <h2>Il mese</h2>
+      <div class="mese-tiles" id="meseTilesReport">
+        <div><b id="meseTileTurni">0</b><span>turni</span></div>
+        <div><b id="meseTileRiposi">0</b><span>riposi</span></div>
+        <div><b id="meseTileStraordinario">0 h</b><span>straordinario</span></div>
+      </div>
 
       <div class="stat-panel-v17 stat-dettagli">
         <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
         <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
-        <div><span>💰 Straordinario netto stimato</span><strong id="rStrNetto">—</strong></div>
-        <div><span>💤 Riposi</span><strong id="rRiposi">0</strong></div>
+        <div class="riga-nascosta"><span>💰 Straordinario netto stimato</span><strong id="rStrNetto">—</strong></div>
+        <div class="riga-nascosta"><span>💤 Riposi</span><strong id="rRiposi">0</strong></div>
         <div><span>🚗 Servizio esterno</span><strong id="rServizioEsterno">0</strong></div>
         <div><span>🛡️ Ordine pubblico</span><strong id="rOrdinePubblico">0</strong></div>
         <div><span>🔦 Controllo territorio</span><strong id="rControlloTerritorio">0</strong></div>
@@ -457,12 +461,16 @@
 
     <section class="scheda" id="sezioneStatisticheGrafici">
       <div class="intestazione-scheda">
-        <h2>Statistiche</h2>
+        <h2>Statistiche dell'anno</h2>
       </div>
-      <label class="campo-modale">Anno
-        <input type="number" id="campoAnnoStatistiche" min="2000" max="2100" inputmode="numeric">
-      </label>
+      <input type="number" id="campoAnnoStatistiche" min="2000" max="2100" hidden>
+      <div class="anno-nav">
+        <button type="button" class="btn-freccia" id="btnAnnoStatPrec" aria-label="Anno precedente">‹</button>
+        <b id="annoStatEtichetta">—</b>
+        <button type="button" class="btn-freccia" id="btnAnnoStatSucc" aria-label="Anno successivo">›</button>
+      </div>
       <div id="contenitoreStatistiche" class="statistiche-container"></div>
+      <button type="button" class="btn-secondario btn-stampa-anno" id="btnStampaAnnoStatistiche">🖨️ Stampa / PDF dell'anno</button>
     </section>
   </div>
 
@@ -506,7 +514,7 @@
     </section>
   </details>
 
-  <details class="cedolino-sezione-secondaria">
+  <details class="cedolino-sezione-secondaria solo-stampa">
     <summary>📅 Riepilogo Annuale ▾</summary>
     <section class="scheda" id="sezioneRiepilogoAnnuale">
     <p class="sotto-titolo">Ore e competenze sommate su tutto l'anno scelto. Lordo e Netto includono solo i mesi per cui hai già generato il cedolino nella scheda "Cedolino Simulato".</p>
@@ -912,9 +920,7 @@
     <div class="modale-header"><h2>Personalizza Report</h2><button class="btn-icona" id="btnChiudiPersonalizzaReport" aria-label="Chiudi">✕</button></div>
     <div class="modale-corpo">
       <p class="sotto-titolo" style="margin:0 0 4px;">Scegli quali blocchi vedere in Report. Puoi riattivarli in qualsiasi momento.</p>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportProssimoTurno"> ⏭️ Prossimo turno</label>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoMese"> 📊 Riepilogo mese (compatto)</label>
-      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoOre"> 🕐 Riepilogo Ore del Mese (dettagliato)</label>
+      <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportRiepilogoOre"> 🕐 Il mese</label>
       <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportStatistiche"> 📈 Statistiche (grafici annuali)</label>
       <label class="campo-modale campo-riga"><input type="checkbox" id="toggleReportCedolino"> 💶 Cedolino</label>
     </div>

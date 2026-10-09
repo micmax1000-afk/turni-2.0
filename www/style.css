@@ -1653,3 +1653,17 @@ body.scrittura-in-corso .barra-schede{display:none}
 #contenitoreStatistiche .stat-v-fill.stat-stra{background:linear-gradient(90deg,#F0A35E,#C26930)}
 #contenitoreStatistiche .stat-v-fill.stat-netto{background:linear-gradient(90deg,#6FD3A6,#2E9E83)}
 #contenitoreStatistiche .stat-v-row:has(.stat-v-fill[style*="width:0%"]){opacity:.45}
+
+
+/* Report alleggerito (v2.56.0) */
+#prossimoTurnoWidget,#riepilogoTurniV45{display:none!important}
+.stat-dettagli>div.riga-nascosta{display:none!important}
+@media screen{.solo-stampa{display:none!important}}
+.mese-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 12px}
+.mese-tiles div{background:var(--carta);border-radius:14px;padding:10px 8px;text-align:center}
+.mese-tiles b{display:block;font:700 1.2rem/1.2 var(--font-cifre)}
+.mese-tiles span{font-size:.72rem;color:var(--testo-tenue)}
+.anno-nav{display:flex;align-items:center;justify-content:center;gap:18px;margin:2px 0 12px}
+.anno-nav b{font:700 1rem var(--font-corpo)}
+.anno-nav .btn-freccia{width:36px;height:36px}
+.btn-stampa-anno{width:100%;margin-top:12px;min-height:44px;border-radius:14px}

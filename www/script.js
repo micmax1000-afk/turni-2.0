@@ -340,6 +340,20 @@ function inizializza(){
   on('btnReportMesePrec', 'click', () => el('btnMesePrec').click());
   on('btnReportMeseSucc', 'click', () => el('btnMeseSucc').click());
   on('tabReport', 'click', renderReportHero);
+  const cambiaAnnoStatistiche = d => {
+    const campo = el('campoAnnoStatistiche');
+    campo.value = (Number(campo.value) || new Date().getFullYear()) + d;
+    renderStatistiche();
+  };
+  on('btnAnnoStatPrec', 'click', () => cambiaAnnoStatistiche(-1));
+  on('btnAnnoStatSucc', 'click', () => cambiaAnnoStatistiche(1));
+  // Stampa dell'anno: calcola il riepilogo annuale (non più sullo schermo) e lo stampa.
+  on('btnStampaAnnoStatistiche', 'click', () => {
+    const anno = Number(el('campoAnnoStatistiche').value) || new Date().getFullYear();
+    el('campoAnnoRiepilogo').value = anno;
+    renderRiepilogoAnnuale(anno);
+    stampaSezione('contenitoreRiepilogoAnnuale');
+  });
   on('tabTurni', 'click', renderModelliTabTurni);
   on('tabAltro', 'click', aggiornaRiassuntoAnagraficaAltro);
   const listaModelliTab = el('listaModelliTabTurni');
@@ -1293,6 +1307,13 @@ function renderReportHero(){
     const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
     const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
     const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
+    // Riquadri in cima a "Il mese" (al posto del vecchio "Riepilogo mese").
+    const strOre = t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
+    if(el('meseTileTurni')){
+      el('meseTileTurni').textContent = r.giorniPresenzaEffettiva;
+      el('meseTileRiposi').textContent = r.riposi;
+      el('meseTileStraordinario').textContent = `${String(Math.round(strOre * 100) / 100).replace('.', ',')} h`;
+    }
     const precedente = NOMI_MESI[(meseCorrente + 11) % 12].toLowerCase();
     box.innerHTML = `
       <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[prossimo].toLowerCase()}</div>
