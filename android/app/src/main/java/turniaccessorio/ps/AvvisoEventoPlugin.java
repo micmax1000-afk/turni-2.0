@@ -8,6 +8,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
@@ -164,5 +168,70 @@ public class AvvisoEventoPlugin extends Plugin {
         }
         r.put("ok", ok);
         call.resolve(r);
+    }
+
+    // ===== Tema "Luce": il sensore di luce del telefono (lo stesso della luminosità automatica).
+    // Letto solo con l'app aperta: si ferma in pausa e riparte al ritorno. Nessun permesso.
+    private SensorEventListener ascoltoLuce;
+    private boolean luceRichiesta = false;
+    private long ultimoInvioLuce = 0;
+
+    @PluginMethod
+    public void avviaLuce(PluginCall call) {
+        luceRichiesta = true;
+        JSObject r = new JSObject();
+        r.put("disponibile", registraLuce());
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void fermaLuce(PluginCall call) {
+        luceRichiesta = false;
+        sganciaLuce();
+        call.resolve();
+    }
+
+    private boolean registraLuce() {
+        SensorManager sm = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+        Sensor sensore = sm != null ? sm.getDefaultSensor(Sensor.TYPE_LIGHT) : null;
+        if (sensore == null) return false;
+        if (ascoltoLuce != null) return true;
+        ascoltoLuce = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent e) {
+                long ora = System.currentTimeMillis();
+                if (ora - ultimoInvioLuce < 1000) return;
+                ultimoInvioLuce = ora;
+                try {
+                    JSObject d = new JSObject();
+                    d.put("lux", (double) e.values[0]);
+                    notifyListeners("luce", d);
+                } catch (Exception ignored) {
+                }
+            }
+            @Override
+            public void onAccuracyChanged(Sensor s, int a) { }
+        };
+        sm.registerListener(ascoltoLuce, sensore, SensorManager.SENSOR_DELAY_NORMAL);
+        return true;
+    }
+
+    private void sganciaLuce() {
+        if (ascoltoLuce == null) return;
+        SensorManager sm = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+        if (sm != null) sm.unregisterListener(ascoltoLuce);
+        ascoltoLuce = null;
+    }
+
+    @Override
+    protected void handleOnPause() {
+        super.handleOnPause();
+        sganciaLuce();
+    }
+
+    @Override
+    protected void handleOnResume() {
+        super.handleOnResume();
+        if (luceRichiesta) registraLuce();
     }
 }

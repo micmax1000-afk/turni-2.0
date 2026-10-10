@@ -1887,3 +1887,6 @@ html[data-tema="scuro"][data-scuro="nero"] .barra-schede{background:color-mix(in
 /* Pulsante ☀️/🌙 nell'intestazione del calendario (al posto della "i") */
 .btn-tema-veloce{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--bordo);background:transparent;font-size:.95rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 #indennitaGiornoSelezionatoV2 .indennita-giorno-badge{cursor:pointer}
+/* v2.69 — quinta scelta "Luce" (sensore o alba/tramonto) */
+.riga-tema .scelta-tema{grid-template-columns:repeat(5,1fr)}
+.cerchio-tema-luce{background:linear-gradient(135deg,#FFD97D 0 45%,#353A45 55% 100%)}

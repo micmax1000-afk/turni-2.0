@@ -303,13 +303,14 @@ function mostraVersioneApp(){
   }).catch(() => {});
 }
 
-// Tema: 'auto' (segue il telefono, predefinito: con il telefono in scuro usa Grigio), 'chiaro',
-// 'grigio' (scuro antracite) o 'nero' (quasi nero). Il vecchio 'scuro' vale come 'grigio'.
+// Tema: 'auto' (segue il telefono, predefinito: con il telefono in scuro usa Grigio), 'luce'
+// (segue la luce intorno col sensore del telefono; senza sensore, scuro dal tramonto all'alba),
+// 'chiaro', 'grigio' (scuro antracite) o 'nero' (quasi nero). Il vecchio 'scuro' vale come 'grigio'.
 // Grigio e Nero mettono data-tema="scuro" su <html>; Nero aggiunge data-scuro="nero".
 function temaScelto(){
   const t = TurniPSStorage.getItem(CHIAVE_TEMA);
   if(t === 'scuro') return 'grigio';
-  return ['chiaro', 'grigio', 'nero'].includes(t) ? t : 'auto';
+  return ['chiaro', 'grigio', 'nero', 'luce'].includes(t) ? t : 'auto';
 }
 function temaScuroPreferito(){
   return TurniPSStorage.getItem(CHIAVE_TEMA_SCURO) === 'nero' ? 'nero' : 'grigio';
@@ -317,14 +318,87 @@ function temaScuroPreferito(){
 function temaAttualeScuro(){
   const t = temaScelto();
   if(t === 'auto') return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  if(t === 'luce') return luceScuroOra();
   return t !== 'chiaro';
+}
+
+// ----- Tema "Luce" -----
+// Alba e tramonto a Roma (va bene per tutta Italia con pochi minuti di scarto), formula NOAA.
+function albaTramonto(giorno = new Date()){
+  const rad = Math.PI / 180, lat = 41.9, lon = 12.5;
+  const inizioAnno = new Date(giorno.getFullYear(), 0, 0);
+  const n = Math.floor((giorno - inizioAnno) / 86400000);
+  const g = 2 * Math.PI / 365 * (n - 1);
+  const eqt = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+  const decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+  const ha = Math.acos(Math.cos(90.833 * rad) / (Math.cos(lat * rad) * Math.cos(decl)) - Math.tan(lat * rad) * Math.tan(decl)) / rad;
+  const minutiUtc = segno => 720 - 4 * (lon + segno * ha) - eqt;
+  const ora = minuti => { const d = new Date(Date.UTC(giorno.getFullYear(), giorno.getMonth(), giorno.getDate())); d.setUTCMinutes(Math.round(minuti)); return d; };
+  return { alba: ora(minutiUtc(1)), tramonto: ora(minutiUtc(-1)) };
+}
+function scuroDalSole(adesso = new Date()){
+  const { alba, tramonto } = albaTramonto(adesso);
+  return adesso < alba || adesso >= tramonto;
+}
+const statoLuce = { attivo: false, fonte: null, scuro: null, candidato: null, timer: null, ascolto: null, intervallo: null };
+function luceScuroOra(){
+  return statoLuce.scuro === null ? scuroDalSole() : statoLuce.scuro;
+}
+// Buio sotto 10 lux, luce sopra 40: in mezzo non cambia niente. Il cambio avviene dopo 3 secondi
+// di luce stabile, così coprire il sensore con il dito non fa scattare il tema.
+function gestisciLux(lux){
+  const voluto = lux < 10 ? true : lux > 40 ? false : null;
+  if(statoLuce.scuro === null && voluto !== null){ statoLuce.scuro = voluto; applicaTema(); return; }
+  if(voluto === null || voluto === statoLuce.scuro){ statoLuce.candidato = null; clearTimeout(statoLuce.timer); return; }
+  if(statoLuce.candidato === voluto) return;
+  statoLuce.candidato = voluto;
+  clearTimeout(statoLuce.timer);
+  statoLuce.timer = setTimeout(() => {
+    if(statoLuce.candidato !== voluto) return;
+    statoLuce.scuro = voluto; statoLuce.candidato = null;
+    applicaTema();
+  }, 3000);
+}
+async function avviaTemaLuce(){
+  if(statoLuce.attivo) return;
+  statoLuce.attivo = true;
+  statoLuce.fonte = 'sole';
+  const plugin = typeof pluginAvvisoEvento === 'function' ? pluginAvvisoEvento() : null;
+  if(plugin && plugin.avviaLuce){
+    try{
+      const r = await plugin.avviaLuce();
+      if(r && r.disponibile && statoLuce.attivo){
+        statoLuce.fonte = 'sensore';
+        statoLuce.ascolto = await plugin.addListener('luce', d => gestisciLux(Number(d && d.lux)));
+      }
+    }catch(e){ statoLuce.fonte = 'sole'; }
+  }
+  if(statoLuce.fonte === 'sole'){
+    statoLuce.scuro = scuroDalSole();
+    statoLuce.intervallo = setInterval(() => {
+      const ora = scuroDalSole();
+      if(ora !== statoLuce.scuro){ statoLuce.scuro = ora; applicaTema(); }
+    }, 60000);
+  }
+  if(statoLuce.attivo) applicaTema();
+}
+function fermaTemaLuce(){
+  if(!statoLuce.attivo) return;
+  const plugin = typeof pluginAvvisoEvento === 'function' ? pluginAvvisoEvento() : null;
+  if(plugin && plugin.fermaLuce) plugin.fermaLuce().catch(() => {});
+  if(statoLuce.ascolto && statoLuce.ascolto.remove) try{ statoLuce.ascolto.remove(); }catch(e){}
+  clearInterval(statoLuce.intervallo); clearTimeout(statoLuce.timer);
+  Object.assign(statoLuce, { attivo: false, fonte: null, scuro: null, candidato: null, timer: null, ascolto: null, intervallo: null });
 }
 function applicaTema(){
   const t = temaScelto();
   const radice = document.documentElement;
+  if(t === 'luce') avviaTemaLuce(); else fermaTemaLuce();
   const descrizione = document.getElementById('descrizioneTema');
-  if(descrizione) descrizione.textContent = { auto: 'Come il telefono', chiaro: 'Sempre chiaro', grigio: 'Scuro, grigio antracite', nero: 'Scuro, quasi nero' }[t];
+  const testoLuce = statoLuce.fonte === 'sole' ? 'Scuro dal tramonto all\'alba' : 'Segue la luce intorno';
+  if(descrizione) descrizione.textContent = { auto: 'Come il telefono', luce: testoLuce, chiaro: 'Sempre chiaro', grigio: 'Scuro, grigio antracite', nero: 'Scuro, quasi nero' }[t];
   if(t === 'auto') radice.removeAttribute('data-tema');
+  else if(t === 'luce') radice.setAttribute('data-tema', luceScuroOra() ? 'scuro' : 'chiaro');
   else radice.setAttribute('data-tema', t === 'chiaro' ? 'chiaro' : 'scuro');
   if(t === 'nero') radice.setAttribute('data-scuro', 'nero');
   else radice.removeAttribute('data-scuro');
