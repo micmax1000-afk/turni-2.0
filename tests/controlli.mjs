@@ -467,6 +467,7 @@ sezione('Riquadro del giorno e assenze nel menu');
   const co = await p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').id);
   await p.click(`#listaModelliAssenze [data-assenza="${co}"]`);
   ok('toccando un\'assenza si applica al giorno', await p.evaluate(id => AppState.turni['2026-10-09'].assenzaTipo === id, co));
+  ok('il backup porta con sé promemoria del turno e widget', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_PROMEMORIA_TURNO, JSON.stringify({ attivo: true, modo: 'prima', minuti: 30 })); TurniPSStorage.setItem(CHIAVE_WIDGET, '1'); const d = costruisciDatiBackup(); return JSON.parse(d.promemoriaTurno).minuti === 30 && d.widget === '1'; }));
   ok('il riquadro mostra l\'assenza', await p.evaluate(() => document.querySelector('.giorno-v3-nome').textContent === 'Congedo ordinario'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();

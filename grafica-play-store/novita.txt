@@ -1,0 +1,12 @@
+<it-IT>
+• Primo avvio guidato in 3 passi
+• Promemoria del turno: la sera prima o poco prima dell'inizio
+• Widget con il turno di oggi e domani
+• Esporta i turni in Google Calendar
+• Simboli per le indennità nel calendario
+• Nuovo "Modifica il giorno" e riquadro del giorno più chiaro
+• Assenze con quanto ti resta, voce per voce
+• Sequenza automatica più semplice da continuare
+• Netto e lordo calcolati in automatico
+• Tema scuro e stampa/PDF sistemati
+</it-IT>

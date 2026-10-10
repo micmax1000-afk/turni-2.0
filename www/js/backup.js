@@ -70,7 +70,9 @@ async function esportaBackup(){
     eventiGiorno: AppState.eventiGiorno,
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null,
     sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
-    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null
+    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null,
+    promemoriaTurno: TurniPSStorage.getItem(CHIAVE_PROMEMORIA_TURNO) || null,
+    widget: TurniPSStorage.getItem(CHIAVE_WIDGET) || null
   };
   // coloriTurni: solo nel backup Drive a pagamento (costruisciDatiBackup) e export colori dedicato
   await salvaOCondividiFile(`backup-simulatore-cedolino-${dataISO(new Date())}.json`, JSON.stringify(dati, null, 2), 'application/json');
@@ -100,7 +102,9 @@ function costruisciDatiBackup(){
     indennitaNascoste: TurniPSStorage.getItem(CHIAVE_INDENNITA_NASCOSTE) || null,
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null,
     sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
-    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null
+    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null,
+    promemoriaTurno: TurniPSStorage.getItem(CHIAVE_PROMEMORIA_TURNO) || null,
+    widget: TurniPSStorage.getItem(CHIAVE_WIDGET) || null
   };
 }
 
@@ -744,6 +748,9 @@ function importaBackup(file, datiGiaLetti){
       if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
       if(typeof dati.sequenzaUltimoGiorno === 'string') TurniPSStorage.setItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO, dati.sequenzaUltimoGiorno);
       if(typeof dati.sequenzaPattern === 'string') TurniPSStorage.setItem(CHIAVE_SEQUENZA_PATTERN, dati.sequenzaPattern);
+      // Promemoria del turno e widget: si ripristinano come erano (se nel backup erano accesi).
+      if(typeof dati.promemoriaTurno === 'string'){ try{ if(JSON.parse(dati.promemoriaTurno) && typeof JSON.parse(dati.promemoriaTurno) === 'object') TurniPSStorage.setItem(CHIAVE_PROMEMORIA_TURNO, dati.promemoriaTurno); }catch(e){} }
+      if(dati.widget === '1' || dati.widget === '0') TurniPSStorage.setItem(CHIAVE_WIDGET, dati.widget);
       if(dati.eventiGiorno && typeof dati.eventiGiorno === 'object' && !Array.isArray(dati.eventiGiorno)){
         const eventiPrima = AppState.eventiGiorno || {};
         AppState.eventiGiorno = dati.eventiGiorno;
@@ -784,6 +791,8 @@ function importaBackup(file, datiGiaLetti){
       aggiornaRiassuntoAnagrafica();
       renderCalendario();
       renderStorico();
+      if(typeof aggiornaVistaPromemoriaTurno === 'function'){ aggiornaVistaPromemoriaTurno(); riprogrammaPromemoriaTurni(); }
+      if(typeof aggiornaVistaWidget === 'function'){ aggiornaVistaWidget(); aggiornaWidget(); }
       el('contenitoreCedolino').hidden = true;
       mostraAvviso('Backup importato correttamente.');
       if(typeof mostraToast === 'function') mostraToast('Dati ripristinati correttamente.', 'successo');
