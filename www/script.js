@@ -663,23 +663,11 @@ function inizializza(){
     const p = el('pannelloColoriTurni');
     if(p) p.hidden = true;
   }
-  function aggiornaPulsantiColoriDrive(){
-    const attivo = typeof backupDriveAttivo === 'function' && backupDriveAttivo();
-    ['btnEsportaColoriTurni','btnImportaColoriTurni'].forEach(id => {
-      const b = el(id);
-      if(!b) return;
-      b.classList.toggle('btn-premium-bloccato', !attivo);
-      b.title = attivo
-        ? (id.indexOf('Esporta')>=0 ? 'Esporta i colori su file' : 'Importa colori da file')
-        : 'Funzione a pagamento: attiva Backup Drive (1,99€)';
-    });
-  }
   function apriPannelloColori(){
     const p = el('pannelloColoriTurni');
     if(!p) return;
     p.hidden = false;
     renderColoriTurni();
-    aggiornaPulsantiColoriDrive();
     el('toggleCalendarioAColori').checked = calendarioAColoriAttivo();
     aggiornaAspettoBlocCoCloriPersonalizzati();
     p.scrollIntoView({behavior:'smooth', block:'nearest'});
@@ -711,18 +699,6 @@ function inizializza(){
   });
   on('btnChiudiColoriTurni','click', chiudiPannelloColori);
   on('btnChiudiColoriTurni2','click', chiudiPannelloColori);
-  on('btnEsportaColoriTurni','click', () => {
-    if(typeof esportaBackupColori === 'function') esportaBackupColori();
-  });
-  on('btnImportaColoriTurni','click', () => {
-    const inp = el('campoImportaColoriTurni');
-    if(inp) inp.click();
-  });
-  on('campoImportaColoriTurni','change', (e) => {
-    const file = e.target && e.target.files && e.target.files[0];
-    if(file && typeof importaBackupColori === 'function') importaBackupColori(file);
-    if(e.target) e.target.value = '';
-  });
   el('btnRipristinaColoriTurni').addEventListener('click', () => {
     mostraConferma('Questo riporta tutti i colori dei turni ai valori predefiniti. Continuare?', () => {
       AppState.coloriTurni = {};

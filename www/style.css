@@ -983,11 +983,6 @@ body.calendario-senza-colori .giorno-cella.riposo-giorno .giorno-numero{ color: 
   font-size:1.1rem;
 }
 
-.btn-premium-bloccato{
-  opacity: 0.72;
-  border-style: dashed !important;
-}
-
 /* V37 — calendario: leggibilità e selezione */
 .giorno-cella{min-height:74px;aspect-ratio:auto;padding:6px 4px;box-sizing:border-box;gap:4px;border-width:2px}
 .giorno-topline{width:100%;display:flex;align-items:center;justify-content:space-between;gap:3px;min-height:20px}
@@ -1781,9 +1776,9 @@ html[data-tema="scuro"] .anteprima-classificazione.anteprima-giorno .et-str{back
 #corpoColoriTurni .codice-colore{font-size:.66rem;opacity:.55;background:none;padding:0}
 #corpoColoriTurni .griglia-swatch{flex:0 0 auto}
 #corpoColoriTurni .swatch-colore-libero{width:38px;height:38px;border-radius:50%}
-.pannello-colori-azioni{display:grid!important;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.pannello-colori-azioni .btn-secondario{font-size:.74rem!important;padding:8px 4px!important;min-height:0!important}
-.pannello-colori-azioni .btn-primario{grid-column:1/-1}
+.pannello-colori-azioni{display:grid!important;grid-template-columns:1fr 2fr;gap:8px;align-items:stretch}
+.pannello-colori-azioni .btn-secondario{font-size:.86rem!important;padding:10px 6px!important;min-height:0!important}
+.pannello-colori-azioni .btn-primario{grid-column:auto}
 #corpoColoriTurni .riga-colore-info{align-items:flex-start;text-align:left}
 /* Nuovo evento */
 #overlayEvento .scelta-colore-evento{gap:8px}
@@ -1867,3 +1862,5 @@ html[data-tema="scuro"] .riga-assenza-giorno.attiva{background:#22305A}
 .assenze-menu-non-usate[open]>summary::before{content:'▾ '}
 html[data-tema="scuro"] #btnCancellaTurniMese{color:#FF8A80}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #btnCancellaTurniMese{color:#FF8A80}}
+.pannello-colori-azioni{margin-top:12px}
+.pannello-colori-azioni>button{white-space:nowrap}
