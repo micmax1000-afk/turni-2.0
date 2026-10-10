@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V177 (v2.67.3 — tema scuro più chiaro) */
+/* Turni & Accessorio PS — Service Worker V178 (v2.67.4 — calendario Moderno a colori di partenza) */
 'use strict';
-const CACHE='turni-ps-v177';
+const CACHE='turni-ps-v178';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

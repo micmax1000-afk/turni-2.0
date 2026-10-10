@@ -469,6 +469,7 @@ sezione('Riquadro del giorno e assenze nel menu');
   ok('toccando un\'assenza si applica al giorno', await p.evaluate(id => AppState.turni['2026-10-09'].assenzaTipo === id, co));
   ok('il backup porta con sé promemoria del turno e widget', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_PROMEMORIA_TURNO, JSON.stringify({ attivo: true, modo: 'prima', minuti: 30 })); TurniPSStorage.setItem(CHIAVE_WIDGET, '1'); const d = costruisciDatiBackup(); return JSON.parse(d.promemoriaTurno).minuti === 30 && d.widget === '1'; }));
   ok('i colori dei turni sono nel backup gratuito e non ci sono più pulsanti a pagamento', await p.evaluate(() => { AppState.coloriTurni = Object.assign({}, AppState.coloriTurni, { sera: '#123456' }); const d = costruisciDatiBackup(); return d.coloriTurni.sera === '#123456' && !document.getElementById('btnEsportaColoriTurni') && typeof esportaBackupColori === 'undefined'; }));
+  ok('al primo avvio il calendario è Moderno e a colori', await p.evaluate(() => { localStorage.removeItem(CHIAVE_STILE_CALENDARIO); localStorage.removeItem(CHIAVE_CALENDARIO_A_COLORI); return calendarioModernoAttivo() && calendarioAColoriAttivo(); }));
   ok('il riquadro mostra l\'assenza', await p.evaluate(() => document.querySelector('.giorno-v3-nome').textContent === 'Congedo ordinario'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();

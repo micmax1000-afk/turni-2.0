@@ -13,16 +13,16 @@ const CATEGORIE_COLORABILI = [
 ];
 
 
-// Spento di default: calendario bianco con sole sigle, finché non lo si accende esplicitamente
-// dalle Impostazioni. Chi vuole i colori può riaccenderlo in qualsiasi momento.
+// Acceso di default (da v2.67.4): chi non ha mai scelto vede il calendario a colori; chi l'ha
+// spento dalle Impostazioni lo ritrova spento.
 function calendarioAColoriAttivo(){
-  return TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1';
+  return TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) !== '0';
 }
 
-// Stile del calendario: 'classico' (casella tutta colorata con la sigla, predefinito) oppure
-// 'moderno' (sfondo chiaro, etichetta colorata con nome e ora di inizio, eventi scritti sotto).
+// Stile del calendario: 'moderno' (predefinito da v2.67.4: etichetta colorata con nome e ora di
+// inizio, eventi scritti sotto) oppure 'classico' (casella tutta colorata con la sigla).
 function calendarioModernoAttivo(){
-  return TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) === 'moderno';
+  return TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) !== 'classico';
 }
 
 // Per l'etichetta dello stile moderno: una versione più scura del colore scelto per il turno
