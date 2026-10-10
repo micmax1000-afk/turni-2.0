@@ -303,21 +303,51 @@ function mostraVersioneApp(){
   }).catch(() => {});
 }
 
-// Tema: 'auto' (segue il telefono, predefinito), 'chiaro' o 'scuro'.
+// Tema: 'auto' (segue il telefono, predefinito: con il telefono in scuro usa Grigio), 'chiaro',
+// 'grigio' (scuro antracite) o 'nero' (quasi nero). Il vecchio 'scuro' vale come 'grigio'.
+// Grigio e Nero mettono data-tema="scuro" su <html>; Nero aggiunge data-scuro="nero".
 function temaScelto(){
   const t = TurniPSStorage.getItem(CHIAVE_TEMA);
-  return t === 'chiaro' || t === 'scuro' ? t : 'auto';
+  if(t === 'scuro') return 'grigio';
+  return ['chiaro', 'grigio', 'nero'].includes(t) ? t : 'auto';
+}
+function temaScuroPreferito(){
+  return TurniPSStorage.getItem(CHIAVE_TEMA_SCURO) === 'nero' ? 'nero' : 'grigio';
+}
+function temaAttualeScuro(){
+  const t = temaScelto();
+  if(t === 'auto') return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  return t !== 'chiaro';
 }
 function applicaTema(){
   const t = temaScelto();
+  const radice = document.documentElement;
   const descrizione = document.getElementById('descrizioneTema');
-  if(descrizione) descrizione.textContent = { auto: 'Come il telefono', chiaro: 'Sempre chiaro', scuro: 'Sempre scuro' }[t];
-  if(t === 'auto') document.documentElement.removeAttribute('data-tema');
-  else document.documentElement.setAttribute('data-tema', t);
+  if(descrizione) descrizione.textContent = { auto: 'Come il telefono', chiaro: 'Sempre chiaro', grigio: 'Scuro, grigio antracite', nero: 'Scuro, quasi nero' }[t];
+  if(t === 'auto') radice.removeAttribute('data-tema');
+  else radice.setAttribute('data-tema', t === 'chiaro' ? 'chiaro' : 'scuro');
+  if(t === 'nero') radice.setAttribute('data-scuro', 'nero');
+  else radice.removeAttribute('data-scuro');
   document.querySelectorAll('.scelta-tema [data-tema]').forEach(b => {
     b.classList.toggle('attivo', b.dataset.tema === t);
     b.setAttribute('aria-pressed', b.dataset.tema === t ? 'true' : 'false');
   });
+  const veloce = document.getElementById('btnTemaVeloce');
+  if(veloce){
+    const scuro = temaAttualeScuro();
+    veloce.textContent = scuro ? '☀️' : '🌙';
+    veloce.setAttribute('aria-label', scuro ? 'Passa al tema chiaro' : 'Passa al tema scuro');
+    veloce.title = veloce.getAttribute('aria-label');
+  }
+}
+function scegliTema(t){
+  TurniPSStorage.setItem(CHIAVE_TEMA, t);
+  if(t === 'grigio' || t === 'nero') TurniPSStorage.setItem(CHIAVE_TEMA_SCURO, t);
+  applicaTema();
+}
+// Pulsante ☀️/🌙 in alto nel calendario: passa da chiaro a scuro (Grigio o Nero, l'ultimo scelto).
+function cambiaTemaVeloce(){
+  scegliTema(temaAttualeScuro() ? 'chiaro' : temaScuroPreferito());
 }
 
 // Barra in basso: l'icona del Calendario mostra il giorno di oggi.
@@ -349,10 +379,9 @@ function inizializza(){
   document.addEventListener('visibilitychange', () => { if(!document.hidden) aggiornaIconaCalendarioOggi(); });
   inizializzaBarraETastiera();
   applicaTema();
-  document.querySelectorAll('[data-tema]').forEach(b => { if(b.tagName === 'BUTTON') b.addEventListener('click', () => {
-    TurniPSStorage.setItem(CHIAVE_TEMA, b.dataset.tema);
-    applicaTema();
-  }); });
+  document.querySelectorAll('.scelta-tema [data-tema]').forEach(b => b.addEventListener('click', () => scegliTema(b.dataset.tema)));
+  on('btnTemaVeloce', 'click', cambiaTemaVeloce);
+  if(window.matchMedia) try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applicaTema); }catch(e){}
   // La finestra "Modifica turno" stava dentro la scheda Calendario: aperta dalla scheda Turni
   // restava invisibile. Spostata in fondo alla pagina, si apre da qualunque scheda.
   const overlayModello = el('overlayModificaModello');
@@ -955,8 +984,9 @@ function inizializza(){
   on('btnEliminaModello','click', eliminaModelloV2);
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
-  on('btnSimboliCalendario','click', apriSimboliCalendario);
   on('settingsSimboli','click', apriSimboliCalendario);
+  // Toccando i simboli nel riquadro del giorno si apre la legenda (prima c'era la "i" in alto).
+  on('indennitaGiornoSelezionatoV2','click', apriSimboliCalendario);
   on('btnChiudiSimboli','click', () => { el('overlaySimboli').hidden = true; });
   on('overlaySimboli','click', e => { if(e.target.id === 'overlaySimboli') el('overlaySimboli').hidden = true; });
   on('listaSimboli','change', e => { if(e.target.dataset.simbolo) cambiaSimboloVisibile(e.target.dataset.simbolo, e.target.checked); });

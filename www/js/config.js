@@ -24,6 +24,7 @@ window.TurniPSConfig = Object.freeze({
     CHIAVE_CALENDARIO_A_COLORI: 'simCedolino_calendarioAColori_v1',
     CHIAVE_STILE_CALENDARIO: 'simCedolino_stileCalendario_v1',
     CHIAVE_TEMA: 'simCedolino_tema_v1',
+    CHIAVE_TEMA_SCURO: 'simCedolino_temaScuro_v1',
     CHIAVE_INDENNITA_NASCOSTE: 'simCedolino_indennitaNascoste_v1',
     CHIAVE_BENVENUTO: 'simCedolino_benvenutoFatto_v1',
     CHIAVE_PROMEMORIA_TURNO: 'simCedolino_promemoriaTurno_v1',

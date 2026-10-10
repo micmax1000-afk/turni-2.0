@@ -48,7 +48,7 @@
       <button class="btn-freccia" id="btnMesePrec" type="button" aria-label="Mese precedente">‹</button>
       <span class="mese-e-simboli">
         <button class="etichetta-mese-btn" id="etichettaMese" type="button" title="Vai a un mese specifico">—</button>
-        <button class="btn-simboli" id="btnSimboliCalendario" type="button" aria-label="Simboli del calendario" title="Simboli del calendario">i</button>
+        <button class="btn-tema-veloce" id="btnTemaVeloce" type="button" aria-label="Passa al tema scuro" title="Passa al tema scuro">🌙</button>
       </span>
       <button class="btn-freccia" id="btnMeseSucc" type="button" aria-label="Mese successivo">›</button>
     </div>
@@ -950,9 +950,10 @@
         <div class="riga-strumento-turni riga-tema">
           <span>🌓</span><i>Tema<small id="descrizioneTema">Come il telefono</small></i>
           <div class="scelta-tema" role="group" aria-label="Tema">
-            <button type="button" data-tema="auto">Auto</button>
-            <button type="button" data-tema="chiaro">Chiaro</button>
-            <button type="button" data-tema="scuro">Scuro</button>
+            <button type="button" data-tema="auto"><span class="cerchio-tema cerchio-tema-auto" aria-hidden="true"></span>Auto</button>
+            <button type="button" data-tema="chiaro"><span class="cerchio-tema cerchio-tema-chiaro" aria-hidden="true"></span>Chiaro</button>
+            <button type="button" data-tema="grigio"><span class="cerchio-tema cerchio-tema-grigio" aria-hidden="true"></span>Grigio</button>
+            <button type="button" data-tema="nero"><span class="cerchio-tema cerchio-tema-nero" aria-hidden="true"></span>Nero</button>
           </div>
         </div>
         <button type="button" class="riga-strumento-turni" id="btnInstallaAppV23" hidden><span>📲</span><i>Installa l'app<small>Aggiungila alla schermata Home</small></i><b>›</b></button>
@@ -1032,6 +1033,7 @@
     <button type="button" class="btn-primario btn-genera-grande" id="btnBenvenutoNotifiche">🔔 Attiva le notifiche</button>
     <p class="sotto-titolo" id="benvenutoStatoNotifiche" style="margin-top:8px;"></p>
     <div class="nota-giorno" style="margin-top:14px;">💡 In Altro puoi accendere anche il <b>promemoria del turno</b> (la sera prima) e il <b>widget</b> per la schermata Home: all'inizio sono spenti.</div>
+    <div class="nota-giorno" style="margin-top:8px;">🌙 Il pulsante in alto nel calendario passa al tema scuro. Cosa vogliono dire i simboli? Toccali sotto il calendario, oppure Altro → Indennità nel calendario.</div>
   </div>
   <div class="benvenuto-piede">
     <button type="button" class="btn-secondario" id="btnBenvenutoIndietro" hidden>Indietro</button>

@@ -1412,11 +1412,11 @@ body.scrittura-in-corso .barra-schede{display:none}
 @media (prefers-color-scheme: dark){
   html:not([data-tema="chiaro"]){
     color-scheme: dark;
-    --carta:#1E222A; --sfondo:#1E222A;
-    --pannello:#2A2F3A; --superficie:#2A2F3A; --sfondo-card:#2A2F3A; --card:#2A2F3A;
-    --sfondo-secondario:#353B48; --superficie-secondaria:#353B48; --surface-2:#353B48;
+    --carta:#292D35; --sfondo:#292D35;
+    --pannello:#353A45; --superficie:#353A45; --sfondo-card:#353A45; --card:#353A45;
+    --sfondo-secondario:#414755; --superficie-secondaria:#414755; --surface-2:#414755;
     --testo:#F0F2F6; --testo-tenue:#B0B6C2;
-    --bordo:#454C5D;
+    --bordo:#525A6C;
     --inchiostro:#D3DCF5; --inchiostro-chiaro:#B4C3EC;
     --gallone:#8D9BB3; --gallone-chiaro:#5D6B82;
     --rosso-bollo:#F08A80;
@@ -1431,7 +1431,7 @@ body.scrittura-in-corso .barra-schede{display:none}
   html:not([data-tema="chiaro"]) .popup-rapido-giorno,
   html:not([data-tema="chiaro"]) .avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
   html:not([data-tema="chiaro"]) .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#3A4770 !important; color:#E6ECFF !important; }
-  html:not([data-tema="chiaro"]) .barra-schede{ background:color-mix(in srgb,#2A2F3A 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+  html:not([data-tema="chiaro"]) .barra-schede{ background:color-mix(in srgb,#353A45 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
   html:not([data-tema="chiaro"]) .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
   html:not([data-tema="chiaro"]) input,
   html:not([data-tema="chiaro"]) select,
@@ -1459,11 +1459,11 @@ body.scrittura-in-corso .barra-schede{display:none}
 }
 html[data-tema="scuro"]{
     color-scheme: dark;
-    --carta:#1E222A; --sfondo:#1E222A;
-    --pannello:#2A2F3A; --superficie:#2A2F3A; --sfondo-card:#2A2F3A; --card:#2A2F3A;
-    --sfondo-secondario:#353B48; --superficie-secondaria:#353B48; --surface-2:#353B48;
+    --carta:#292D35; --sfondo:#292D35;
+    --pannello:#353A45; --superficie:#353A45; --sfondo-card:#353A45; --card:#353A45;
+    --sfondo-secondario:#414755; --superficie-secondaria:#414755; --surface-2:#414755;
     --testo:#F0F2F6; --testo-tenue:#B0B6C2;
-    --bordo:#454C5D;
+    --bordo:#525A6C;
     --inchiostro:#D3DCF5; --inchiostro-chiaro:#B4C3EC;
     --gallone:#8D9BB3; --gallone-chiaro:#5D6B82;
     --rosso-bollo:#F08A80;
@@ -1478,7 +1478,7 @@ html[data-tema="scuro"] .btn-primario,
   html[data-tema="scuro"] .popup-rapido-giorno,
   html[data-tema="scuro"] .avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
 html[data-tema="scuro"] .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#3A4770 !important; color:#E6ECFF !important; }
-html[data-tema="scuro"] .barra-schede{ background:color-mix(in srgb,#2A2F3A 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+html[data-tema="scuro"] .barra-schede{ background:color-mix(in srgb,#353A45 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
 html[data-tema="scuro"] .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
 html[data-tema="scuro"] input,
   html[data-tema="scuro"] select,
@@ -1864,3 +1864,26 @@ html[data-tema="scuro"] #btnCancellaTurniMese{color:#FF8A80}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #btnCancellaTurniMese{color:#FF8A80}}
 .pannello-colori-azioni{margin-top:12px}
 .pannello-colori-azioni>button{white-space:nowrap}
+
+/* v2.68 — Tema Nero (quasi nero, scelto in Altro): stesse regole dello scuro, sfondi più scuri */
+html[data-tema="scuro"][data-scuro="nero"]{
+  --carta:#0A0C10; --sfondo:#0A0C10;
+  --pannello:#15181F; --superficie:#15181F; --sfondo-card:#15181F; --card:#15181F;
+  --sfondo-secondario:#1D2129; --superficie-secondaria:#1D2129; --surface-2:#1D2129;
+  --bordo:#2A2F3A;
+}
+html[data-tema="scuro"][data-scuro="nero"] .barra-schede{background:color-mix(in srgb,#15181F 94%,transparent)!important}
+
+/* Scelta del tema in Altro: quattro pallini sotto il titolo */
+.riga-tema{flex-wrap:wrap}
+.riga-tema .scelta-tema{flex:1 1 100%;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:8px 0 0}
+.scelta-tema button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;font-size:.78rem}
+.cerchio-tema{width:26px;height:26px;border-radius:50%;border:1px solid rgba(127,127,127,.55);display:block}
+.cerchio-tema-auto{background:linear-gradient(90deg,#F4F5F2 50%,#353A45 50%)}
+.cerchio-tema-chiaro{background:#F4F5F2}
+.cerchio-tema-grigio{background:#353A45}
+.cerchio-tema-nero{background:#0A0C10}
+
+/* Pulsante ☀️/🌙 nell'intestazione del calendario (al posto della "i") */
+.btn-tema-veloce{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--bordo);background:transparent;font-size:.95rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+#indennitaGiornoSelezionatoV2 .indennita-giorno-badge{cursor:pointer}
