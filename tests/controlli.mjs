@@ -398,7 +398,7 @@ for(const scuro of [false, true]){
   await p.click('#tabAltro'); await p.click('#settingsAnagrafica');
   await p.click('#tabAltro'); await p.click('#settingsTabelle');
   const sfondo = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  ok(`tema ${scuro ? 'scuro' : 'chiaro'}: sfondo ${sfondo}`, scuro ? sfondo === 'rgb(18, 21, 28)' : sfondo !== 'rgb(18, 21, 28)');
+  ok(`tema ${scuro ? 'scuro' : 'chiaro'}: sfondo ${sfondo}`, scuro ? sfondo === 'rgb(30, 34, 42)' : sfondo !== 'rgb(30, 34, 42)');
   ok(`tema ${scuro ? 'scuro' : 'chiaro'}: tutte le schede si aprono senza errori`, !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -411,16 +411,16 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   await p.click('#tabAltro');
   ok('pulsanti del tema visibili, "Auto" attivo', await p.evaluate(() => document.querySelector('.scelta-tema [data-tema="auto"]').classList.contains('attivo') && !!document.querySelector('.scelta-tema [data-tema="scuro"]').offsetParent));
   await p.click('.scelta-tema [data-tema="scuro"]');
-  ok('"Scuro" con il telefono in chiaro: sfondo scuro', await sfondo() === 'rgb(18, 21, 28)');
+  ok('"Scuro" con il telefono in chiaro: sfondo scuro', await sfondo() === 'rgb(30, 34, 42)');
   await p.reload();
   await p.waitForFunction(() => document.querySelector('.giorno-cella'));
-  ok('"Scuro" resta dopo la riapertura', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
+  ok('"Scuro" resta dopo la riapertura', await sfondo() === 'rgb(30, 34, 42)' && await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
   await p.emulateMedia({ colorScheme: 'dark' });
   await p.click('#tabAltro');
   await p.click('.scelta-tema [data-tema="chiaro"]');
-  ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(18, 21, 28)');
+  ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(30, 34, 42)');
   await p.click('.scelta-tema [data-tema="auto"]');
-  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(30, 34, 42)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

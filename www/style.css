@@ -1412,11 +1412,11 @@ body.scrittura-in-corso .barra-schede{display:none}
 @media (prefers-color-scheme: dark){
   html:not([data-tema="chiaro"]){
     color-scheme: dark;
-    --carta:#12151C; --sfondo:#12151C;
-    --pannello:#1B1F29; --superficie:#1B1F29; --sfondo-card:#1B1F29; --card:#1B1F29;
-    --sfondo-secondario:#232835; --superficie-secondaria:#232835; --surface-2:#232835;
-    --testo:#E6E8EE; --testo-tenue:#9AA1AE;
-    --bordo:#2F3545;
+    --carta:#1E222A; --sfondo:#1E222A;
+    --pannello:#2A2F3A; --superficie:#2A2F3A; --sfondo-card:#2A2F3A; --card:#2A2F3A;
+    --sfondo-secondario:#353B48; --superficie-secondaria:#353B48; --surface-2:#353B48;
+    --testo:#F0F2F6; --testo-tenue:#B0B6C2;
+    --bordo:#454C5D;
     --inchiostro:#D3DCF5; --inchiostro-chiaro:#B4C3EC;
     --gallone:#8D9BB3; --gallone-chiaro:#5D6B82;
     --rosso-bollo:#F08A80;
@@ -1430,8 +1430,8 @@ body.scrittura-in-corso .barra-schede{display:none}
   html:not([data-tema="chiaro"]) .switch-turno-assenza-btn.attivo,
   html:not([data-tema="chiaro"]) .popup-rapido-giorno,
   html:not([data-tema="chiaro"]) .avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
-  html:not([data-tema="chiaro"]) .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#2A3556 !important; color:#E6ECFF !important; }
-  html:not([data-tema="chiaro"]) .barra-schede{ background:color-mix(in srgb,#1B1F29 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+  html:not([data-tema="chiaro"]) .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#3A4770 !important; color:#E6ECFF !important; }
+  html:not([data-tema="chiaro"]) .barra-schede{ background:color-mix(in srgb,#2A2F3A 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
   html:not([data-tema="chiaro"]) .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
   html:not([data-tema="chiaro"]) input,
   html:not([data-tema="chiaro"]) select,
@@ -1459,11 +1459,11 @@ body.scrittura-in-corso .barra-schede{display:none}
 }
 html[data-tema="scuro"]{
     color-scheme: dark;
-    --carta:#12151C; --sfondo:#12151C;
-    --pannello:#1B1F29; --superficie:#1B1F29; --sfondo-card:#1B1F29; --card:#1B1F29;
-    --sfondo-secondario:#232835; --superficie-secondaria:#232835; --surface-2:#232835;
-    --testo:#E6E8EE; --testo-tenue:#9AA1AE;
-    --bordo:#2F3545;
+    --carta:#1E222A; --sfondo:#1E222A;
+    --pannello:#2A2F3A; --superficie:#2A2F3A; --sfondo-card:#2A2F3A; --card:#2A2F3A;
+    --sfondo-secondario:#353B48; --superficie-secondaria:#353B48; --surface-2:#353B48;
+    --testo:#F0F2F6; --testo-tenue:#B0B6C2;
+    --bordo:#454C5D;
     --inchiostro:#D3DCF5; --inchiostro-chiaro:#B4C3EC;
     --gallone:#8D9BB3; --gallone-chiaro:#5D6B82;
     --rosso-bollo:#F08A80;
@@ -1477,8 +1477,8 @@ html[data-tema="scuro"] .btn-primario,
   html[data-tema="scuro"] .switch-turno-assenza-btn.attivo,
   html[data-tema="scuro"] .popup-rapido-giorno,
   html[data-tema="scuro"] .avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
-html[data-tema="scuro"] .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#2A3556 !important; color:#E6ECFF !important; }
-html[data-tema="scuro"] .barra-schede{ background:color-mix(in srgb,#1B1F29 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+html[data-tema="scuro"] .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#3A4770 !important; color:#E6ECFF !important; }
+html[data-tema="scuro"] .barra-schede{ background:color-mix(in srgb,#2A2F3A 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
 html[data-tema="scuro"] .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
 html[data-tema="scuro"] input,
   html[data-tema="scuro"] select,
