@@ -983,11 +983,6 @@ body.calendario-senza-colori .giorno-cella.riposo-giorno .giorno-numero{ color: 
   font-size:1.1rem;
 }
 
-.btn-premium-bloccato{
-  opacity: 0.72;
-  border-style: dashed !important;
-}
-
 /* V37 — calendario: leggibilità e selezione */
 .giorno-cella{min-height:74px;aspect-ratio:auto;padding:6px 4px;box-sizing:border-box;gap:4px;border-width:2px}
 .giorno-topline{width:100%;display:flex;align-items:center;justify-content:space-between;gap:3px;min-height:20px}
@@ -1417,11 +1412,11 @@ body.scrittura-in-corso .barra-schede{display:none}
 @media (prefers-color-scheme: dark){
   html:not([data-tema="chiaro"]){
     color-scheme: dark;
-    --carta:#12151C; --sfondo:#12151C;
-    --pannello:#1B1F29; --superficie:#1B1F29; --sfondo-card:#1B1F29; --card:#1B1F29;
-    --sfondo-secondario:#232835; --superficie-secondaria:#232835; --surface-2:#232835;
-    --testo:#E6E8EE; --testo-tenue:#9AA1AE;
-    --bordo:#2F3545;
+    --carta:#292D35; --sfondo:#292D35;
+    --pannello:#353A45; --superficie:#353A45; --sfondo-card:#353A45; --card:#353A45;
+    --sfondo-secondario:#414755; --superficie-secondaria:#414755; --surface-2:#414755;
+    --testo:#F0F2F6; --testo-tenue:#B0B6C2;
+    --bordo:#525A6C;
     --inchiostro:#D3DCF5; --inchiostro-chiaro:#B4C3EC;
     --gallone:#8D9BB3; --gallone-chiaro:#5D6B82;
     --rosso-bollo:#F08A80;
@@ -1435,8 +1430,8 @@ body.scrittura-in-corso .barra-schede{display:none}
   html:not([data-tema="chiaro"]) .switch-turno-assenza-btn.attivo,
   html:not([data-tema="chiaro"]) .popup-rapido-giorno,
   html:not([data-tema="chiaro"]) .avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
-  html:not([data-tema="chiaro"]) .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#2A3556 !important; color:#E6ECFF !important; }
-  html:not([data-tema="chiaro"]) .barra-schede{ background:color-mix(in srgb,#1B1F29 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+  html:not([data-tema="chiaro"]) .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#3A4770 !important; color:#E6ECFF !important; }
+  html:not([data-tema="chiaro"]) .barra-schede{ background:color-mix(in srgb,#353A45 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
   html:not([data-tema="chiaro"]) .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
   html:not([data-tema="chiaro"]) input,
   html:not([data-tema="chiaro"]) select,
@@ -1464,11 +1459,11 @@ body.scrittura-in-corso .barra-schede{display:none}
 }
 html[data-tema="scuro"]{
     color-scheme: dark;
-    --carta:#12151C; --sfondo:#12151C;
-    --pannello:#1B1F29; --superficie:#1B1F29; --sfondo-card:#1B1F29; --card:#1B1F29;
-    --sfondo-secondario:#232835; --superficie-secondaria:#232835; --surface-2:#232835;
-    --testo:#E6E8EE; --testo-tenue:#9AA1AE;
-    --bordo:#2F3545;
+    --carta:#292D35; --sfondo:#292D35;
+    --pannello:#353A45; --superficie:#353A45; --sfondo-card:#353A45; --card:#353A45;
+    --sfondo-secondario:#414755; --superficie-secondaria:#414755; --surface-2:#414755;
+    --testo:#F0F2F6; --testo-tenue:#B0B6C2;
+    --bordo:#525A6C;
     --inchiostro:#D3DCF5; --inchiostro-chiaro:#B4C3EC;
     --gallone:#8D9BB3; --gallone-chiaro:#5D6B82;
     --rosso-bollo:#F08A80;
@@ -1482,8 +1477,8 @@ html[data-tema="scuro"] .btn-primario,
   html[data-tema="scuro"] .switch-turno-assenza-btn.attivo,
   html[data-tema="scuro"] .popup-rapido-giorno,
   html[data-tema="scuro"] .avviso-nuova-versione-v65{ background:#3A55B4 !important; color:#fff !important; border-color:#3A55B4 !important; }
-html[data-tema="scuro"] .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#2A3556 !important; color:#E6ECFF !important; }
-html[data-tema="scuro"] .barra-schede{ background:color-mix(in srgb,#1B1F29 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
+html[data-tema="scuro"] .barra-schede .riga-schede-icone .scheda-nav.attiva{ background:#3A4770 !important; color:#E6ECFF !important; }
+html[data-tema="scuro"] .barra-schede{ background:color-mix(in srgb,#353A45 94%,transparent) !important; box-shadow:0 8px 28px rgba(0,0,0,.5) !important; }
 html[data-tema="scuro"] .btn-secondario{ background:var(--pannello); color:var(--testo); border-color:var(--bordo); }
 html[data-tema="scuro"] input,
   html[data-tema="scuro"] select,
@@ -1781,9 +1776,9 @@ html[data-tema="scuro"] .anteprima-classificazione.anteprima-giorno .et-str{back
 #corpoColoriTurni .codice-colore{font-size:.66rem;opacity:.55;background:none;padding:0}
 #corpoColoriTurni .griglia-swatch{flex:0 0 auto}
 #corpoColoriTurni .swatch-colore-libero{width:38px;height:38px;border-radius:50%}
-.pannello-colori-azioni{display:grid!important;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.pannello-colori-azioni .btn-secondario{font-size:.74rem!important;padding:8px 4px!important;min-height:0!important}
-.pannello-colori-azioni .btn-primario{grid-column:1/-1}
+.pannello-colori-azioni{display:grid!important;grid-template-columns:1fr 2fr;gap:8px;align-items:stretch}
+.pannello-colori-azioni .btn-secondario{font-size:.86rem!important;padding:10px 6px!important;min-height:0!important}
+.pannello-colori-azioni .btn-primario{grid-column:auto}
 #corpoColoriTurni .riga-colore-info{align-items:flex-start;text-align:left}
 /* Nuovo evento */
 #overlayEvento .scelta-colore-evento{gap:8px}
@@ -1803,3 +1798,95 @@ html[data-tema="scuro"] .anteprima-classificazione.anteprima-giorno .et-str{back
 }
 .azioni-cedolino{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.azioni-cedolino button{margin:0;min-height:44px}.azioni-cedolino button[hidden]{display:none}
 @media screen{#contenitoreCedolino .cedolino-v39-riepilogo{display:none}}
+/* Primo avvio guidato */
+.benvenuto{position:fixed;inset:0;z-index:97;background:var(--pannello);overflow-y:auto;display:flex;flex-direction:column;padding:0 18px}
+.benvenuto[hidden]{display:none}
+@media(min-width:700px){.benvenuto{left:50%;width:560px;transform:translateX(-50%);box-shadow:0 0 0 100vmax rgba(0,0,0,.35)}}
+.benvenuto-testa{display:flex;align-items:center;justify-content:space-between;padding:16px 0 6px;position:sticky;top:0;background:var(--pannello);z-index:1}
+.benvenuto-punti{display:flex;gap:6px}
+.benvenuto-punti i{width:28px;height:6px;border-radius:3px;background:var(--bordo)}
+.benvenuto-punti i.attivo{background:#1D5FE0}
+.benvenuto-salta{background:none;border:0;color:var(--testo-tenue,#6B7280);font:600 .9rem var(--font-corpo);cursor:pointer;padding:6px}
+.benvenuto-passo{flex:1;padding-bottom:16px}
+.benvenuto-passo h2{font-size:1.5rem;margin:14px 0 6px}
+.benvenuto-passo[hidden]{display:none}
+.benvenuto-piede{position:sticky;bottom:0;display:grid;grid-template-columns:auto 1fr;gap:10px;padding:12px 0 calc(14px + env(safe-area-inset-bottom));background:var(--pannello);border-top:1px solid var(--bordo)}
+.benvenuto-piede button{min-height:48px;margin:0}
+.benvenuto-piede #btnBenvenutoIndietro[hidden]+#btnBenvenutoAvanti{grid-column:1/-1}
+.benvenuto-piede button[hidden]{display:none}
+#benvenutoFase button.attivo{font-weight:700}
+/* Altro: righe con interruttore e opzioni sotto */
+.riga-strumento-turni.riga-interruttore{cursor:default}
+.riga-strumento-turni.riga-interruttore .interruttore{margin-left:auto}
+.opzioni-riga-altro{padding:4px 14px 12px;border-top:1px dashed var(--bordo)}
+.opzioni-riga-altro[hidden]{display:none}
+.opzioni-riga-altro .scelta-prima-dopo{margin-top:8px}
+.opzioni-riga-altro .riga-anagrafica{padding:10px 0 0;border:0}
+.opzioni-riga-altro .riga-anagrafica[hidden]{display:none}
+.opzioni-riga-altro input[type=time]{width:auto;border:0;border-radius:9px;background:var(--carta);color:var(--inchiostro);font:600 .95rem var(--font-corpo);padding:7px 10px;margin:0}
+#sceltaPeriodoEsporta button.attivo{background:var(--inchiostro);border-color:var(--inchiostro);color:var(--pannello)}
+/* Modifica il giorno → Assenza: elenco da toccare */
+.elenco-assenze-giorno{margin-top:2px}
+.riga-assenza-giorno{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:0;border-top:1px solid var(--bordo);background:none;color:var(--testo);font:inherit;text-align:left;cursor:pointer}
+.riga-assenza-giorno:first-child{border-top:0}
+.riga-assenza-giorno span{font-size:1.05rem;flex:0 0 auto}
+.riga-assenza-giorno b{flex:1;font-size:.92rem}
+.riga-assenza-giorno em{font-style:normal;font-weight:700;font-size:.9rem}
+.riga-assenza-giorno em small{font-weight:500;color:var(--testo-tenue,#6B7280)}
+.riga-assenza-giorno i{font-style:normal;color:#1D4FC4;font-weight:800}
+.riga-assenza-giorno.attiva{background:#DCE7FF}
+html[data-tema="scuro"] .riga-assenza-giorno.attiva{background:#22305A}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .riga-assenza-giorno.attiva{background:#22305A}}
+
+/* v2.67 — Riquadro del giorno sotto il calendario, compatto */
+.riepilogo-giorno-selezionato-v2{display:flex;align-items:center;gap:12px;padding:2px 0 4px}
+.giorno-v3-barra{flex:0 0 6px;align-self:stretch;min-height:44px;border-radius:4px}
+.giorno-v3-testi{display:flex;flex-direction:column;flex:1;min-width:0}
+.giorno-v3-data{font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--testo-tenue)}
+.giorno-v3-nome{font-size:1.05rem;font-weight:800;color:var(--testo);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.giorno-v3-orario{font-size:.8rem;color:var(--testo-tenue);font-variant-numeric:tabular-nums}
+.giorno-v3-ore{flex:0 0 auto;background:var(--bordo);color:var(--testo);border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:800;font-variant-numeric:tabular-nums}
+.riepilogo-giorno-selezionato-box-v2 .indennita-giorno-selezionato-v2{margin:4px 0 6px}
+.campo-servizio-svolto{width:100%;box-sizing:border-box;margin:6px 0 8px;padding:10px 12px;border:1px solid var(--bordo);border-radius:10px;background:var(--sfondo, var(--carta));color:var(--testo);font:inherit;font-size:.86rem}
+.azioni-giorno-v3{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.azioni-giorno-v3>button{margin:0;width:100%;min-width:0}
+.riepilogo-giorno-selezionato-box-v2 .lista-eventi-giorno-v2{margin:8px 0 0}
+.lista-eventi-giorno-v2:empty{display:none}
+#btnCancellaTurniMese{margin:6px auto 0;font-size:.8rem}
+/* v2.67 — "Cosa vuoi aggiungere?" → Assenze: stesso elenco di "Modifica il giorno" */
+.elenco-assenze-menu{border:1px solid var(--bordo);border-radius:12px;overflow:hidden;background:var(--carta)}
+.assenze-menu-non-usate{margin-top:8px}
+.assenze-menu-non-usate>summary{cursor:pointer;padding:8px 4px;font-size:.8rem;font-weight:700;color:var(--testo-tenue);list-style:none}
+.assenze-menu-non-usate>summary::-webkit-details-marker{display:none}
+.assenze-menu-non-usate>summary::before{content:'▸ '}
+.assenze-menu-non-usate[open]>summary::before{content:'▾ '}
+html[data-tema="scuro"] #btnCancellaTurniMese{color:#FF8A80}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #btnCancellaTurniMese{color:#FF8A80}}
+.pannello-colori-azioni{margin-top:12px}
+.pannello-colori-azioni>button{white-space:nowrap}
+
+/* v2.68 — Tema Nero (quasi nero, scelto in Altro): stesse regole dello scuro, sfondi più scuri */
+html[data-tema="scuro"][data-scuro="nero"]{
+  --carta:#0A0C10; --sfondo:#0A0C10;
+  --pannello:#15181F; --superficie:#15181F; --sfondo-card:#15181F; --card:#15181F;
+  --sfondo-secondario:#1D2129; --superficie-secondaria:#1D2129; --surface-2:#1D2129;
+  --bordo:#2A2F3A;
+}
+html[data-tema="scuro"][data-scuro="nero"] .barra-schede{background:color-mix(in srgb,#15181F 94%,transparent)!important}
+
+/* Scelta del tema in Altro: quattro pallini sotto il titolo */
+.riga-tema{flex-wrap:wrap}
+.riga-tema .scelta-tema{flex:1 1 100%;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:8px 0 0}
+.scelta-tema button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;font-size:.78rem}
+.cerchio-tema{width:26px;height:26px;border-radius:50%;border:1px solid rgba(127,127,127,.55);display:block}
+.cerchio-tema-auto{background:linear-gradient(90deg,#F4F5F2 50%,#353A45 50%)}
+.cerchio-tema-chiaro{background:#F4F5F2}
+.cerchio-tema-grigio{background:#353A45}
+.cerchio-tema-nero{background:#0A0C10}
+
+/* Pulsante ☀️/🌙 nell'intestazione del calendario (al posto della "i") */
+.btn-tema-veloce{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--bordo);background:transparent;font-size:.95rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+#indennitaGiornoSelezionatoV2 .indennita-giorno-badge{cursor:pointer}
+/* v2.69 — quinta scelta "Luce" (sensore o alba/tramonto) */
+.riga-tema .scelta-tema{grid-template-columns:repeat(5,1fr)}
+.cerchio-tema-luce{background:linear-gradient(135deg,#FFD97D 0 45%,#353A45 55% 100%)}

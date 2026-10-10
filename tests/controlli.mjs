@@ -60,7 +60,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
       const f = (nome, risposta) => a => { window.__log.push([nome, JSON.parse(JSON.stringify(a || {}))]); return Promise.resolve(risposta || {}); };
       window.Capacitor = { isNativePlatform: () => true, Plugins: {
         LocalNotifications: { cancel: f('ln.cancel'), schedule: f('ln.schedule'), checkPermissions: f('ln.check', { display: 'granted' }), requestPermissions: f('ln.req', { display: 'granted' }), createChannel: f('x'), deleteChannel: f('x'), checkExactNotificationSetting: f('x', { exact_alarm: 'granted' }) },
-        AvvisoEvento: { programma: f('av.programma'), annulla: f('av.annulla'), statoNotifiche: f('stato', { attive: true }), apriImpostazioniNotifiche: f('impostazioni'),
+        AvvisoEvento: { coloriBarre: f('barre'), programma: f('av.programma'), annulla: f('av.annulla'), statoNotifiche: f('stato', { attive: true }), apriImpostazioniNotifiche: f('impostazioni'),
           stampa: a => { window.__log.push(['stampa', a, document.documentElement.getAttribute('data-tema'), !document.getElementById('contenitoreCedolino').hidden]); return new Promise(r => setTimeout(r, 300)); } } } };
     }
   }, [JSON.stringify(turni), JSON.stringify(eventi), stile, colori, nativo]);
@@ -171,8 +171,9 @@ for(const stile of ['classico', 'moderno']){
     await p.click('.giorno-cella[data-data="2026-10-20"]');
     ok('toccando un giorno si apre il menu rapido', await p.evaluate(() => !document.getElementById('popupRapidoGiorno').hidden));
     await p.evaluate(() => { document.getElementById('popupRapidoGiorno').hidden = true; });
-    await p.click('#btnSimboliCalendario');
-    ok('pulsante "i": si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));
+    await p.evaluate(() => { AppState.turni['2026-10-03'] = Object.assign({}, AppState.turni['2026-10-03'], { data: '2026-10-03', oraInizio: '07:00', oraFine: '13:00', ordinePubblico: true }); selezionaGiorno('2026-10-03'); });
+    await p.click('#indennitaGiornoSelezionatoV2 .indennita-giorno-badge');
+    ok('toccando un simbolo del giorno si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));
     await p.click('#listaSimboli [data-simbolo="servizioEsterno"]');
     ok('acceso "Servizio esterno": compare nella casella', await p.evaluate(() => [...document.querySelectorAll('.giorno-cella[data-data="2026-10-02"] .mod-indennita [aria-label]')].some(b => b.getAttribute('aria-label') === 'Servizio esterno')));
     await p.click('#btnChiudiSimboli');
@@ -317,11 +318,56 @@ sezione('Modifica il giorno, Tabelle, avvisi');
   await p.click('[data-tipo-giorno="riposo"]');
   await p.click('#btnSalvaTurno');
   ok('"Riposo" salva il giorno come riposo', await p.evaluate(() => AppState.turni['2026-10-01'].riposo === true));
+  await p.click('#btnModificaGiornoSelezionatoV2');
+  await p.click('[data-tipo-giorno="assenza"]');
+  const idCO = await p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').id);
+  ok('"Assenza": elenco da toccare con quanto resta (Congedo ordinario 30 / 30 gg)', await p.evaluate(id => /30\s*\/ 30 gg/.test(document.querySelector(`[data-assenza-giorno="${id}"]`).innerText), idCO));
+  await p.click(`[data-assenza-giorno="${idCO}"]`);
+  await p.click('#btnSalvaTurno');
+  ok('l\'assenza toccata viene salvata', await p.evaluate(id => AppState.turni['2026-10-01'].assenzaTipo === id && !AppState.turni['2026-10-01'].riposo, idCO));
   ok('l\'avviso sta solo nel Calendario', await p.evaluate(() => !!document.querySelector('#vistaTurni #appAlerts')));
   await p.click('#tabAltro'); await p.click('#settingsTabelle');
   await p.click('#toggleTabelleAvanzate');
   await p.evaluate(() => { const i = document.querySelector('input[data-t="buonoPastoValore"]'); i.value = '8'; i.dispatchEvent(new Event('change', { bubbles: true })); });
   ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
+{
+  // Installazione nuova: niente anagrafica, niente turni → si apre la guida.
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome' });
+  const p = await ctx.newPage();
+  const errori = []; p.on('pageerror', e => errori.push(e.message));
+  await p.clock.setFixedTime(new Date('2026-10-09T10:00:00+02:00'));
+  await p.goto(URL_APP); await p.waitForFunction(() => typeof renderCalendario === 'function' && document.querySelector('.giorno-cella'));
+  ok('installazione nuova: si apre il primo avvio guidato', await p.evaluate(() => !document.getElementById('overlayBenvenuto').hidden));
+  await p.selectOption('#benvenutoQualifica', 'Sovrintendente');
+  await p.click('#btnBenvenutoAvanti');
+  await p.click('[data-benvenuto-pattern="pattern_quinta5"]');
+  await p.click('[data-benvenuto-fase="1"]');
+  await p.click('#btnBenvenutoAvanti');
+  await p.click('#btnBenvenutoAvanti');
+  const b = await p.evaluate(() => ({ q: AppState.anagrafica.qualifica, oggi: AppState.turni['2026-10-09']?.modelloId, n: Object.keys(AppState.turni).length, chiuso: document.getElementById('overlayBenvenuto').hidden }));
+  ok('guida: anagrafica salvata, "Oggi fai: Pom." e 3 mesi di turni', b.q === 'Sovrintendente' && b.oggi === 'pomeriggio' && b.n === 92 && b.chiuso, JSON.stringify(b));
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('la guida non si riapre', await p.evaluate(() => document.getElementById('overlayBenvenuto').hidden));
+  // Promemoria del turno e widget: spenti all'inizio.
+  const spenti = await p.evaluate(() => ({ prom: impostazioniPromemoriaTurno().attivo, lista: promemoriaTurnoDaProgrammare().length, widget: datiWidget().attivo }));
+  ok('promemoria del turno e widget partono spenti', spenti.prom === false && spenti.lista === 0 && spenti.widget === false, JSON.stringify(spenti));
+  await p.click('#tabAltro');
+  await p.click('#campoPromemoriaTurno');
+  const prom = await p.evaluate(() => promemoriaTurnoDaProgrammare()[0]);
+  ok('acceso: "Domani: Mattino" la sera prima alle 20:00', prom.title === 'Domani: Mattino' && prom.body === '07:00 – 13:00' && new Date(prom.quando).toISOString() === '2026-10-09T18:00:00.000Z', JSON.stringify(prom));
+  await p.click('#campoWidget');
+  const w = await p.evaluate(() => datiWidget());
+  ok('widget acceso: oggi Pomeriggio 13:00 – 19:00', w.attivo && w.giorni['2026-10-09'].nome === 'Pomeriggio' && w.giorni['2026-10-09'].orario === '13:00 – 19:00', JSON.stringify(w.giorni['2026-10-09']));
+  await p.click('#tabTurni'); await p.click('#btnApriEsportaCalendario');
+  const ics = await p.evaluate(() => creaIcsTurni(false).testo);
+  ok('file .ics: turni con orari di Roma, la Sera finisce il giorno dopo', /BEGIN:VCALENDAR/.test(ics) && /DTSTART;TZID=Europe\/Rome:20261009T130000/.test(ics) && /DTSTART;TZID=Europe\/Rome:20261013T190000\r\nDTEND;TZID=Europe\/Rome:20261014T010000/.test(ics) && !/SUMMARY:Riposo/.test(ics));
+  ok('con "Includi riposi": i riposi come giornata intera', await p.evaluate(() => /DTSTART;VALUE=DATE:\d{8}\r\nDTEND;VALUE=DATE:\d{8}\r\nSUMMARY:Riposo/.test(creaIcsTurni(true).testo)));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -353,7 +399,7 @@ for(const scuro of [false, true]){
   await p.click('#tabAltro'); await p.click('#settingsAnagrafica');
   await p.click('#tabAltro'); await p.click('#settingsTabelle');
   const sfondo = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  ok(`tema ${scuro ? 'scuro' : 'chiaro'}: sfondo ${sfondo}`, scuro ? sfondo === 'rgb(18, 21, 28)' : sfondo !== 'rgb(18, 21, 28)');
+  ok(`tema ${scuro ? 'scuro' : 'chiaro'}: sfondo ${sfondo}`, scuro ? sfondo === 'rgb(41, 45, 53)' : sfondo !== 'rgb(41, 45, 53)');
   ok(`tema ${scuro ? 'scuro' : 'chiaro'}: tutte le schede si aprono senza errori`, !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -364,18 +410,40 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   const sfondo = () => p.evaluate(() => getComputedStyle(document.body).backgroundColor);
   await p.click('#tabAltro');
-  ok('pulsanti del tema visibili, "Auto" attivo', await p.evaluate(() => document.querySelector('.scelta-tema [data-tema="auto"]').classList.contains('attivo') && !!document.querySelector('.scelta-tema [data-tema="scuro"]').offsetParent));
-  await p.click('.scelta-tema [data-tema="scuro"]');
-  ok('"Scuro" con il telefono in chiaro: sfondo scuro', await sfondo() === 'rgb(18, 21, 28)');
+  ok('pulsanti del tema visibili, "Auto" attivo', await p.evaluate(() => document.querySelector('.scelta-tema [data-tema="auto"]').classList.contains('attivo') && !!document.querySelector('.scelta-tema [data-tema="nero"]').offsetParent));
+  await p.click('.scelta-tema [data-tema="grigio"]');
+  ok('"Grigio" con il telefono in chiaro: sfondo grigio scuro', await sfondo() === 'rgb(41, 45, 53)');
   await p.reload();
   await p.waitForFunction(() => document.querySelector('.giorno-cella'));
-  ok('"Scuro" resta dopo la riapertura', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
+  ok('"Grigio" resta dopo la riapertura', await sfondo() === 'rgb(41, 45, 53)' && await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
   await p.emulateMedia({ colorScheme: 'dark' });
   await p.click('#tabAltro');
   await p.click('.scelta-tema [data-tema="chiaro"]');
-  ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(18, 21, 28)');
+  ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(41, 45, 53)');
   await p.click('.scelta-tema [data-tema="auto"]');
-  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(18, 21, 28)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(41, 45, 53)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  await p.click('.scelta-tema [data-tema="nero"]');
+  ok('"Nero": sfondo quasi nero', await sfondo() === 'rgb(10, 12, 16)');
+  await p.click('#tabCalendario');
+  ok('nel calendario c\'è il pulsante ☀️ al posto della "i"', await p.evaluate(() => !document.getElementById('btnSimboliCalendario') && document.getElementById('btnTemaVeloce').textContent === '☀️'));
+  await p.click('#btnTemaVeloce');
+  ok('☀️ passa al chiaro e diventa 🌙', await sfondo() !== 'rgb(10, 12, 16)' && await p.evaluate(() => temaScelto() === 'chiaro' && document.getElementById('btnTemaVeloce').textContent === '🌙'));
+  await p.click('#btnTemaVeloce');
+  ok('🌙 torna allo scuro scelto prima (Nero)', await sfondo() === 'rgb(10, 12, 16)');
+  ok('alba e tramonto a Roma il 9 ottobre: circa 7:15 e 18:40', await p.evaluate(() => { const { alba, tramonto } = albaTramonto(new Date('2026-10-09T12:00:00+02:00')); const m = d => d.getUTCHours() * 60 + d.getUTCMinutes() + 120; return Math.abs(m(alba) - 435) < 15 && Math.abs(m(tramonto) - 1120) < 15; }));
+  await p.click('#tabAltro');
+  await p.click('.scelta-tema [data-tema="luce"]');
+  ok('"Luce" senza sensore (web): alle 10 di mattina è chiaro, la sera scuro', await p.evaluate(() => document.documentElement.dataset.tema === 'chiaro' && statoLuce.fonte === 'sole' && scuroDalSole(new Date('2026-10-09T21:00:00+02:00'))));
+  await p.evaluate(() => { statoLuce.fonte = 'sensore'; clearInterval(statoLuce.intervallo); gestisciLux(3); });
+  ok('"Luce": al buio non cambia subito', await p.evaluate(() => document.documentElement.dataset.tema === 'chiaro'));
+  await p.waitForTimeout(3400);
+  ok('"Luce": dopo 3 secondi di buio passa allo scuro', await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
+  await p.evaluate(() => { gestisciLux(200); gestisciLux(3); });
+  await p.waitForTimeout(3400);
+  ok('"Luce": un lampo di luce (o il dito sul sensore) non fa scattare il tema', await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
+  await p.click('.scelta-tema [data-tema="grigio"]');
+  ok('lasciando "Luce" il sensore si ferma', await p.evaluate(() => !statoLuce.attivo));
+  ok('il vecchio "Scuro" salvato vale come Grigio', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_TEMA, 'scuro'); applicaTema(); return temaScelto() === 'grigio' && getComputedStyle(document.body).backgroundColor === 'rgb(41, 45, 53)'; }));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -393,6 +461,41 @@ sezione('Stampa / Esporta PDF nell\'app Android');
   ok('durante la stampa il foglio è chiaro anche col tema scuro', !!s && s[2] === 'chiaro');
   await p.waitForTimeout(500);
   ok('chiusa la stampa, il tema torna come prima', await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('barre di Android in tinta con l\'app (sfondo e icone)', await p.evaluate(() => { scegliTema('nero'); const b = window.__log.filter(x => x[0] === 'barre').pop(); return !!b && b[1].colore === '#0A0C10' && b[1].iconeChiare === true; }));
+  ok('in Chiaro le barre diventano chiare con icone scure', await p.evaluate(() => { scegliTema('chiaro'); const b = window.__log.filter(x => x[0] === 'barre').pop(); return b[1].colore === '#ECEFEA' && b[1].iconeChiare === false; }));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Riquadro del giorno e assenze nel menu');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.evaluate(() => selezionaGiorno('2026-10-09'));
+  const r = await p.evaluate(() => ({
+    data: document.querySelector('.giorno-v3-data')?.textContent,
+    nome: document.querySelector('.giorno-v3-nome')?.textContent,
+    orario: document.querySelector('.giorno-v3-orario')?.textContent || '',
+    link: document.getElementById('btnCancellaTurniMese').textContent
+  }));
+  ok('il riquadro dice giorno della settimana e nome del turno', r.data === 'Venerdì 9 ottobre' && !!r.nome && r.nome !== 'Nessun turno', JSON.stringify(r));
+  ok('"Cancella i turni" dice il mese visualizzato', r.link === 'Cancella i turni di ottobre…', r.link);
+  await p.evaluate(() => { giornoPerPopupV2 = '2026-10-09'; apriSelettoreModelliV2('assenze'); });
+  const m = await p.evaluate(() => ({
+    righe: document.querySelectorAll('#listaModelliAssenze .riga-assenza-giorno[data-assenza]').length,
+    saldo: !!document.querySelector('#listaModelliAssenze .riga-assenza-giorno em small'),
+    nonUsate: document.querySelector('#listaModelliAssenze .assenze-menu-non-usate summary')?.textContent || '',
+    chiuso: !document.querySelector('#listaModelliAssenze .assenze-menu-non-usate')?.open
+  }));
+  ok('Assenze nel menu: elenco con quanto resta', m.righe > 3 && m.saldo, JSON.stringify(m));
+  ok('voci a zero in "Non usate", chiuso', /^Non usate \(\d+\)$/.test(m.nonUsate) && m.chiuso, JSON.stringify(m));
+  const co = await p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').id);
+  await p.click(`#listaModelliAssenze [data-assenza="${co}"]`);
+  ok('toccando un\'assenza si applica al giorno', await p.evaluate(id => AppState.turni['2026-10-09'].assenzaTipo === id, co));
+  ok('il backup porta con sé promemoria del turno e widget', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_PROMEMORIA_TURNO, JSON.stringify({ attivo: true, modo: 'prima', minuti: 30 })); TurniPSStorage.setItem(CHIAVE_WIDGET, '1'); const d = costruisciDatiBackup(); return JSON.parse(d.promemoriaTurno).minuti === 30 && d.widget === '1'; }));
+  ok('i colori dei turni sono nel backup gratuito e non ci sono più pulsanti a pagamento', await p.evaluate(() => { AppState.coloriTurni = Object.assign({}, AppState.coloriTurni, { sera: '#123456' }); const d = costruisciDatiBackup(); return d.coloriTurni.sera === '#123456' && !document.getElementById('btnEsportaColoriTurni') && typeof esportaBackupColori === 'undefined'; }));
+  ok('al primo avvio il calendario è Moderno e a colori', await p.evaluate(() => { localStorage.removeItem(CHIAVE_STILE_CALENDARIO); localStorage.removeItem(CHIAVE_CALENDARIO_A_COLORI); return calendarioModernoAttivo() && calendarioAColoriAttivo(); }));
+  ok('il riquadro mostra l\'assenza', await p.evaluate(() => document.querySelector('.giorno-v3-nome').textContent === 'Congedo ordinario'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

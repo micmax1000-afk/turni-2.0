@@ -35,6 +35,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- Widget "Turno di oggi e domani" (spento finché non lo accendi in Altro) -->
+        <receiver
+            android:name=".TurnoWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_turno_info" />
+        </receiver>
+
         <service
             android:name=".AvvisoEventoService"
             android:exported="false"

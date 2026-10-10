@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colori del widget con il telefono in chiaro (in values-night quelli per il tema scuro). -->
+<resources>
+    <color name="widget_sfondo">#F7F8F5</color>
+    <color name="widget_testo">#1E2129</color>
+    <color name="widget_testo_secondario">#374151</color>
+    <color name="widget_etichetta">#6B7280</color>
+</resources>

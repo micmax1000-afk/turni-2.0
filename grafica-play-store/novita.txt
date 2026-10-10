@@ -1,0 +1,11 @@
+<it-IT>
+• Primo avvio guidato in 3 passi
+• Promemoria del turno e widget (anche ridotto a una riga)
+• Esporta i turni in Google Calendar
+• Temi Chiaro, Grigio, Nero e Luce (segue la luce intorno), pulsante 🌙 nel calendario
+• Calendario Moderno a colori, simboli per le indennità
+• Nuovo "Modifica il giorno" e riquadro del giorno
+• Assenze con quanto ti resta
+• Netto e lordo in automatico
+• Colori e impostazioni nel backup gratuito
+</it-IT>

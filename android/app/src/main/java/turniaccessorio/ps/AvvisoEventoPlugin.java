@@ -8,6 +8,14 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.view.Window;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
@@ -134,5 +142,133 @@ public class AvvisoEventoPlugin extends Plugin {
                 call.reject("Stampa non avviata: " + e.getMessage());
             }
         });
+    }
+
+    /** Widget: l'app passa i giorni già pronti da mostrare (o {"attivo":false} se è spento). */
+    @PluginMethod
+    public void aggiornaWidget(PluginCall call) {
+        try {
+            TurnoWidgetProvider.salvaDati(getContext(), call.getString("dati", "{}"));
+            TurnoWidgetProvider.aggiornaTutti(getContext());
+            call.resolve(new JSObject());
+        } catch (Exception e) {
+            call.reject("Widget non aggiornato: " + e.getMessage());
+        }
+    }
+
+    /** Chiede ad Android di aggiungere il widget alla schermata Home (Android 8+, se il launcher lo permette). */
+    @PluginMethod
+    public void aggiungiWidget(PluginCall call) {
+        JSObject r = new JSObject();
+        boolean ok = false;
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                android.appwidget.AppWidgetManager m = android.appwidget.AppWidgetManager.getInstance(getContext());
+                if (m.isRequestPinAppWidgetSupported()) {
+                    ok = m.requestPinAppWidget(new android.content.ComponentName(getContext(), TurnoWidgetProvider.class), null, null);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        r.put("ok", ok);
+        call.resolve(r);
+    }
+
+    // ===== Tema "Luce": il sensore di luce del telefono (lo stesso della luminosità automatica).
+    // Letto solo con l'app aperta: si ferma in pausa e riparte al ritorno. Nessun permesso.
+    private SensorEventListener ascoltoLuce;
+    private boolean luceRichiesta = false;
+    private long ultimoInvioLuce = 0;
+
+    @PluginMethod
+    public void avviaLuce(PluginCall call) {
+        luceRichiesta = true;
+        JSObject r = new JSObject();
+        r.put("disponibile", registraLuce());
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void fermaLuce(PluginCall call) {
+        luceRichiesta = false;
+        sganciaLuce();
+        call.resolve();
+    }
+
+    private boolean registraLuce() {
+        SensorManager sm = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+        Sensor sensore = sm != null ? sm.getDefaultSensor(Sensor.TYPE_LIGHT) : null;
+        if (sensore == null) return false;
+        if (ascoltoLuce != null) return true;
+        ascoltoLuce = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent e) {
+                long ora = System.currentTimeMillis();
+                if (ora - ultimoInvioLuce < 1000) return;
+                ultimoInvioLuce = ora;
+                try {
+                    JSObject d = new JSObject();
+                    d.put("lux", (double) e.values[0]);
+                    notifyListeners("luce", d);
+                } catch (Exception ignored) {
+                }
+            }
+            @Override
+            public void onAccuracyChanged(Sensor s, int a) { }
+        };
+        sm.registerListener(ascoltoLuce, sensore, SensorManager.SENSOR_DELAY_NORMAL);
+        return true;
+    }
+
+    private void sganciaLuce() {
+        if (ascoltoLuce == null) return;
+        SensorManager sm = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+        if (sm != null) sm.unregisterListener(ascoltoLuce);
+        ascoltoLuce = null;
+    }
+
+    // ===== Barre di sistema in tinta con l'app: lo sfondo dietro la barra di stato e quella di
+    // navigazione prende il colore dello sfondo dell'app, le icone sono chiare o scure di conseguenza.
+    // Si riapplica al ritorno nell'app (Android può rimettere i colori del tema del telefono).
+    private String coloreBarre = null;
+    private boolean iconeChiareBarre = false;
+
+    @PluginMethod
+    public void coloriBarre(PluginCall call) {
+        coloreBarre = call.getString("colore", null);
+        iconeChiareBarre = Boolean.TRUE.equals(call.getBoolean("iconeChiare", false));
+        getActivity().runOnUiThread(this::applicaColoriBarre);
+        call.resolve();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void applicaColoriBarre() {
+        if (coloreBarre == null) return;
+        try {
+            int colore = Color.parseColor(coloreBarre);
+            Window w = getActivity().getWindow();
+            w.getDecorView().setBackgroundColor(colore);
+            if (android.os.Build.VERSION.SDK_INT < 35) {
+                w.setStatusBarColor(colore);
+                w.setNavigationBarColor(colore);
+            }
+            WindowInsetsControllerCompat c = WindowCompat.getInsetsController(w, w.getDecorView());
+            c.setAppearanceLightStatusBars(!iconeChiareBarre);
+            c.setAppearanceLightNavigationBars(!iconeChiareBarre);
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
+    protected void handleOnPause() {
+        super.handleOnPause();
+        sganciaLuce();
+    }
+
+    @Override
+    protected void handleOnResume() {
+        super.handleOnResume();
+        if (luceRichiesta) registraLuce();
+        getActivity().runOnUiThread(this::applicaColoriBarre);
     }
 }

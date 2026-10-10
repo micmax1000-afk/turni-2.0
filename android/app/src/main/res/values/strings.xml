@@ -4,4 +4,5 @@
     <string name="title_activity_main">Turni &amp; Accessorio PS</string>
     <string name="package_name">turniaccessorio.ps</string>
     <string name="custom_url_scheme">turniaccessorio.ps</string>
+    <string name="widget_descrizione">Il turno di oggi e di domani</string>
 </resources>

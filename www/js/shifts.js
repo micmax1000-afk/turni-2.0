@@ -13,16 +13,16 @@ const CATEGORIE_COLORABILI = [
 ];
 
 
-// Spento di default: calendario bianco con sole sigle, finché non lo si accende esplicitamente
-// dalle Impostazioni. Chi vuole i colori può riaccenderlo in qualsiasi momento.
+// Acceso di default (da v2.67.4): chi non ha mai scelto vede il calendario a colori; chi l'ha
+// spento dalle Impostazioni lo ritrova spento.
 function calendarioAColoriAttivo(){
-  return TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1';
+  return TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) !== '0';
 }
 
-// Stile del calendario: 'classico' (casella tutta colorata con la sigla, predefinito) oppure
-// 'moderno' (sfondo chiaro, etichetta colorata con nome e ora di inizio, eventi scritti sotto).
+// Stile del calendario: 'moderno' (predefinito da v2.67.4: etichetta colorata con nome e ora di
+// inizio, eventi scritti sotto) oppure 'classico' (casella tutta colorata con la sigla).
 function calendarioModernoAttivo(){
-  return TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) === 'moderno';
+  return TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) !== 'classico';
 }
 
 // Per l'etichetta dello stile moderno: una versione più scura del colore scelto per il turno
@@ -182,6 +182,19 @@ function aggiornaEditorGiornoV3(){
   }).join('');
   el('contaIndennitaGiorno').textContent = attive ? `${attive} ${attive === 1 ? 'attiva' : 'attive'}` : '';
   el('notaControlloTerritorio').hidden = !el('campoControlloTerritorio').checked;
+  // Assenza: elenco da toccare, con quanto resta di ognuna
+  const elenco = el('elencoAssenzeGiorno');
+  if(elenco && modo === 'assenza'){
+    const scelta = el('campoAssenzaTipo').value;
+    const voci = [...el('campoAssenzaTipo').options].filter(o => o.value).map(o => (AppState.assenze || []).find(a => a.id === o.value)).filter(Boolean);
+    elenco.innerHTML = voci.map(a => {
+      const x = typeof saldoAssenza === 'function' ? saldoAssenza(a) : null;
+      const saldo = x && x.spettanti ? `${numeroIt(x.rimangono)} <small>/ ${numeroIt(x.spettanti)} ${x.unita}</small>` : '';
+      const attiva = a.id === scelta;
+      return `<button type="button" class="riga-assenza-giorno${attiva ? ' attiva' : ''}" data-assenza-giorno="${escapeHtml(a.id)}"><span>${ICONE_ASSENZE[a.nome] || (a.unita === 'h' ? '⏱️' : '📅')}</span><b>${escapeHtml(a.nome)}</b><em>${saldo}</em>${attiva ? '<i aria-hidden="true">✓</i>' : ''}</button>`;
+    }).join('');
+    el('contaAssenzaGiorno').textContent = scelta ? '' : 'tocca per scegliere';
+  }
   // Prima / dopo il turno
   document.querySelectorAll('#pannelloTurno .scelta-prima-dopo').forEach(g => {
     const valore = el(g.dataset.per).value;

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colori del widget con il telefono in scuro: grigio antracite come il tema Grigio dell'app. -->
+<resources>
+    <color name="widget_sfondo">#353A45</color>
+    <color name="widget_testo">#F0F2F6</color>
+    <color name="widget_testo_secondario">#C9CED8</color>
+    <color name="widget_etichetta">#B0B6C2</color>
+</resources>

@@ -54,25 +54,8 @@ function aggiornaStatoBackup(){
 }
 
 async function esportaBackup(){
-  const dati = {
-    versioneBackup: 1,
-    dataEsportazione: new Date().toISOString(),
-    anagrafica: AppState.anagrafica,
-    turni: AppState.turni,
-    tabelle: AppState.tabelle,
-    conguagliPerMese: AppState.conguagliPerMese,
-    storico: AppState.storico,
-    assenze: AppState.assenze,
-    sequenzaTurni: AppState.sequenzaTurni,
-    noteGiorni: AppState.noteGiorni,
-    modelliTurno: AppState.modelliTurno,
-    pattern: AppState.pattern,
-    eventiGiorno: AppState.eventiGiorno,
-    sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null,
-    sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
-    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null
-  };
-  // coloriTurni: solo nel backup Drive a pagamento (costruisciDatiBackup) e export colori dedicato
+  // Stesso contenuto del backup su Drive: colori, stile, tema e impostazioni compresi.
+  const dati = Object.assign(costruisciDatiBackup(), { pattern: AppState.pattern });
   await salvaOCondividiFile(`backup-simulatore-cedolino-${dataISO(new Date())}.json`, JSON.stringify(dati, null, 2), 'application/json');
   TurniPSStorage.setItem(CHIAVE_ULTIMO_BACKUP, new Date().toISOString());
   aggiornaStatoBackup();
@@ -94,91 +77,22 @@ function costruisciDatiBackup(){
     coloriTurni: AppState.coloriTurni || {},
     eventiGiorno: AppState.eventiGiorno || {},
     modelliTurno: Array.isArray(AppState.modelliTurno) ? AppState.modelliTurno : null,
-    calendarioAColori: (TurniPSStorage.getItem(CHIAVE_CALENDARIO_A_COLORI) === '1'),
-    stileCalendario: TurniPSStorage.getItem(CHIAVE_STILE_CALENDARIO) === 'moderno' ? 'moderno' : 'classico',
+    calendarioAColori: calendarioAColoriAttivo(),
+    stileCalendario: calendarioModernoAttivo() ? 'moderno' : 'classico',
     tema: TurniPSStorage.getItem(CHIAVE_TEMA) || 'auto',
+    temaScuro: TurniPSStorage.getItem(CHIAVE_TEMA_SCURO) || null,
     indennitaNascoste: TurniPSStorage.getItem(CHIAVE_INDENNITA_NASCOSTE) || null,
     sequenzaAncora: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ANCORA) || null,
     sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
-    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null
+    sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null,
+    promemoriaTurno: TurniPSStorage.getItem(CHIAVE_PROMEMORIA_TURNO) || null,
+    widget: TurniPSStorage.getItem(CHIAVE_WIDGET) || null
   };
 }
 
 /** True se l'utente ha attivato il backup Drive a pagamento. */
 function backupDriveAttivo(){
   return TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1';
-}
-
-function richiediBackupDrivePerColori(){
-  const msg = "L'esportazione e l'importazione dei colori turni sono riservate al Backup automatico su Google Drive (funzione a pagamento, 1,99€). Attivala da Impostazioni → Backup Drive.";
-  if(typeof mostraAvviso === 'function') mostraAvviso(msg, 'Funzione a pagamento');
-  else alert(msg);
-  if(typeof mostraImpostazioniBackup === 'function'){
-    try { mostraImpostazioniBackup('sezioneBackupDrive'); } catch(e){}
-  } else if(typeof mostraScheda === 'function'){
-    try { mostraScheda('impostazioni'); } catch(e){}
-  }
-}
-
-/** Esporta solo i colori turni — disponibile solo con Backup Drive attivo. */
-function esportaBackupColori(){
-  if(!backupDriveAttivo()){
-    richiediBackupDrivePerColori();
-    return;
-  }
-  const dati = {
-    tipo: 'colori-turni',
-    versione: 1,
-    dataEsportazione: new Date().toISOString(),
-    coloriTurni: Object.assign({}, AppState.coloriTurni || {})
-  };
-  if(!dati.coloriTurni || !Object.keys(dati.coloriTurni).length){
-    const pre = {};
-    (typeof CATEGORIE_COLORABILI !== 'undefined' ? CATEGORIE_COLORABILI : []).forEach(c => {
-      pre[c.chiave] = c.predefinito;
-    });
-    dati.coloriTurni = pre;
-  }
-  salvaOCondividiFile(`colori-turni-${dataISO(new Date())}.json`, JSON.stringify(dati, null, 2), 'application/json').then(() => {
-    if(typeof mostraToast === 'function') mostraToast('Colori esportati. Conserva il file.', 'successo');
-    else if(typeof mostraAvviso === 'function') mostraAvviso('Colori esportati correttamente.');
-  });
-}
-
-/** Importa colori — solo con Backup Drive attivo. */
-function importaBackupColori(file){
-  if(!backupDriveAttivo()){
-    richiediBackupDrivePerColori();
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = () => {
-    try{
-      const dati = JSON.parse(reader.result);
-      const colori = dati.coloriTurni || (dati.tipo === 'colori-turni' ? dati.colori : null);
-      if(!colori || typeof colori !== 'object'){
-        mostraAvviso('Il file non contiene colori turni validi.');
-        return;
-      }
-      AppState.coloriTurni = Object.assign({}, AppState.coloriTurni || {}, colori);
-      Object.keys(AppState.coloriTurni).forEach(k => {
-        if(!AppState.coloriTurni[k] || AppState.coloriTurni[k] === 'transparent'){
-          const cat = (typeof CATEGORIE_COLORABILI !== 'undefined') && CATEGORIE_COLORABILI.find(c => c.chiave === k);
-          if(cat) AppState.coloriTurni[k] = cat.predefinito;
-        }
-      });
-      salvaColoriTurniStorage();
-      applicaColoriTurni();
-      if(typeof renderColoriTurni === 'function') renderColoriTurni();
-      if(typeof renderCalendario === 'function') renderCalendario();
-      if(typeof mostraToast === 'function') mostraToast('Colori importati.', 'successo');
-      else mostraAvviso('Colori importati correttamente.');
-    }catch(e){
-      mostraAvviso('File colori non valido o corrotto.');
-    }
-  };
-  reader.onerror = () => mostraAvviso('Impossibile leggere il file.');
-  reader.readAsText(file);
 }
 
 // Modulo di acquisto per Capacitor (Google Play Billing diretto, senza bundler — vedi
@@ -744,6 +658,9 @@ function importaBackup(file, datiGiaLetti){
       if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
       if(typeof dati.sequenzaUltimoGiorno === 'string') TurniPSStorage.setItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO, dati.sequenzaUltimoGiorno);
       if(typeof dati.sequenzaPattern === 'string') TurniPSStorage.setItem(CHIAVE_SEQUENZA_PATTERN, dati.sequenzaPattern);
+      // Promemoria del turno e widget: si ripristinano come erano (se nel backup erano accesi).
+      if(typeof dati.promemoriaTurno === 'string'){ try{ if(JSON.parse(dati.promemoriaTurno) && typeof JSON.parse(dati.promemoriaTurno) === 'object') TurniPSStorage.setItem(CHIAVE_PROMEMORIA_TURNO, dati.promemoriaTurno); }catch(e){} }
+      if(dati.widget === '1' || dati.widget === '0') TurniPSStorage.setItem(CHIAVE_WIDGET, dati.widget);
       if(dati.eventiGiorno && typeof dati.eventiGiorno === 'object' && !Array.isArray(dati.eventiGiorno)){
         const eventiPrima = AppState.eventiGiorno || {};
         AppState.eventiGiorno = dati.eventiGiorno;
@@ -769,7 +686,7 @@ function importaBackup(file, datiGiaLetti){
         TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, dati.calendarioAColori ? '1' : '0');
         if(dati.stileCalendario === 'moderno' || dati.stileCalendario === 'classico') TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, dati.stileCalendario);
         if(typeof dati.indennitaNascoste === 'string'){ try{ if(Array.isArray(JSON.parse(dati.indennitaNascoste))) TurniPSStorage.setItem(CHIAVE_INDENNITA_NASCOSTE, dati.indennitaNascoste); }catch(e){} }
-        if(['auto', 'chiaro', 'scuro'].includes(dati.tema)){ TurniPSStorage.setItem(CHIAVE_TEMA, dati.tema); if(typeof applicaTema === 'function') applicaTema(); }
+        if(['auto', 'luce', 'chiaro', 'scuro', 'grigio', 'nero'].includes(dati.tema)){ TurniPSStorage.setItem(CHIAVE_TEMA, dati.tema === 'scuro' ? 'grigio' : dati.tema); if(dati.temaScuro === 'nero' || dati.temaScuro === 'grigio') TurniPSStorage.setItem(CHIAVE_TEMA_SCURO, dati.temaScuro); if(typeof applicaTema === 'function') applicaTema(); }
         if(typeof aggiornaClasseCalendarioColori === 'function') aggiornaClasseCalendarioColori();
       }
       if(dati.coloriTurni && typeof dati.coloriTurni === 'object'){
@@ -784,6 +701,8 @@ function importaBackup(file, datiGiaLetti){
       aggiornaRiassuntoAnagrafica();
       renderCalendario();
       renderStorico();
+      if(typeof aggiornaVistaPromemoriaTurno === 'function'){ aggiornaVistaPromemoriaTurno(); riprogrammaPromemoriaTurni(); }
+      if(typeof aggiornaVistaWidget === 'function'){ aggiornaVistaWidget(); aggiornaWidget(); }
       el('contenitoreCedolino').hidden = true;
       mostraAvviso('Backup importato correttamente.');
       if(typeof mostraToast === 'function') mostraToast('Dati ripristinati correttamente.', 'successo');
