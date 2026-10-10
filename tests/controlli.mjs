@@ -169,8 +169,13 @@ for(const stile of ['classico', 'moderno']){
     const t = await p.evaluate(() => { const r = document.querySelector('#toastContainer .toast-v20').getBoundingClientRect(); return r.top > 0 && r.bottom < innerHeight; });
     ok('i messaggi a comparsa sono visibili sullo schermo', t);
     await p.click('.giorno-cella[data-data="2026-10-20"]');
-    ok('toccando un giorno si apre il menu rapido', await p.evaluate(() => !document.getElementById('popupRapidoGiorno').hidden));
-    await p.evaluate(() => { document.getElementById('popupRapidoGiorno').hidden = true; });
+    ok('toccando un giorno: si seleziona e lo mostra il riquadro, nessun popup', await p.evaluate(() => giornoSelezionato === '2026-10-20' && !document.getElementById('popupRapidoGiorno') && document.getElementById('overlaySelettoreModelli').hidden && /20 ottobre/i.test(document.querySelector('.giorno-v3-data').textContent)));
+    await p.click('.giorno-cella[data-data="2026-10-20"]');
+    ok('secondo tocco sullo stesso giorno: si apre "Cosa vuoi aggiungere?"', await p.evaluate(() => !document.getElementById('overlaySelettoreModelli').hidden && giornoPerPopupV2 === '2026-10-20'));
+    await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; });
+    await p.click('#btnTurnoGiornoV3');
+    ok('pulsante "🔄 Turno" nel riquadro: apre "Cosa vuoi aggiungere?"', await p.evaluate(() => !document.getElementById('overlaySelettoreModelli').hidden));
+    await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; });
     await p.evaluate(() => { AppState.turni['2026-10-03'] = Object.assign({}, AppState.turni['2026-10-03'], { data: '2026-10-03', oraInizio: '07:00', oraFine: '13:00', ordinePubblico: true }); selezionaGiorno('2026-10-03'); });
     await p.click('#indennitaGiornoSelezionatoV2 .indennita-giorno-badge');
     ok('toccando un simbolo del giorno si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));

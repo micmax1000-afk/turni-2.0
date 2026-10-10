@@ -1075,6 +1075,7 @@ function inizializza(){
   });
   on('btnEliminaModello','click', eliminaModelloV2);
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
+  on('btnTurnoGiornoV3','click', () => { if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
   on('settingsSimboli','click', apriSimboliCalendario);
   // Toccando i simboli nel riquadro del giorno si apre la legenda (prima c'era la "i" in alto).
@@ -1145,11 +1146,21 @@ let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifi
 // Tocco su una cella del calendario: se il giorno ha già qualcosa (turno, riposo o assenza),
 // apre direttamente il dettaglio/modifica; se è vuoto, propone il popup rapido "+ Turno / + Evento"
 // invece di aprire subito il modulo completo.
+// Da v2.71 niente popup: il primo tocco seleziona il giorno e lo mostra nel riquadro sotto il
+// calendario; un secondo tocco sullo stesso giorno apre "Cosa vuoi aggiungere?".
+let ultimoGiornoToccatoV2 = null;
 function gestisciTocchGiornoV2(iso){
   ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayRientroRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
+  const secondoTocco = ultimoGiornoToccatoV2 === iso && giornoSelezionato === iso;
+  ultimoGiornoToccatoV2 = iso;
   selezionaGiorno(iso);
   giornoPerPopupV2 = iso;
-  apriPopupRapidoGiornoV2();
+  if(secondoTocco){ apriSelettoreModelliV2('turni'); return; }
+  const box = document.querySelector('.riepilogo-giorno-selezionato-box-v2');
+  if(box){
+    const r = box.getBoundingClientRect();
+    if(r.top > innerHeight - 140) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function apriPopupRapidoGiornoV2(){

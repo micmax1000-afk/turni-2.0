@@ -62,8 +62,9 @@
       <div class="indennita-giorno-selezionato-v2" id="indennitaGiornoSelezionatoV2" hidden></div>
       <input type="text" id="campoServizioSvolto" class="campo-servizio-svolto" placeholder="📋 Servizio svolto (es. Pattugliamento)" aria-label="Servizio svolto">
       <div class="azioni-giorno-v3">
-        <button class="btn-secondario" id="btnNuovoEventoGiornoV2" type="button">＋ Evento</button>
-        <button class="btn-primario" id="btnModificaGiornoSelezionatoV2" type="button">✏️ Modifica</button>
+        <button class="btn-secondario" id="btnTurnoGiornoV3" type="button"><span aria-hidden="true">🔄</span>Turno</button>
+        <button class="btn-secondario" id="btnNuovoEventoGiornoV2" type="button"><span aria-hidden="true">＋</span>Evento</button>
+        <button class="btn-primario" id="btnModificaGiornoSelezionatoV2" type="button"><span aria-hidden="true">✏️</span>Modifica</button>
       </div>
       <div class="lista-eventi-giorno-v2" id="listaEventiGiornoV2"></div>
     </div>
@@ -76,14 +77,6 @@
 
 
     <!-- Popup rapido "+ Turno / + Evento" al tocco di un giorno vuoto -->
-    <div class="popup-rapido-giorno" id="popupRapidoGiorno" hidden>
-      <button type="button" class="popup-rapido-btn" id="btnPopupModifica" hidden>✏️ Modifica</button>
-      <div class="popup-rapido-divider" id="dividerPopupModifica" aria-hidden="true" hidden></div>
-      <button type="button" class="popup-rapido-btn" id="btnPopupAggiungiTurno">＋ Turno</button>
-      <div class="popup-rapido-divider" aria-hidden="true"></div>
-      <button type="button" class="popup-rapido-btn" id="btnPopupAggiungiEvento">＋ Evento</button>
-      <button type="button" class="popup-rapido-chiudi" id="btnPopupChiudi" aria-label="Chiudi">✕</button>
-    </div>
 
     <!-- Selettore Turno di lavoro / Assenza / Indennità, con Modelli pronti (colore incluso) -->
     <div class="overlay" id="overlaySelettoreModelli" hidden>
@@ -1034,7 +1027,7 @@
     <button type="button" class="btn-primario btn-genera-grande" id="btnBenvenutoNotifiche">🔔 Attiva le notifiche</button>
     <p class="sotto-titolo" id="benvenutoStatoNotifiche" style="margin-top:8px;"></p>
     <div class="nota-giorno" style="margin-top:14px;">💡 In Altro puoi accendere anche il <b>promemoria del turno</b> (la sera prima) e il <b>widget</b> per la schermata Home: all'inizio sono spenti.</div>
-    <div class="nota-giorno" style="margin-top:8px;">🌙 Il pulsante in alto nel calendario passa al tema scuro. Cosa vogliono dire i simboli? Toccali sotto il calendario, oppure Altro → Indennità nel calendario.</div>
+    <div class="nota-giorno" style="margin-top:8px;">👆 Tocca due volte un giorno per cambiare turno. 🌙 Il pulsante in alto nel calendario passa al tema scuro. Cosa vogliono dire i simboli? Toccali sotto il calendario, oppure Altro → Indennità nel calendario.</div>
   </div>
   <div class="benvenuto-piede">
     <button type="button" class="btn-secondario" id="btnBenvenutoIndietro" hidden>Indietro</button>

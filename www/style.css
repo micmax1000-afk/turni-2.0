@@ -1911,3 +1911,9 @@ html[data-tema="scuro"] .riga-turno-menu-corpo em{color:#8FB0FF}
 .riga-indennita-menu>span{display:inline-flex;width:22px;justify-content:center;color:var(--testo)}
 .riga-indennita-menu>span svg{width:20px;height:20px}
 #listaModelliTurni .btn-aggiungi-tratteggiato{margin-top:10px}
+
+/* v2.71 — riquadro del giorno: tre pulsanti con l'icona sopra la scritta (niente più popup) */
+.azioni-giorno-v3{grid-template-columns:1fr 1fr 1fr}
+.azioni-giorno-v3>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;font-size:.85rem;white-space:nowrap}
+.azioni-giorno-v3>button>span{font-size:1.15rem;line-height:1}
+.riepilogo-giorno-selezionato-box-v2{scroll-margin-bottom:110px}
