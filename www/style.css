@@ -1890,3 +1890,24 @@ html[data-tema="scuro"][data-scuro="nero"] .barra-schede{background:color-mix(in
 /* v2.69 — quinta scelta "Luce" (sensore o alba/tramonto) */
 .riga-tema .scelta-tema{grid-template-columns:repeat(5,1fr)}
 .cerchio-tema-luce{background:linear-gradient(135deg,#FFD97D 0 45%,#353A45 55% 100%)}
+
+/* v2.71 — "Cosa vuoi aggiungere?" → Turni e Indennità nello stesso stile dell'elenco Assenze */
+.elenco-turni-menu{border:1px solid var(--bordo);border-radius:12px;overflow:hidden;background:var(--carta)}
+.elenco-turni-menu-extra{margin-top:10px}
+.riga-turno-menu{display:flex;align-items:stretch;border-top:1px solid var(--bordo)}
+.riga-turno-menu:first-child{border-top:0}
+.riga-turno-menu.attiva{background:#DCE7FF}
+html[data-tema="scuro"] .riga-turno-menu.attiva{background:#22305A}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .riga-turno-menu.attiva{background:#22305A}}
+.riga-turno-menu-corpo{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:11px 6px 11px 14px;border:0;background:none;color:var(--testo);font:inherit;text-align:left;cursor:pointer}
+.riga-turno-menu-corpo>i{flex:0 0 6px;align-self:stretch;min-height:34px;border-radius:4px}
+.riga-turno-menu-corpo>span{display:flex;flex-direction:column;min-width:0;flex:1}
+.riga-turno-menu-corpo b{font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.riga-turno-menu-corpo small{font-size:.8rem;color:var(--testo-tenue);font-variant-numeric:tabular-nums}
+.riga-turno-menu-corpo em{font-style:normal;color:#1D4FC4;font-weight:800}
+html[data-tema="scuro"] .riga-turno-menu-corpo em{color:#8FB0FF}
+.riga-turno-menu-matita{flex:0 0 48px;border:0;border-left:1px solid var(--bordo);background:none;color:var(--testo-tenue);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.riga-assenza-giorno b small{display:block;font-weight:500;font-size:.78rem;color:var(--testo-tenue)}
+.riga-indennita-menu>span{display:inline-flex;width:22px;justify-content:center;color:var(--testo)}
+.riga-indennita-menu>span svg{width:20px;height:20px}
+#listaModelliTurni .btn-aggiungi-tratteggiato{margin-top:10px}

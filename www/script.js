@@ -1701,21 +1701,26 @@ function renderListaModelliTurniV2(){
   const rientroSotto = (tGiornoCorrente.secondoAttivo && tGiornoCorrente.secondoOraInizio && tGiornoCorrente.secondoOraFine)
     ? `${tGiornoCorrente.secondoOraInizio} - ${tGiornoCorrente.secondoOraFine} ✓`
     : 'aggiungi un secondo turno a oggi';
-  const righe = (AppState.modelliTurno || []).map(m => {
-    const colore = coloreModelloV2(m);
-    const sotto = m.riposo ? 'giornata libera' : `${m.oraInizio} - ${m.oraFine}`;
-    return `<div class="riga-modello-selettore">
-      <button type="button" class="riga-modello-selettore-corpo" data-modello="${escapeHtml(m.id)}">
-        <span class="cerchio-modello" style="background:${colore}">${escapeHtml(m.sigla || (m.nome||'??').slice(0,2).toUpperCase())}</span>
-        <span class="riga-modello-testo"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(sotto)}</small></span>
-      </button>
-      <button type="button" class="riga-modello-matita" data-modifica-modello="${escapeHtml(m.id)}" aria-label="Modifica ${escapeHtml(m.nome)}">✏️</button>
+  // Stesso stile dell'elenco Assenze: barra del colore, nome, orario e durata, ✓ sul turno del
+  // giorno, matita per modificarlo. I modelli di solito rari stanno in "Altri turni", chiuso.
+  const matita = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  const riga = m => {
+    const attiva = turnoUsaModello(tGiornoCorrente, m);
+    const durata = durataModelloTesto(m);
+    const sotto = m.riposo ? 'giornata libera' : `${m.oraInizio} – ${m.oraFine}${durata ? ' · ' + durata : ''}`;
+    return `<div class="riga-turno-menu${attiva ? ' attiva' : ''}">
+      <button type="button" class="riga-turno-menu-corpo" data-modello="${escapeHtml(m.id)}"><i style="background:${coloreModelloV2(m)}"></i><span><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(sotto)}</small></span>${attiva ? '<em aria-hidden="true">✓</em>' : ''}</button>
+      <button type="button" class="riga-turno-menu-matita" data-modifica-modello="${escapeHtml(m.id)}" aria-label="Modifica ${escapeHtml(m.nome)}">${matita}</button>
     </div>`;
-  }).join('');
-  host.innerHTML = righe + `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" id="btnRientroTurniV2" style="border-top:1px dashed var(--bordo);margin-top:4px;">
-    <span class="cerchio-modello" style="background:var(--sfondo-secondario,#f3f5f9);border:1.5px dashed var(--bordo);">🔁</span>
-    <span class="riga-modello-testo"><strong>Rientro</strong><small>${rientroSotto}</small></span>
-  </button>` + `<button type="button" class="riga-modello-nuovo" id="btnNuovoModelloV2">＋ Nuovo turno personalizzato</button>`;
+  };
+  const modelli = AppState.modelliTurno || [];
+  const raro = m => MODELLI_DI_SOLITO_RARI.includes(m.id) && !turnoUsaModello(tGiornoCorrente, m);
+  const principali = modelli.filter(m => !raro(m)), altri = modelli.filter(raro);
+  const conRientro = !!(tGiornoCorrente.secondoAttivo && tGiornoCorrente.secondoOraInizio && tGiornoCorrente.secondoOraFine);
+  host.innerHTML = `<div class="elenco-turni-menu">${principali.map(riga).join('')}</div>`
+    + (altri.length ? `<details class="assenze-menu-non-usate"><summary>Altri turni (${altri.length})</summary><div class="elenco-turni-menu">${altri.map(riga).join('')}</div></details>` : '')
+    + `<div class="elenco-turni-menu elenco-turni-menu-extra"><button type="button" class="riga-assenza-giorno${conRientro ? ' attiva' : ''}" id="btnRientroTurniV2"><span>🔁</span><b>Rientro<small>${escapeHtml(rientroSotto.replace(' ✓', ''))}</small></b>${conRientro ? '<i aria-hidden="true">✓</i>' : ''}</button></div>`
+    + `<button type="button" class="btn-aggiungi-tratteggiato" id="btnNuovoModelloV2">＋ Nuovo turno personalizzato</button>`;
 }
 
 function renderListaModelliAssenzeV2(){
@@ -1760,15 +1765,12 @@ function renderListaModelliIndennitaV2(){
   const host = el('listaModelliIndennita');
   if(!host) return;
   const t = giornoPerPopupV2 ? (AppState.turni[giornoPerPopupV2] || {}) : {};
-  const righeIndennita = INDENNITA_RAPIDE_V2.map(x => `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-indennita="${x.chiave}">
-    <span class="cerchio-modello cerchio-modello-assenza cerchio-icona${t[x.chiave] ? ' attiva' : ''}">${iconaIndennita(x.chiave)}${t[x.chiave] ? ' ✓' : ''}</span>
-    <span class="riga-modello-testo"><strong>${x.nome}</strong></span>
-  </button>`).join('');
-  const rigaStraordinario = `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" id="btnIndennitaStraordinarioV2">
-    <span class="cerchio-modello cerchio-modello-assenza cerchio-icona">${iconaIndennita('straordinario')}</span>
-    <span class="riga-modello-testo"><strong>Straordinario</strong><small>ore, prima o dopo il turno</small></span>
-  </button>`;
-  host.innerHTML = rigaStraordinario + righeIndennita;
+  // Stesso stile dell'elenco Assenze: icona, nome, ✓ se è già segnata in questo giorno.
+  const righeIndennita = INDENNITA_RAPIDE_V2.map(x => `<button type="button" class="riga-assenza-giorno riga-indennita-menu${t[x.chiave] ? ' attiva' : ''}" data-indennita="${x.chiave}"><span>${iconaIndennita(x.chiave)}</span><b>${x.nome}</b>${t[x.chiave] ? '<i aria-hidden="true">✓</i>' : ''}</button>`).join('');
+  let oreStr = 0;
+  if(t.oraInizio && t.oraFine && typeof classificaTurno === 'function' && typeof totaleStraordinario === 'function') oreStr = totaleStraordinario(classificaTurno(t));
+  const rigaStraordinario = `<button type="button" class="riga-assenza-giorno riga-indennita-menu${oreStr > 0 ? ' attiva' : ''}" id="btnIndennitaStraordinarioV2"><span>${iconaIndennita('straordinario')}</span><b>Straordinario<small>ore, prima o dopo il turno</small></b>${oreStr > 0 ? `<em>${formatOreMinuti(oreStr)}</em>` : ''}</button>`;
+  host.innerHTML = `<div class="elenco-turni-menu">${rigaStraordinario}${righeIndennita}</div>`;
 }
 
 function applicaModelloV2(idModello){

@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V181 (v2.70.0 — barre di sistema in tinta, widget scuro) */
+/* Turni & Accessorio PS — Service Worker V182 (v2.70.1 — menu Cosa vuoi aggiungere nello stile nuovo) */
 'use strict';
-const CACHE='turni-ps-v181';
+const CACHE='turni-ps-v182';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
