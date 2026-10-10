@@ -60,7 +60,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
       const f = (nome, risposta) => a => { window.__log.push([nome, JSON.parse(JSON.stringify(a || {}))]); return Promise.resolve(risposta || {}); };
       window.Capacitor = { isNativePlatform: () => true, Plugins: {
         LocalNotifications: { cancel: f('ln.cancel'), schedule: f('ln.schedule'), checkPermissions: f('ln.check', { display: 'granted' }), requestPermissions: f('ln.req', { display: 'granted' }), createChannel: f('x'), deleteChannel: f('x'), checkExactNotificationSetting: f('x', { exact_alarm: 'granted' }) },
-        AvvisoEvento: { programma: f('av.programma'), annulla: f('av.annulla'), statoNotifiche: f('stato', { attive: true }), apriImpostazioniNotifiche: f('impostazioni'),
+        AvvisoEvento: { coloriBarre: f('barre'), programma: f('av.programma'), annulla: f('av.annulla'), statoNotifiche: f('stato', { attive: true }), apriImpostazioniNotifiche: f('impostazioni'),
           stampa: a => { window.__log.push(['stampa', a, document.documentElement.getAttribute('data-tema'), !document.getElementById('contenitoreCedolino').hidden]); return new Promise(r => setTimeout(r, 300)); } } } };
     }
   }, [JSON.stringify(turni), JSON.stringify(eventi), stile, colori, nativo]);
@@ -461,6 +461,8 @@ sezione('Stampa / Esporta PDF nell\'app Android');
   ok('durante la stampa il foglio è chiaro anche col tema scuro', !!s && s[2] === 'chiaro');
   await p.waitForTimeout(500);
   ok('chiusa la stampa, il tema torna come prima', await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('barre di Android in tinta con l\'app (sfondo e icone)', await p.evaluate(() => { scegliTema('nero'); const b = window.__log.filter(x => x[0] === 'barre').pop(); return !!b && b[1].colore === '#0A0C10' && b[1].iconeChiare === true; }));
+  ok('in Chiaro le barre diventano chiare con icone scure', await p.evaluate(() => { scegliTema('chiaro'); const b = window.__log.filter(x => x[0] === 'barre').pop(); return b[1].colore === '#ECEFEA' && b[1].iconeChiare === false; }));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

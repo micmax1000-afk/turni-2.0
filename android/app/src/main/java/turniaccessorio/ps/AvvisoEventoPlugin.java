@@ -8,6 +8,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.view.Window;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -223,6 +227,38 @@ public class AvvisoEventoPlugin extends Plugin {
         ascoltoLuce = null;
     }
 
+    // ===== Barre di sistema in tinta con l'app: lo sfondo dietro la barra di stato e quella di
+    // navigazione prende il colore dello sfondo dell'app, le icone sono chiare o scure di conseguenza.
+    // Si riapplica al ritorno nell'app (Android può rimettere i colori del tema del telefono).
+    private String coloreBarre = null;
+    private boolean iconeChiareBarre = false;
+
+    @PluginMethod
+    public void coloriBarre(PluginCall call) {
+        coloreBarre = call.getString("colore", null);
+        iconeChiareBarre = Boolean.TRUE.equals(call.getBoolean("iconeChiare", false));
+        getActivity().runOnUiThread(this::applicaColoriBarre);
+        call.resolve();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void applicaColoriBarre() {
+        if (coloreBarre == null) return;
+        try {
+            int colore = Color.parseColor(coloreBarre);
+            Window w = getActivity().getWindow();
+            w.getDecorView().setBackgroundColor(colore);
+            if (android.os.Build.VERSION.SDK_INT < 35) {
+                w.setStatusBarColor(colore);
+                w.setNavigationBarColor(colore);
+            }
+            WindowInsetsControllerCompat c = WindowCompat.getInsetsController(w, w.getDecorView());
+            c.setAppearanceLightStatusBars(!iconeChiareBarre);
+            c.setAppearanceLightNavigationBars(!iconeChiareBarre);
+        } catch (Exception ignored) {
+        }
+    }
+
     @Override
     protected void handleOnPause() {
         super.handleOnPause();
@@ -233,5 +269,6 @@ public class AvvisoEventoPlugin extends Plugin {
     protected void handleOnResume() {
         super.handleOnResume();
         if (luceRichiesta) registraLuce();
+        getActivity().runOnUiThread(this::applicaColoriBarre);
     }
 }

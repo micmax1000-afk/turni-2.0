@@ -29,7 +29,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="OGGI"
-                android:textColor="#6B7280"
+                android:textColor="@color/widget_etichetta"
                 android:textSize="11sp"
                 android:textStyle="bold" />
             <TextView
@@ -37,14 +37,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Turni"
-                android:textColor="#1E2129"
+                android:textColor="@color/widget_testo"
                 android:textSize="20sp"
                 android:textStyle="bold" />
             <TextView
                 android:id="@+id/widget_oggi_orario"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#374151"
+                android:textColor="@color/widget_testo_secondario"
                 android:textSize="14sp" />
         </LinearLayout>
     </LinearLayout>
@@ -69,7 +69,7 @@
             android:layout_marginStart="10dp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:textColor="#374151"
+            android:textColor="@color/widget_testo_secondario"
             android:textSize="13sp" />
     </LinearLayout>
 </LinearLayout>

@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:maxLines="1"
             android:ellipsize="end"
-            android:textColor="#1E2129"
+            android:textColor="@color/widget_testo"
             android:textSize="15sp"
             android:textStyle="bold" />
         <TextView
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:maxLines="1"
             android:ellipsize="end"
-            android:textColor="#374151"
+            android:textColor="@color/widget_testo_secondario"
             android:textSize="12sp" />
     </LinearLayout>
     <LinearLayout
@@ -60,7 +60,7 @@
             android:maxLines="2"
             android:maxWidth="110dp"
             android:ellipsize="end"
-            android:textColor="#374151"
+            android:textColor="@color/widget_testo_secondario"
             android:textSize="11sp" />
     </LinearLayout>
 </LinearLayout>

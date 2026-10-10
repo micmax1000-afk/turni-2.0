@@ -406,6 +406,7 @@ function applicaTema(){
     b.classList.toggle('attivo', b.dataset.tema === t);
     b.setAttribute('aria-pressed', b.dataset.tema === t ? 'true' : 'false');
   });
+  aggiornaColoriBarre();
   const veloce = document.getElementById('btnTemaVeloce');
   if(veloce){
     const scuro = temaAttualeScuro();
@@ -413,6 +414,23 @@ function applicaTema(){
     veloce.setAttribute('aria-label', scuro ? 'Passa al tema chiaro' : 'Passa al tema scuro');
     veloce.title = veloce.getAttribute('aria-label');
   }
+}
+// Barre di Android (stato in alto, navigazione in basso) dello stesso colore dello sfondo dell'app.
+function coloreSfondoHex(){
+  const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(getComputedStyle(document.body).backgroundColor || '');
+  return m ? '#' + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, '0')).join('').toUpperCase() : null;
+}
+let ultimiColoriBarre = '';
+function aggiornaColoriBarre(){
+  const avviso = typeof pluginAvvisoEvento === 'function' ? pluginAvvisoEvento() : null;
+  if(!avviso || !avviso.coloriBarre || !document.body) return;
+  const colore = coloreSfondoHex();
+  if(!colore) return;
+  const iconeChiare = temaAttualeScuro();
+  const chiave = colore + iconeChiare;
+  if(chiave === ultimiColoriBarre) return;
+  ultimiColoriBarre = chiave;
+  avviso.coloriBarre({ colore, iconeChiare }).catch(() => { ultimiColoriBarre = ''; });
 }
 function scegliTema(t){
   TurniPSStorage.setItem(CHIAVE_TEMA, t);
