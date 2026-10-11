@@ -1,11 +1,10 @@
 <it-IT>
-• Primo avvio guidato in 3 passi
-• Promemoria del turno e widget (anche ridotto a una riga)
+• Report più chiaro: lordo, trattenute e netto ben distinti
+• Nuova apertura guidata in 4 passi
+• Tocca un giorno per vederlo, due volte per cambiare turno
+• Temi Chiaro, Grigio, Nero e Luce, pulsante 🌙 nel calendario
+• Promemoria del turno e widget (anche ridotto)
 • Esporta i turni in Google Calendar
-• Temi Chiaro, Grigio, Nero e Luce (segue la luce intorno), pulsante 🌙 nel calendario
-• Calendario Moderno a colori, simboli per le indennità
-• Nuovo "Modifica il giorno" e riquadro del giorno
-• Assenze con quanto ti resta
-• Netto e lordo in automatico
+• Turni di base più sicuri: si modificano ma non si eliminano
 • Colori e impostazioni nel backup gratuito
 </it-IT>
