@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V187 (v2.72.0 — Report: lordo, trattenute e netto) */
+/* Turni & Accessorio PS — Service Worker V188 (v2.73.0 — apertura guidata in 4 passi) */
 'use strict';
-const CACHE='turni-ps-v187';
+const CACHE='turni-ps-v188';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

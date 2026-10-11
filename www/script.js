@@ -3001,37 +3001,82 @@ function apriBenvenuto(){
   el('benvenutoQualifica').value = 'Agente';
   el('benvenutoRegione').innerHTML = el('campoRegione').innerHTML;
   el('benvenutoRegione').value = 'Lazio';
-  benvenuto.passo = 1; benvenuto.pattern = null; benvenuto.fase = 0;
+  benvenuto.passo = 1; benvenuto.pattern = null; benvenuto.fase = 0; benvenuto.scritti = 0; benvenuto.fine = null;
+  const modelli = AppState.modelliTurno || [];
+  el('benvenutoStriscia').innerHTML = ['sera', 'pomeriggio', 'mattina', 'notte', 'riposo', 'sera', 'pomeriggio'].map(id => {
+    const m = modelli.find(x => x.id === id);
+    return m ? `<span style="background:${coloreModelloV2(m)};color:${testoSuColore(coloreModelloV2(m))}">${escapeHtml(SIGLA_SINGOLA_CATEGORIA[id] || m.sigla || '')}</span>` : '';
+  }).join('');
   renderSequenzeBenvenuto();
   mostraPassoBenvenuto(1);
   el('overlayBenvenuto').hidden = false;
+}
+// Sotto il nome della sequenza: i turni per esteso (se sono pochi) o quanti giorni dura.
+function descrizioneSequenzaBenvenuto(p){
+  const modelli = AppState.modelliTurno || [];
+  if(p.giorni.length <= 5) return p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return m ? nomeBreveModelloSeq(m) : '?'; }).join(' · ');
+  return `${p.giorni.length} giorni a rotazione`;
 }
 function renderSequenzeBenvenuto(){
   const modelli = AppState.modelliTurno || [];
   el('benvenutoSequenze').innerHTML = sequenzeDisponibiliBenvenuto().map(p => {
     const striscia = p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return `<i style="background:${m ? coloreModelloV2(m) : '#E8ECF0'}"></i>`; }).join('');
-    return `<button type="button" class="card-sequenza${benvenuto.pattern === p.id ? ' in-uso' : ''}" data-benvenuto-pattern="${escapeHtml(p.id)}"><strong>${escapeHtml(p.nome)}</strong><span class="striscia-sequenza">${striscia}</span><span class="stato-sequenza"><small>${p.giorni.length} giorni a rotazione</small></span></button>`;
+    return `<button type="button" class="card-sequenza${benvenuto.pattern === p.id ? ' in-uso' : ''}" data-benvenuto-pattern="${escapeHtml(p.id)}"><strong>${escapeHtml(p.nome)}</strong><span class="striscia-sequenza">${striscia}</span><span class="stato-sequenza"><small>${escapeHtml(descrizioneSequenzaBenvenuto(p))}</small></span></button>`;
   }).join('') + `<button type="button" class="card-sequenza${benvenuto.pattern === '' ? ' in-uso' : ''}" data-benvenuto-pattern=""><strong>Li inserisco a mano</strong><span class="stato-sequenza"><small>Tocchi i giorni sul calendario</small></span></button>`;
   const p = sequenzeDisponibiliBenvenuto().find(x => x.id === benvenuto.pattern);
   el('benvenutoFaseBox').hidden = !p;
   if(p){
     const oggi = new Date().toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long' });
-    el('benvenutoFaseTitolo').textContent = `Oggi (${oggi}) fai:`;
+    el('benvenutoFaseTitolo').textContent = `Oggi, ${oggi}, fai:`;
     el('benvenutoFase').innerHTML = p.giorni.map((g, i) => {
       const m = modelli.find(x => x.id === g.modelloId);
       const scelto = i === benvenuto.fase;
       const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
       return `<button type="button" data-benvenuto-fase="${i}" class="${scelto ? 'attivo' : ''}" ${scelto ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
     }).join('');
+    // Anteprima: i prossimi 7 giorni come verranno.
+    const giorniSett = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+    const oggiD = new Date();
+    el('benvenutoSettimana').innerHTML = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(oggiD.getFullYear(), oggiD.getMonth(), oggiD.getDate() + i, 12);
+      const g = p.giorni[(benvenuto.fase + i) % p.giorni.length];
+      const m = modelli.find(x => x.id === g.modelloId);
+      const col = m ? coloreModelloV2(m) : '#E8ECF0';
+      const sigla = m ? (SIGLA_SINGOLA_CATEGORIA[m.id] || m.sigla || m.nome.slice(0, 2)) : '?';
+      return `<div>${giorniSett[d.getDay()]}<b>${d.getDate()}</b><span style="background:${col};color:${testoSuColore(col)}">${escapeHtml(sigla)}</span></div>`;
+    }).join('');
   }
+  if(benvenuto.passo === 2) el('btnBenvenutoAvanti').textContent = benvenuto.pattern ? 'Crea i turni' : 'Avanti';
 }
 function mostraPassoBenvenuto(n){
   benvenuto.passo = n;
   document.querySelectorAll('[data-passo-benvenuto]').forEach(x => { x.hidden = Number(x.dataset.passoBenvenuto) !== n; });
   el('benvenutoPunti').querySelectorAll('i').forEach((x, i) => x.classList.toggle('attivo', i < n));
   el('btnBenvenutoIndietro').hidden = n === 1;
-  el('btnBenvenutoAvanti').textContent = n === 3 ? 'Inizia' : 'Avanti';
+  el('btnBenvenutoAvanti').textContent = n === 4 ? 'Vai al calendario' : n === 2 && benvenuto.pattern ? 'Crea i turni' : 'Avanti';
+  if(n === 3){ aggiornaTemiBenvenuto(); aggiornaStatoNotificheBenvenuto(); }
+  if(n === 4) renderRiepilogoBenvenuto();
   el('overlayBenvenuto').scrollTop = 0;
+}
+function aggiornaTemiBenvenuto(){
+  const t = temaScelto();
+  const scelto = t === 'nero' ? 'grigio' : t === 'luce' ? 'auto' : t;
+  el('benvenutoTemi').querySelectorAll('[data-benvenuto-tema]').forEach(b => b.classList.toggle('attivo', b.dataset.benvenutoTema === scelto));
+}
+function renderRiepilogoBenvenuto(){
+  const a = AppState.anagrafica || {};
+  const anni = Number(a.anni) || 0;
+  const p = sequenzeDisponibiliBenvenuto().find(x => x.id === benvenuto.pattern);
+  const righe = [
+    [`${a.qualifica || '—'} · ${anni} ${anni === 1 ? 'anno' : 'anni'} · ${a.regione || '—'}`, 'Profilo per stimare lo stipendio'],
+    p ? [p.nome, benvenuto.scritti ? `${benvenuto.scritti} giorni nel calendario${benvenuto.fine ? ', fino al ' + new Date(benvenuto.fine + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long' }) : ''}` : 'Sequenza scelta']
+      : ['Turni a mano', 'Tocca i giorni del calendario per inserirli'],
+    [benvenuto.notificheAttive ? 'Notifiche attive' : 'Notifiche da attivare', `Promemoria del turno: ${el('benvenutoPromemoria').checked ? 'acceso' : 'spento'} · Widget: ${el('benvenutoWidget').checked ? 'acceso' : 'spento'}`]
+  ];
+  el('benvenutoRiepilogo').innerHTML = righe.map(([t, s], i) => {
+    const fatto = i < 2 || benvenuto.notificheAttive;
+    return `<div class="benvenuto-ok${fatto ? '' : ' da-fare'}"><b>${fatto ? '✓' : '○'}</b><span>${escapeHtml(t)}<small>${escapeHtml(s)}</small></span></div>`;
+  }).join('');
 }
 function chiudiBenvenuto(){
   TurniPSStorage.setItem(CHIAVE_BENVENUTO, '1');
@@ -3064,12 +3109,20 @@ function avantiBenvenuto(){
       const fine = new Date(oggi.getFullYear(), oggi.getMonth() + 3, oggi.getDate() - 1, 12);
       const giorni = Math.round((fine - new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate(), 12)) / 86400000) + 1;
       if(sequenza && sequenza.length){
-        const scritti = generaTurniDaCiclo({ sequenza, dataInizioIso: dataISO(oggi), numeroGiorni: giorni, fase: benvenuto.fase, proteggiAssenze: true, sovrascrivi: true, patternId: benvenuto.pattern });
-        mostraToast(`${scritti} giorni di turni inseriti`, 'successo');
+        benvenuto.scritti = generaTurniDaCiclo({ sequenza, dataInizioIso: dataISO(oggi), numeroGiorni: giorni, fase: benvenuto.fase, proteggiAssenze: true, sovrascrivi: true, patternId: benvenuto.pattern });
+        benvenuto.fine = dataISO(fine);
       }
     }
     mostraPassoBenvenuto(3);
-    aggiornaStatoNotificheBenvenuto();
+    return;
+  }
+  if(benvenuto.passo === 3){
+    // Promemoria e widget: si accendono solo se li hai accesi qui (all'inizio sono spenti).
+    [['benvenutoPromemoria', 'campoPromemoriaTurno'], ['benvenutoWidget', 'campoWidget']].forEach(([da, a]) => {
+      const voluto = el(da).checked, campo = el(a);
+      if(campo && campo.checked !== voluto){ campo.checked = voluto; campo.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    mostraPassoBenvenuto(4);
     return;
   }
   chiudiBenvenuto();
@@ -3077,10 +3130,11 @@ function avantiBenvenuto(){
 async function aggiornaStatoNotificheBenvenuto(){
   const nativo = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications);
   const box = el('benvenutoStatoNotifiche');
-  if(!nativo){ box.textContent = 'Le notifiche si attivano nell\'app per Android.'; el('btnBenvenutoNotifiche').hidden = true; return; }
+  if(!nativo){ box.textContent = 'Si attivano nell\'app per Android'; el('btnBenvenutoNotifiche').hidden = true; benvenuto.notificheAttive = false; return; }
   const attive = await notificheAttive();
+  benvenuto.notificheAttive = attive;
   el('btnBenvenutoNotifiche').hidden = attive;
-  box.textContent = attive ? '✓ Notifiche attive' : '';
+  box.textContent = attive ? '✓ Attive' : 'Per i promemoria di visite, corsi…';
 }
 function inizializzaBenvenuto(){
   on('btnSaltaBenvenuto', 'click', chiudiBenvenuto);
@@ -3093,7 +3147,9 @@ function inizializzaBenvenuto(){
     const seq = e.target.closest('[data-benvenuto-pattern]');
     if(seq){ benvenuto.pattern = seq.dataset.benvenutoPattern; benvenuto.fase = 0; renderSequenzeBenvenuto(); return; }
     const fase = e.target.closest('[data-benvenuto-fase]');
-    if(fase){ benvenuto.fase = Number(fase.dataset.benvenutoFase); renderSequenzeBenvenuto(); }
+    if(fase){ benvenuto.fase = Number(fase.dataset.benvenutoFase); renderSequenzeBenvenuto(); return; }
+    const tema = e.target.closest('[data-benvenuto-tema]');
+    if(tema){ scegliTema(tema.dataset.benvenutoTema); aggiornaTemiBenvenuto(); }
   });
   if(deveMostrareBenvenuto()) apriBenvenuto();
 }
