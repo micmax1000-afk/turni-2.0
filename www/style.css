@@ -1917,3 +1917,4 @@ html[data-tema="scuro"] .riga-turno-menu-corpo em{color:#8FB0FF}
 .azioni-giorno-v3>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px;font-size:.85rem;white-space:nowrap}
 .azioni-giorno-v3>button>span{font-size:1.15rem;line-height:1}
 .riepilogo-giorno-selezionato-box-v2{scroll-margin-bottom:110px}
+#btnSalvaModello{margin-left:auto}

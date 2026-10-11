@@ -1075,6 +1075,7 @@ function inizializza(){
     aggiornaStatoColoreModelloV2();
   });
   on('btnEliminaModello','click', eliminaModelloV2);
+  on('btnOrarioBaseModello','click', orarioBaseModelloV2);
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
   on('btnTurnoGiornoV3','click', () => { if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
@@ -1882,8 +1883,12 @@ function apriModificaModelloV2(id){
   el('campoModModelloColore').value = modelloColoreForzatoV2 || coloreAutomaticoPerModello(m);
   dipingiSwatchModelloV2();
   aggiornaStatoColoreModelloV2();
-  // "Elimina" ha senso solo per un turno che già esiste, non per uno nuovo che stai ancora creando.
-  el('btnEliminaModello').hidden = !m;
+  // "Elimina" solo per i turni creati da te: quelli di base (Sera, Mattino… Ufficio) si modificano
+  // ma non si eliminano, perché sequenze, primo avvio e colori automatici si basano su di loro.
+  // Al loro posto "↺ Orario di base", se l'orario è stato cambiato.
+  const base = m ? modelloBaseV2(m.id) : null;
+  el('btnEliminaModello').hidden = !m || !!base;
+  el('btnOrarioBaseModello').hidden = !base || base.riposo || (base.oraInizio === m.oraInizio && base.oraFine === m.oraFine);
   aggiornaAnteprimaModelloV2();
   el('overlayModificaModello').hidden = false;
 }
@@ -1970,8 +1975,23 @@ function proponiAggiornamentoTurniDelModello(modello, orarioPrima){
   el('btnAggTurniNessuno').onclick = chiudi;
   el('overlayAggiornaTurni').hidden = false;
 }
+function modelloBaseV2(id){
+  return (typeof MODELLI_TURNO_BASE_V2 !== 'undefined' ? MODELLI_TURNO_BASE_V2 : []).find(x => x.id === id) || null;
+}
+// Rimette nei campi l'orario originale del turno di base; si salva con "Salva" (che poi chiede
+// se aggiornare anche i giorni già nel calendario).
+function orarioBaseModelloV2(){
+  const base = modelloBaseV2(modelloInModificaV2);
+  if(!base || base.riposo) return;
+  el('campoModModelloInizio').value = base.oraInizio;
+  el('campoModModelloFine').value = base.oraFine;
+  ['campoModModelloInizio', 'campoModModelloFine'].forEach(id => el(id).dispatchEvent(new Event('change', { bubbles: true })));
+  aggiornaAnteprimaModelloV2();
+  el('btnOrarioBaseModello').hidden = true;
+  mostraToast(`Orario di base: ${base.oraInizio}–${base.oraFine}. Tocca Salva per confermare.`, 'info');
+}
 function eliminaModelloV2(){
-  if(!modelloInModificaV2) return;
+  if(!modelloInModificaV2 || modelloBaseV2(modelloInModificaV2)) return;
   const m = (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2);
   if(!m) return;
   // Un turno usato in una sequenza non si elimina: quei giorni della sequenza diventerebbero riposo.
@@ -2010,6 +2030,24 @@ function riparaCollegamentiModelli(){
     return m ? m.id : null;
   };
   let modelliCambiati = false, patternCambiati = false, turniCambiati = false;
+  // Un turno di base eliminato e ricreato con lo stesso nome torna a essere quello di base
+  // (stesso id, stesso posto nell'elenco, non eliminabile).
+  (typeof MODELLI_TURNO_BASE_V2 !== 'undefined' ? MODELLI_TURNO_BASE_V2 : []).forEach(base => {
+    if(ids.has(base.id)) return;
+    const nuovo = sostituto(base.id);
+    if(!nuovo) return;
+    const m = modelli.find(x => x.id === nuovo);
+    if(modelloBaseV2(m.id)) return;
+    const vecchioId = m.id;
+    m.id = base.id;
+    if(base.riposo) m.riposo = true;
+    ids.delete(vecchioId); ids.add(base.id);
+    (AppState.pattern || []).forEach(p => (p.giorni || []).forEach(g => { if(g.modelloId === vecchioId){ g.modelloId = base.id; patternCambiati = true; } }));
+    Object.values(AppState.turni || {}).forEach(t => { if(t && t.modelloId === vecchioId){ t.modelloId = base.id; turniCambiati = true; } });
+    const ordine = id => { const i = MODELLI_TURNO_BASE_V2.findIndex(b => b.id === id); return i < 0 ? 999 : i; };
+    modelli.sort((a, b) => ordine(a.id) - ordine(b.id));
+    modelliCambiati = true;
+  });
   (AppState.pattern || []).forEach(p => (p.giorni || []).forEach(g => {
     if(!g.modelloId || ids.has(g.modelloId)) return;
     const nuovo = sostituto(g.modelloId);
