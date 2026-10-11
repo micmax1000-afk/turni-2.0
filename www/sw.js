@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V186 (v2.71.3 — orari dei turni solo dalla scheda Turni) */
+/* Turni & Accessorio PS — Service Worker V187 (v2.72.0 — Report: lordo, trattenute e netto) */
 'use strict';
-const CACHE='turni-ps-v186';
+const CACHE='turni-ps-v187';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

@@ -437,12 +437,15 @@
 
     <section class="scheda" id="sezioneRiepilogo">
       <h2>Il mese</h2>
-      <div class="mese-tiles" id="meseTilesReport">
+      <div class="mese-tiles mese-tiles-4" id="meseTilesReport">
         <div><b id="meseTileTurni">0</b><span>turni</span></div>
         <div><b id="meseTileRiposi">0</b><span>riposi</span></div>
-        <div><b id="meseTileStraordinario">0 h</b><span>straordinario</span></div>
+        <div><b id="meseTileOre">0</b><span>ore</span></div>
+        <div><b id="meseTileStraordinario">0 h</b><span>straord.</span></div>
       </div>
+      <div id="meseDettaglioV3"></div>
 
+      <div hidden>
       <div class="stat-panel-v17 stat-dettagli">
         <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
         <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
@@ -483,6 +486,7 @@
         </div>
         </div>
       </details>
+      </div>
     </section>
 
     <section class="scheda" id="sezioneStatisticheGrafici">
@@ -502,13 +506,17 @@
 
   <div id="vistaCedolino" hidden>
   <section class="scheda" id="sezioneCedolino">
-    <h2>🧾 Cedolino simulato</h2>
-    <p class="sotto-titolo">Il cedolino del mese visualizzato, da anagrafica, turni e tabelle. A dicembre c'è anche la tredicesima.</p>
-    <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
-      <input type="number" id="campoConguagliMese" step="0.01" value="0">
-    </label>
-    <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
+    <h2 id="titoloCedolinoV3">🧾 Cedolino</h2>
+    <p class="sotto-titolo" id="sottotitoloCedolinoV3">Stima dal tuo profilo, dai turni e dalle tabelle.</p>
+    <div id="cedolinoRiassuntoV3"></div>
+    <button class="btn-secondario cedolino-tutte-voci" id="btnGeneraCedolino" type="button">Vedi tutte le voci ▾</button>
     <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
+    <details class="conguagli-v3">
+      <summary>Conguagli manuali del mese</summary>
+      <label class="campo-modale" style="max-width:260px; margin:8px 0 4px;">Importo da aggiungere o togliere al netto (€)
+        <input type="number" id="campoConguagliMese" step="0.01" value="0">
+      </label>
+    </details>
     <div class="azioni-cedolino">
       <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / PDF</button>
       <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>Chiudi cedolino</button>

@@ -1926,3 +1926,43 @@ html[data-tema="scuro"] .link-gestisci-turni{color:#8FB0FF}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .link-gestisci-turni{color:#8FB0FF}}
 .nota-orario-giorno{margin:6px 2px 0;font-size:.8rem;color:var(--testo-tenue);line-height:1.35}
 .nota-orario-giorno[hidden]{display:none}
+
+/* v2.72 — Report: lordo/netto chiari, "Il mese" con ore e indennità, cedolino sempre aperto */
+.tag-importo{display:inline-block;font:800 .62rem var(--font-corpo);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:middle;line-height:1.4}
+.tag-lordo{background:#3A55B4;color:#fff}.tag-netto{background:#2E9E5B;color:#fff}.tag-trattenute{background:#D9A441;color:#1E2129}
+.report-hero .tag-netto{background:rgba(142,224,177,.25);color:#B9F2CF}
+.report-hero-righe{margin:10px 0 6px;display:grid;gap:4px;font-size:.84rem;opacity:.95}
+.report-hero-righe div{display:flex;justify-content:space-between;gap:8px}.report-hero-righe b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.report-hero-righe .meno{opacity:.8}
+.mese-tiles-4{grid-template-columns:repeat(4,1fr)!important}
+.mese-str-v3{margin:10px 2px 4px;font-size:.86rem;color:var(--testo-tenue);line-height:1.5}.mese-str-v3 b{color:#1E7A46}
+html[data-tema="scuro"] .mese-str-v3 b{color:#7FE0A6}
+.mese-gruppo-v3{border:1px solid var(--bordo);border-radius:14px;padding:12px 14px;margin-top:12px;background:var(--carta)}
+.mese-gruppo-v3 h3{margin:0 0 8px;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--testo-tenue)}
+.mese-riga-v3{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center;padding:7px 0;border-top:1px solid var(--bordo)}
+.mese-gruppo-v3 h3+.mese-riga-v3{border-top:0}
+.mese-riga-v3 b{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.mese-riga-v3 small{grid-column:1/-1;color:var(--testo-tenue);font-size:.75rem}
+.mese-barra-v3{grid-column:1/-1;height:6px;border-radius:4px;background:var(--bordo);overflow:hidden}.mese-barra-v3 i{display:block;height:100%;border-radius:4px}
+.mese-barra-v3 .diurne{background:#9AA6B2}.mese-barra-v3 .notturne{background:#7E5BD6}.mese-barra-v3 .festive{background:#D64545}.mese-barra-v3 .straordinario{background:#E8803A}
+.mese-ind-v3{grid-template-columns:24px 1fr auto auto}.mese-ind-v3 em{font-style:normal;color:var(--testo-tenue);font-size:.8rem;text-align:right}
+.mese-ind-icona{display:inline-flex;color:var(--testo)}.mese-ind-icona svg{width:18px;height:18px}
+.mese-tot-v3{display:flex;justify-content:space-between;margin-top:6px;padding-top:8px;border-top:1.5px solid var(--bordo);font-weight:800}
+.mese-sub-v3{font-size:.78rem;color:var(--testo-tenue);margin-top:2px}
+.mese-mostra-v3{display:block;margin:10px auto 0;background:none;border:0;color:#1D5FE0;font:600 .86rem var(--font-corpo);cursor:pointer}
+html[data-tema="scuro"] .mese-mostra-v3{color:#8FB0FF}
+.ced-blocco-v3{border-radius:14px;padding:10px 14px;margin-top:10px}
+.ced-blocco-v3>small{color:var(--testo-tenue);font-size:.74rem;margin-left:6px}
+.ced-lordo-v3{background:var(--sfondo-secondario,#ECEFEA)}
+.ced-tratt-v3{background:color-mix(in srgb,#D9A441 12%,transparent)}
+.ced-netto-v3{background:color-mix(in srgb,#2E9E5B 16%,transparent);border:1.5px solid color-mix(in srgb,#2E9E5B 45%,transparent);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ced-netto-v3 small{display:block;color:var(--testo-tenue);font-size:.76rem;margin-top:2px}
+.ced-riga-v3{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:.92rem}
+.ced-riga-v3 b{font-variant-numeric:tabular-nums;white-space:nowrap;align-self:flex-start}
+.ced-riga-v3 small{display:block;color:var(--testo-tenue);font-size:.74rem}
+.ced-tot-v3{border-top:1.5px solid var(--bordo);margin-top:4px;padding-top:7px;font-weight:800}
+.ced-cifra-v3{font:800 1.35rem var(--font-cifre,monospace);color:#1E7A46;white-space:nowrap}
+html[data-tema="scuro"] .ced-cifra-v3{color:#7FE0A6}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .ced-cifra-v3,html:not([data-tema="chiaro"]) .mese-str-v3 b{color:#7FE0A6}html:not([data-tema="chiaro"]) .mese-mostra-v3{color:#8FB0FF}}
+.cedolino-tutte-voci{display:block;width:100%;margin-top:12px}
+.conguagli-v3{margin-top:10px}.conguagli-v3>summary{cursor:pointer;font-size:.82rem;color:var(--testo-tenue);padding:6px 2px}

@@ -549,6 +549,32 @@ sezione('Modificare ed eliminare un turno');
   await ctx.close();
 }
 
+// ─────────────────────────────────────────────────────────────
+sezione('Report: lordo, trattenute e netto');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.evaluate(() => { AppState.turni['2026-10-02'].straordinarioDopoInizio = AppState.turni['2026-10-02'].oraFine; AppState.turni['2026-10-02'].straordinarioDopoFine = '23:00'; salvaTurniStorage(); });
+  await p.click('#tabReport');
+  const num = t => Number(String(t).replace(/[^0-9,−-]/g, '').replace('−', '-').replace(/\./g, '').replace(',', '.'));
+  const hero = await p.evaluate(() => ({ cifra: document.querySelector('.report-hero-cifra').textContent, righe: [...document.querySelectorAll('.report-hero-righe b')].map(b => b.textContent), tag: !!document.querySelector('.report-hero .tag-netto') }));
+  const sommaHero = hero.righe.reduce((s, x) => s + num(x), 0);
+  ok('riquadro in alto: stipendio + accessorie − tasse = netto, con etichetta "netto"', hero.tag && Math.abs(sommaHero - num(hero.cifra)) < 0.02, JSON.stringify(hero));
+  const ced = await p.evaluate(() => ({ lordo: [...document.querySelectorAll('.ced-lordo-v3 .ced-riga-v3 b')].map(b => b.textContent), tratt: [...document.querySelectorAll('.ced-tratt-v3 .ced-riga-v3 b')].map(b => b.textContent), netto: document.querySelector('.ced-cifra-v3').textContent, tag: document.querySelectorAll('#cedolinoRiassuntoV3 .tag-importo').length }));
+  const totL = num(ced.lordo[ced.lordo.length - 1]), totT = num(ced.tratt[ced.tratt.length - 1]);
+  ok('cedolino sempre in vista: stipendio + accessorie = lordo', ced.tag === 3 && Math.abs(num(ced.lordo[0]) + num(ced.lordo[1]) - totL) < 0.02, JSON.stringify(ced));
+  ok('cedolino: le trattenute sommano al totale e lordo − trattenute = netto', Math.abs(ced.tratt.slice(0, -1).reduce((s, x) => s + num(x), 0) - totT) < 0.02 && Math.abs(totL + totT - num(ced.netto)) < 0.02 && totT < 0);
+  ok('cedolino: il netto è quello del calcolo', await p.evaluate(() => document.querySelector('.ced-cifra-v3').textContent === euro(generaCedolino(annoCorrente, meseCorrente).netto)));
+  const mese = await p.evaluate(() => ({ righe: [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].map(b => b.textContent), str: document.querySelector('.mese-str-v3')?.textContent || '', zeri: !!document.getElementById('btnMeseZeriV3'), ore: document.getElementById('meseTileOre').textContent }));
+  ok('Il mese: straordinario lordo → netto con il mese in cui arriva', /lordi.*netti, arrivano a dicembre/.test(mese.str), mese.str);
+  ok('Il mese: nessuna indennità a zero in vista', mese.righe.every(x => num(x) > 0) && mese.zeri, JSON.stringify(mese));
+  await p.click('#btnMeseZeriV3');
+  ok('"Mostra anche le voci a zero" le fa comparire', await p.evaluate(() => [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].some(b => b.textContent.startsWith('0,00'))));
+  await p.click('#btnGeneraCedolino');
+  ok('"Vedi tutte le voci" apre il cedolino completo', await p.evaluate(() => !document.getElementById('contenitoreCedolino').hidden && /Nascondi/.test(document.getElementById('btnGeneraCedolino').textContent)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(`\n${superati} controlli superati, ${falliti} falliti`);

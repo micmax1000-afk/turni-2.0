@@ -749,7 +749,10 @@ function inizializza(){
     e.target.value = '';
   });
 
-  el('btnGeneraCedolino').addEventListener('click', renderCedolino);
+  el('btnGeneraCedolino').addEventListener('click', () => {
+    if(el('contenitoreCedolino').hidden){ renderCedolino(); el('btnGeneraCedolino').textContent = 'Nascondi le voci ▴'; }
+    else { el('btnNascondiCedolino').click(); }
+  });
   el('btnGeneraAccreditoConto').addEventListener('click', renderAccreditoConto);
   el('btnStampaCedolino').addEventListener('click', () => stampaSezione('contenitoreCedolino'));
   el('btnNascondiCedolino').addEventListener('click', () => {
@@ -757,6 +760,7 @@ function inizializza(){
     el('contenitoreCedolino').innerHTML = '';
     el('btnStampaCedolino').hidden = true;
     el('btnNascondiCedolino').hidden = true;
+    el('btnGeneraCedolino').textContent = 'Vedi tutte le voci ▾';
   });
   el('btnCancellaAccreditoConto').addEventListener('click', () => {
     el('contenitoreAccreditoConto').hidden = true;
@@ -778,6 +782,8 @@ function inizializza(){
   el('campoConguagliMese').addEventListener('input', () => {
     AppState.conguagliPerMese[chiaveMese(annoCorrente, meseCorrente)] = Number(el('campoConguagliMese').value) || 0;
     salvaConguagliStorage();
+    renderReportHero();
+    if(!el('contenitoreCedolino').hidden) renderCedolino();
   });
   renderStorico();
 
@@ -1584,34 +1590,114 @@ function renderReportHero(){
   if(!box) return;
   el('reportMeseEtichetta').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
   try{
-    const euroFmt = v => typeof euro === 'function' ? euro(v) : `${Number(v || 0).toFixed(2)} €`;
+    const f = v => typeof euro === 'function' ? euro(v) : `${Number(v || 0).toFixed(2)} €`;
     // Quanto arriva sul conto NEL mese visualizzato: stipendio del mese prima + accessorie di due mesi prima.
     const acc = generaAccreditoConto(annoCorrente, meseCorrente);
-    const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
-    const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
-    const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
-    // Riquadri in cima a "Il mese" (al posto del vecchio "Riepilogo mese").
-    const strOre = t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
-    if(el('meseTileTurni')){
-      el('meseTileTurni').textContent = r.giorniPresenzaEffettiva;
-      el('meseTileRiposi').textContent = r.riposi;
-      el('meseTileStraordinario').textContent = `${String(Math.round(strOre * 100) / 100).replace('.', ',')} h`;
-    }
     const precedente = NOMI_MESI[(meseCorrente + 11) % 12].toLowerCase();
     const dueMesiPrima = NOMI_MESI[(meseCorrente + 10) % 12].toLowerCase();
+    const lordo = round2((acc.fisseBase || 0) + (acc.tredicesimaAccredito || 0) + (acc.accessorieLorde || 0));
+    const trattenute = round2(lordo - acc.netto);
     box.innerHTML = `
-      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()}</div>
-      <div class="report-hero-cifra">${euroFmt(acc.netto)}</div>
-      <div class="report-hero-det">Stipendio di ${precedente} + accessorie di ${dueMesiPrima} · stima</div>
-      <div class="report-hero-tiles">
-        <div><b>${String(Math.round(ore * 10) / 10).replace('.', ',')}</b><span>ore lavorate</span></div>
-        <div><b class="${ns.netto > 0 ? 'pos' : ''}">${ns.netto > 0 ? '+' : ''}${euroFmt(ns.netto)}</b><span>netto straordinario</span></div>
-      </div>`;
+      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()} <span class="tag-importo tag-netto">netto</span></div>
+      <div class="report-hero-cifra">${f(acc.netto)}</div>
+      <div class="report-hero-righe">
+        <div><span>Stipendio di ${precedente}</span><b>${f(acc.fisseBase)}</b></div>
+        ${acc.tredicesimaAccredito > 0 ? `<div><span>Tredicesima</span><b>${f(acc.tredicesimaAccredito)}</b></div>` : ''}
+        <div><span>Indennità e straordinari di ${dueMesiPrima}</span><b>${f(acc.accessorieLorde)}</b></div>
+        <div class="meno"><span>Tasse e contributi</span><b>−${f(trattenute)}</b></div>
+      </div>
+      <div class="report-hero-det">Stima · le voci sopra sono lorde</div>`;
     box.hidden = false;
   }catch(e){
     console.warn('Riquadro Report non calcolato:', e);
     box.hidden = true;
   }
+  try{ renderMeseV3(); }catch(e){ console.warn('Il mese non calcolato:', e); }
+  try{ renderCedolinoRiassuntoV3(); }catch(e){ console.warn('Cedolino non calcolato:', e); }
+}
+
+// "Il mese": riquadri, straordinario (lordo → netto), ore divise per fascia con barretta,
+// indennità con giorni ed euro (lorde), buoni pasto a parte. Le voci a zero non compaiono.
+let meseMostraZeriV3 = false;
+function renderMeseV3(){
+  const host = el('meseDettaglioV3');
+  if(!host) return;
+  const f = v => euro(v), h = v => String(Math.round(v * 10) / 10).replace('.', ',') + ' h';
+  const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
+  const c = calcolaCompetenze(annoCorrente, meseCorrente), a = c.accessorie;
+  const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
+  const mese = NOMI_MESI[meseCorrente].toLowerCase(), pag = NOMI_MESI[(meseCorrente + 2) % 12].toLowerCase();
+  const str = t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
+  const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + str;
+  el('meseTileTurni').textContent = r.giorniPresenzaEffettiva;
+  el('meseTileRiposi').textContent = r.riposi;
+  el('meseTileOre').textContent = String(Math.round(ore * 10) / 10).replace('.', ',');
+  el('meseTileStraordinario').textContent = h(str);
+  const righeOre = [
+    ['Diurne feriali', t.ordinarie, 'diurne', ''],
+    ['Serali e notturne', t.notturne, 'notturne', ''],
+    ['Festive e domeniche', t.festive + t.domenicali + t.notturneFestive, 'festive', t.notturneFestive ? `di cui ${h(t.notturneFestive)} notturne festive` : ''],
+    ['Straordinario', str, 'straordinario', [t.strDiurno && `${h(t.strDiurno)} diurno`, t.strNotturno && `${h(t.strNotturno)} notturno`, t.strFestivo && `${h(t.strFestivo)} festivo`, t.strNotturnoFestivo && `${h(t.strNotturnoFestivo)} notturno festivo`].filter(Boolean).join(' · ')]
+  ].filter(x => meseMostraZeriV3 || x[1] > 0);
+  const strLordo = round2(a.strDiurno + a.strNotturno + a.strFestivo + a.strNotturnoFestivo);
+  const ind = [
+    [iconaIndennita('servizioEsterno'), 'Servizio esterno', `${r.servizioEsterno} gg`, a.indServizioEsterno],
+    [iconaIndennita('controlloTerritorio'), 'Controllo territorio', `${r.giorniControlloTerritorioSerali} serali · ${r.giorniControlloTerritorioNotturni} notturni`, a.indControlloTerritorio],
+    ['🌙', 'Turni notturni', '', a.indTurnoNotturno],
+    ['📅', 'Festivi lavorati', `${r.turniFestiviLavorati} turni`, (a.indFestiva || 0) + (a.indFestivitaParticolare || 0)],
+    [iconaIndennita('ordinePubblico'), 'Ordine pubblico', `${r.ordinePubblico}`, a.indOP],
+    [iconaIndennita('reperibilita'), 'Reperibilità', `${r.reperibilita}`, a.indReperibilita],
+    [iconaIndennita('missione'), 'Missioni', `${r.missioni}`, a.indMissioni],
+    [iconaIndennita('cambioTurno'), 'Cambio turno', `${r.turniCambioTurno}`, a.indCambioTurno],
+    [iconaIndennita('compensazioneRiposo'), 'Lavorato sul riposo', `${r.turniCompensazioneRiposo}`, a.indCompensazioneRiposo],
+    [iconaIndennita('straordinario'), 'Straordinario', h(str), strLordo]
+  ].filter(x => meseMostraZeriV3 || x[3] > 0);
+  const totInd = round2(ind.reduce((s, x) => s + (x[3] || 0), 0));
+  const ciSonoZeri = !meseMostraZeriV3 && ([t.ordinarie, t.notturne, t.festive + t.domenicali + t.notturneFestive, str].some(v => !v) || [a.indOP, a.indReperibilita, a.indMissioni, a.indCambioTurno].some(v => !v));
+  host.innerHTML = `
+    ${str > 0 ? `<p class="mese-str-v3">Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} <span class="tag-importo tag-lordo">lordi</span> → <b>+${f(ns.netto)}</b> <span class="tag-importo tag-netto">netti</span>, arrivano a ${pag}.</p>` : ''}
+    <div class="mese-gruppo-v3"><h3>Ore lavorate · ${h(ore)}</h3>
+      ${righeOre.length ? righeOre.map(([n, v, cls, sub]) => `<div class="mese-riga-v3"><span>${n}</span><b>${h(v)}</b><div class="mese-barra-v3"><i class="${cls}" style="width:${ore ? Math.round(v / ore * 100) : 0}%"></i></div>${sub ? `<small>${sub}</small>` : ''}</div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna ora in questo mese.</p>'}
+    </div>
+    <div class="mese-gruppo-v3"><h3>Indennità del mese <span class="tag-importo tag-lordo">lordo</span></h3>
+      ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}</span><em>${q}</em><b>${f(e || 0)}</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
+      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)}</span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}</div>` : ''}
+      ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi le voci a zero ▴' : 'Mostra anche le voci a zero ▾'}</button>` : ''}
+    </div>
+    ${r.buoniPasto ? `<div class="mese-gruppo-v3"><h3>Fuori busta paga</h3><div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">🍽️</span><span>Buoni pasto</span><em>${r.buoniPasto}</em><b>${f(round2(r.buoniPasto * (AppState.tabelle.buonoPastoValore || 0)))}</b></div></div>` : ''}`;
+  const btn = el('btnMeseZeriV3');
+  if(btn) btn.onclick = () => { meseMostraZeriV3 = !meseMostraZeriV3; renderMeseV3(); };
+}
+
+// Cedolino sempre in vista: Lordo (stipendio + accessorie), Trattenute (voce per voce), Netto.
+// "Vedi tutte le voci" apre il cedolino completo di prima.
+function renderCedolinoRiassuntoV3(){
+  const host = el('cedolinoRiassuntoV3');
+  if(!host) return;
+  const f = v => euro(v);
+  const g = generaCedolino(annoCorrente, meseCorrente);
+  const c = calcolaCompetenze(annoCorrente, meseCorrente), a = c.accessorie;
+  const mese = NOMI_MESI[meseCorrente].toLowerCase(), pag = NOMI_MESI[(meseCorrente + 2) % 12].toLowerCase();
+  el('titoloCedolinoV3').textContent = `🧾 Cedolino di ${mese}`;
+  el('sottotitoloCedolinoV3').textContent = `Stima dal tuo profilo, dai turni e dalle tabelle. Accessorie di ${mese}: in busta a ${pag}.${meseCorrente === 11 ? ' A dicembre c\'è anche la tredicesima.' : ''}`;
+  const lordo = round2(g.comp.totaleLordo), fisse = round2(g.comp.totaleFisse), accT = round2(lordo - fisse);
+  const strL = round2(a.strDiurno + a.strNotturno + a.strFestivo + a.strNotturnoFestivo), indL = round2(accT - strL);
+  const irpef = round2(Math.max(0, (g.irpefTotale || 0) - (g.detrazioni || 0) - (g.trattamentoIntegrativo || 0)));
+  const voci = [['Contributi previdenziali', g.contributi], ['IRPEF (già tolte le detrazioni)', irpef], ['Addizionali regionale e comunale', g.addizionali], ['Sindacato', g.sindacato]].filter(x => x[1] > 0);
+  const tratt = round2(lordo - g.netto);
+  const altro = round2(tratt - voci.reduce((s, x) => s + x[1], 0));
+  if(Math.abs(altro) >= 0.01) voci.push([altro > 0 ? 'Altre trattenute e conguagli' : 'Conguagli e rimborsi', altro]);
+  host.innerHTML = `
+    <div class="ced-blocco-v3 ced-lordo-v3"><span class="tag-importo tag-lordo">Lordo</span><small>prima delle tasse</small>
+      <div class="ced-riga-v3"><span>Stipendio (voci fisse)</span><b>${f(fisse)}</b></div>
+      <div class="ced-riga-v3"><span>Accessorie<small>indennità ${f(indL)} · straordinario ${f(strL)}</small></span><b>${f(accT)}</b></div>
+      <div class="ced-riga-v3 ced-tot-v3"><span>Totale lordo</span><b>${f(lordo)}</b></div>
+    </div>
+    <div class="ced-blocco-v3 ced-tratt-v3"><span class="tag-importo tag-trattenute">Trattenute</span>
+      ${voci.map(([n, v]) => `<div class="ced-riga-v3"><span>${n}</span><b>${v < 0 ? '+' : '−'}${f(Math.abs(v))}</b></div>`).join('')}
+      <div class="ced-riga-v3 ced-tot-v3"><span>Totale trattenute</span><b>−${f(tratt)}</b></div>
+    </div>
+    <div class="ced-blocco-v3 ced-netto-v3"><div><span class="tag-importo tag-netto">Netto</span><small>quello che arriva sul conto</small></div><span class="ced-cifra-v3">${f(g.netto)}</span></div>`;
 }
 
 // Scheda Turni: i modelli di turno con il loro colore e orario, toccandone uno si modifica.
