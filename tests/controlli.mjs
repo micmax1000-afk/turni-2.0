@@ -507,6 +507,35 @@ sezione('Riquadro del giorno e assenze nel menu');
   await ctx.close();
 }
 
+// ─────────────────────────────────────────────────────────────
+sezione('Modificare ed eliminare un turno');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.evaluate(() => generaTurniDaCiclo({ sequenza: sequenzaDaPatternV2('pattern_quinta5'), dataInizioIso: '2026-10-01', numeroGiorni: 30, fase: 0, patternId: 'pattern_quinta5' }));
+  await p.evaluate(() => { apriModificaModelloV2('sera'); el('campoModModelloInizio').value = '18:40'; el('campoModModelloFine').value = '00:15'; salvaModificaModelloV2(); });
+  ok('cambiando l\'orario di un turno si chiede se aggiornare i giorni', await p.evaluate(() => !el('overlayAggiornaTurni').hidden && /18:40–00:15/.test(el('testoAggiornaTurni').textContent)));
+  await p.evaluate(() => el('btnAggTurniFuturi').click());
+  ok('"da oggi in poi": i giorni futuri prendono il nuovo orario, quelli passati no', await p.evaluate(() => AppState.turni['2026-10-11'].oraInizio === '18:40' && AppState.turni['2026-10-01'].oraInizio === '19:00' && AppState.modelliTurno[0].id === 'sera'));
+  await p.evaluate(() => { apriModificaModelloV2('sera'); el('btnEliminaModello').click(); });
+  ok('un turno usato in una sequenza non si elimina (spiega perché)', await p.evaluate(() => AppState.modelliTurno.some(m => m.id === 'sera') && /sequenza/.test(el('testoAvviso').textContent)));
+  await p.evaluate(() => { document.querySelectorAll('.overlay').forEach(o => o.hidden = true); AppState.modelliTurno.push({ id: 'personalizzato_9', nome: 'Scorta', oraInizio: '08:00', oraFine: '14:00', sigla: 'SC' }); AppState.turni['2026-10-02'].modelloId = 'personalizzato_9'; apriModificaModelloV2('personalizzato_9'); el('btnEliminaModello').click(); });
+  ok('eliminare un turno chiede conferma e dice che i giorni restano', await p.evaluate(() => AppState.modelliTurno.some(m => m.id === 'personalizzato_9') && /restano/.test(el('testoAvviso').textContent)));
+  await p.evaluate(() => el('btnConfermaAvviso').click());
+  ok('confermato: il turno sparisce, il giorno resta con il suo orario', await p.evaluate(() => !AppState.modelliTurno.some(m => m.id === 'personalizzato_9') && AppState.turni['2026-10-02'].oraInizio && !AppState.turni['2026-10-02'].modelloId));
+  // Situazione rimasta dalle versioni prima: "Sera" eliminato e ricreato con un altro id.
+  await p.evaluate(() => {
+    AppState.modelliTurno = AppState.modelliTurno.filter(m => m.id !== 'sera');
+    AppState.modelliTurno.push({ id: 'personalizzato_1', nome: 'Sera', oraInizio: '18:40', oraFine: '00:15', sigla: 'SE' });
+    salvaModelliTurnoStorage(); TurniPSStorage.setItem(CHIAVE_TURNI, JSON.stringify(AppState.turni));
+  });
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('turno eliminato e ricreato: giorni e sequenza si ricollegano al nuovo "Sera"', await p.evaluate(() => AppState.turni['2026-10-01'].modelloId === 'personalizzato_1' && AppState.pattern.find(x => x.id === 'pattern_quinta5').giorni[0].modelloId === 'personalizzato_1'));
+  ok('la sequenza genera di nuovo "Sera" e non riposo', await p.evaluate(() => { const s = sequenzaDaPatternV2('pattern_quinta5'); return s[0].tipo === 'personalizzato' && s[0].oraInizio === '18:40'; }));
+  ok('nella scheda Turni "Sera" torna tra i turni usati', await p.evaluate(() => { renderModelliTabTurni(); return [...document.querySelectorAll('.tessera-modello strong, .tessera-turno strong, [data-modifica-modello]')].some(x => /Sera/.test(x.textContent)) && typeof turnoUsaModello === 'function' && turnoUsaModello(AppState.turni['2026-10-01'], AppState.modelliTurno.find(m => m.id === 'personalizzato_1')); }));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(`\n${superati} controlli superati, ${falliti} falliti`);

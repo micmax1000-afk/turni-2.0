@@ -97,6 +97,7 @@ AppState.indennitaPersonalizzate = caricaIndennitaPersonalizzate(); // array [{ 
 AppState.reportBlocchi = caricaReportBlocchi(); // { prossimoTurno, riepilogoMese, riepilogoOre, statistiche, cedolino }
 AppState.modelliTurno = caricaModelliTurno(); // array di modelli turno (5 di base + eventuali personalizzati)
 AppState.pattern = caricaPattern(); // V2 — solo visualizzazione/modifica del ciclo per ora
+riparaCollegamentiModelli(); // giorni e sequenze che puntano a un turno eliminato
 AppState.eventiGiorno = caricaEventiGiorno(); // { iso: [{ id, titolo, tuttoIlGiorno, oraInizio, oraFine, note, luogo }] }
 TurniPSStorage.setItem(CHIAVE_ASSENZE, JSON.stringify(AppState.assenze)); // persiste subito l'eventuale merge di nuove voci predefinite
 
@@ -1929,6 +1930,7 @@ function salvaModificaModelloV2(){
   if(modelloColoreForzatoV2) modelloSalvato.colore = modelloColoreForzatoV2;
   else delete modelloSalvato.colore;
   salvaModelliTurnoStorage();
+  riparaCollegamentiModelli();
   el('overlayModificaModello').hidden = true;
   renderListaModelliTurniV2();
   renderCalendario();
@@ -1970,11 +1972,60 @@ function proponiAggiornamentoTurniDelModello(modello, orarioPrima){
 }
 function eliminaModelloV2(){
   if(!modelloInModificaV2) return;
-  AppState.modelliTurno = (AppState.modelliTurno || []).filter(x => x.id !== modelloInModificaV2);
-  salvaModelliTurnoStorage();
-  el('overlayModificaModello').hidden = true;
-  renderListaModelliTurniV2();
-  mostraToast('Turno eliminato', 'successo');
+  const m = (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2);
+  if(!m) return;
+  // Un turno usato in una sequenza non si elimina: quei giorni della sequenza diventerebbero riposo.
+  const sequenze = (AppState.pattern || []).filter(p => (p.giorni || []).some(g => g.modelloId === m.id));
+  if(sequenze.length){
+    mostraAvviso(`"${m.nome}" è usato nella sequenza ${sequenze.map(p => '"' + p.nome + '"').join(', ')}: se lo elimini, quei giorni diventerebbero riposo. Per cambiarlo modifica nome, orario o colore, oppure toglilo prima dalla sequenza.`, 'Non si può eliminare');
+    return;
+  }
+  const giorni = Object.keys(AppState.turni || {}).filter(iso => AppState.turni[iso] && AppState.turni[iso].modelloId === m.id);
+  const testo = giorni.length
+    ? `Eliminare "${m.nome}"? I ${giorni.length} giorni già nel calendario con questo turno restano, con il loro orario.`
+    : `Eliminare "${m.nome}"?`;
+  mostraConferma(testo, () => {
+    AppState.modelliTurno = (AppState.modelliTurno || []).filter(x => x.id !== m.id);
+    giorni.forEach(iso => { delete AppState.turni[iso].modelloId; });
+    salvaModelliTurnoStorage();
+    if(giorni.length) salvaTurniStorage();
+    el('overlayModificaModello').hidden = true;
+    renderListaModelliTurniV2();
+    renderCalendario();
+    mostraToast('Turno eliminato', 'successo');
+  }, 'Elimina turno');
+}
+
+// Giorni del calendario e sequenze che puntano a un turno che non c'è più (eliminato prima della
+// v2.71.1): si ricollegano al turno con lo stesso nome se esiste (es. "Sera" ricreato da capo);
+// altrimenti i giorni perdono solo il collegamento (tengono l'orario) e alle sequenze si
+// rimette il turno di base, così non generano riposi al posto dei turni.
+function riparaCollegamentiModelli(){
+  const modelli = AppState.modelliTurno || [];
+  const ids = new Set(modelli.map(m => m.id));
+  const nomeBase = id => { const b = (typeof MODELLI_TURNO_BASE_V2 !== 'undefined' ? MODELLI_TURNO_BASE_V2 : []).find(x => x.id === id); return b ? b.nome : null; };
+  const sostituto = id => {
+    const nome = (nomeBase(id) || '').trim().toLowerCase();
+    const m = nome ? modelli.find(x => (x.nome || '').trim().toLowerCase() === nome) : null;
+    return m ? m.id : null;
+  };
+  let modelliCambiati = false, patternCambiati = false, turniCambiati = false;
+  (AppState.pattern || []).forEach(p => (p.giorni || []).forEach(g => {
+    if(!g.modelloId || ids.has(g.modelloId)) return;
+    const nuovo = sostituto(g.modelloId);
+    if(nuovo){ g.modelloId = nuovo; patternCambiati = true; return; }
+    const base = (typeof MODELLI_TURNO_BASE_V2 !== 'undefined' ? MODELLI_TURNO_BASE_V2 : []).find(x => x.id === g.modelloId);
+    if(base){ modelli.push({ ...base }); ids.add(base.id); modelliCambiati = true; }
+  }));
+  Object.values(AppState.turni || {}).forEach(t => {
+    if(!t || !t.modelloId || ids.has(t.modelloId)) return;
+    const nuovo = sostituto(t.modelloId);
+    if(nuovo) t.modelloId = nuovo; else delete t.modelloId;
+    turniCambiati = true;
+  });
+  if(modelliCambiati) salvaModelliTurnoStorage();
+  if(patternCambiati) salvaPatternStorage();
+  if(turniCambiati) TurniPSStorage.setItem(CHIAVE_TURNI, JSON.stringify(AppState.turni));
 }
 
 // ===================== Eventi del giorno (separati dal turno, più di uno per giorno) =====================
