@@ -167,6 +167,17 @@ function aggiornaEditorGiornoV3(){
   el('sottotitoloModaleTurno').textContent = modo === 'riposo' ? 'Riposo'
     : modo === 'assenza' ? (voce ? voce.nome : 'Assenza')
     : inizio && fine ? `${modello ? modello.nome + ' · ' : ''}${inizio} – ${fine}` : 'Turno da completare';
+  // Orario diverso da quello del turno: vale solo per questo giorno (il turno si cambia dalla scheda Turni).
+  const nota = el('notaOrarioSoloGiorno');
+  if(nota){
+    const primaId = (AppState.turni[giornoSelezionato] || {}).modelloId;
+    const prima = (AppState.modelliTurno || []).find(m => m.id === primaId && !m.riposo);
+    const diverso = modo === 'turno' && inizio && fine && !idModello;
+    nota.hidden = !diverso;
+    if(diverso) nota.textContent = prima
+      ? `Orario solo per questo giorno (${prima.nome} di solito è ${prima.oraInizio}–${prima.oraFine}). Per cambiarlo sempre: scheda Turni.`
+      : 'Orario solo per questo giorno. Per cambiare l\'orario di un turno per sempre: scheda Turni.';
+  }
   // Modelli
   el('sceltaModelloGiorno').innerHTML = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine).map(m => {
     const colore = scurisciColore(coloreModelloV2(m), 0.35);

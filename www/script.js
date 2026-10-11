@@ -1041,6 +1041,7 @@ function inizializza(){
     const btnNuovo = e.target.closest('#btnNuovoModelloV2');
     if(btnNuovo){ apriModificaModelloV2(null); return; }
     if(e.target.closest('#btnRientroTurniV2')){ apriRientroRapidoV2(); return; }
+    if(e.target.closest('#btnGestisciTurniV2')){ el('overlaySelettoreModelli').hidden = true; mostraScheda('turni'); scrollTo(0, 0); return; }
     const btnMatita = e.target.closest('[data-modifica-modello]');
     if(btnMatita){ apriModificaModelloV2(btnMatita.dataset.modificaModello); return; }
     const btn = e.target.closest('[data-modello]');
@@ -1715,15 +1716,14 @@ function renderListaModelliTurniV2(){
     ? `${tGiornoCorrente.secondoOraInizio} - ${tGiornoCorrente.secondoOraFine} ✓`
     : 'aggiungi un secondo turno a oggi';
   // Stesso stile dell'elenco Assenze: barra del colore, nome, orario e durata, ✓ sul turno del
-  // giorno, matita per modificarlo. I modelli di solito rari stanno in "Altri turni", chiuso.
-  const matita = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  // giorno. Qui si sceglie soltanto: gli orari dei turni si cambiano dalla scheda Turni ("Gestisci
+  // i turni →" in fondo). I modelli di solito rari stanno in "Altri turni", chiuso.
   const riga = m => {
     const attiva = turnoUsaModello(tGiornoCorrente, m);
     const durata = durataModelloTesto(m);
     const sotto = m.riposo ? 'giornata libera' : `${m.oraInizio} – ${m.oraFine}${durata ? ' · ' + durata : ''}`;
     return `<div class="riga-turno-menu${attiva ? ' attiva' : ''}">
       <button type="button" class="riga-turno-menu-corpo" data-modello="${escapeHtml(m.id)}"><i style="background:${coloreModelloV2(m)}"></i><span><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(sotto)}</small></span>${attiva ? '<em aria-hidden="true">✓</em>' : ''}</button>
-      <button type="button" class="riga-turno-menu-matita" data-modifica-modello="${escapeHtml(m.id)}" aria-label="Modifica ${escapeHtml(m.nome)}">${matita}</button>
     </div>`;
   };
   const modelli = AppState.modelliTurno || [];
@@ -1733,7 +1733,7 @@ function renderListaModelliTurniV2(){
   host.innerHTML = `<div class="elenco-turni-menu">${principali.map(riga).join('')}</div>`
     + (altri.length ? `<details class="assenze-menu-non-usate"><summary>Altri turni (${altri.length})</summary><div class="elenco-turni-menu">${altri.map(riga).join('')}</div></details>` : '')
     + `<div class="elenco-turni-menu elenco-turni-menu-extra"><button type="button" class="riga-assenza-giorno${conRientro ? ' attiva' : ''}" id="btnRientroTurniV2"><span>🔁</span><b>Rientro<small>${escapeHtml(rientroSotto.replace(' ✓', ''))}</small></b>${conRientro ? '<i aria-hidden="true">✓</i>' : ''}</button></div>`
-    + `<button type="button" class="btn-aggiungi-tratteggiato" id="btnNuovoModelloV2">＋ Nuovo turno personalizzato</button>`;
+    + `<button type="button" class="link-gestisci-turni" id="btnGestisciTurniV2">Gestisci i turni →</button>`;
 }
 
 function renderListaModelliAssenzeV2(){

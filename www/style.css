@@ -1918,3 +1918,11 @@ html[data-tema="scuro"] .riga-turno-menu-corpo em{color:#8FB0FF}
 .azioni-giorno-v3>button>span{font-size:1.15rem;line-height:1}
 .riepilogo-giorno-selezionato-box-v2{scroll-margin-bottom:110px}
 #btnSalvaModello{margin-left:auto}
+
+/* v2.71.3 — menu: niente matite, link alla scheda Turni; nota "orario solo per questo giorno" */
+.riga-turno-menu-corpo{padding-right:14px}
+.link-gestisci-turni{display:block;margin:12px auto 2px;background:none;border:0;color:#1D5FE0;font:600 .9rem var(--font-corpo);cursor:pointer;padding:8px}
+html[data-tema="scuro"] .link-gestisci-turni{color:#8FB0FF}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .link-gestisci-turni{color:#8FB0FF}}
+.nota-orario-giorno{margin:6px 2px 0;font-size:.8rem;color:var(--testo-tenue);line-height:1.35}
+.nota-orario-giorno[hidden]{display:none}
