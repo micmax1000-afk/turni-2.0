@@ -97,6 +97,7 @@ AppState.indennitaPersonalizzate = caricaIndennitaPersonalizzate(); // array [{ 
 AppState.reportBlocchi = caricaReportBlocchi(); // { prossimoTurno, riepilogoMese, riepilogoOre, statistiche, cedolino }
 AppState.modelliTurno = caricaModelliTurno(); // array di modelli turno (5 di base + eventuali personalizzati)
 AppState.pattern = caricaPattern(); // V2 — solo visualizzazione/modifica del ciclo per ora
+riparaCollegamentiModelli(); // giorni e sequenze che puntano a un turno eliminato
 AppState.eventiGiorno = caricaEventiGiorno(); // { iso: [{ id, titolo, tuttoIlGiorno, oraInizio, oraFine, note, luogo }] }
 TurniPSStorage.setItem(CHIAVE_ASSENZE, JSON.stringify(AppState.assenze)); // persiste subito l'eventuale merge di nuove voci predefinite
 
@@ -748,7 +749,10 @@ function inizializza(){
     e.target.value = '';
   });
 
-  el('btnGeneraCedolino').addEventListener('click', renderCedolino);
+  el('btnGeneraCedolino').addEventListener('click', () => {
+    if(el('contenitoreCedolino').hidden){ renderCedolino(); el('btnGeneraCedolino').textContent = 'Nascondi le voci ▴'; }
+    else { el('btnNascondiCedolino').click(); }
+  });
   el('btnGeneraAccreditoConto').addEventListener('click', renderAccreditoConto);
   el('btnStampaCedolino').addEventListener('click', () => stampaSezione('contenitoreCedolino'));
   el('btnNascondiCedolino').addEventListener('click', () => {
@@ -756,6 +760,7 @@ function inizializza(){
     el('contenitoreCedolino').innerHTML = '';
     el('btnStampaCedolino').hidden = true;
     el('btnNascondiCedolino').hidden = true;
+    el('btnGeneraCedolino').textContent = 'Vedi tutte le voci ▾';
   });
   el('btnCancellaAccreditoConto').addEventListener('click', () => {
     el('contenitoreAccreditoConto').hidden = true;
@@ -777,6 +782,8 @@ function inizializza(){
   el('campoConguagliMese').addEventListener('input', () => {
     AppState.conguagliPerMese[chiaveMese(annoCorrente, meseCorrente)] = Number(el('campoConguagliMese').value) || 0;
     salvaConguagliStorage();
+    renderReportHero();
+    if(!el('contenitoreCedolino').hidden) renderCedolino();
   });
   renderStorico();
 
@@ -1040,6 +1047,7 @@ function inizializza(){
     const btnNuovo = e.target.closest('#btnNuovoModelloV2');
     if(btnNuovo){ apriModificaModelloV2(null); return; }
     if(e.target.closest('#btnRientroTurniV2')){ apriRientroRapidoV2(); return; }
+    if(e.target.closest('#btnGestisciTurniV2')){ el('overlaySelettoreModelli').hidden = true; mostraScheda('turni'); scrollTo(0, 0); return; }
     const btnMatita = e.target.closest('[data-modifica-modello]');
     if(btnMatita){ apriModificaModelloV2(btnMatita.dataset.modificaModello); return; }
     const btn = e.target.closest('[data-modello]');
@@ -1074,7 +1082,9 @@ function inizializza(){
     aggiornaStatoColoreModelloV2();
   });
   on('btnEliminaModello','click', eliminaModelloV2);
+  on('btnOrarioBaseModello','click', orarioBaseModelloV2);
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
+  on('btnTurnoGiornoV3','click', () => { if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
   on('settingsSimboli','click', apriSimboliCalendario);
   // Toccando i simboli nel riquadro del giorno si apre la legenda (prima c'era la "i" in alto).
@@ -1145,11 +1155,21 @@ let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifi
 // Tocco su una cella del calendario: se il giorno ha già qualcosa (turno, riposo o assenza),
 // apre direttamente il dettaglio/modifica; se è vuoto, propone il popup rapido "+ Turno / + Evento"
 // invece di aprire subito il modulo completo.
+// Da v2.71 niente popup: il primo tocco seleziona il giorno e lo mostra nel riquadro sotto il
+// calendario; un secondo tocco sullo stesso giorno apre "Cosa vuoi aggiungere?".
+let ultimoGiornoToccatoV2 = null;
 function gestisciTocchGiornoV2(iso){
   ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayRientroRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
+  const secondoTocco = ultimoGiornoToccatoV2 === iso && giornoSelezionato === iso;
+  ultimoGiornoToccatoV2 = iso;
   selezionaGiorno(iso);
   giornoPerPopupV2 = iso;
-  apriPopupRapidoGiornoV2();
+  if(secondoTocco){ apriSelettoreModelliV2('turni'); return; }
+  const box = document.querySelector('.riepilogo-giorno-selezionato-box-v2');
+  if(box){
+    const r = box.getBoundingClientRect();
+    if(r.top > innerHeight - 140) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function apriPopupRapidoGiornoV2(){
@@ -1570,34 +1590,114 @@ function renderReportHero(){
   if(!box) return;
   el('reportMeseEtichetta').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
   try{
-    const euroFmt = v => typeof euro === 'function' ? euro(v) : `${Number(v || 0).toFixed(2)} €`;
+    const f = v => typeof euro === 'function' ? euro(v) : `${Number(v || 0).toFixed(2)} €`;
     // Quanto arriva sul conto NEL mese visualizzato: stipendio del mese prima + accessorie di due mesi prima.
     const acc = generaAccreditoConto(annoCorrente, meseCorrente);
-    const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
-    const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
-    const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
-    // Riquadri in cima a "Il mese" (al posto del vecchio "Riepilogo mese").
-    const strOre = t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
-    if(el('meseTileTurni')){
-      el('meseTileTurni').textContent = r.giorniPresenzaEffettiva;
-      el('meseTileRiposi').textContent = r.riposi;
-      el('meseTileStraordinario').textContent = `${String(Math.round(strOre * 100) / 100).replace('.', ',')} h`;
-    }
     const precedente = NOMI_MESI[(meseCorrente + 11) % 12].toLowerCase();
     const dueMesiPrima = NOMI_MESI[(meseCorrente + 10) % 12].toLowerCase();
+    const lordo = round2((acc.fisseBase || 0) + (acc.tredicesimaAccredito || 0) + (acc.accessorieLorde || 0));
+    const trattenute = round2(lordo - acc.netto);
     box.innerHTML = `
-      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()}</div>
-      <div class="report-hero-cifra">${euroFmt(acc.netto)}</div>
-      <div class="report-hero-det">Stipendio di ${precedente} + accessorie di ${dueMesiPrima} · stima</div>
-      <div class="report-hero-tiles">
-        <div><b>${String(Math.round(ore * 10) / 10).replace('.', ',')}</b><span>ore lavorate</span></div>
-        <div><b class="${ns.netto > 0 ? 'pos' : ''}">${ns.netto > 0 ? '+' : ''}${euroFmt(ns.netto)}</b><span>netto straordinario</span></div>
-      </div>`;
+      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()} <span class="tag-importo tag-netto">netto</span></div>
+      <div class="report-hero-cifra">${f(acc.netto)}</div>
+      <div class="report-hero-righe">
+        <div><span>Stipendio di ${precedente}</span><b>${f(acc.fisseBase)}</b></div>
+        ${acc.tredicesimaAccredito > 0 ? `<div><span>Tredicesima</span><b>${f(acc.tredicesimaAccredito)}</b></div>` : ''}
+        <div><span>Indennità e straordinari di ${dueMesiPrima}</span><b>${f(acc.accessorieLorde)}</b></div>
+        <div class="meno"><span>Tasse e contributi</span><b>−${f(trattenute)}</b></div>
+      </div>
+      <div class="report-hero-det">Stima · le voci sopra sono lorde</div>`;
     box.hidden = false;
   }catch(e){
     console.warn('Riquadro Report non calcolato:', e);
     box.hidden = true;
   }
+  try{ renderMeseV3(); }catch(e){ console.warn('Il mese non calcolato:', e); }
+  try{ renderCedolinoRiassuntoV3(); }catch(e){ console.warn('Cedolino non calcolato:', e); }
+}
+
+// "Il mese": riquadri, straordinario (lordo → netto), ore divise per fascia con barretta,
+// indennità con giorni ed euro (lorde), buoni pasto a parte. Le voci a zero non compaiono.
+let meseMostraZeriV3 = false;
+function renderMeseV3(){
+  const host = el('meseDettaglioV3');
+  if(!host) return;
+  const f = v => euro(v), h = v => String(Math.round(v * 10) / 10).replace('.', ',') + ' h';
+  const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
+  const c = calcolaCompetenze(annoCorrente, meseCorrente), a = c.accessorie;
+  const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
+  const mese = NOMI_MESI[meseCorrente].toLowerCase(), pag = NOMI_MESI[(meseCorrente + 2) % 12].toLowerCase();
+  const str = t.strDiurno + t.strNotturno + t.strFestivo + t.strNotturnoFestivo;
+  const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + str;
+  el('meseTileTurni').textContent = r.giorniPresenzaEffettiva;
+  el('meseTileRiposi').textContent = r.riposi;
+  el('meseTileOre').textContent = String(Math.round(ore * 10) / 10).replace('.', ',');
+  el('meseTileStraordinario').textContent = h(str);
+  const righeOre = [
+    ['Diurne feriali', t.ordinarie, 'diurne', ''],
+    ['Serali e notturne', t.notturne, 'notturne', ''],
+    ['Festive e domeniche', t.festive + t.domenicali + t.notturneFestive, 'festive', t.notturneFestive ? `di cui ${h(t.notturneFestive)} notturne festive` : ''],
+    ['Straordinario', str, 'straordinario', [t.strDiurno && `${h(t.strDiurno)} diurno`, t.strNotturno && `${h(t.strNotturno)} notturno`, t.strFestivo && `${h(t.strFestivo)} festivo`, t.strNotturnoFestivo && `${h(t.strNotturnoFestivo)} notturno festivo`].filter(Boolean).join(' · ')]
+  ].filter(x => meseMostraZeriV3 || x[1] > 0);
+  const strLordo = round2(a.strDiurno + a.strNotturno + a.strFestivo + a.strNotturnoFestivo);
+  const ind = [
+    [iconaIndennita('servizioEsterno'), 'Servizio esterno', `${r.servizioEsterno} gg`, a.indServizioEsterno],
+    [iconaIndennita('controlloTerritorio'), 'Controllo territorio', `${r.giorniControlloTerritorioSerali} serali · ${r.giorniControlloTerritorioNotturni} notturni`, a.indControlloTerritorio],
+    ['🌙', 'Turni notturni', '', a.indTurnoNotturno],
+    ['📅', 'Festivi lavorati', `${r.turniFestiviLavorati} turni`, (a.indFestiva || 0) + (a.indFestivitaParticolare || 0)],
+    [iconaIndennita('ordinePubblico'), 'Ordine pubblico', `${r.ordinePubblico}`, a.indOP],
+    [iconaIndennita('reperibilita'), 'Reperibilità', `${r.reperibilita}`, a.indReperibilita],
+    [iconaIndennita('missione'), 'Missioni', `${r.missioni}`, a.indMissioni],
+    [iconaIndennita('cambioTurno'), 'Cambio turno', `${r.turniCambioTurno}`, a.indCambioTurno],
+    [iconaIndennita('compensazioneRiposo'), 'Lavorato sul riposo', `${r.turniCompensazioneRiposo}`, a.indCompensazioneRiposo],
+    [iconaIndennita('straordinario'), 'Straordinario', h(str), strLordo]
+  ].filter(x => meseMostraZeriV3 || x[3] > 0);
+  const totInd = round2(ind.reduce((s, x) => s + (x[3] || 0), 0));
+  const ciSonoZeri = !meseMostraZeriV3 && ([t.ordinarie, t.notturne, t.festive + t.domenicali + t.notturneFestive, str].some(v => !v) || [a.indOP, a.indReperibilita, a.indMissioni, a.indCambioTurno].some(v => !v));
+  host.innerHTML = `
+    ${str > 0 ? `<p class="mese-str-v3">Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} <span class="tag-importo tag-lordo">lordi</span> → <b>+${f(ns.netto)}</b> <span class="tag-importo tag-netto">netti</span>, arrivano a ${pag}.</p>` : ''}
+    <div class="mese-gruppo-v3"><h3>Ore lavorate · ${h(ore)}</h3>
+      ${righeOre.length ? righeOre.map(([n, v, cls, sub]) => `<div class="mese-riga-v3"><span>${n}</span><b>${h(v)}</b><div class="mese-barra-v3"><i class="${cls}" style="width:${ore ? Math.round(v / ore * 100) : 0}%"></i></div>${sub ? `<small>${sub}</small>` : ''}</div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna ora in questo mese.</p>'}
+    </div>
+    <div class="mese-gruppo-v3"><h3>Indennità del mese <span class="tag-importo tag-lordo">lordo</span></h3>
+      ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}</span><em>${q}</em><b>${f(e || 0)}</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
+      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)}</span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}</div>` : ''}
+      ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi le voci a zero ▴' : 'Mostra anche le voci a zero ▾'}</button>` : ''}
+    </div>
+    ${r.buoniPasto ? `<div class="mese-gruppo-v3"><h3>Fuori busta paga</h3><div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">🍽️</span><span>Buoni pasto</span><em>${r.buoniPasto}</em><b>${f(round2(r.buoniPasto * (AppState.tabelle.buonoPastoValore || 0)))}</b></div></div>` : ''}`;
+  const btn = el('btnMeseZeriV3');
+  if(btn) btn.onclick = () => { meseMostraZeriV3 = !meseMostraZeriV3; renderMeseV3(); };
+}
+
+// Cedolino sempre in vista: Lordo (stipendio + accessorie), Trattenute (voce per voce), Netto.
+// "Vedi tutte le voci" apre il cedolino completo di prima.
+function renderCedolinoRiassuntoV3(){
+  const host = el('cedolinoRiassuntoV3');
+  if(!host) return;
+  const f = v => euro(v);
+  const g = generaCedolino(annoCorrente, meseCorrente);
+  const c = calcolaCompetenze(annoCorrente, meseCorrente), a = c.accessorie;
+  const mese = NOMI_MESI[meseCorrente].toLowerCase(), pag = NOMI_MESI[(meseCorrente + 2) % 12].toLowerCase();
+  el('titoloCedolinoV3').textContent = `🧾 Cedolino di ${mese}`;
+  el('sottotitoloCedolinoV3').textContent = `Stima dal tuo profilo, dai turni e dalle tabelle. Accessorie di ${mese}: in busta a ${pag}.${meseCorrente === 11 ? ' A dicembre c\'è anche la tredicesima.' : ''}`;
+  const lordo = round2(g.comp.totaleLordo), fisse = round2(g.comp.totaleFisse), accT = round2(lordo - fisse);
+  const strL = round2(a.strDiurno + a.strNotturno + a.strFestivo + a.strNotturnoFestivo), indL = round2(accT - strL);
+  const irpef = round2(Math.max(0, (g.irpefTotale || 0) - (g.detrazioni || 0) - (g.trattamentoIntegrativo || 0)));
+  const voci = [['Contributi previdenziali', g.contributi], ['IRPEF (già tolte le detrazioni)', irpef], ['Addizionali regionale e comunale', g.addizionali], ['Sindacato', g.sindacato]].filter(x => x[1] > 0);
+  const tratt = round2(lordo - g.netto);
+  const altro = round2(tratt - voci.reduce((s, x) => s + x[1], 0));
+  if(Math.abs(altro) >= 0.01) voci.push([altro > 0 ? 'Altre trattenute e conguagli' : 'Conguagli e rimborsi', altro]);
+  host.innerHTML = `
+    <div class="ced-blocco-v3 ced-lordo-v3"><span class="tag-importo tag-lordo">Lordo</span><small>prima delle tasse</small>
+      <div class="ced-riga-v3"><span>Stipendio (voci fisse)</span><b>${f(fisse)}</b></div>
+      <div class="ced-riga-v3"><span>Accessorie<small>indennità ${f(indL)} · straordinario ${f(strL)}</small></span><b>${f(accT)}</b></div>
+      <div class="ced-riga-v3 ced-tot-v3"><span>Totale lordo</span><b>${f(lordo)}</b></div>
+    </div>
+    <div class="ced-blocco-v3 ced-tratt-v3"><span class="tag-importo tag-trattenute">Trattenute</span>
+      ${voci.map(([n, v]) => `<div class="ced-riga-v3"><span>${n}</span><b>${v < 0 ? '+' : '−'}${f(Math.abs(v))}</b></div>`).join('')}
+      <div class="ced-riga-v3 ced-tot-v3"><span>Totale trattenute</span><b>−${f(tratt)}</b></div>
+    </div>
+    <div class="ced-blocco-v3 ced-netto-v3"><div><span class="tag-importo tag-netto">Netto</span><small>quello che arriva sul conto</small></div><span class="ced-cifra-v3">${f(g.netto)}</span></div>`;
 }
 
 // Scheda Turni: i modelli di turno con il loro colore e orario, toccandone uno si modifica.
@@ -1701,21 +1801,25 @@ function renderListaModelliTurniV2(){
   const rientroSotto = (tGiornoCorrente.secondoAttivo && tGiornoCorrente.secondoOraInizio && tGiornoCorrente.secondoOraFine)
     ? `${tGiornoCorrente.secondoOraInizio} - ${tGiornoCorrente.secondoOraFine} ✓`
     : 'aggiungi un secondo turno a oggi';
-  const righe = (AppState.modelliTurno || []).map(m => {
-    const colore = coloreModelloV2(m);
-    const sotto = m.riposo ? 'giornata libera' : `${m.oraInizio} - ${m.oraFine}`;
-    return `<div class="riga-modello-selettore">
-      <button type="button" class="riga-modello-selettore-corpo" data-modello="${escapeHtml(m.id)}">
-        <span class="cerchio-modello" style="background:${colore}">${escapeHtml(m.sigla || (m.nome||'??').slice(0,2).toUpperCase())}</span>
-        <span class="riga-modello-testo"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(sotto)}</small></span>
-      </button>
-      <button type="button" class="riga-modello-matita" data-modifica-modello="${escapeHtml(m.id)}" aria-label="Modifica ${escapeHtml(m.nome)}">✏️</button>
+  // Stesso stile dell'elenco Assenze: barra del colore, nome, orario e durata, ✓ sul turno del
+  // giorno. Qui si sceglie soltanto: gli orari dei turni si cambiano dalla scheda Turni ("Gestisci
+  // i turni →" in fondo). I modelli di solito rari stanno in "Altri turni", chiuso.
+  const riga = m => {
+    const attiva = turnoUsaModello(tGiornoCorrente, m);
+    const durata = durataModelloTesto(m);
+    const sotto = m.riposo ? 'giornata libera' : `${m.oraInizio} – ${m.oraFine}${durata ? ' · ' + durata : ''}`;
+    return `<div class="riga-turno-menu${attiva ? ' attiva' : ''}">
+      <button type="button" class="riga-turno-menu-corpo" data-modello="${escapeHtml(m.id)}"><i style="background:${coloreModelloV2(m)}"></i><span><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(sotto)}</small></span>${attiva ? '<em aria-hidden="true">✓</em>' : ''}</button>
     </div>`;
-  }).join('');
-  host.innerHTML = righe + `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" id="btnRientroTurniV2" style="border-top:1px dashed var(--bordo);margin-top:4px;">
-    <span class="cerchio-modello" style="background:var(--sfondo-secondario,#f3f5f9);border:1.5px dashed var(--bordo);">🔁</span>
-    <span class="riga-modello-testo"><strong>Rientro</strong><small>${rientroSotto}</small></span>
-  </button>` + `<button type="button" class="riga-modello-nuovo" id="btnNuovoModelloV2">＋ Nuovo turno personalizzato</button>`;
+  };
+  const modelli = AppState.modelliTurno || [];
+  const raro = m => MODELLI_DI_SOLITO_RARI.includes(m.id) && !turnoUsaModello(tGiornoCorrente, m);
+  const principali = modelli.filter(m => !raro(m)), altri = modelli.filter(raro);
+  const conRientro = !!(tGiornoCorrente.secondoAttivo && tGiornoCorrente.secondoOraInizio && tGiornoCorrente.secondoOraFine);
+  host.innerHTML = `<div class="elenco-turni-menu">${principali.map(riga).join('')}</div>`
+    + (altri.length ? `<details class="assenze-menu-non-usate"><summary>Altri turni (${altri.length})</summary><div class="elenco-turni-menu">${altri.map(riga).join('')}</div></details>` : '')
+    + `<div class="elenco-turni-menu elenco-turni-menu-extra"><button type="button" class="riga-assenza-giorno${conRientro ? ' attiva' : ''}" id="btnRientroTurniV2"><span>🔁</span><b>Rientro<small>${escapeHtml(rientroSotto.replace(' ✓', ''))}</small></b>${conRientro ? '<i aria-hidden="true">✓</i>' : ''}</button></div>`
+    + `<button type="button" class="link-gestisci-turni" id="btnGestisciTurniV2">Gestisci i turni →</button>`;
 }
 
 function renderListaModelliAssenzeV2(){
@@ -1760,15 +1864,12 @@ function renderListaModelliIndennitaV2(){
   const host = el('listaModelliIndennita');
   if(!host) return;
   const t = giornoPerPopupV2 ? (AppState.turni[giornoPerPopupV2] || {}) : {};
-  const righeIndennita = INDENNITA_RAPIDE_V2.map(x => `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" data-indennita="${x.chiave}">
-    <span class="cerchio-modello cerchio-modello-assenza cerchio-icona${t[x.chiave] ? ' attiva' : ''}">${iconaIndennita(x.chiave)}${t[x.chiave] ? ' ✓' : ''}</span>
-    <span class="riga-modello-testo"><strong>${x.nome}</strong></span>
-  </button>`).join('');
-  const rigaStraordinario = `<button type="button" class="riga-modello-selettore-corpo riga-modello-selettore" id="btnIndennitaStraordinarioV2">
-    <span class="cerchio-modello cerchio-modello-assenza cerchio-icona">${iconaIndennita('straordinario')}</span>
-    <span class="riga-modello-testo"><strong>Straordinario</strong><small>ore, prima o dopo il turno</small></span>
-  </button>`;
-  host.innerHTML = rigaStraordinario + righeIndennita;
+  // Stesso stile dell'elenco Assenze: icona, nome, ✓ se è già segnata in questo giorno.
+  const righeIndennita = INDENNITA_RAPIDE_V2.map(x => `<button type="button" class="riga-assenza-giorno riga-indennita-menu${t[x.chiave] ? ' attiva' : ''}" data-indennita="${x.chiave}"><span>${iconaIndennita(x.chiave)}</span><b>${x.nome}</b>${t[x.chiave] ? '<i aria-hidden="true">✓</i>' : ''}</button>`).join('');
+  let oreStr = 0;
+  if(t.oraInizio && t.oraFine && typeof classificaTurno === 'function' && typeof totaleStraordinario === 'function') oreStr = totaleStraordinario(classificaTurno(t));
+  const rigaStraordinario = `<button type="button" class="riga-assenza-giorno riga-indennita-menu${oreStr > 0 ? ' attiva' : ''}" id="btnIndennitaStraordinarioV2"><span>${iconaIndennita('straordinario')}</span><b>Straordinario<small>ore, prima o dopo il turno</small></b>${oreStr > 0 ? `<em>${formatOreMinuti(oreStr)}</em>` : ''}</button>`;
+  host.innerHTML = `<div class="elenco-turni-menu">${rigaStraordinario}${righeIndennita}</div>`;
 }
 
 function applicaModelloV2(idModello){
@@ -1868,8 +1969,12 @@ function apriModificaModelloV2(id){
   el('campoModModelloColore').value = modelloColoreForzatoV2 || coloreAutomaticoPerModello(m);
   dipingiSwatchModelloV2();
   aggiornaStatoColoreModelloV2();
-  // "Elimina" ha senso solo per un turno che già esiste, non per uno nuovo che stai ancora creando.
-  el('btnEliminaModello').hidden = !m;
+  // "Elimina" solo per i turni creati da te: quelli di base (Sera, Mattino… Ufficio) si modificano
+  // ma non si eliminano, perché sequenze, primo avvio e colori automatici si basano su di loro.
+  // Al loro posto "↺ Orario di base", se l'orario è stato cambiato.
+  const base = m ? modelloBaseV2(m.id) : null;
+  el('btnEliminaModello').hidden = !m || !!base;
+  el('btnOrarioBaseModello').hidden = !base || base.riposo || (base.oraInizio === m.oraInizio && base.oraFine === m.oraFine);
   aggiornaAnteprimaModelloV2();
   el('overlayModificaModello').hidden = false;
 }
@@ -1916,6 +2021,7 @@ function salvaModificaModelloV2(){
   if(modelloColoreForzatoV2) modelloSalvato.colore = modelloColoreForzatoV2;
   else delete modelloSalvato.colore;
   salvaModelliTurnoStorage();
+  riparaCollegamentiModelli();
   el('overlayModificaModello').hidden = true;
   renderListaModelliTurniV2();
   renderCalendario();
@@ -1955,13 +2061,95 @@ function proponiAggiornamentoTurniDelModello(modello, orarioPrima){
   el('btnAggTurniNessuno').onclick = chiudi;
   el('overlayAggiornaTurni').hidden = false;
 }
+function modelloBaseV2(id){
+  return (typeof MODELLI_TURNO_BASE_V2 !== 'undefined' ? MODELLI_TURNO_BASE_V2 : []).find(x => x.id === id) || null;
+}
+// Rimette nei campi l'orario originale del turno di base; si salva con "Salva" (che poi chiede
+// se aggiornare anche i giorni già nel calendario).
+function orarioBaseModelloV2(){
+  const base = modelloBaseV2(modelloInModificaV2);
+  if(!base || base.riposo) return;
+  el('campoModModelloInizio').value = base.oraInizio;
+  el('campoModModelloFine').value = base.oraFine;
+  ['campoModModelloInizio', 'campoModModelloFine'].forEach(id => el(id).dispatchEvent(new Event('change', { bubbles: true })));
+  aggiornaAnteprimaModelloV2();
+  el('btnOrarioBaseModello').hidden = true;
+  mostraToast(`Orario di base: ${base.oraInizio}–${base.oraFine}. Tocca Salva per confermare.`, 'info');
+}
 function eliminaModelloV2(){
-  if(!modelloInModificaV2) return;
-  AppState.modelliTurno = (AppState.modelliTurno || []).filter(x => x.id !== modelloInModificaV2);
-  salvaModelliTurnoStorage();
-  el('overlayModificaModello').hidden = true;
-  renderListaModelliTurniV2();
-  mostraToast('Turno eliminato', 'successo');
+  if(!modelloInModificaV2 || modelloBaseV2(modelloInModificaV2)) return;
+  const m = (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2);
+  if(!m) return;
+  // Un turno usato in una sequenza non si elimina: quei giorni della sequenza diventerebbero riposo.
+  const sequenze = (AppState.pattern || []).filter(p => (p.giorni || []).some(g => g.modelloId === m.id));
+  if(sequenze.length){
+    mostraAvviso(`"${m.nome}" è usato nella sequenza ${sequenze.map(p => '"' + p.nome + '"').join(', ')}: se lo elimini, quei giorni diventerebbero riposo. Per cambiarlo modifica nome, orario o colore, oppure toglilo prima dalla sequenza.`, 'Non si può eliminare');
+    return;
+  }
+  const giorni = Object.keys(AppState.turni || {}).filter(iso => AppState.turni[iso] && AppState.turni[iso].modelloId === m.id);
+  const testo = giorni.length
+    ? `Eliminare "${m.nome}"? I ${giorni.length} giorni già nel calendario con questo turno restano, con il loro orario.`
+    : `Eliminare "${m.nome}"?`;
+  mostraConferma(testo, () => {
+    AppState.modelliTurno = (AppState.modelliTurno || []).filter(x => x.id !== m.id);
+    giorni.forEach(iso => { delete AppState.turni[iso].modelloId; });
+    salvaModelliTurnoStorage();
+    if(giorni.length) salvaTurniStorage();
+    el('overlayModificaModello').hidden = true;
+    renderListaModelliTurniV2();
+    renderCalendario();
+    mostraToast('Turno eliminato', 'successo');
+  }, 'Elimina turno');
+}
+
+// Giorni del calendario e sequenze che puntano a un turno che non c'è più (eliminato prima della
+// v2.71.1): si ricollegano al turno con lo stesso nome se esiste (es. "Sera" ricreato da capo);
+// altrimenti i giorni perdono solo il collegamento (tengono l'orario) e alle sequenze si
+// rimette il turno di base, così non generano riposi al posto dei turni.
+function riparaCollegamentiModelli(){
+  const modelli = AppState.modelliTurno || [];
+  const ids = new Set(modelli.map(m => m.id));
+  const nomeBase = id => { const b = (typeof MODELLI_TURNO_BASE_V2 !== 'undefined' ? MODELLI_TURNO_BASE_V2 : []).find(x => x.id === id); return b ? b.nome : null; };
+  const sostituto = id => {
+    const nome = (nomeBase(id) || '').trim().toLowerCase();
+    const m = nome ? modelli.find(x => (x.nome || '').trim().toLowerCase() === nome) : null;
+    return m ? m.id : null;
+  };
+  let modelliCambiati = false, patternCambiati = false, turniCambiati = false;
+  // Un turno di base eliminato e ricreato con lo stesso nome torna a essere quello di base
+  // (stesso id, stesso posto nell'elenco, non eliminabile).
+  (typeof MODELLI_TURNO_BASE_V2 !== 'undefined' ? MODELLI_TURNO_BASE_V2 : []).forEach(base => {
+    if(ids.has(base.id)) return;
+    const nuovo = sostituto(base.id);
+    if(!nuovo) return;
+    const m = modelli.find(x => x.id === nuovo);
+    if(modelloBaseV2(m.id)) return;
+    const vecchioId = m.id;
+    m.id = base.id;
+    if(base.riposo) m.riposo = true;
+    ids.delete(vecchioId); ids.add(base.id);
+    (AppState.pattern || []).forEach(p => (p.giorni || []).forEach(g => { if(g.modelloId === vecchioId){ g.modelloId = base.id; patternCambiati = true; } }));
+    Object.values(AppState.turni || {}).forEach(t => { if(t && t.modelloId === vecchioId){ t.modelloId = base.id; turniCambiati = true; } });
+    const ordine = id => { const i = MODELLI_TURNO_BASE_V2.findIndex(b => b.id === id); return i < 0 ? 999 : i; };
+    modelli.sort((a, b) => ordine(a.id) - ordine(b.id));
+    modelliCambiati = true;
+  });
+  (AppState.pattern || []).forEach(p => (p.giorni || []).forEach(g => {
+    if(!g.modelloId || ids.has(g.modelloId)) return;
+    const nuovo = sostituto(g.modelloId);
+    if(nuovo){ g.modelloId = nuovo; patternCambiati = true; return; }
+    const base = (typeof MODELLI_TURNO_BASE_V2 !== 'undefined' ? MODELLI_TURNO_BASE_V2 : []).find(x => x.id === g.modelloId);
+    if(base){ modelli.push({ ...base }); ids.add(base.id); modelliCambiati = true; }
+  }));
+  Object.values(AppState.turni || {}).forEach(t => {
+    if(!t || !t.modelloId || ids.has(t.modelloId)) return;
+    const nuovo = sostituto(t.modelloId);
+    if(nuovo) t.modelloId = nuovo; else delete t.modelloId;
+    turniCambiati = true;
+  });
+  if(modelliCambiati) salvaModelliTurnoStorage();
+  if(patternCambiati) salvaPatternStorage();
+  if(turniCambiati) TurniPSStorage.setItem(CHIAVE_TURNI, JSON.stringify(AppState.turni));
 }
 
 // ===================== Eventi del giorno (separati dal turno, più di uno per giorno) =====================
@@ -2813,37 +3001,82 @@ function apriBenvenuto(){
   el('benvenutoQualifica').value = 'Agente';
   el('benvenutoRegione').innerHTML = el('campoRegione').innerHTML;
   el('benvenutoRegione').value = 'Lazio';
-  benvenuto.passo = 1; benvenuto.pattern = null; benvenuto.fase = 0;
+  benvenuto.passo = 1; benvenuto.pattern = null; benvenuto.fase = 0; benvenuto.scritti = 0; benvenuto.fine = null;
+  const modelli = AppState.modelliTurno || [];
+  el('benvenutoStriscia').innerHTML = ['sera', 'pomeriggio', 'mattina', 'notte', 'riposo', 'sera', 'pomeriggio'].map(id => {
+    const m = modelli.find(x => x.id === id);
+    return m ? `<span style="background:${coloreModelloV2(m)};color:${testoSuColore(coloreModelloV2(m))}">${escapeHtml(SIGLA_SINGOLA_CATEGORIA[id] || m.sigla || '')}</span>` : '';
+  }).join('');
   renderSequenzeBenvenuto();
   mostraPassoBenvenuto(1);
   el('overlayBenvenuto').hidden = false;
+}
+// Sotto il nome della sequenza: i turni per esteso (se sono pochi) o quanti giorni dura.
+function descrizioneSequenzaBenvenuto(p){
+  const modelli = AppState.modelliTurno || [];
+  if(p.giorni.length <= 5) return p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return m ? nomeBreveModelloSeq(m) : '?'; }).join(' · ');
+  return `${p.giorni.length} giorni a rotazione`;
 }
 function renderSequenzeBenvenuto(){
   const modelli = AppState.modelliTurno || [];
   el('benvenutoSequenze').innerHTML = sequenzeDisponibiliBenvenuto().map(p => {
     const striscia = p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return `<i style="background:${m ? coloreModelloV2(m) : '#E8ECF0'}"></i>`; }).join('');
-    return `<button type="button" class="card-sequenza${benvenuto.pattern === p.id ? ' in-uso' : ''}" data-benvenuto-pattern="${escapeHtml(p.id)}"><strong>${escapeHtml(p.nome)}</strong><span class="striscia-sequenza">${striscia}</span><span class="stato-sequenza"><small>${p.giorni.length} giorni a rotazione</small></span></button>`;
+    return `<button type="button" class="card-sequenza${benvenuto.pattern === p.id ? ' in-uso' : ''}" data-benvenuto-pattern="${escapeHtml(p.id)}"><strong>${escapeHtml(p.nome)}</strong><span class="striscia-sequenza">${striscia}</span><span class="stato-sequenza"><small>${escapeHtml(descrizioneSequenzaBenvenuto(p))}</small></span></button>`;
   }).join('') + `<button type="button" class="card-sequenza${benvenuto.pattern === '' ? ' in-uso' : ''}" data-benvenuto-pattern=""><strong>Li inserisco a mano</strong><span class="stato-sequenza"><small>Tocchi i giorni sul calendario</small></span></button>`;
   const p = sequenzeDisponibiliBenvenuto().find(x => x.id === benvenuto.pattern);
   el('benvenutoFaseBox').hidden = !p;
   if(p){
     const oggi = new Date().toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long' });
-    el('benvenutoFaseTitolo').textContent = `Oggi (${oggi}) fai:`;
+    el('benvenutoFaseTitolo').textContent = `Oggi, ${oggi}, fai:`;
     el('benvenutoFase').innerHTML = p.giorni.map((g, i) => {
       const m = modelli.find(x => x.id === g.modelloId);
       const scelto = i === benvenuto.fase;
       const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
       return `<button type="button" data-benvenuto-fase="${i}" class="${scelto ? 'attivo' : ''}" ${scelto ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
     }).join('');
+    // Anteprima: i prossimi 7 giorni come verranno.
+    const giorniSett = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+    const oggiD = new Date();
+    el('benvenutoSettimana').innerHTML = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(oggiD.getFullYear(), oggiD.getMonth(), oggiD.getDate() + i, 12);
+      const g = p.giorni[(benvenuto.fase + i) % p.giorni.length];
+      const m = modelli.find(x => x.id === g.modelloId);
+      const col = m ? coloreModelloV2(m) : '#E8ECF0';
+      const sigla = m ? (SIGLA_SINGOLA_CATEGORIA[m.id] || m.sigla || m.nome.slice(0, 2)) : '?';
+      return `<div>${giorniSett[d.getDay()]}<b>${d.getDate()}</b><span style="background:${col};color:${testoSuColore(col)}">${escapeHtml(sigla)}</span></div>`;
+    }).join('');
   }
+  if(benvenuto.passo === 2) el('btnBenvenutoAvanti').textContent = benvenuto.pattern ? 'Crea i turni' : 'Avanti';
 }
 function mostraPassoBenvenuto(n){
   benvenuto.passo = n;
   document.querySelectorAll('[data-passo-benvenuto]').forEach(x => { x.hidden = Number(x.dataset.passoBenvenuto) !== n; });
   el('benvenutoPunti').querySelectorAll('i').forEach((x, i) => x.classList.toggle('attivo', i < n));
   el('btnBenvenutoIndietro').hidden = n === 1;
-  el('btnBenvenutoAvanti').textContent = n === 3 ? 'Inizia' : 'Avanti';
+  el('btnBenvenutoAvanti').textContent = n === 4 ? 'Vai al calendario' : n === 2 && benvenuto.pattern ? 'Crea i turni' : 'Avanti';
+  if(n === 3){ aggiornaTemiBenvenuto(); aggiornaStatoNotificheBenvenuto(); }
+  if(n === 4) renderRiepilogoBenvenuto();
   el('overlayBenvenuto').scrollTop = 0;
+}
+function aggiornaTemiBenvenuto(){
+  const t = temaScelto();
+  const scelto = t === 'nero' ? 'grigio' : t === 'luce' ? 'auto' : t;
+  el('benvenutoTemi').querySelectorAll('[data-benvenuto-tema]').forEach(b => b.classList.toggle('attivo', b.dataset.benvenutoTema === scelto));
+}
+function renderRiepilogoBenvenuto(){
+  const a = AppState.anagrafica || {};
+  const anni = Number(a.anni) || 0;
+  const p = sequenzeDisponibiliBenvenuto().find(x => x.id === benvenuto.pattern);
+  const righe = [
+    [`${a.qualifica || '—'} · ${anni} ${anni === 1 ? 'anno' : 'anni'} · ${a.regione || '—'}`, 'Profilo per stimare lo stipendio'],
+    p ? [p.nome, benvenuto.scritti ? `${benvenuto.scritti} giorni nel calendario${benvenuto.fine ? ', fino al ' + new Date(benvenuto.fine + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long' }) : ''}` : 'Sequenza scelta']
+      : ['Turni a mano', 'Tocca i giorni del calendario per inserirli'],
+    [benvenuto.notificheAttive ? 'Notifiche attive' : 'Notifiche da attivare', `Promemoria del turno: ${el('benvenutoPromemoria').checked ? 'acceso' : 'spento'} · Widget: ${el('benvenutoWidget').checked ? 'acceso' : 'spento'}`]
+  ];
+  el('benvenutoRiepilogo').innerHTML = righe.map(([t, s], i) => {
+    const fatto = i < 2 || benvenuto.notificheAttive;
+    return `<div class="benvenuto-ok${fatto ? '' : ' da-fare'}"><b>${fatto ? '✓' : '○'}</b><span>${escapeHtml(t)}<small>${escapeHtml(s)}</small></span></div>`;
+  }).join('');
 }
 function chiudiBenvenuto(){
   TurniPSStorage.setItem(CHIAVE_BENVENUTO, '1');
@@ -2876,12 +3109,20 @@ function avantiBenvenuto(){
       const fine = new Date(oggi.getFullYear(), oggi.getMonth() + 3, oggi.getDate() - 1, 12);
       const giorni = Math.round((fine - new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate(), 12)) / 86400000) + 1;
       if(sequenza && sequenza.length){
-        const scritti = generaTurniDaCiclo({ sequenza, dataInizioIso: dataISO(oggi), numeroGiorni: giorni, fase: benvenuto.fase, proteggiAssenze: true, sovrascrivi: true, patternId: benvenuto.pattern });
-        mostraToast(`${scritti} giorni di turni inseriti`, 'successo');
+        benvenuto.scritti = generaTurniDaCiclo({ sequenza, dataInizioIso: dataISO(oggi), numeroGiorni: giorni, fase: benvenuto.fase, proteggiAssenze: true, sovrascrivi: true, patternId: benvenuto.pattern });
+        benvenuto.fine = dataISO(fine);
       }
     }
     mostraPassoBenvenuto(3);
-    aggiornaStatoNotificheBenvenuto();
+    return;
+  }
+  if(benvenuto.passo === 3){
+    // Promemoria e widget: si accendono solo se li hai accesi qui (all'inizio sono spenti).
+    [['benvenutoPromemoria', 'campoPromemoriaTurno'], ['benvenutoWidget', 'campoWidget']].forEach(([da, a]) => {
+      const voluto = el(da).checked, campo = el(a);
+      if(campo && campo.checked !== voluto){ campo.checked = voluto; campo.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    mostraPassoBenvenuto(4);
     return;
   }
   chiudiBenvenuto();
@@ -2889,10 +3130,11 @@ function avantiBenvenuto(){
 async function aggiornaStatoNotificheBenvenuto(){
   const nativo = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications);
   const box = el('benvenutoStatoNotifiche');
-  if(!nativo){ box.textContent = 'Le notifiche si attivano nell\'app per Android.'; el('btnBenvenutoNotifiche').hidden = true; return; }
+  if(!nativo){ box.textContent = 'Si attivano nell\'app per Android'; el('btnBenvenutoNotifiche').hidden = true; benvenuto.notificheAttive = false; return; }
   const attive = await notificheAttive();
+  benvenuto.notificheAttive = attive;
   el('btnBenvenutoNotifiche').hidden = attive;
-  box.textContent = attive ? '✓ Notifiche attive' : '';
+  box.textContent = attive ? '✓ Attive' : 'Per i promemoria di visite, corsi…';
 }
 function inizializzaBenvenuto(){
   on('btnSaltaBenvenuto', 'click', chiudiBenvenuto);
@@ -2905,7 +3147,9 @@ function inizializzaBenvenuto(){
     const seq = e.target.closest('[data-benvenuto-pattern]');
     if(seq){ benvenuto.pattern = seq.dataset.benvenutoPattern; benvenuto.fase = 0; renderSequenzeBenvenuto(); return; }
     const fase = e.target.closest('[data-benvenuto-fase]');
-    if(fase){ benvenuto.fase = Number(fase.dataset.benvenutoFase); renderSequenzeBenvenuto(); }
+    if(fase){ benvenuto.fase = Number(fase.dataset.benvenutoFase); renderSequenzeBenvenuto(); return; }
+    const tema = e.target.closest('[data-benvenuto-tema]');
+    if(tema){ scegliTema(tema.dataset.benvenutoTema); aggiornaTemiBenvenuto(); }
   });
   if(deveMostrareBenvenuto()) apriBenvenuto();
 }

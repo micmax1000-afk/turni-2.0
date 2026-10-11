@@ -62,8 +62,9 @@
       <div class="indennita-giorno-selezionato-v2" id="indennitaGiornoSelezionatoV2" hidden></div>
       <input type="text" id="campoServizioSvolto" class="campo-servizio-svolto" placeholder="📋 Servizio svolto (es. Pattugliamento)" aria-label="Servizio svolto">
       <div class="azioni-giorno-v3">
-        <button class="btn-secondario" id="btnNuovoEventoGiornoV2" type="button">＋ Evento</button>
-        <button class="btn-primario" id="btnModificaGiornoSelezionatoV2" type="button">✏️ Modifica</button>
+        <button class="btn-secondario" id="btnTurnoGiornoV3" type="button"><span aria-hidden="true">🔄</span>Turno</button>
+        <button class="btn-secondario" id="btnNuovoEventoGiornoV2" type="button"><span aria-hidden="true">＋</span>Evento</button>
+        <button class="btn-primario" id="btnModificaGiornoSelezionatoV2" type="button"><span aria-hidden="true">✏️</span>Modifica</button>
       </div>
       <div class="lista-eventi-giorno-v2" id="listaEventiGiornoV2"></div>
     </div>
@@ -76,14 +77,6 @@
 
 
     <!-- Popup rapido "+ Turno / + Evento" al tocco di un giorno vuoto -->
-    <div class="popup-rapido-giorno" id="popupRapidoGiorno" hidden>
-      <button type="button" class="popup-rapido-btn" id="btnPopupModifica" hidden>✏️ Modifica</button>
-      <div class="popup-rapido-divider" id="dividerPopupModifica" aria-hidden="true" hidden></div>
-      <button type="button" class="popup-rapido-btn" id="btnPopupAggiungiTurno">＋ Turno</button>
-      <div class="popup-rapido-divider" aria-hidden="true"></div>
-      <button type="button" class="popup-rapido-btn" id="btnPopupAggiungiEvento">＋ Evento</button>
-      <button type="button" class="popup-rapido-chiudi" id="btnPopupChiudi" aria-label="Chiudi">✕</button>
-    </div>
 
     <!-- Selettore Turno di lavoro / Assenza / Indennità, con Modelli pronti (colore incluso) -->
     <div class="overlay" id="overlaySelettoreModelli" hidden>
@@ -128,6 +121,7 @@
         </div>
         <div class="modale-footer" style="justify-content:space-between;">
           <button class="btn-secondario editor-giorno-elimina" id="btnEliminaModello" type="button">Elimina</button>
+          <button class="btn-secondario" id="btnOrarioBaseModello" type="button" hidden>↺ Orario di base</button>
           <button class="btn-primario" id="btnSalvaModello" type="button">Salva</button>
         </div>
       </div>
@@ -287,6 +281,7 @@
             <span aria-hidden="true">→</span>
             <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoOraFine"></label>
           </div>
+          <p class="nota-orario-giorno" id="notaOrarioSoloGiorno" hidden></p>
           <div id="anteprimaClassificazione" class="anteprima-classificazione anteprima-giorno"></div>
 
           <p class="titolo-sezione-giorno">Indennità <em id="contaIndennitaGiorno"></em></p>
@@ -442,12 +437,15 @@
 
     <section class="scheda" id="sezioneRiepilogo">
       <h2>Il mese</h2>
-      <div class="mese-tiles" id="meseTilesReport">
+      <div class="mese-tiles mese-tiles-4" id="meseTilesReport">
         <div><b id="meseTileTurni">0</b><span>turni</span></div>
         <div><b id="meseTileRiposi">0</b><span>riposi</span></div>
-        <div><b id="meseTileStraordinario">0 h</b><span>straordinario</span></div>
+        <div><b id="meseTileOre">0</b><span>ore</span></div>
+        <div><b id="meseTileStraordinario">0 h</b><span>straord.</span></div>
       </div>
+      <div id="meseDettaglioV3"></div>
 
+      <div hidden>
       <div class="stat-panel-v17 stat-dettagli">
         <div><span>Ordinarie</span><strong id="rOrdinarie">0,00</strong></div>
         <div><span>⏱️ Straordinario totale</span><strong id="rStrTotale">0,00</strong></div>
@@ -488,6 +486,7 @@
         </div>
         </div>
       </details>
+      </div>
     </section>
 
     <section class="scheda" id="sezioneStatisticheGrafici">
@@ -507,13 +506,17 @@
 
   <div id="vistaCedolino" hidden>
   <section class="scheda" id="sezioneCedolino">
-    <h2>🧾 Cedolino simulato</h2>
-    <p class="sotto-titolo">Il cedolino del mese visualizzato, da anagrafica, turni e tabelle. A dicembre c'è anche la tredicesima.</p>
-    <label class="campo-modale" style="max-width:260px; margin-bottom:12px;">Conguagli manuali del mese (€)
-      <input type="number" id="campoConguagliMese" step="0.01" value="0">
-    </label>
-    <button class="btn-primario" id="btnGeneraCedolino" type="button">Genera Cedolino</button>
+    <h2 id="titoloCedolinoV3">🧾 Cedolino</h2>
+    <p class="sotto-titolo" id="sottotitoloCedolinoV3">Stima dal tuo profilo, dai turni e dalle tabelle.</p>
+    <div id="cedolinoRiassuntoV3"></div>
+    <button class="btn-secondario cedolino-tutte-voci" id="btnGeneraCedolino" type="button">Vedi tutte le voci ▾</button>
     <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
+    <details class="conguagli-v3">
+      <summary>Conguagli manuali del mese</summary>
+      <label class="campo-modale" style="max-width:260px; margin:8px 0 4px;">Importo da aggiungere o togliere al netto (€)
+        <input type="number" id="campoConguagliMese" step="0.01" value="0">
+      </label>
+    </details>
     <div class="azioni-cedolino">
       <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / PDF</button>
       <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>Chiudi cedolino</button>
@@ -1005,36 +1008,61 @@
 <!-- Primo avvio guidato: solo per chi installa l'app (nessuna anagrafica e nessun turno) -->
 <div class="benvenuto" id="overlayBenvenuto" hidden>
   <div class="benvenuto-testa">
-    <div class="benvenuto-punti" id="benvenutoPunti"><i></i><i></i><i></i></div>
+    <div class="benvenuto-punti" id="benvenutoPunti"><i></i><i></i><i></i><i></i></div>
     <button type="button" class="benvenuto-salta" id="btnSaltaBenvenuto">Salta</button>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="1">
-    <h2>Benvenuto! 👋</h2>
-    <p class="sotto-titolo">Tre passaggi e l'app è pronta. I dati restano solo sul tuo telefono.</p>
+    <p class="benvenuto-prog">Passo 1 di 4</p>
+    <div class="benvenuto-hero">
+      <h2>Benvenuto! 👋</h2>
+      <p>I tuoi turni, quanto arriva in busta e le ferie: tutto in un'app, e i dati restano sul telefono.</p>
+      <div class="benvenuto-striscia" id="benvenutoStriscia"></div>
+    </div>
     <p class="titolo-sezione-giorno">Chi sei</p>
     <div class="gruppo-anagrafica">
       <label class="riga-anagrafica"><span>Qualifica</span><select id="benvenutoQualifica"></select></label>
       <div class="riga-anagrafica"><span>Anni di servizio</span><div class="contatore-anagrafica"><button type="button" data-passo-benvenuto-anni="-1" aria-label="Meno">−</button><input type="number" id="benvenutoAnni" min="0" value="0" inputmode="numeric" aria-label="Anni di servizio"><button type="button" data-passo-benvenuto-anni="1" aria-label="Più">+</button></div></div>
       <label class="riga-anagrafica"><span>Regione</span><select id="benvenutoRegione"></select></label>
     </div>
-    <p class="sotto-titolo" style="margin-top:10px;">Servono per stimare stipendio e tasse. Il resto (famiglia, sindacato) lo trovi in Altro → Anagrafica.</p>
+    <p class="benvenuto-nota">Servono per stimare stipendio e tasse. Famiglia e sindacato li aggiungi dopo in Altro → Anagrafica.</p>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="2" hidden>
-    <h2>I tuoi turni</h2>
-    <p class="sotto-titolo">Scegli come lavori: l'app riempie il calendario dei prossimi 3 mesi. Potrai cambiare tutto quando vuoi.</p>
+    <p class="benvenuto-prog">Passo 2 di 4</p>
+    <h2>Come lavori?</h2>
     <div class="lista-sequenze" id="benvenutoSequenze"></div>
     <div id="benvenutoFaseBox" hidden>
       <p class="etichetta-scelte" id="benvenutoFaseTitolo">Oggi fai:</p>
       <div class="scelte-sequenza" id="benvenutoFase"></div>
+      <p class="etichetta-scelte" style="margin-top:16px;">Ecco la tua settimana:</p>
+      <div class="benvenuto-settimana" id="benvenutoSettimana"></div>
+      <p class="benvenuto-nota">L'app riempie i prossimi 3 mesi. Potrai cambiare tutto quando vuoi.</p>
     </div>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="3" hidden>
-    <h2>Notifiche</h2>
-    <p class="sotto-titolo">Servono per i promemoria degli eventi che aggiungi al calendario (visite, corsi…).</p>
-    <button type="button" class="btn-primario btn-genera-grande" id="btnBenvenutoNotifiche">🔔 Attiva le notifiche</button>
-    <p class="sotto-titolo" id="benvenutoStatoNotifiche" style="margin-top:8px;"></p>
-    <div class="nota-giorno" style="margin-top:14px;">💡 In Altro puoi accendere anche il <b>promemoria del turno</b> (la sera prima) e il <b>widget</b> per la schermata Home: all'inizio sono spenti.</div>
-    <div class="nota-giorno" style="margin-top:8px;">🌙 Il pulsante in alto nel calendario passa al tema scuro. Cosa vogliono dire i simboli? Toccali sotto il calendario, oppure Altro → Indennità nel calendario.</div>
+    <p class="benvenuto-prog">Passo 3 di 4</p>
+    <h2>Come la vuoi?</h2>
+    <p class="titolo-sezione-giorno">Tema</p>
+    <div class="benvenuto-temi" id="benvenutoTemi">
+      <button type="button" data-benvenuto-tema="auto"><i class="cerchio-tema cerchio-tema-auto"></i>Auto</button>
+      <button type="button" data-benvenuto-tema="chiaro"><i class="cerchio-tema cerchio-tema-chiaro"></i>Chiaro</button>
+      <button type="button" data-benvenuto-tema="grigio"><i class="cerchio-tema cerchio-tema-grigio"></i>Scuro</button>
+    </div>
+    <p class="titolo-sezione-giorno">Avvisi</p>
+    <div class="benvenuto-card">
+      <div class="benvenuto-riga"><span>🔔</span><i>Notifiche<small id="benvenutoStatoNotifiche">Per i promemoria di visite, corsi…</small></i><button type="button" class="btn-primario" id="btnBenvenutoNotifiche">Attiva</button></div>
+      <label class="benvenuto-riga"><span>⏰</span><i>Promemoria del turno<small>La sera prima alle 20:00</small></i><input type="checkbox" class="interruttore" id="benvenutoPromemoria"></label>
+      <label class="benvenuto-riga"><span>📱</span><i>Widget sulla Home<small>Turno di oggi e domani</small></i><input type="checkbox" class="interruttore" id="benvenutoWidget"></label>
+    </div>
+    <p class="benvenuto-nota">Tutto si cambia anche dopo, in Altro.</p>
+  </div>
+  <div class="benvenuto-passo" data-passo-benvenuto="4" hidden>
+    <p class="benvenuto-prog">Passo 4 di 4</p>
+    <h2>Tutto pronto! 🎉</h2>
+    <div class="benvenuto-card benvenuto-riepilogo" id="benvenutoRiepilogo"></div>
+    <p class="titolo-sezione-giorno">Tre cose utili</p>
+    <div class="benvenuto-consiglio"><span>👆</span><div><b>Tocca un giorno</b> per vederlo, <b>due volte</b> per cambiare turno.</div></div>
+    <div class="benvenuto-consiglio"><span>💰</span><div>In <b>Report</b> vedi quanto arriva sul conto e il cedolino.</div></div>
+    <div class="benvenuto-consiglio"><span>🌙</span><div>Il pulsante in alto nel calendario passa al <b>tema scuro</b>.</div></div>
   </div>
   <div class="benvenuto-piede">
     <button type="button" class="btn-secondario" id="btnBenvenutoIndietro" hidden>Indietro</button>

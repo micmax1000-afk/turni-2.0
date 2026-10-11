@@ -169,8 +169,13 @@ for(const stile of ['classico', 'moderno']){
     const t = await p.evaluate(() => { const r = document.querySelector('#toastContainer .toast-v20').getBoundingClientRect(); return r.top > 0 && r.bottom < innerHeight; });
     ok('i messaggi a comparsa sono visibili sullo schermo', t);
     await p.click('.giorno-cella[data-data="2026-10-20"]');
-    ok('toccando un giorno si apre il menu rapido', await p.evaluate(() => !document.getElementById('popupRapidoGiorno').hidden));
-    await p.evaluate(() => { document.getElementById('popupRapidoGiorno').hidden = true; });
+    ok('toccando un giorno: si seleziona e lo mostra il riquadro, nessun popup', await p.evaluate(() => giornoSelezionato === '2026-10-20' && !document.getElementById('popupRapidoGiorno') && document.getElementById('overlaySelettoreModelli').hidden && /20 ottobre/i.test(document.querySelector('.giorno-v3-data').textContent)));
+    await p.click('.giorno-cella[data-data="2026-10-20"]');
+    ok('secondo tocco sullo stesso giorno: si apre "Cosa vuoi aggiungere?"', await p.evaluate(() => !document.getElementById('overlaySelettoreModelli').hidden && giornoPerPopupV2 === '2026-10-20'));
+    await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; });
+    await p.click('#btnTurnoGiornoV3');
+    ok('pulsante "🔄 Turno" nel riquadro: apre "Cosa vuoi aggiungere?"', await p.evaluate(() => !document.getElementById('overlaySelettoreModelli').hidden));
+    await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; });
     await p.evaluate(() => { AppState.turni['2026-10-03'] = Object.assign({}, AppState.turni['2026-10-03'], { data: '2026-10-03', oraInizio: '07:00', oraFine: '13:00', ordinePubblico: true }); selezionaGiorno('2026-10-03'); });
     await p.click('#indennitaGiornoSelezionatoV2 .indennita-giorno-badge');
     ok('toccando un simbolo del giorno si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));
@@ -181,7 +186,12 @@ for(const stile of ['classico', 'moderno']){
     ok('la stessa legenda si apre da Altro, con la scelta salvata', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelector('#listaSimboli [data-simbolo="servizioEsterno"]').checked && !document.querySelector('#listaSimboli [data-simbolo="buonoPasto"]').checked));
     await p.click('#btnChiudiSimboli'); await p.click('#tabCalendario');
     await p.evaluate(() => { giornoPerPopupV2 = '2026-10-02'; apriSelettoreModelliV2('indennita'); });
-    ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .cerchio-icona svg').length === 10 && document.querySelector('[data-indennita="missione"] .cerchio-icona').textContent.includes('✓')));
+    ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .riga-indennita-menu > span svg').length === 10 && document.querySelector('[data-indennita="missione"]').classList.contains('attiva') && document.querySelector('[data-indennita="missione"] i').textContent === '✓'));
+    await p.evaluate(() => apriSelettoreModelliV2('turni'));
+    ok('menu Turni: barra colorata, orario e durata, ✓ sul turno del giorno, rari in "Altri turni", niente matite', await p.evaluate(() => { const r = [...document.querySelectorAll('#listaModelliTurni .riga-turno-menu')]; const att = document.querySelector('#listaModelliTurni .riga-turno-menu.attiva'); return r.length >= 5 && !!att && !!att.querySelector('em') && /\d h/.test(document.querySelector('#listaModelliTurni .riga-turno-menu small').textContent) && /^Altri turni \(\d\)$/.test(document.querySelector('#listaModelliTurni details summary').textContent) && !document.querySelector('#listaModelliTurni [data-modifica-modello]') && !!document.getElementById('btnGestisciTurniV2'); }));
+    await p.click('#btnGestisciTurniV2');
+    ok('"Gestisci i turni →" porta alla scheda Turni', await p.evaluate(() => document.getElementById('overlaySelettoreModelli').hidden && [...document.querySelectorAll('.tessera-modello')].some(x => x.offsetParent)));
+    await p.click('#tabCalendario');
     await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; giornoSelezionato = '2026-10-02'; renderCalendario(); });
     ok('riquadro del giorno: icona e nome per esteso', await p.evaluate(() => /Missione/.test(document.getElementById('indennitaGiornoSelezionatoV2').innerText) && !!document.querySelector('.indennita-giorno-badge svg')));
   }
@@ -348,7 +358,11 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
   await p.click('#btnBenvenutoAvanti');
   await p.click('[data-benvenuto-pattern="pattern_quinta5"]');
   await p.click('[data-benvenuto-fase="1"]');
+  ok('guida: anteprima della settimana che parte da Pom. oggi', await p.evaluate(() => { const s = [...document.querySelectorAll('#benvenutoSettimana span')].map(x => x.textContent); return s.length === 7 && s[0] === 'P' && s[1] === 'M' && document.getElementById('btnBenvenutoAvanti').textContent === 'Crea i turni'; }));
   await p.click('#btnBenvenutoAvanti');
+  ok('guida passo 3: tema e avvisi, promemoria e widget spenti', await p.evaluate(() => !document.querySelector('[data-passo-benvenuto="3"]').hidden && !el('benvenutoPromemoria').checked && !el('benvenutoWidget').checked && document.querySelector('[data-benvenuto-tema="auto"]').classList.contains('attivo')));
+  await p.click('#btnBenvenutoAvanti');
+  ok('guida passo 4: riepilogo con profilo e giorni inseriti', await p.evaluate(() => /Sovrintendente/.test(el('benvenutoRiepilogo').textContent) && /92 giorni nel calendario/.test(el('benvenutoRiepilogo').textContent) && document.getElementById('btnBenvenutoAvanti').textContent === 'Vai al calendario'));
   await p.click('#btnBenvenutoAvanti');
   const b = await p.evaluate(() => ({ q: AppState.anagrafica.qualifica, oggi: AppState.turni['2026-10-09']?.modelloId, n: Object.keys(AppState.turni).length, chiuso: document.getElementById('overlayBenvenuto').hidden }));
   ok('guida: anagrafica salvata, "Oggi fai: Pom." e 3 mesi di turni', b.q === 'Sovrintendente' && b.oggi === 'pomeriggio' && b.n === 92 && b.chiuso, JSON.stringify(b));
@@ -496,6 +510,71 @@ sezione('Riquadro del giorno e assenze nel menu');
   ok('i colori dei turni sono nel backup gratuito e non ci sono più pulsanti a pagamento', await p.evaluate(() => { AppState.coloriTurni = Object.assign({}, AppState.coloriTurni, { sera: '#123456' }); const d = costruisciDatiBackup(); return d.coloriTurni.sera === '#123456' && !document.getElementById('btnEsportaColoriTurni') && typeof esportaBackupColori === 'undefined'; }));
   ok('al primo avvio il calendario è Moderno e a colori', await p.evaluate(() => { localStorage.removeItem(CHIAVE_STILE_CALENDARIO); localStorage.removeItem(CHIAVE_CALENDARIO_A_COLORI); return calendarioModernoAttivo() && calendarioAColoriAttivo(); }));
   ok('il riquadro mostra l\'assenza', await p.evaluate(() => document.querySelector('.giorno-v3-nome').textContent === 'Congedo ordinario'));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Modificare ed eliminare un turno');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.evaluate(() => generaTurniDaCiclo({ sequenza: sequenzaDaPatternV2('pattern_quinta5'), dataInizioIso: '2026-10-01', numeroGiorni: 30, fase: 0, patternId: 'pattern_quinta5' }));
+  await p.evaluate(() => { apriModificaModelloV2('sera'); el('campoModModelloInizio').value = '18:40'; el('campoModModelloFine').value = '00:15'; salvaModificaModelloV2(); });
+  ok('cambiando l\'orario di un turno si chiede se aggiornare i giorni', await p.evaluate(() => !el('overlayAggiornaTurni').hidden && /18:40–00:15/.test(el('testoAggiornaTurni').textContent)));
+  await p.evaluate(() => el('btnAggTurniFuturi').click());
+  ok('"da oggi in poi": i giorni futuri prendono il nuovo orario, quelli passati no', await p.evaluate(() => AppState.turni['2026-10-11'].oraInizio === '18:40' && AppState.turni['2026-10-01'].oraInizio === '19:00' && AppState.modelliTurno[0].id === 'sera'));
+  await p.evaluate(() => apriModificaModelloV2('sera'));
+  ok('turno di base: niente "Elimina", c\'è "↺ Orario di base" se l\'orario è cambiato', await p.evaluate(() => el('btnEliminaModello').hidden && !el('btnOrarioBaseModello').hidden));
+  await p.evaluate(() => el('btnOrarioBaseModello').click());
+  ok('"↺ Orario di base" rimette 19:00–01:00 nei campi', await p.evaluate(() => el('campoModModelloInizio').value === '19:00' && el('campoModModelloFine').value === '01:00' && el('btnOrarioBaseModello').hidden));
+  await p.evaluate(() => { document.querySelectorAll('.overlay').forEach(o => o.hidden = true); AppState.modelliTurno.push({ id: 'personalizzato_8', nome: 'Servizio', oraInizio: '09:00', oraFine: '15:00', sigla: 'SV' }); AppState.pattern[0].giorni[1].modelloId = 'personalizzato_8'; apriModificaModelloV2('personalizzato_8'); });
+  ok('turno creato da te: "Elimina" c\'è', await p.evaluate(() => !el('btnEliminaModello').hidden));
+  await p.evaluate(() => el('btnEliminaModello').click());
+  ok('se è usato in una sequenza non si elimina (spiega perché)', await p.evaluate(() => AppState.modelliTurno.some(m => m.id === 'personalizzato_8') && /sequenza/.test(el('testoAvviso').textContent)));
+  await p.evaluate(() => { AppState.pattern[0].giorni[1].modelloId = 'pomeriggio'; document.querySelectorAll('.overlay').forEach(o => o.hidden = true); AppState.modelliTurno.push({ id: 'personalizzato_9', nome: 'Scorta', oraInizio: '08:00', oraFine: '14:00', sigla: 'SC' }); AppState.turni['2026-10-02'].modelloId = 'personalizzato_9'; apriModificaModelloV2('personalizzato_9'); el('btnEliminaModello').click(); });
+  ok('eliminare un turno chiede conferma e dice che i giorni restano', await p.evaluate(() => AppState.modelliTurno.some(m => m.id === 'personalizzato_9') && /restano/.test(el('testoAvviso').textContent)));
+  await p.evaluate(() => el('btnConfermaAvviso').click());
+  ok('confermato: il turno sparisce, il giorno resta con il suo orario', await p.evaluate(() => !AppState.modelliTurno.some(m => m.id === 'personalizzato_9') && AppState.turni['2026-10-02'].oraInizio && !AppState.turni['2026-10-02'].modelloId));
+  // Situazione rimasta dalle versioni prima: "Sera" eliminato e ricreato con un altro id.
+  await p.evaluate(() => {
+    AppState.modelliTurno = AppState.modelliTurno.filter(m => m.id !== 'sera');
+    AppState.modelliTurno.push({ id: 'personalizzato_1', nome: 'Sera', oraInizio: '18:40', oraFine: '00:15', sigla: 'SE' });
+    salvaModelliTurnoStorage(); TurniPSStorage.setItem(CHIAVE_TURNI, JSON.stringify(AppState.turni));
+  });
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('"Sera" eliminato e ricreato torna il turno di base: primo in elenco, giorni e sequenza ricollegati', await p.evaluate(() => AppState.modelliTurno[0].id === 'sera' && AppState.modelliTurno[0].oraInizio === '18:40' && !AppState.modelliTurno.some(m => m.id === 'personalizzato_1') && AppState.turni['2026-10-01'].modelloId === 'sera' && AppState.pattern.find(x => x.id === 'pattern_quinta5').giorni[0].modelloId === 'sera'));
+  ok('la sequenza genera di nuovo "Sera" e non riposo', await p.evaluate(() => { const s = sequenzaDaPatternV2('pattern_quinta5'); return s[0].tipo === 'personalizzato' && s[0].oraInizio === '18:40'; }));
+  ok('nella scheda Turni "Sera" torna tra i turni usati', await p.evaluate(() => { renderModelliTabTurni(); return [...document.querySelectorAll('.tessera-modello strong, .tessera-turno strong, [data-modifica-modello]')].some(x => /Sera/.test(x.textContent)) && typeof turnoUsaModello === 'function' && turnoUsaModello(AppState.turni['2026-10-01'], AppState.modelliTurno.find(m => m.id === 'sera')); }));
+  await p.evaluate(() => { document.querySelectorAll('.overlay').forEach(o => o.hidden = true); giornoSelezionato = '2026-10-11'; apriModaleTurno('2026-10-11'); });
+  ok('Modifica il giorno con l\'orario del turno: nessuna nota', await p.evaluate(() => el('notaOrarioSoloGiorno').hidden));
+  await p.evaluate(() => { el('campoOraFine').value = '02:30'; el('campoOraFine').dispatchEvent(new Event('input', { bubbles: true })); el('campoOraFine').dispatchEvent(new Event('change', { bubbles: true })); aggiornaEditorGiornoV3(); });
+  ok('orario diverso: "Orario solo per questo giorno … scheda Turni"', await p.evaluate(() => !el('notaOrarioSoloGiorno').hidden && /solo per questo giorno/.test(el('notaOrarioSoloGiorno').textContent) && /Sera di solito/.test(el('notaOrarioSoloGiorno').textContent)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Report: lordo, trattenute e netto');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.evaluate(() => { AppState.turni['2026-10-02'].straordinarioDopoInizio = AppState.turni['2026-10-02'].oraFine; AppState.turni['2026-10-02'].straordinarioDopoFine = '23:00'; salvaTurniStorage(); });
+  await p.click('#tabReport');
+  const num = t => Number(String(t).replace(/[^0-9,−-]/g, '').replace('−', '-').replace(/\./g, '').replace(',', '.'));
+  const hero = await p.evaluate(() => ({ cifra: document.querySelector('.report-hero-cifra').textContent, righe: [...document.querySelectorAll('.report-hero-righe b')].map(b => b.textContent), tag: !!document.querySelector('.report-hero .tag-netto') }));
+  const sommaHero = hero.righe.reduce((s, x) => s + num(x), 0);
+  ok('riquadro in alto: stipendio + accessorie − tasse = netto, con etichetta "netto"', hero.tag && Math.abs(sommaHero - num(hero.cifra)) < 0.02, JSON.stringify(hero));
+  const ced = await p.evaluate(() => ({ lordo: [...document.querySelectorAll('.ced-lordo-v3 .ced-riga-v3 b')].map(b => b.textContent), tratt: [...document.querySelectorAll('.ced-tratt-v3 .ced-riga-v3 b')].map(b => b.textContent), netto: document.querySelector('.ced-cifra-v3').textContent, tag: document.querySelectorAll('#cedolinoRiassuntoV3 .tag-importo').length }));
+  const totL = num(ced.lordo[ced.lordo.length - 1]), totT = num(ced.tratt[ced.tratt.length - 1]);
+  ok('cedolino sempre in vista: stipendio + accessorie = lordo', ced.tag === 3 && Math.abs(num(ced.lordo[0]) + num(ced.lordo[1]) - totL) < 0.02, JSON.stringify(ced));
+  ok('cedolino: le trattenute sommano al totale e lordo − trattenute = netto', Math.abs(ced.tratt.slice(0, -1).reduce((s, x) => s + num(x), 0) - totT) < 0.02 && Math.abs(totL + totT - num(ced.netto)) < 0.02 && totT < 0);
+  ok('cedolino: il netto è quello del calcolo', await p.evaluate(() => document.querySelector('.ced-cifra-v3').textContent === euro(generaCedolino(annoCorrente, meseCorrente).netto)));
+  const mese = await p.evaluate(() => ({ righe: [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].map(b => b.textContent), str: document.querySelector('.mese-str-v3')?.textContent || '', zeri: !!document.getElementById('btnMeseZeriV3'), ore: document.getElementById('meseTileOre').textContent }));
+  ok('Il mese: straordinario lordo → netto con il mese in cui arriva', /lordi.*netti, arrivano a dicembre/.test(mese.str), mese.str);
+  ok('Il mese: nessuna indennità a zero in vista', mese.righe.every(x => num(x) > 0) && mese.zeri, JSON.stringify(mese));
+  await p.click('#btnMeseZeriV3');
+  ok('"Mostra anche le voci a zero" le fa comparire', await p.evaluate(() => [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].some(b => b.textContent.startsWith('0,00'))));
+  await p.click('#btnGeneraCedolino');
+  ok('"Vedi tutte le voci" apre il cedolino completo', await p.evaluate(() => !document.getElementById('contenitoreCedolino').hidden && /Nascondi/.test(document.getElementById('btnGeneraCedolino').textContent)));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
