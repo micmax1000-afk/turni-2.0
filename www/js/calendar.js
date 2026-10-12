@@ -1024,35 +1024,33 @@ else inizializzaFiltriCalendario();
   };
 })();
 
-// ── Vista Agenda: i prossimi giorni in elenco, in alternativa alla griglia del mese ──
+// ── Agenda sotto il calendario: i prossimi giorni in elenco, sotto la griglia del mese ──
 // Mostra solo dati già salvati (turni, assenze, indennità, eventi): non calcola niente di nuovo.
-// L'app ricorda l'ultima vista scelta; all'inizio parte da "Mese".
-const CHIAVE_VISTA_CALENDARIO = 'simCedolino_vistaCalendario_v1';
-const GIORNI_AGENDA_PASSO = 30;
+// Si accende da Altro → "Agenda sotto il calendario" (all'inizio è spenta); quando è accesa
+// prende il posto di "Prossimi 7 giorni", che mostrerebbe gli stessi eventi una seconda volta.
+const CHIAVE_AGENDA_SOTTO = 'simCedolino_agendaSottoCalendario_v1';
+const GIORNI_AGENDA_PASSO = 14;
 const GIORNI_SETTIMANA_BREVI = ['dom','lun','mar','mer','gio','ven','sab'];
 let giorniAgenda = GIORNI_AGENDA_PASSO;
 
-function vistaAgendaAttiva(){
-  try{ return TurniPSStorage.getItem(CHIAVE_VISTA_CALENDARIO) === 'agenda'; }catch(e){ return false; }
+function agendaSottoAttiva(){
+  try{ return TurniPSStorage.getItem(CHIAVE_AGENDA_SOTTO) === '1'; }catch(e){ return false; }
 }
-function impostaVistaCalendario(vista){
-  try{ TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, vista === 'agenda' ? 'agenda' : 'mese'); }catch(e){}
+function impostaAgendaSotto(attiva){
+  try{ TurniPSStorage.setItem(CHIAVE_AGENDA_SOTTO, attiva ? '1' : '0'); }catch(e){}
   giorniAgenda = GIORNI_AGENDA_PASSO;
-  if(vista !== 'agenda') el('etichettaMese').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
   aggiornaVistaCalendario();
-  window.scrollTo(0, 0);
 }
 function aggiornaVistaCalendario(){
   const sez = document.querySelector('.scheda-calendario-v2');
-  const host = el('agendaCalendario');
-  if(!sez || !host) return;
-  const agenda = vistaAgendaAttiva();
-  sez.classList.toggle('in-agenda', agenda);
-  host.hidden = !agenda;
-  const bM = el('btnVistaMese'), bA = el('btnVistaAgenda');
-  if(bM){ bM.classList.toggle('attivo', !agenda); bM.setAttribute('aria-selected', String(!agenda)); }
-  if(bA){ bA.classList.toggle('attivo', agenda); bA.setAttribute('aria-selected', String(agenda)); }
-  if(agenda) renderAgenda();
+  const box = el('agendaSottoCalendario');
+  if(!sez || !box) return;
+  const attiva = agendaSottoAttiva();
+  sez.classList.toggle('con-agenda', attiva);
+  box.hidden = !attiva;
+  const campo = el('campoAgendaSotto');
+  if(campo) campo.checked = attiva;
+  if(attiva) renderAgenda();
 }
 function oreAgenda(n){ return String(Math.round(Number(n || 0) * 100) / 100).replace('.', ','); }
 function meseBreveAgenda(d){ return d.toLocaleDateString('it-IT', { month: 'short' }).replace('.', ''); }
@@ -1099,7 +1097,6 @@ function renderAgenda(){
   const host = el('agendaCalendario');
   if(!host) return;
   const oggi = new Date(); oggi.setHours(12, 0, 0, 0);
-  el('etichettaMese').textContent = `${NOMI_MESI[oggi.getMonth()]} ${oggi.getFullYear()}`;
   const nascoste = indennitaNascoste();
   let html = '', lunedi = null;
   for(let i = 0; i < giorniAgenda; i++){

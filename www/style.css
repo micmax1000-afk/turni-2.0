@@ -2023,17 +2023,11 @@ html[data-tema="scuro"] .tabelle-versione-v3 a,html[data-tema="scuro"] .link-tab
 .tabelle-hero-v17 .tabelle-versione-v3 b{color:#fff}
 .tabelle-hero-v17 .tabelle-versione-v3 a,.tabelle-hero-v17 .link-tabelle-v3{color:#B9CCFF!important;text-decoration:underline;text-underline-offset:2px}
 
-/* ── v2.76 Vista Agenda ── */
-.vista-calendario-switch{display:flex;gap:4px;background:var(--sfondo-secondario,#ECEFEA);border-radius:12px;padding:3px;margin:6px 0 10px}
-.vista-calendario-switch button{flex:1;border:0;background:transparent;border-radius:9px;padding:8px 0;font:inherit;font-weight:700;font-size:.9rem;color:var(--testo-tenue);cursor:pointer}
-.vista-calendario-switch button.attivo{background:var(--carta,#fff);color:var(--testo);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.scheda-calendario-v2.in-agenda > .calendario-giorni-settimana,
-.scheda-calendario-v2.in-agenda > .calendario-griglia,
-.scheda-calendario-v2.in-agenda > .riepilogo-giorno-selezionato-box-v2,
-.scheda-calendario-v2.in-agenda > #btnCancellaTurniMese,
-.scheda-calendario-v2.in-agenda > #prossimiEventiV2{display:none!important}
-.scheda-calendario-v2.in-agenda .calendario-header-v2 .btn-freccia{visibility:hidden}
-.scheda-calendario-v2.in-agenda #etichettaMese{pointer-events:none}
+/* ── v2.76 Agenda sotto il calendario ── */
+.scheda-calendario-v2.con-agenda > #prossimiEventiV2{display:none!important}
+.agenda-sotto-calendario{margin-top:14px}
+.agenda-sotto-titolo{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:4px 2px 0;font-weight:800;font-size:1rem;color:var(--testo)}
+.agenda-sotto-titolo small{font-weight:600;font-size:.78rem;color:var(--testo-tenue)}
 .agenda-settimana{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 2px 4px;font-size:.74rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--testo-tenue)}
 .agenda-settimana:first-child{margin-top:4px}
 .agenda-settimana b{font-weight:700;letter-spacing:0;text-transform:none;font-size:.8rem}

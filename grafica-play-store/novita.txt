@@ -1,5 +1,5 @@
 <it-IT>
-• Nuova vista Agenda: i prossimi giorni in elenco con turni, ore, indennità ed eventi
+• Agenda sotto il calendario (da Altro): i prossimi 14 giorni con turni, ore ed eventi
 • Indennità del mese con lordo e netto
 • Tabelle ufficiali aggiornate dal sito, senza perdere le tue modifiche
 • Report più chiaro: lordo, trattenute e netto ben distinti

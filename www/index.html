@@ -52,11 +52,6 @@
       </span>
       <button class="btn-freccia" id="btnMeseSucc" type="button" aria-label="Mese successivo">›</button>
     </div>
-    <div class="vista-calendario-switch" role="tablist" aria-label="Vista del calendario">
-      <button type="button" role="tab" id="btnVistaMese" class="attivo" aria-selected="true">Mese</button>
-      <button type="button" role="tab" id="btnVistaAgenda" aria-selected="false">Agenda</button>
-    </div>
-    <div class="agenda-calendario" id="agendaCalendario" hidden></div>
     <div class="calendario-giorni-settimana">
       <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
     </div>
@@ -74,6 +69,11 @@
       <div class="lista-eventi-giorno-v2" id="listaEventiGiornoV2"></div>
     </div>
     <button class="link-cancella-anagrafica" id="btnCancellaTurniMese" type="button">Cancella i turni del mese…</button>
+
+    <div class="agenda-sotto-calendario" id="agendaSottoCalendario" hidden>
+      <div class="agenda-sotto-titolo"><span>📅 Prossimi 14 giorni</span><small>turni, ore ed eventi</small></div>
+      <div class="agenda-calendario" id="agendaCalendario"></div>
+    </div>
 
     <div class="prossimi-eventi-v2" id="prossimiEventiV2" hidden>
       <strong class="prossimi-eventi-titolo">📅 Prossimi 7 giorni</strong>
@@ -937,6 +937,10 @@
         <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="btnApriAssenzeV64"><span>🗂️</span><i>Assenze e permessi<small id="riassuntoAssenzeAltro">Congedi, permessi e saldi</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Indennità nel calendario<small>Simboli e quali mostrare</small></i><b>›</b></button>
+        <div class="riga-strumento-turni riga-interruttore">
+          <span>📋</span><i>Agenda sotto il calendario<small>Prossimi 14 giorni con turni, ore ed eventi</small></i>
+          <input type="checkbox" class="interruttore" id="campoAgendaSotto" aria-label="Agenda sotto il calendario">
+        </div>
         <div class="riga-strumento-turni riga-interruttore">
           <span>⏰</span><i>Promemoria del turno<small id="descrizionePromemoriaTurno">Spento</small></i>
           <input type="checkbox" class="interruttore" id="campoPromemoriaTurno" aria-label="Promemoria del turno">
