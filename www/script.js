@@ -485,6 +485,7 @@ function inizializza(){
   inizializzaPromemoriaTurno();
   inizializzaWidget();
   inizializzaEsportaCalendario();
+  setTimeout(() => aggiornaTabelleDalSito(), 4000);
   inizializzaBenvenuto();
   on('btnReportMesePrec', 'click', () => el('btnMesePrec').click());
   on('btnReportMeseSucc', 'click', () => el('btnMeseSucc').click());
@@ -3389,4 +3390,61 @@ function inizializzaEsportaCalendario(){
     await salvaOCondividiFile(`turni-${dataISO(da).slice(0, 7)}.ics`, testo, 'text/calendar');
     mostraToast(`File con ${quanti} giorni pronto`, 'successo');
   });
+}
+
+
+// ===================== Tabelle aggiornate dal sito =====================
+// Una volta a settimana (se c'è rete) l'app legge il file pubblico turni/tabelle.json sul sito e, se
+// ha una versione più nuova, aggiorna i valori ufficiali. Non invia nulla. Le modifiche fatte a mano
+// dall'utente restano (sono salvate a parte). Senza rete o con un file non valido non cambia niente.
+const URL_TABELLE_SITO = 'https://micmax-apps.netlify.app/turni/tabelle.json';
+const URL_PAGINA_TABELLE = 'https://micmax-apps.netlify.app/tabelle-turni.html';
+const CHIAVE_TABELLE_SITO_CONTROLLO = 'simCedolino_tabelleSitoControllo_v1';
+function tabelleSitoValide(j){
+  if(!j || j.formato !== 1 || typeof j.versione !== 'string' || !j.tabelle || typeof j.tabelle !== 'object') return false;
+  const t = j.tabelle, base = TABELLE_PREDEFINITE;
+  if(!t.stipendiAnnuiAttuale || !(Number(t.stipendiAnnuiAttuale['Agente']) > 0)) return false;
+  // Ogni voce deve avere lo stesso tipo di quella dell'app, e i numeri devono essere sensati.
+  const ok = (v, b) => {
+    if(b === undefined) return true;
+    if(typeof b === 'number') return v === null ? false : (typeof v === 'number' && isFinite(v) && v >= 0);
+    if(Array.isArray(b)) return Array.isArray(v);
+    if(b && typeof b === 'object') return v && typeof v === 'object' && Object.keys(v).every(k => ok(v[k], b[k]) || (k === 'fino' && v[k] === null));
+    return true;
+  };
+  return Object.keys(t).every(k => ok(t[k], base[k]));
+}
+async function aggiornaTabelleDalSito({ forza = false, avvisaSeUguali = false } = {}){
+  const adesso = Date.now();
+  const ultimo = Number(TurniPSStorage.getItem(CHIAVE_TABELLE_SITO_CONTROLLO) || 0);
+  if(!forza && adesso - ultimo < 7 * 86400000) return false;
+  let j = null;
+  try{
+    const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = setTimeout(() => ctrl && ctrl.abort(), 8000);
+    const r = await fetch(URL_TABELLE_SITO, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined });
+    clearTimeout(timer);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    j = await r.json();
+  }catch(e){
+    if(avvisaSeUguali) mostraToast('Non riesco a controllare: serve la connessione a internet.', 'avviso');
+    return false;
+  }
+  TurniPSStorage.setItem(CHIAVE_TABELLE_SITO_CONTROLLO, String(adesso));
+  if(!tabelleSitoValide(j)){ if(avvisaSeUguali) mostraToast('Il file delle tabelle sul sito non è valido: restano quelle attuali.', 'avviso'); return false; }
+  const info = applicaTabelleSito();
+  if(!versioneTabelleMaggiore(j.versione, info.versione)){
+    if(avvisaSeUguali) mostraToast(`Le tabelle sono già aggiornate (versione ${info.versione}).`, 'successo');
+    return false;
+  }
+  // Le modifiche fatte a mano si tengono da parte, si aggiornano i valori ufficiali e si riapplicano.
+  const modifiche = differenzeTabelle(AppState.tabelle, clonaTabelleConSoglie(TABELLE_PREDEFINITE));
+  TurniPSStorage.setItem(CHIAVE_TABELLE_SITO, JSON.stringify({ versione: j.versione, aggiornato: j.aggiornato || '', nota: j.nota || '', tabelle: j.tabelle }));
+  unisciTabelleProfondo(TABELLE_PREDEFINITE, ripristinaSoglieInfinite(JSON.parse(JSON.stringify(j.tabelle))));
+  infoTabelleUfficiali = { versione: j.versione, aggiornato: j.aggiornato || '', fonte: 'sito', nota: j.nota || '' };
+  AppState.tabelle = ripristinaSoglieInfinite(unisciTabelleProfondo(clonaTabelleConSoglie(TABELLE_PREDEFINITE), modifiche));
+  salvaTabelleStorage();
+  try{ renderCalendario(); if(el('vistaTabelle') && !el('vistaTabelle').hidden) renderTabelle(); }catch(e){}
+  mostraToast(`Tabelle aggiornate (versione ${j.versione})${j.nota ? ': ' + j.nota : ''}`, 'successo');
+  return true;
 }

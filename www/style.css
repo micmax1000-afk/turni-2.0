@@ -2014,3 +2014,11 @@ html[data-tema="scuro"] .netto-v3{color:#7FE0A6}
 .mese-ind-testa-v3>span:nth-child(4){text-align:right;min-width:58px}
 .mese-ind-testa-v3+.mese-riga-v3{border-top:0}
 .mese-sub-v3{line-height:1.4}
+
+/* v2.75 — versione delle tabelle e link al sito */
+.tabelle-versione-v3{margin:6px 0 0;font-size:.82rem;color:var(--testo-tenue);line-height:1.4}
+.tabelle-versione-v3 a,.link-tabelle-v3{color:#1D5FE0;font-weight:600;text-decoration:none;background:none;border:0;padding:0;font:inherit;font-weight:600;cursor:pointer}
+html[data-tema="scuro"] .tabelle-versione-v3 a,html[data-tema="scuro"] .link-tabelle-v3{color:#8FB0FF}
+.tabelle-hero-v17 .tabelle-versione-v3{color:rgba(255,255,255,.78)}
+.tabelle-hero-v17 .tabelle-versione-v3 b{color:#fff}
+.tabelle-hero-v17 .tabelle-versione-v3 a,.tabelle-hero-v17 .link-tabelle-v3{color:#B9CCFF!important;text-decoration:underline;text-underline-offset:2px}

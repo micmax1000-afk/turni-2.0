@@ -41,6 +41,7 @@ function turniDiProva(){
 const browser = await chromium.launch();
 async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true, scuro = false, nativo = false } = {}){
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome', colorScheme: scuro ? 'dark' : 'light' });
+  await ctx.route('https://micmax-apps.netlify.app/**', r => r.fulfill({ status: 404, body: '' }));
   const p = await ctx.newPage();
   const errori = [];
   p.on('pageerror', e => errori.push(e.message));
@@ -339,7 +340,7 @@ sezione('Modifica il giorno, Tabelle, avvisi');
   await p.click('#tabAltro'); await p.click('#settingsTabelle');
   await p.click('#toggleTabelleAvanzate');
   await p.evaluate(() => { const i = document.querySelector('input[data-t="buonoPastoValore"]'); i.value = '8'; i.dispatchEvent(new Event('change', { bubbles: true })); });
-  ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
+  ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').modifiche.buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -577,6 +578,34 @@ sezione('Report: lordo, trattenute e netto');
   ok('"Mostra anche le voci a zero" le fa comparire', await p.evaluate(() => [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].some(b => b.textContent.startsWith('0,00'))));
   await p.click('#btnGeneraCedolino');
   ok('"Vedi tutte le voci" apre il cedolino completo', await p.evaluate(() => !document.getElementById('contenitoreCedolino').hidden && /Nascondi/.test(document.getElementById('btnGeneraCedolino').textContent)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Tabelle: modifiche personali e aggiornamento dal sito');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  // Vecchio formato (copia completa con il buono pasto cambiato): diventa "solo le modifiche".
+  await p.evaluate(() => { const t = clonaTabelleConSoglie(TABELLE_PREDEFINITE); t.buonoPastoValore = 9; localStorage.setItem('simCedolino_tabelle_v1', JSON.stringify(t)); });
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  const mig = await p.evaluate(() => ({ salv: JSON.parse(localStorage.getItem('simCedolino_tabelle_v1')), bp: AppState.tabelle.buonoPastoValore }));
+  ok('tabelle salvate nel vecchio formato: restano solo le modifiche fatte a mano', mig.salv.formato === 2 && JSON.stringify(mig.salv.modifiche) === '{"buonoPastoValore":9}' && mig.bp === 9, JSON.stringify(mig.salv));
+  const agenteApp = await p.evaluate(() => AppState.tabelle.stipendiAnnuiAttuale['Agente']);
+  const nuovo = await p.evaluate(() => { const t = JSON.parse(JSON.stringify(TABELLE_PREDEFINITE)); t.stipendiAnnuiAttuale['Agente'] = 21000; t.buonoPastoValore = 8; return { formato: 1, versione: '2099.01', aggiornato: '2099-01-10', nota: 'Prova', tabelle: t }; });
+  await ctx.unroute('https://micmax-apps.netlify.app/**');
+  await ctx.route('https://micmax-apps.netlify.app/**', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(nuovo) }));
+  const agg = await p.evaluate(async () => ({ fatto: await aggiornaTabelleDalSito({ forza: true }), agente: AppState.tabelle.stipendiAnnuiAttuale['Agente'], bp: AppState.tabelle.buonoPastoValore, info: applicaTabelleSito() }));
+  ok('tabelle dal sito più nuove: i valori ufficiali si aggiornano', agg.fatto === true && agg.agente === 21000 && agenteApp !== 21000 && agg.info.versione === '2099.01', JSON.stringify(agg));
+  ok('…e le modifiche fatte a mano restano (buono pasto 9 €)', agg.bp === 9);
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('dopo la riapertura l\'app usa ancora le tabelle del sito', await p.evaluate(() => AppState.tabelle.stipendiAnnuiAttuale['Agente'] === 21000 && applicaTabelleSito().fonte === 'sito'));
+  const vecchia = await p.evaluate(async () => { localStorage.setItem('simCedolino_tabelleSitoControllo_v1', '0'); return aggiornaTabelleDalSito({ forza: true }); });
+  ok('stessa versione: non cambia niente', vecchia === false);
+  await ctx.unroute('https://micmax-apps.netlify.app/**');
+  await ctx.route('https://micmax-apps.netlify.app/**', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ formato: 1, versione: '2999.01', tabelle: { stipendiAnnuiAttuale: { Agente: 'tanti' } } }) }));
+  const rotto = await p.evaluate(async () => ({ r: await aggiornaTabelleDalSito({ forza: true }), agente: AppState.tabelle.stipendiAnnuiAttuale['Agente'] }));
+  ok('file del sito non valido: le tabelle restano quelle di prima', rotto.r === false && rotto.agente === 21000, JSON.stringify(rotto));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
