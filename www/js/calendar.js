@@ -1052,7 +1052,8 @@ function aggiornaVistaCalendario(){
   if(campo) campo.checked = attiva;
   if(attiva) renderAgenda();
 }
-function oreAgenda(n){ return String(Math.round(Number(n || 0) * 100) / 100).replace('.', ','); }
+// Ore e minuti (6:35), come nel riquadro del giorno: "6,58 h" si leggerebbe come 6 ore e 58 minuti.
+function oreAgenda(n){ return formatOreMinuti(n); }
 function meseBreveAgenda(d){ return d.toLocaleDateString('it-IT', { month: 'short' }).replace('.', ''); }
 function oreServizioGiorno(t){
   return t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? Number(classificaTurno(t).oreTotali || 0) : 0;
@@ -1064,7 +1065,7 @@ function intestazioneSettimanaAgenda(lun, questa){
   const periodo = questa ? 'Questa settimana'
     : lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${meseBreveAgenda(dom)}`
     : `${lun.getDate()} ${meseBreveAgenda(lun)} – ${dom.getDate()} ${meseBreveAgenda(dom)}`;
-  return `<div class="agenda-settimana"><span>${periodo}</span>${ore > 0 ? `<b>${oreAgenda(ore)} h di servizio</b>` : ''}</div>`;
+  return `<div class="agenda-settimana"><span>${periodo}</span>${ore > 0 ? `<b>${oreAgenda(ore)} ore di servizio</b>` : ''}</div>`;
 }
 function corpoGiornoAgenda(iso, t, nascoste){
   if(t && t.riposo) return '<span class="agenda-semplice">💤 Riposo</span>';
@@ -1091,7 +1092,7 @@ function corpoGiornoAgenda(iso, t, nascoste){
   return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">${svgIconaMomento(categoria)}`
     + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>`
     + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}</span>`
-    + `<span class="agenda-ore">${oreAgenda(oreServizioGiorno(t))} h</span></span>`;
+    + `<span class="agenda-ore">${oreAgenda(oreServizioGiorno(t))}</span></span>`;
 }
 function renderAgenda(){
   const host = el('agendaCalendario');
