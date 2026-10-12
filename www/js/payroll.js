@@ -120,6 +120,22 @@ function calcolaEffettoNettoStraordinario(anno, mese){
   return { ore, lordo, netto: round2(nettoCon - nettoSenza) };
 }
 
+// Netto delle accessorie (indennità e straordinario del mese): come per lo straordinario, il
+// cedolino si rifà con e senza le voci accessorie; la differenza dei due netti è quanto restano
+// in tasca, tassazione agevolata e scaglioni compresi. Le voci personalizzate restano invariate.
+function calcolaNettoAccessorie(anno, mese){
+  const comp = calcolaCompetenze(anno, mese);
+  const lordo = round2(Object.values(comp.accessorie).reduce((a, b) => a + b, 0));
+  if(lordo <= 0) return { lordo: 0, netto: 0 };
+  const senza = JSON.parse(JSON.stringify(comp));
+  Object.keys(senza.accessorie).forEach(k => { senza.accessorie[k] = 0; });
+  senza.totaleAccessorieFisse = 0;
+  senza.totaleAccessorie = round2(senza.totalePersonalizzate || 0);
+  senza.totaleLordo = round2(senza.totaleFisse + senza.totaleAccessorie);
+  const netto = round2(generaCedolino(anno, mese, comp).netto - generaCedolino(anno, mese, senza).netto);
+  return { lordo, netto };
+}
+
 function generaCedolino(anno, mese, compForzato){
   const comp = compForzato || calcolaCompetenze(anno, mese);
 

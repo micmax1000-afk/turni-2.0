@@ -2001,3 +2001,16 @@ html[data-tema="scuro"] .benvenuto-temi button.attivo{color:#8FB0FF;border-color
 .benvenuto-consiglio>span{font-size:1.2rem}
 .benvenuto .card-sequenza .stato-sequenza small{font-size:.84rem}
 .benvenuto-ok.da-fare b{color:var(--testo-tenue)}
+
+/* v2.74 — indennità con lordo e netto */
+.mese-ind-v3{grid-template-columns:24px 1fr auto auto!important}
+.mese-ind-v3>span:nth-child(2) small{grid-column:auto;display:block;font-size:.75rem;color:var(--testo-tenue)}
+.mese-ind-v3 .netto-v3{min-width:58px}
+.netto-v3{color:#1E7A46;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+html[data-tema="scuro"] .netto-v3{color:#7FE0A6}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .netto-v3{color:#7FE0A6}}
+.mese-ind-testa-v3{display:grid;grid-template-columns:24px 1fr auto auto;gap:3px 10px;padding:0 0 2px}
+.mese-ind-testa-v3>span:nth-child(3){text-align:right}
+.mese-ind-testa-v3>span:nth-child(4){text-align:right;min-width:58px}
+.mese-ind-testa-v3+.mese-riga-v3{border-top:0}
+.mese-sub-v3{line-height:1.4}
