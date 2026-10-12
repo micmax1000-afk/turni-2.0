@@ -1060,8 +1060,11 @@ function oreServizioGiorno(t){
 }
 function intestazioneSettimanaAgenda(lun, questa){
   const dom = new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + 6, 12);
-  let ore = 0;
-  for(let k = 0; k < 7; k++) ore += oreServizioGiorno(AppState.turni[dataISO(new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + k, 12))]);
+  // Si sommano i minuti di ogni giorno (come sono scritti sotto), non le ore con i decimali
+  // arrotondati: sei turni da 6:35 devono fare 39:30, non 39:29.
+  let minuti = 0;
+  for(let k = 0; k < 7; k++) minuti += Math.round(oreServizioGiorno(AppState.turni[dataISO(new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + k, 12))]) * 60);
+  const ore = minuti / 60;
   const periodo = questa ? 'Questa settimana'
     : lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${meseBreveAgenda(dom)}`
     : `${lun.getDate()} ${meseBreveAgenda(lun)} – ${dom.getDate()} ${meseBreveAgenda(dom)}`;

@@ -631,6 +631,12 @@ sezione('Agenda sotto il calendario');
   ok('Agenda: ore di servizio della settimana (30:00)', /Questa settimana/.test(a.settimana) && /30:00 ore di servizio/.test(a.settimana), a.settimana);
   const om = await p.evaluate(() => { AppState.turni['2026-10-14'] = { data: '2026-10-14', oraInizio: '12:40', oraFine: '19:15', modelloId: 'pomeriggio' }; renderAgenda(); return document.querySelector('[data-agenda-giorno="2026-10-14"] .agenda-ore').textContent; });
   ok('Agenda: ore in ore e minuti (12:40–19:15 = 6:35, non 6,58)', om === '6:35', om);
+  const tot = await p.evaluate(() => {
+    ['12','13','14','16','17','18'].forEach(g => { const iso = `2026-10-${g}`; AppState.turni[iso] = g === '16' ? { data: iso, oraInizio: '18:40', oraFine: '00:15', modelloId: 'sera' } : { data: iso, oraInizio: '12:40', oraFine: '19:15', modelloId: 'pomeriggio' }; });
+    AppState.turni['2026-10-15'] = { data: '2026-10-15', riposo: true };
+    renderAgenda(); return document.querySelectorAll('.agenda-settimana')[1].textContent;
+  });
+  ok('Agenda: il totale della settimana è la somma dei giorni (5 × 6:35 + 5:35 = 38:30)', /38:30 ore di servizio/.test(tot), tot);
   ok('Agenda: eventi sotto il giorno, "Prossimi 7 giorni" nascosto', /10:00/.test(a.evento) && /Visita medica/.test(a.evento) && a.prossimi === 'none', JSON.stringify(a));
   await p.click('#btnAgendaAltri');
   ok('"Mostra altri" aggiunge altri 14 giorni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length === 28));
