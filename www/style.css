@@ -2022,3 +2022,47 @@ html[data-tema="scuro"] .tabelle-versione-v3 a,html[data-tema="scuro"] .link-tab
 .tabelle-hero-v17 .tabelle-versione-v3{color:rgba(255,255,255,.78)}
 .tabelle-hero-v17 .tabelle-versione-v3 b{color:#fff}
 .tabelle-hero-v17 .tabelle-versione-v3 a,.tabelle-hero-v17 .link-tabelle-v3{color:#B9CCFF!important;text-decoration:underline;text-underline-offset:2px}
+
+/* ── v2.76 Vista Agenda ── */
+.vista-calendario-switch{display:flex;gap:4px;background:var(--sfondo-secondario,#ECEFEA);border-radius:12px;padding:3px;margin:6px 0 10px}
+.vista-calendario-switch button{flex:1;border:0;background:transparent;border-radius:9px;padding:8px 0;font:inherit;font-weight:700;font-size:.9rem;color:var(--testo-tenue);cursor:pointer}
+.vista-calendario-switch button.attivo{background:var(--carta,#fff);color:var(--testo);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.scheda-calendario-v2.in-agenda > .calendario-giorni-settimana,
+.scheda-calendario-v2.in-agenda > .calendario-griglia,
+.scheda-calendario-v2.in-agenda > .riepilogo-giorno-selezionato-box-v2,
+.scheda-calendario-v2.in-agenda > #btnCancellaTurniMese,
+.scheda-calendario-v2.in-agenda > #prossimiEventiV2{display:none!important}
+.scheda-calendario-v2.in-agenda .calendario-header-v2 .btn-freccia{visibility:hidden}
+.scheda-calendario-v2.in-agenda #etichettaMese{pointer-events:none}
+.agenda-settimana{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 2px 4px;font-size:.74rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--testo-tenue)}
+.agenda-settimana:first-child{margin-top:4px}
+.agenda-settimana b{font-weight:700;letter-spacing:0;text-transform:none;font-size:.8rem}
+.agenda-giorno{display:grid;grid-template-columns:46px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--bordo);cursor:pointer}
+.agenda-data{text-align:center;line-height:1.05;padding-top:2px}
+.agenda-data small{display:block;font-size:.68rem;font-weight:800;text-transform:uppercase;color:var(--testo-tenue)}
+.agenda-data b{font-size:1.35rem;font-variant-numeric:tabular-nums;color:var(--testo)}
+.agenda-giorno.festivo .agenda-data small,.agenda-giorno.festivo .agenda-data b{color:#C0392B}
+.agenda-giorno.oggi .agenda-data b{background:#3A55B4;color:#fff;border-radius:50%;display:inline-grid;place-items:center;width:34px;height:34px;font-size:1.1rem;margin-top:2px}
+.agenda-righe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.agenda-quando{font-size:.7rem;font-weight:800;color:#3A55B4;text-transform:uppercase;letter-spacing:.04em}
+.agenda-corpo{display:block;width:100%;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.agenda-turno{display:flex;align-items:center;gap:10px;border-radius:12px;padding:8px 10px;border-left:5px solid var(--colore-turno);background:color-mix(in srgb,var(--colore-turno) 16%,var(--carta,#fff))}
+.agenda-turno > svg{width:30px;height:30px;flex:none;border-radius:8px}
+.agenda-turno-testo{flex:1;min-width:0}
+.agenda-turno-testo b{display:block;font-size:.95rem;color:var(--testo)}
+.agenda-turno-testo small{font-size:.82rem;color:var(--testo-tenue);font-variant-numeric:tabular-nums}
+.agenda-ore{font-weight:800;font-size:.85rem;font-variant-numeric:tabular-nums;color:var(--testo-tenue);white-space:nowrap}
+.agenda-indennita{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.agenda-indennita span{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:700;border-radius:20px;padding:2px 7px;background:var(--carta,#fff);color:var(--testo)}
+.agenda-indennita svg{width:13px;height:13px}
+.agenda-semplice{display:block;font-size:.9rem;color:var(--testo-tenue);padding:6px 2px}
+.agenda-libero{font-style:italic;opacity:.75}
+.agenda-assenza{display:flex;align-items:center;gap:8px;border-radius:12px;padding:8px 10px;background:color-mix(in srgb,#E08A00 14%,var(--carta,#fff));font-weight:700;font-size:.92rem;color:var(--testo)}
+.agenda-evento{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:2px;font:inherit;font-size:.88rem;color:var(--testo);text-align:left;cursor:pointer}
+.agenda-evento i{width:9px;height:9px;border-radius:50%;flex:none}
+.agenda-evento em{font-style:normal;color:var(--testo-tenue);font-variant-numeric:tabular-nums;white-space:nowrap}
+.agenda-evento span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agenda-altri{display:block;width:100%;margin-top:12px}
+html[data-tema=scuro] .agenda-giorno.oggi .agenda-data b{background:#8FA6FF;color:#111}
+html[data-tema=scuro] .agenda-quando{color:#8FA6FF}
+html[data-tema=scuro] .agenda-giorno.festivo .agenda-data small,html[data-tema=scuro] .agenda-giorno.festivo .agenda-data b{color:#FF8A80}

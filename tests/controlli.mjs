@@ -610,6 +610,39 @@ sezione('Tabelle: modifiche personali e aggiornamento dal sito');
   await ctx.close();
 }
 
+sezione('Vista Agenda');
+{
+  const { p, errori } = await apri({ turni: turniDiProva(), eventi: { '2026-10-12': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }] } });
+  ok('all\'inizio il calendario parte dalla vista Mese', await p.evaluate(() => el('agendaCalendario').hidden && !document.querySelector('.scheda-calendario-v2').classList.contains('in-agenda')));
+  await p.click('#btnVistaAgenda');
+  const a = await p.evaluate(() => {
+    const righe = [...document.querySelectorAll('.agenda-giorno')];
+    return { n: righe.length, primo: righe[0].dataset.agendaGiorno, oggi: righe[0].classList.contains('oggi'), testoPrimo: righe[0].textContent,
+      griglia: getComputedStyle(el('calendarioGriglia')).display, settimana: document.querySelector('.agenda-settimana').textContent,
+      riposo: document.querySelector('[data-agenda-giorno="2026-10-10"]').textContent, evento: document.querySelector('[data-agenda-giorno="2026-10-12"] .agenda-evento')?.textContent || '',
+      prossimi: getComputedStyle(el('prossimiEventiV2')).display };
+  });
+  ok('Agenda: 30 giorni a partire da oggi, griglia nascosta', a.n === 30 && a.primo === '2026-10-09' && a.oggi && a.griglia === 'none', JSON.stringify(a));
+  ok('Agenda: turno con nome e orario, riposo e "Oggi"', /Oggi/.test(a.testoPrimo) && /Notte/.test(a.testoPrimo) && /01:00 – 07:00/.test(a.testoPrimo) && /Riposo/.test(a.riposo), a.testoPrimo);
+  ok('Agenda: ore di servizio della settimana (30 h)', /Questa settimana/.test(a.settimana) && /30 h di servizio/.test(a.settimana), a.settimana);
+  ok('Agenda: eventi sotto il giorno, "Prossimi 7 giorni" nascosto', /10:00/.test(a.evento) && /Visita medica/.test(a.evento) && a.prossimi === 'none', JSON.stringify(a));
+  await p.click('#btnAgendaAltri');
+  ok('"Mostra altri" aggiunge altri 30 giorni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length === 60));
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('l\'app ricorda la vista Agenda alla riapertura', await p.evaluate(() => !el('agendaCalendario').hidden && document.querySelectorAll('.agenda-giorno').length === 30));
+  await p.click('[data-agenda-giorno="2026-10-13"] .agenda-corpo');
+  const g = await p.evaluate(() => ({ t: el('titoloModaleTurno').textContent, iso: giornoSelezionato }));
+  ok('tocco su un giorno: si apre la modifica di quel giorno', g.iso === '2026-10-13' && /13/.test(g.t), JSON.stringify(g));
+  await p.click('#btnChiudiTurno');
+  await p.click('[data-agenda-giorno="2026-10-12"] .agenda-evento');
+  ok('tocco su un evento: si apre la modifica dell\'evento', await p.evaluate(() => !el('overlayEvento').hidden && el('campoEventoTitolo').value === 'Visita medica'));
+  await p.evaluate(() => { document.querySelectorAll('.overlay').forEach(o => { o.hidden = true; }); });
+  await p.click('#btnVistaMese');
+  ok('di nuovo Mese: torna la griglia', await p.evaluate(() => el('agendaCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none'));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await p.context().close();
+}
+
 await browser.close();
 server.close();
 console.log(`\n${superati} controlli superati, ${falliti} falliti`);

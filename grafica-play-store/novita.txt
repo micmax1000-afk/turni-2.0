@@ -1,10 +1,8 @@
 <it-IT>
+• Nuova vista Agenda: i prossimi giorni in elenco con turni, ore, indennità ed eventi
+• Indennità del mese con lordo e netto
+• Tabelle ufficiali aggiornate dal sito, senza perdere le tue modifiche
 • Report più chiaro: lordo, trattenute e netto ben distinti
 • Nuova apertura guidata in 4 passi
-• Tocca un giorno per vederlo, due volte per cambiare turno
-• Temi Chiaro, Grigio, Nero e Luce, pulsante 🌙 nel calendario
-• Promemoria del turno e widget (anche ridotto)
-• Esporta i turni in Google Calendar
-• Turni di base più sicuri: si modificano ma non si eliminano
-• Colori e impostazioni nel backup gratuito
+• Promemoria del turno, widget ed esporta in Google Calendar
 </it-IT>

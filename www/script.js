@@ -663,6 +663,9 @@ function inizializza(){
 
   on('filtroCalendarioSelect','change', e => impostaFiltroCalendario(e.target.value));
   on('btnModificaGiornoSelezionatoV2','click', () => { if(giornoSelezionato) apriModaleTurno(giornoSelezionato); });
+  on('btnVistaMese','click', () => impostaVistaCalendario('mese'));
+  on('btnVistaAgenda','click', () => impostaVistaCalendario('agenda'));
+  on('agendaCalendario','click', clicAgenda);
 
   on('settingsSequenza','click', () => mostraScheda('sequenza'));
   on('btnChiudiSequenza','click', () => mostraScheda('turni'));

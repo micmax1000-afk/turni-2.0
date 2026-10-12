@@ -790,6 +790,7 @@ function renderCalendario(){
   if(typeof aggiornaRiepilogoVisualeMese === 'function') aggiornaRiepilogoVisualeMese();
   if(typeof aggiornaRiepilogoGiornoSelezionatoV2 === 'function') aggiornaRiepilogoGiornoSelezionatoV2();
   if(typeof renderProssimiEventiV2 === 'function') renderProssimiEventiV2();
+  if(typeof aggiornaVistaCalendario === 'function') aggiornaVistaCalendario();
   if(typeof renderReportHero === 'function') renderReportHero();
 }
 
@@ -1022,3 +1023,117 @@ else inizializzaFiltriCalendario();
     total.textContent = value;
   };
 })();
+
+// ── Vista Agenda: i prossimi giorni in elenco, in alternativa alla griglia del mese ──
+// Mostra solo dati già salvati (turni, assenze, indennità, eventi): non calcola niente di nuovo.
+// L'app ricorda l'ultima vista scelta; all'inizio parte da "Mese".
+const CHIAVE_VISTA_CALENDARIO = 'simCedolino_vistaCalendario_v1';
+const GIORNI_AGENDA_PASSO = 30;
+const GIORNI_SETTIMANA_BREVI = ['dom','lun','mar','mer','gio','ven','sab'];
+let giorniAgenda = GIORNI_AGENDA_PASSO;
+
+function vistaAgendaAttiva(){
+  try{ return TurniPSStorage.getItem(CHIAVE_VISTA_CALENDARIO) === 'agenda'; }catch(e){ return false; }
+}
+function impostaVistaCalendario(vista){
+  try{ TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, vista === 'agenda' ? 'agenda' : 'mese'); }catch(e){}
+  giorniAgenda = GIORNI_AGENDA_PASSO;
+  if(vista !== 'agenda') el('etichettaMese').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
+  aggiornaVistaCalendario();
+  window.scrollTo(0, 0);
+}
+function aggiornaVistaCalendario(){
+  const sez = document.querySelector('.scheda-calendario-v2');
+  const host = el('agendaCalendario');
+  if(!sez || !host) return;
+  const agenda = vistaAgendaAttiva();
+  sez.classList.toggle('in-agenda', agenda);
+  host.hidden = !agenda;
+  const bM = el('btnVistaMese'), bA = el('btnVistaAgenda');
+  if(bM){ bM.classList.toggle('attivo', !agenda); bM.setAttribute('aria-selected', String(!agenda)); }
+  if(bA){ bA.classList.toggle('attivo', agenda); bA.setAttribute('aria-selected', String(agenda)); }
+  if(agenda) renderAgenda();
+}
+function oreAgenda(n){ return String(Math.round(Number(n || 0) * 100) / 100).replace('.', ','); }
+function meseBreveAgenda(d){ return d.toLocaleDateString('it-IT', { month: 'short' }).replace('.', ''); }
+function oreServizioGiorno(t){
+  return t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? Number(classificaTurno(t).oreTotali || 0) : 0;
+}
+function intestazioneSettimanaAgenda(lun, questa){
+  const dom = new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + 6, 12);
+  let ore = 0;
+  for(let k = 0; k < 7; k++) ore += oreServizioGiorno(AppState.turni[dataISO(new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + k, 12))]);
+  const periodo = questa ? 'Questa settimana'
+    : lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${meseBreveAgenda(dom)}`
+    : `${lun.getDate()} ${meseBreveAgenda(lun)} – ${dom.getDate()} ${meseBreveAgenda(dom)}`;
+  return `<div class="agenda-settimana"><span>${periodo}</span>${ore > 0 ? `<b>${oreAgenda(ore)} h di servizio</b>` : ''}</div>`;
+}
+function corpoGiornoAgenda(iso, t, nascoste){
+  if(t && t.riposo) return '<span class="agenda-semplice">💤 Riposo</span>';
+  if(t && t.assenzaTipo){
+    const voce = AppState.assenze.find(a => a.id === t.assenzaTipo);
+    const nome = voce ? voce.nome : 'Assenza';
+    return `<span class="agenda-assenza"><span aria-hidden="true">${iconaAssenza(nome)}</span>${escapeHtml(nome)}</span>`;
+  }
+  if(!(t && t.oraInizio && t.oraFine)) return '<span class="agenda-semplice agenda-libero">Nessun turno</span>';
+  const categoria = categoriaTurno(t.oraInizio, t.oraFine, iso);
+  const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+  // Come nel calendario: Ufficio, Aggiornamento e Tiro hanno un colore proprio anche se l'orario è di mattina.
+  const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
+  const colore = (modello && modello.colore) || coloreCategoria(categoriaColore);
+  const nome = modello ? modello.nome : (INIZIALE_CATEGORIA[categoria] || 'Turno');
+  const presenti = {
+    straordinario: !!((t.straordinarioPrimaInizio && t.straordinarioPrimaFine) || (t.straordinarioDopoInizio && t.straordinarioDopoFine) || (t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine)),
+    missione: !!t.missione, servizioEsterno: !!t.servizioEsterno, ordinePubblico: !!t.ordinePubblico, reperibilita: !!t.reperibilita,
+    controlloTerritorio: !!t.controlloTerritorio, buonoPasto: !!t.buonoPasto, cambioTurno: !!t.cambioTurno,
+    compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
+  };
+  const chip = ELENCO_INDENNITA.filter(x => presenti[x.chiave] && !nascoste.includes(x.chiave))
+    .map(x => `<span>${iconaIndennita(x.chiave)}${escapeHtml(x.nome)}</span>`).join('');
+  return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">${svgIconaMomento(categoria)}`
+    + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>`
+    + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}</span>`
+    + `<span class="agenda-ore">${oreAgenda(oreServizioGiorno(t))} h</span></span>`;
+}
+function renderAgenda(){
+  const host = el('agendaCalendario');
+  if(!host) return;
+  const oggi = new Date(); oggi.setHours(12, 0, 0, 0);
+  el('etichettaMese').textContent = `${NOMI_MESI[oggi.getMonth()]} ${oggi.getFullYear()}`;
+  const nascoste = indennitaNascoste();
+  let html = '', lunedi = null;
+  for(let i = 0; i < giorniAgenda; i++){
+    const d = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() + i, 12);
+    const iso = dataISO(d);
+    const lun = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7, 12);
+    if(dataISO(lun) !== lunedi){ lunedi = dataISO(lun); html += intestazioneSettimanaAgenda(lun, i === 0); }
+    const t = AppState.turni[iso];
+    const eventi = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : [])
+      .slice().sort((a, b) => (a.ev.tuttoIlGiorno ? '' : a.ev.oraInizio || '').localeCompare(b.ev.tuttoIlGiorno ? '' : b.ev.oraInizio || ''));
+    const righeEventi = eventi.map(({ ev, isoOrigine }) =>
+      `<button type="button" class="agenda-evento" data-evento-giorno="${iso}" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">`
+      + `<i style="background:${coloreEvento(ev)}" aria-hidden="true"></i><em>${ev.tuttoIlGiorno ? 'Tutto il giorno' : escapeHtml(ev.oraInizio || '')}</em>`
+      + `<span>${escapeHtml(ev.titolo || 'Senza titolo')}</span></button>`).join('');
+    const quando = i === 0 ? '<span class="agenda-quando">Oggi</span>' : i === 1 ? '<span class="agenda-quando">Domani</span>' : '';
+    const classi = 'agenda-giorno' + (i === 0 ? ' oggi' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
+    html += `<div class="${classi}" data-agenda-giorno="${iso}">`
+      + `<div class="agenda-data" aria-hidden="true"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b></div>`
+      + `<div class="agenda-righe">${quando}<button type="button" class="agenda-corpo" aria-label="${d.getDate()} ${NOMI_MESI[d.getMonth()]}: apri il giorno">${corpoGiornoAgenda(iso, t, nascoste)}</button>${righeEventi}</div></div>`;
+  }
+  html += `<button type="button" class="btn-secondario agenda-altri" id="btnAgendaAltri">Mostra altri ${GIORNI_AGENDA_PASSO} giorni</button>`;
+  host.innerHTML = html;
+}
+function clicAgenda(e){
+  const evento = e.target.closest('[data-evento-id]');
+  if(evento){ apriEventoDaProssimi(evento); return; }
+  if(e.target.closest('#btnAgendaAltri')){ giorniAgenda += GIORNI_AGENDA_PASSO; renderAgenda(); return; }
+  const riga = e.target.closest('[data-agenda-giorno]');
+  if(!riga) return;
+  const iso = riga.dataset.agendaGiorno;
+  const d = dataDaIso(iso);
+  meseCorrente = d.getMonth();
+  annoCorrente = d.getFullYear();
+  giornoSelezionato = iso;
+  renderCalendario();
+  apriModaleTurno(iso);
+}
