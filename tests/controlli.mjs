@@ -655,6 +655,23 @@ sezione('Agenda sotto il calendario');
   await p.context().close();
 }
 
+sezione('Velocità del calcolo delle ore');
+{
+  const { p, errori } = await apri({ turni: turniDiProva() });
+  // Valori presi dal vecchio conteggio minuto per minuto: il nuovo (a blocchi di un'ora) deve dare gli stessi.
+  const attesi = [["2026-10-24","22:00","06:00",{"ordinarie":0,"notturne":2,"festive":0,"domenicali":0,"notturneFestive":7,"serali":0},"notte"],["2026-03-28","23:30","07:15",{"ordinarie":0,"notturne":0.5,"festive":0,"domenicali":1.25,"notturneFestive":5,"serali":0},"notte"],["2026-04-05","18:40","00:15",{"ordinarie":0,"notturne":0,"festive":0,"domenicali":3.33,"notturneFestive":2.25,"serali":3.33},"sera"],["2026-12-24","12:40","19:15",{"ordinarie":6.58,"notturne":0,"festive":0,"domenicali":0,"notturneFestive":0,"serali":1.25},"pomeriggio"]];
+  const r = await p.evaluate(attesi => attesi.map(([g, a, b, cat, momento]) => {
+    const [hs, ms] = a.split(':').map(Number), [he, me] = b.split(':').map(Number);
+    const i = new Date(g + 'T00:00:00'); i.setHours(hs, ms, 0, 0); const f = new Date(g + 'T00:00:00'); f.setHours(he, me, 0, 0); if(f <= i) f.setDate(f.getDate() + 1);
+    return JSON.stringify(classificaFinestra(i, f)) === JSON.stringify(cat) && categoriaTurno(a, b, g) === momento;
+  }), attesi);
+  ok('ore notturne, festive e serali uguali a prima (anche col cambio dell\'ora e a Pasqua)', r.every(Boolean), JSON.stringify(r));
+  const ms = await p.evaluate(() => { const s = performance.now(); for(let i = 0; i < 1000; i++) classificaTurno({ data: '2026-10-11', oraInizio: '18:40', oraFine: '00:15' }); return performance.now() - s; });
+  ok('1000 turni calcolati in meno di 300 ms', ms < 300, Math.round(ms) + ' ms');
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await p.context().close();
+}
+
 await browser.close();
 server.close();
 console.log(`\n${superati} controlli superati, ${falliti} falliti`);

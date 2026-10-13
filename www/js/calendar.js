@@ -45,14 +45,18 @@ function categoriaTurno(oraInizio, oraFine, dataStr){
   if(fine <= inizio) fine.setDate(fine.getDate() + 1);
 
   const minuti = { mattina:0, pomeriggio:0, sera:0, notte:0 };
-  let cursore = new Date(inizio);
-  while(cursore < fine){
+  // A blocchi di un'ora come in classificaFinestra: stesso risultato, molti meno passaggi.
+  let t = inizio.getTime();
+  const fineMs = fine.getTime();
+  while(t < fineMs){
+    const cursore = new Date(t);
+    const passo = Math.max(1, Math.min(60 - cursore.getMinutes(), Math.ceil((fineMs - t) / 60000)));
     const h = cursore.getHours();
-    if(h >= 6 && h < 12) minuti.mattina++;
-    else if(h >= 12 && h < 18) minuti.pomeriggio++;
-    else if(h >= 18) minuti.sera++;
-    else minuti.notte++;
-    cursore = new Date(cursore.getTime() + 60000);
+    if(h >= 6 && h < 12) minuti.mattina += passo;
+    else if(h >= 12 && h < 18) minuti.pomeriggio += passo;
+    else if(h >= 18) minuti.sera += passo;
+    else minuti.notte += passo;
+    t += passo * 60000;
   }
   return Object.entries(minuti).sort((a, b) => b[1] - a[1])[0][0];
 }
@@ -77,20 +81,26 @@ function eFestivoOdDomenica(dataStr){ return eDomenica(dataStr) || eFestivoFisso
 function classificaFinestra(inizio, fine){
   const cat = { ordinarie:0, notturne:0, festive:0, domenicali:0, notturneFestive:0, serali:0 };
   if(!(fine > inizio)) return cat;
-  let cursore = new Date(inizio);
-  while(cursore < fine){
+  // Si contano i minuti a blocchi: dentro la stessa ora tutti i minuti hanno la stessa fascia
+  // (stessa ora, stesso giorno), quindi il risultato è identico al conteggio minuto per minuto,
+  // ma con una decina di passaggi invece di centinaia (prima rallentava Report e Turni).
+  let t = new Date(inizio).getTime();
+  const fineMs = fine.getTime();
+  while(t < fineMs){
+    const cursore = new Date(t);
+    const passo = Math.max(1, Math.min(60 - cursore.getMinutes(), Math.ceil((fineMs - t) / 60000)));
     const ora = cursore.getHours();
     const notte = ora >= 22 || ora < 6;
     const iso = dataISO(cursore);
     const domenica = eDomenica(iso);
     const festivo = !domenica && eFestivoFisso(iso);
-    if(notte && (domenica || festivo)) cat.notturneFestive++;
-    else if(domenica) cat.domenicali++;
-    else if(festivo) cat.festive++;
-    else if(notte) cat.notturne++;
-    else cat.ordinarie++;
-    if(ora >= 18 && ora < 22) cat.serali++; // fascia serale, tracciata a parte per il controllo del territorio
-    cursore = new Date(cursore.getTime() + 60000); // passo di 1 minuto
+    if(notte && (domenica || festivo)) cat.notturneFestive += passo;
+    else if(domenica) cat.domenicali += passo;
+    else if(festivo) cat.festive += passo;
+    else if(notte) cat.notturne += passo;
+    else cat.ordinarie += passo;
+    if(ora >= 18 && ora < 22) cat.serali += passo; // fascia serale, tracciata a parte per il controllo del territorio
+    t += passo * 60000;
   }
   for(const k in cat) cat[k] = round2(cat[k] / 60); // minuti → ore
   return cat;
