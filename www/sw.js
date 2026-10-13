@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V195 (v2.78.0 — Report e Turni più veloci) */
+/* Turni & Accessorio PS — Service Worker V196 (v2.79.0 — Assenze nella barra, saldi ad anello, giorni del mese vicino) */
 'use strict';
-const CACHE='turni-ps-v195';
+const CACHE='turni-ps-v196';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

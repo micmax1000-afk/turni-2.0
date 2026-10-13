@@ -417,7 +417,7 @@ function impostaFiltroCalendario(filtro){
   const select = el('filtroCalendarioSelect');
   if(select) select.value = filtroCalendario;
   aggiornaFiltriCalendario();
-  document.querySelectorAll('#calendarioGriglia .giorno-cella:not(.vuota)').forEach(cella => {
+  document.querySelectorAll('#calendarioGriglia .giorno-cella:not(.vuota):not(.fuori-mese)').forEach(cella => {
     const tipo = cella.dataset.filtro || 'vuoto';
     const visibile = filtroCalendario === 'tutti' || tipo === filtroCalendario || (filtroCalendario === 'turni' && tipo === 'extra');
     cella.classList.toggle('filtro-nascosto', !visibile);
@@ -547,15 +547,10 @@ function renderCalendario(){
       : dataISO(new Date(annoCorrente, meseCorrente, 1));
   }
 
-  for(let i = 0; i < offset; i++){
-    const vuota = document.createElement('div');
-    vuota.className = 'giorno-cella vuota';
-    vuota.setAttribute('aria-hidden','true');
-    griglia.appendChild(vuota);
-  }
-
-  for(let g = 1; g <= giorniNelMese; g++){
-    const d = new Date(annoCorrente, meseCorrente, g);
+  // Costruisce la casella di un giorno. Usata per i giorni del mese e, sbiaditi e non toccabili,
+  // per quelli del mese prima e dopo che riempiono la prima e l'ultima settimana.
+  const costruisciCella = (d) => {
+    const g = d.getDate(), meseCella = d.getMonth(), annoCella = d.getFullYear();
     const iso = dataISO(d);
     const t = AppState.turni[iso];
     const sabato = d.getDay() === 6;
@@ -725,8 +720,8 @@ function renderCalendario(){
     cella.className = classi;
     cella.dataset.data = iso;
     cella.dataset.filtro = categoriaFiltroCalendario(t, categoria);
-    cella.setAttribute('aria-label', `${g} ${NOMI_MESI[meseCorrente]} ${annoCorrente}: ${nomeCategoria}${orario ? ', ' + t.oraInizio + '–' + t.oraFine : ''}${haStraordinario ? ', straordinario' : ''}${haMissione ? ', missione' : ''}${haAssenza ? ', assenza' : ''}`);
-    cella.title = `${g} ${NOMI_MESI[meseCorrente]} — ${nomeCategoria}${haStraordinario ? ' · Straordinario' : ''}${haMissione ? ' · Missione' : ''}`;
+    cella.setAttribute('aria-label', `${g} ${NOMI_MESI[meseCella]} ${annoCella}: ${nomeCategoria}${orario ? ', ' + t.oraInizio + '–' + t.oraFine : ''}${haStraordinario ? ', straordinario' : ''}${haMissione ? ', missione' : ''}${haAssenza ? ', assenza' : ''}`);
+    cella.title = `${g} ${NOMI_MESI[meseCella]} — ${nomeCategoria}${haStraordinario ? ' · Straordinario' : ''}${haMissione ? ' · Missione' : ''}`;
 
     // Eventi del giorno: il titolo del primo in una striscia in fondo alla casella, "+N" se sono di più.
     const eventiCella = typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : (AppState.eventiGiorno[iso] || []).map(ev => ({ ev }));
@@ -760,8 +755,7 @@ function renderCalendario(){
         ${rigaEvento}
       `;
       cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
-      griglia.appendChild(cella);
-      continue;
+      return cella;
     }
 
     cella.innerHTML = `
@@ -787,8 +781,27 @@ function renderCalendario(){
     }
 
     cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
-    griglia.appendChild(cella);
-  }
+    return cella;
+  };
+
+  // Giorni del mese prima e del mese dopo: si vede come continua la turnazione, ma sono solo da guardare.
+  const cellaFuoriMese = (d) => {
+    const cella = costruisciCella(d);
+    const copia = cella.cloneNode(true); // la copia non porta con sé il tocco: non si possono aprire
+    copia.classList.add('fuori-mese');
+    copia.classList.remove('oggi', 'selezionata');
+    delete copia.dataset.data;
+    delete copia.dataset.filtro;
+    copia.removeAttribute('title');
+    copia.setAttribute('aria-hidden', 'true');
+    copia.tabIndex = -1;
+    if(copia.tagName === 'BUTTON') copia.disabled = true;
+    return copia;
+  };
+  for(let i = offset; i > 0; i--) griglia.appendChild(cellaFuoriMese(new Date(annoCorrente, meseCorrente, 1 - i)));
+  for(let g = 1; g <= giorniNelMese; g++) griglia.appendChild(costruisciCella(new Date(annoCorrente, meseCorrente, g)));
+  const finali = (7 - (offset + giorniNelMese) % 7) % 7;
+  for(let i = 1; i <= finali; i++) griglia.appendChild(cellaFuoriMese(new Date(annoCorrente, meseCorrente, giorniNelMese + i)));
 
   aggiornaFiltriCalendario();
   impostaFiltroCalendario(filtroCalendario);

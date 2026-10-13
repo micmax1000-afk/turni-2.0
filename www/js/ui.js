@@ -107,15 +107,15 @@ function mostraScheda(nome){
   // resta "Altro" anche quando si sta guardando una di queste due, non essendoci un tasto proprio.
   // Gli altri alias mappano i vecchi nomi di scheda (ancora richiamati altrove nel codice) ai
   // nuovi 4 gruppi, senza dover cambiare ogni singola chiamata a mostraScheda(...).
-  const tabAttivoPerNome = { anagrafica: 'altro', tabelle: 'altro', sequenza: 'turni', cedolino: 'report', statistiche: 'report', impostazioni: 'altro', assenze: 'altro' };
+  const tabAttivoPerNome = { anagrafica: 'altro', tabelle: 'altro', sequenza: 'turni', cedolino: 'report', statistiche: 'report', impostazioni: 'altro' };
   const tabAttivo = tabAttivoPerNome[nome] || nome;
   const vistaDaMostrare = gruppi[nome] ? nome : tabAttivo;
   const tuttiIDiv = ['vistaTurni', 'vistaStatistiche', 'vistaCedolino', 'vistaAssenze', 'vistaImpostazioni', 'vistaAnagrafica', 'vistaTabelle', 'vistaGestioneAssenze', 'vistaSequenza'];
   const daMostrare = gruppi[vistaDaMostrare] || [];
   tuttiIDiv.forEach(id => { const n = el(id); if(n) n.hidden = !daMostrare.includes(id); });
-  const tabId = { calendario: 'tabCalendario', report: 'tabReport', turni: 'tabTurni', altro: 'tabAltro' };
+  const tabId = { calendario: 'tabCalendario', report: 'tabReport', assenze: 'tabAssenze', turni: 'tabTurni', altro: 'tabAltro' };
   Object.keys(tabId).forEach(k => { const n = el(tabId[k]); if(n) n.classList.toggle('attiva', k === tabAttivo); });
-  if(nome === 'assenze' || nome === 'turni') renderAssenze();
+  if(nome === 'assenze') renderAssenze();
   if(nome === 'tabelle'){ renderTabelle(); const st = el('statoSalvataggioTabelle'); if(st) st.textContent = 'Le modifiche si salvano da sole.'; }
   if(nome === 'anagrafica') popolaFormAnagrafica();
   if(nome === 'sequenza') renderSequenza();

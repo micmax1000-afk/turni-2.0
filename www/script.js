@@ -609,7 +609,7 @@ function inizializza(){
     if(p && p.hidden) apriPannelloColori();
     else p?.scrollIntoView({behavior:'smooth',block:'start'});
   });
-  on('btnApriAssenzeV64','click', () => mostraScheda('assenze'));
+  on('tabAssenze','click', () => mostraScheda('assenze'));
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
   on('settingsDrive','click', () => mostraImpostazioniBackup('sezioneBackupDrive'));
   on('btnChiudiSettingsBackup','click', () => { const p=el('impostazioniBackupPanel'); if(p) p.hidden = true; });
@@ -668,7 +668,6 @@ function inizializza(){
 
   on('settingsSequenza','click', () => mostraScheda('sequenza'));
   on('btnChiudiSequenza','click', () => mostraScheda('turni'));
-  on('btnChiudiAssenze','click', () => mostraScheda('altro'));
   const listaPatternSempliceHost = el('listaPatternSempliceV2');
   if(listaPatternSempliceHost) listaPatternSempliceHost.addEventListener('click', (e) => {
     if(e.target.closest('#btnNuovoPatternV2')){ nuovoPatternV2(); return; }

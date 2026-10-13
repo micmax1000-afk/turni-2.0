@@ -152,12 +152,12 @@ function renderDashboardAssenze(){
   if(!box) return;
   const voce = nome => AppState.assenze.find(a => a.nome === nome);
   const resto = nome => { const v = voce(nome); return v ? saldoAssenza(v).rimangono : 0; };
-  const tiles = [
-    [numeroIt(resto('Congedo ordinario')), 'giorni di congedo'],
-    [`${numeroIt(resto('Permesso breve'))} h`, 'permesso breve'],
-    [numeroIt(resto('Recupero riposo') + resto('Recupero festivo')), 'recuperi']
-  ];
-  box.innerHTML = tiles.map(([v, t]) => `<div class="assenza-riepilogo"><b>${v}</b><small>${t}</small></div>`).join('');
+  const congedo = resto('Congedo ordinario');
+  const recuperi = resto('Recupero riposo') + resto('Recupero festivo');
+  box.innerHTML = `<small class="saldi-hero-anno">Ti restano nel ${annoCorrente}</small>`
+    + `<b class="saldi-hero-numero">${numeroIt(congedo)} ${congedo === 1 ? 'giorno' : 'giorni'}</b>`
+    + `<div class="saldi-hero-voci"><span>🌴 di congedo ordinario</span><span>⏱️ ${numeroIt(resto('Permesso breve'))} h di permesso breve</span>`
+    + `<span>🔄 ${numeroIt(recuperi)} ${recuperi === 1 ? 'recupero' : 'recuperi'}</span></div>`;
   const sotto = el('sottotitoloAssenze');
   if(sotto) sotto.textContent = `Quanto ti resta nel ${annoCorrente}. Solo informativo: non cambia il cedolino.`;
 }
@@ -208,8 +208,20 @@ function aggiornaCardAssenza(riga, voce){
   const residuoCompatto = riga.querySelector('.card-assenza-compact-residuo');
   if(residuoCompatto){
     residuoCompatto.textContent = numeroIt(rimangono);
-    const totale = residuoCompatto.nextElementSibling;
-    if(totale) totale.textContent = `/ ${numeroIt(spettanti || 0)} ${unita}`;
+    const unitaCompatta = residuoCompatto.nextElementSibling;
+    if(unitaCompatta) unitaCompatta.textContent = unita;
+  }
+  const usatiCompatti = riga.querySelector('.saldo-usati em');
+  if(usatiCompatti) usatiCompatti.textContent = numeroIt(usate);
+  const spettantiCompatti = riga.querySelector('.saldo-su');
+  if(spettantiCompatti) spettantiCompatti.textContent = numeroIt(spettanti || 0);
+  const anello = riga.querySelector('.saldo-anello-pieno');
+  if(anello){
+    const c = 2 * Math.PI * 22;
+    const pieno = spettanti > 0 ? Math.min(1, Math.max(0, rimangono / spettanti)) : 0;
+    anello.setAttribute('stroke-dasharray', `${(c * pieno).toFixed(1)} ${c.toFixed(1)}`);
+    anello.setAttribute('stroke-opacity', pieno ? '1' : '0');
+    anello.setAttribute('stroke', rimangono < 0 ? '#D64545' : coloreAnelloAssenza(voce));
   }
   const barra = riga.querySelector('.barra-residuo-assenza i');
   if(barra){
@@ -223,6 +235,20 @@ function aggiornaCardAssenza(riga, voce){
   if(meta){ const first=meta.querySelector('span'); const second=meta.querySelectorAll('span')[1]; if(first) first.textContent=eL104?`Usate a ${NOMI_MESI[meseCorrente]}: ${usate} ${unita}`:((annuali.includes(voce.nome)||eCongedoOrdinario)?`Usate nel ${annoCorrente}: ${usate} ${unita}`:`Usate: ${usate} ${unita}`); if(second) second.textContent=`${Math.round(percentuale)}% utilizzato`; }
   const status=riga.querySelector('.card-assenza-status');
   if(status) status.textContent=rimangono<0?'⚠ Esaurito':rimangono===0?'0 disponibili':percentuale>=80?'Quasi esaurito':'Disponibile';
+}
+
+// Anello del saldo: pieno quando la voce è tutta da usare, si svuota man mano che la si usa.
+const COLORI_ANELLO_ASSENZE = ['#2E9E5B','#3A55B4','#E08A00','#8E44AD','#00838F','#D64545','#2E7DD7','#6D4C41','#546E7A'];
+function coloreAnelloAssenza(a){
+  const i = Math.max(0, AppState.assenze.indexOf(a));
+  return COLORI_ANELLO_ASSENZE[i % COLORI_ANELLO_ASSENZE.length];
+}
+function anelloAssenzaHtml(frazione, colore, icona){
+  const c = 2 * Math.PI * 22;
+  const pieno = Math.min(1, Math.max(0, Number(frazione) || 0));
+  return `<span class="saldo-anello" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" fill="none" stroke="${colore}" stroke-opacity=".18" stroke-width="6"/>`
+    + `<circle class="saldo-anello-pieno" cx="26" cy="26" r="22" fill="none" stroke="${colore}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(c * pieno).toFixed(1)} ${c.toFixed(1)}"${pieno ? '' : ' stroke-opacity="0"'}/></svg>`
+    + `<span class="card-assenza-icon">${icona}</span></span>`;
 }
 
 function renderCardAssenzaItem(a){
@@ -276,10 +302,16 @@ function renderCardAssenzaItem(a){
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
       <div class="card-assenza-compact" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
-        <span class="card-assenza-icon" aria-hidden="true">${icona}</span>
         <div class="card-assenza-compact-nome"><strong>${a.personalizzata ? (a.nome || 'Nuova voce') : a.nome}</strong></div>
-        <div><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small>/ ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small></div>
         <span class="card-assenza-apri" aria-hidden="true">⌄</span>
+        <div class="saldo-corpo">
+          ${anelloAssenzaHtml(valoreVisuale > 0 ? rimangono / valoreVisuale : 0, rimangono < 0 ? '#D64545' : coloreAnelloAssenza(a), icona)}
+          <div class="saldo-numeri">
+            <small class="saldo-etichetta">Rimangono</small>
+            <span class="saldo-resta"><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong> <small>${unitaEffettiva}</small></span>
+            <small class="saldo-usati">Usati <em>${numeroIt(usate)}</em> su <span class="saldo-su">${numeroIt(valoreVisuale)}</span></small>
+          </div>
+        </div>
       </div>
       <span class="barra-residuo-assenza" aria-hidden="true"><i style="width:${resto}%;background:${coloreResto}"></i></span>
       <div class="card-assenza-head">

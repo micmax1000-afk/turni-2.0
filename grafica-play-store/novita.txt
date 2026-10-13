@@ -1,8 +1,8 @@
 <it-IT>
-• Agenda sotto il calendario (da Altro): i prossimi 14 giorni con turni, ore ed eventi
+• Nuova scheda Assenze nella barra: quanto ti resta con anelli colorati
+• Calendario: i giorni del mese prima e dopo, sbiaditi
+• Report e Turni molto più veloci
+• Agenda sotto il calendario (da Altro): i prossimi 14 giorni
 • Indennità del mese con lordo e netto
 • Tabelle ufficiali aggiornate dal sito, senza perdere le tue modifiche
-• Report più chiaro: lordo, trattenute e netto ben distinti
-• Nuova apertura guidata in 4 passi
-• Promemoria del turno, widget ed esporta in Google Calendar
 </it-IT>

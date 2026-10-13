@@ -145,6 +145,8 @@ for(const stile of ['classico', 'moderno']){
     };
   });
   ok(`${stile}: 31 giorni nel calendario`, c.celle === 31);
+  const fm = await p.evaluate(() => { const f = [...document.querySelectorAll('#calendarioGriglia .giorno-cella.fuori-mese')]; return { n: f.length, primo: f[0]?.innerText.trim().split(/\s+/)[0], ultimo: f[f.length - 1]?.innerText.trim().split(/\s+/)[0], conTurno: f.filter(x => /Sera|Pom|Matt|Notte|Riposo|S|P|M|N|R/.test(x.innerText)).length, toccabili: f.filter(x => getComputedStyle(x).pointerEvents !== 'none').length }; });
+  ok(`${stile}: giorni del mese prima e dopo sbiaditi (28–30 settembre, 1 novembre), non toccabili`, fm.n === 4 && fm.primo === '28' && fm.ultimo === '1' && fm.toccabili === 0, JSON.stringify(fm));
   ok(`${stile}: stile applicato`, c.moderno === (stile === 'moderno'));
   if(stile === 'moderno'){
     ok('moderno: etichetta del 1/10 "Sera"', c.etichetta1 === 'Sera');
@@ -163,7 +165,7 @@ for(const stile of ['classico', 'moderno']){
     ok('moderno: icone di missione e reperibilità; servizio esterno e buono pasto nascosti all\'inizio', m.indennita === 'Missione,Reperibilità', m.indennita);
     ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
   }
-  ok(`${stile}: barra in basso con Calendario/Report/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Turni,Altro' && c.oggiIcona === '9');
+  ok(`${stile}: barra in basso con Calendario/Report/Assenze/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Assenze,Turni,Altro' && c.oggiIcona === '9', c.nomi);
   ok(`${stile}: matita tolta`, !c.matita);
   if(stile === 'moderno'){
     await p.evaluate(() => mostraToast('Prova', 'successo', 5000));
@@ -269,17 +271,19 @@ sezione('Turni: cambio orario di un modello');
 }
 
 // ─────────────────────────────────────────────────────────────
-sezione('Assenze in Altro e sequenza automatica');
+sezione('Assenze nella barra e sequenza automatica');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
-  await p.click('#tabAltro');
-  await p.click('#btnApriAssenzeV64');
-  ok('Altro → Assenze e permessi apre la pagina delle assenze', await p.evaluate(() => !!document.getElementById('sezioneAssenze').offsetParent && document.getElementById('tabAltro').classList.contains('attiva')));
-  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, tiles: document.querySelectorAll('#assenzeSummaryGrid .assenza-riepilogo').length, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nonUsate: document.getElementById('titoloAssenzeNonUsate').textContent, festivoInNonUsate: [...document.querySelectorAll('#corpoAssenzeNonUsate .card-assenza-compact-nome')].some(n => n.textContent.includes('Riposo festivo')) }));
-  ok('Assenze: titolo uguale alla voce di Altro, 3 riquadri in cima', ass.titolo === 'Assenze e permessi' && ass.tiles === 3);
-  ok('ogni voce: quanto resta su quanto spetta (Congedo ordinario 30 / 30 gg)', /Congedo ordinario 30 \/ 30 gg/.test(ass.congedo), ass.congedo);
+  await p.click('#tabAssenze');
+  ok('Assenze nella barra apre la pagina delle assenze', await p.evaluate(() => !!document.getElementById('sezioneAssenze').offsetParent && document.getElementById('tabAssenze').classList.contains('attiva') && !document.getElementById('btnApriAssenzeV64')));
+  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, hero: document.getElementById('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), anelli: document.querySelectorAll('#corpoAssenze .saldo-anello').length, colonne: getComputedStyle(document.getElementById('corpoAssenze')).gridTemplateColumns.split(' ').length, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nonUsate: document.getElementById('titoloAssenzeNonUsate').textContent, festivoInNonUsate: [...document.querySelectorAll('#corpoAssenzeNonUsate .card-assenza-compact-nome')].some(n => n.textContent.includes('Riposo festivo')) }));
+  ok('Assenze: riquadro in alto con i giorni di congedo che restano', ass.titolo === 'Assenze e permessi' && /Ti restano nel 2026 30 giorni/.test(ass.hero) && /permesso breve/.test(ass.hero), ass.hero);
+  ok('ogni voce in una scheda con l\'anello, due per riga', ass.anelli > 3 && ass.colonne === 2, JSON.stringify(ass));
+  ok('ogni voce: quanto rimane e quanto è stato usato (Congedo ordinario: rimangono 30, usati 0 su 30)', /Congedo ordinario/.test(ass.congedo) && /Rimangono 30 gg/i.test(ass.congedo) && /Usati 0 su 30/.test(ass.congedo), ass.congedo);
   ok('voci a zero in "Non usate"', /^Non usate \(\d+\)$/.test(ass.nonUsate) && ass.festivoInNonUsate, ass.nonUsate);
-  await p.click('#btnChiudiAssenze');
+  await p.click('.card-assenza[data-id] .card-assenza-compact');
+  ok('tocco su una scheda: si apre il dettaglio a tutta larghezza', await p.evaluate(() => { const c = document.querySelector('#corpoAssenze .card-assenza-aperta'); return !!c && c.getBoundingClientRect().width > document.getElementById('corpoAssenze').getBoundingClientRect().width - 2; }));
+  await p.click('#tabAltro');
   await p.click('#settingsAnagrafica');
   await p.click('[data-passo="campoAnni"][data-delta="1"]');
   await p.selectOption('#campoRegione', 'Toscana');

@@ -1308,7 +1308,7 @@ body.calendario-moderno .mod-evento i{color:#2196F3;font-style:normal;margin-rig
 
 /* Barra di navigazione in basso (v2.53.0): icone e nomi, sempre a portata di pollice */
 .barra-schede{position:fixed;top:auto;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:90;max-width:none;margin:0;padding:6px;background:color-mix(in srgb,var(--pannello,#fff) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--bordo);border-bottom:1px solid var(--bordo);border-radius:24px;box-shadow:0 8px 28px rgba(27,36,64,.14)}
-.barra-schede .riga-schede-icone{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0;padding:0}
+.barra-schede .riga-schede-icone{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:0;padding:0}
 .barra-schede .riga-schede-icone .scheda-nav{height:56px;min-height:56px;padding:0!important;border:0;border-radius:18px;background:transparent;color:var(--testo-tenue);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:none;font-size:inherit}
 .barra-schede .riga-schede-icone .scheda-nav.attiva{background:#E8ECF7;color:var(--inchiostro)}
 .barra-schede .scheda-nav svg{pointer-events:none;flex-shrink:0}
@@ -2060,3 +2060,47 @@ html[data-tema="scuro"] .tabelle-versione-v3 a,html[data-tema="scuro"] .link-tab
 html[data-tema=scuro] .agenda-giorno.oggi .agenda-data b{background:#8FA6FF;color:#111}
 html[data-tema=scuro] .agenda-quando{color:#8FA6FF}
 html[data-tema=scuro] .agenda-giorno.festivo .agenda-data small,html[data-tema=scuro] .agenda-giorno.festivo .agenda-data b{color:#FF8A80}
+
+/* ── v2.79 Assenze e permessi: riquadro in alto e schede con l'anello ── */
+.saldi-hero{background:linear-gradient(135deg,#24345E,#3A55B4);color:#fff;border-radius:18px;padding:16px 18px;margin:6px 0 14px}
+.saldi-hero-anno{display:block;opacity:.82;font-size:.8rem;font-weight:600}
+.saldi-hero-numero{display:block;font-size:2.2rem;line-height:1.1;margin:2px 0 8px;font-variant-numeric:tabular-nums}
+.saldi-hero-voci{display:flex;gap:6px;flex-wrap:wrap}
+.saldi-hero-voci span{background:rgba(255,255,255,.14);border-radius:20px;padding:4px 10px;font-size:.8rem;font-weight:700}
+#sezioneAssenze .griglia-saldi{display:grid;grid-template-columns:1fr 1fr;gap:10px;border:0;background:none;overflow:visible}
+#sezioneAssenze .griglia-saldi > p{grid-column:1/-1;border:1px solid var(--bordo);border-radius:14px}
+#sezioneAssenze .griglia-saldi .card-assenza{margin:0;border:1px solid var(--bordo);border-radius:16px;background:var(--carta);box-shadow:none;padding:0;min-width:0;position:relative}
+#sezioneAssenze .griglia-saldi .card-assenza.assenza-nascosta{display:none}
+#sezioneAssenze .griglia-saldi .card-assenza-aperta{grid-column:1/-1;padding:0 12px 12px}
+#sezioneAssenze .griglia-saldi .card-assenza-compact{display:block;background:none;padding:10px 12px 12px;border-radius:16px}
+#sezioneAssenze .griglia-saldi .card-assenza-aperta .card-assenza-compact{padding:10px 0 4px}
+#sezioneAssenze .griglia-saldi .card-assenza-compact-nome{display:block;white-space:normal;overflow:visible;padding-right:16px;margin-bottom:6px}
+#sezioneAssenze .griglia-saldi .card-assenza-compact-nome strong{font-size:.9rem;font-weight:800;line-height:1.2}
+#sezioneAssenze .griglia-saldi .card-assenza-apri{position:absolute;top:10px;right:10px;font-size:.8rem;opacity:.7}
+#sezioneAssenze .griglia-saldi .barra-residuo-assenza{display:none}
+#sezioneAssenze .griglia-saldi .card-assenza-head .card-assenza-icon,#sezioneAssenze .griglia-saldi .card-assenza-head strong,#sezioneAssenze .griglia-saldi .saldo-progress{display:none}
+#sezioneAssenze .griglia-saldi .card-assenza-head{margin-top:2px}
+#sezioneAssenze .griglia-saldi .card-assenza-main{margin-top:6px}
+.saldo-corpo{display:flex;align-items:center;gap:10px}
+.saldo-anello{width:50px;height:50px;flex:none;position:relative;display:block}
+.saldo-anello svg{width:50px;height:50px;transform:rotate(-90deg);display:block}
+#sezioneAssenze .saldo-anello .card-assenza-icon{position:absolute;inset:0;display:grid;place-items:center;font-size:1.05rem;width:auto;height:auto;background:none;opacity:1}
+.saldo-numeri{display:flex;flex-direction:column;gap:2px;min-width:0}
+#sezioneAssenze .saldo-numeri .saldo-etichetta{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--testo-tenue);opacity:1}
+.saldo-resta{display:block;line-height:1.05;color:#1E7A46;white-space:nowrap}
+#sezioneAssenze .saldo-resta strong{font-size:1.45rem;font-weight:900;font-variant-numeric:tabular-nums;color:inherit}
+#sezioneAssenze .saldo-resta small{font-size:.75rem;font-weight:700;opacity:1;color:inherit}
+#sezioneAssenze .saldo-usati{font-size:.74rem;color:var(--testo-tenue);font-weight:600;opacity:1}
+.saldo-usati em{font-style:normal;font-weight:800;color:#C0392B}
+.card-assenza.esaurito .saldo-resta{color:#C0392B}
+html[data-tema=scuro] .saldo-resta{color:#7FE0A6}
+html[data-tema=scuro] .saldo-usati em,html[data-tema=scuro] .card-assenza.esaurito .saldo-resta{color:#FF8A80}
+
+/* Calendario: giorni del mese prima e dopo, sbiaditi e non toccabili */
+#calendarioGriglia .giorno-cella.fuori-mese{opacity:.38;pointer-events:none;filter:saturate(.7);box-shadow:none}
+#sezioneAssenze .griglia-saldi .card-assenza-compact span{opacity:1;font-size:inherit}
+#sezioneAssenze .griglia-saldi .card-assenza-compact-nome strong{display:block;line-height:1.25}
+#sezioneAssenze .saldo-usati .saldo-su{font-weight:700;color:var(--testo-tenue)}
+#sezioneAssenze .griglia-saldi .card-assenza-compact > .saldo-corpo{display:flex;align-items:center;gap:10px}
+/* Aperta: i tre riquadri Disponibili/Utilizzati/Spettanti ripeterebbero i numeri già scritti sopra */
+#sezioneAssenze .griglia-saldi .card-assenza-aperta .card-assenza-main{display:none}
