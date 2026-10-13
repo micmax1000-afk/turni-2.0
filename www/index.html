@@ -717,7 +717,7 @@
       <em id="testataCompleta">Da completare</em>
     </div>
 
-    <p class="strumenti-turni-titolo">Servizio</p>
+    <p class="strumenti-turni-titolo">I tuoi dati</p>
     <div class="gruppo-anagrafica">
       <label class="riga-anagrafica"><span>Qualifica</span><select id="campoQualifica">
         <option>Agente</option><option>Agente Scelto</option><option>Assistente</option>
@@ -737,10 +737,6 @@
           <option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option>
           <option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
         </select></label>
-    </div>
-
-    <p class="strumenti-turni-titolo">Famiglia e tasse</p>
-    <div class="gruppo-anagrafica">
       <label class="riga-anagrafica"><span>Coniuge a carico</span><select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select></label>
       <div class="riga-anagrafica"><span>Figli over 21 a carico</span><div class="contatore-anagrafica"><button type="button" data-passo="campoFigliOver21" data-delta="-1" aria-label="Meno">−</button><input type="number" id="campoFigliOver21" min="0" step="1" value="0" inputmode="numeric" aria-label="Figli over 21 a carico"><button type="button" data-passo="campoFigliOver21" data-delta="1" aria-label="Più">+</button></div></div>
       <label class="riga-anagrafica"><span>Iscritto al sindacato</span><select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select></label>
@@ -934,7 +930,7 @@
       <div id="statoConnessioneV23" class="stato-connessione-v23" role="status" aria-live="polite"></div>
       <p class="strumenti-turni-titolo">Impostazioni</p>
       <div class="lista-strumenti-turni">
-        <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span>🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span class="grado-altro" id="gradoAltro" aria-hidden="true">🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Indennità nel calendario<small>Simboli e quali mostrare</small></i><b>›</b></button>
         <div class="riga-strumento-turni riga-interruttore">
@@ -1041,11 +1037,11 @@
     </div>
     <p class="titolo-sezione-giorno">Chi sei</p>
     <div class="gruppo-anagrafica">
-      <label class="riga-anagrafica"><span>Qualifica</span><select id="benvenutoQualifica"></select></label>
+      <label class="riga-anagrafica"><span>Qualifica</span><span class="grado-benvenuto" id="benvenutoGrado" aria-hidden="true"></span><select id="benvenutoQualifica"></select></label>
       <div class="riga-anagrafica"><span>Anni di servizio</span><div class="contatore-anagrafica"><button type="button" data-passo-benvenuto-anni="-1" aria-label="Meno">−</button><input type="number" id="benvenutoAnni" min="0" value="0" inputmode="numeric" aria-label="Anni di servizio"><button type="button" data-passo-benvenuto-anni="1" aria-label="Più">+</button></div></div>
       <label class="riga-anagrafica"><span>Regione</span><select id="benvenutoRegione"></select></label>
     </div>
-    <p class="benvenuto-nota">Servono per stimare stipendio e tasse. Famiglia e sindacato li aggiungi dopo in Altro → Anagrafica.</p>
+    <p class="benvenuto-nota">Servono per stimare stipendio e tasse. Coniuge, figli over 21 e sindacato li aggiungi dopo in Altro → Anagrafica, nel riquadro "I tuoi dati".</p>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="2" hidden>
     <p class="benvenuto-prog">Passo 2 di 5</p>

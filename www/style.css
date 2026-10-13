@@ -2178,3 +2178,9 @@ html[class*="accento-"][data-tema="scuro"] .btn-primario{background:var(--acc)!i
 @media (prefers-color-scheme: dark){
   html[class*="accento-"]:not([data-tema="chiaro"]) .btn-primario{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff!important}
 }
+
+/* ── v2.82 Distintivo del grado in Altro e nell'apertura guidata ── */
+.grado-altro{display:grid!important;place-items:center;width:40px;flex:none}
+.grado-altro svg{width:40px!important;height:23px!important}
+.grado-benvenuto{display:inline-grid;place-items:center;margin-left:auto;margin-right:8px;flex:none}
+.grado-benvenuto svg{width:36px!important;height:20px!important}

@@ -121,7 +121,7 @@ function mostraScheda(nome){
   if(nome === 'sequenza') renderSequenza();
   if(nome === 'turni' && typeof renderModelliTabTurni === 'function') renderModelliTabTurni();
   if(nome === 'statistiche' || nome === 'report'){ const a=el('campoAnnoStatistiche'); if(a && !a.value) a.value=new Date().getFullYear(); renderStatistiche(); if(typeof aggiornaRiepilogoMensile === 'function') aggiornaRiepilogoMensile(); if(typeof applicaVisibilitaReportBlocchi === 'function') applicaVisibilitaReportBlocchi(); }
-  if(nome === 'impostazioni' || nome === 'altro'){ inizializzaImpostazioni(); if(typeof aggiornaRiassuntoAssenzeAltro === 'function') aggiornaRiassuntoAssenzeAltro(); }
+  if(nome === 'impostazioni' || nome === 'altro'){ inizializzaImpostazioni(); if(typeof aggiornaRiassuntoAssenzeAltro === 'function') aggiornaRiassuntoAssenzeAltro(); if(typeof aggiornaRiassuntoAnagraficaAltro === 'function') aggiornaRiassuntoAnagraficaAltro(); }
   window.scrollTo({ top:0, behavior:'instant' });
 }
 

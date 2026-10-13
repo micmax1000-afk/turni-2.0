@@ -725,6 +725,21 @@ sezione('Colore dell\'app e Scrivi allo sviluppatore');
   await p.context().close();
 }
 
+sezione('Anagrafica: un solo riquadro e distintivo del grado');
+{
+  const { p, errori } = await apri({ turni: turniDiProva() });
+  await p.click('#tabAltro');
+  ok('in Altro la riga Anagrafica mostra il distintivo del grado', await p.evaluate(() => !!el('gradoAltro').querySelector('svg')));
+  await p.click('#settingsAnagrafica');
+  const g = await p.evaluate(() => ({ gruppi: document.querySelectorAll('#sezioneAnagrafica .gruppo-anagrafica').length, titoli: [...document.querySelectorAll('#sezioneAnagrafica .strumenti-turni-titolo')].map(x => x.textContent).join('|'), campi: ['campoQualifica','campoAnni','campoRegione','campoConiugeACarico','campoFigliOver21','campoSindacato'].every(id => el(id).closest('.gruppo-anagrafica')) }));
+  ok('Anagrafica: un solo riquadro "I tuoi dati" con tutti e sei i campi', g.gruppi === 1 && g.titoli === 'I tuoi dati' && g.campi, JSON.stringify(g));
+  await p.selectOption('#campoQualifica', 'Ispettore');
+  await p.click('#btnChiudiAnagrafica');
+  ok('cambiata la qualifica (Ispettore), in Altro il distintivo si aggiorna', await p.evaluate(() => el('gradoAltro').querySelectorAll('polygon').length === 2 && !el('gradoAltro').querySelector('rect[width="1.8"]')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await p.context().close();
+}
+
 await browser.close();
 server.close();
 console.log(`\n${superati} controlli superati, ${falliti} falliti`);

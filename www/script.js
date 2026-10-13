@@ -1799,6 +1799,9 @@ function aggiornaRiassuntoAnagraficaAltro(){
   const a = AppState.anagrafica || {};
   const parti = [a.qualifica, a.regione].filter(Boolean);
   box.textContent = parti.length ? parti.join(' · ') : 'Da compilare: serve per il cedolino';
+  // Al posto dell'icona, il distintivo del grado (lo stesso della testata di Anagrafica).
+  const grado = el('gradoAltro');
+  if(grado) grado.innerHTML = a.qualifica && typeof svgBadgeGrado === 'function' ? svgBadgeGrado(a.qualifica) : '🪪';
 }
 
 function renderListaModelliTurniV2(){
@@ -3004,9 +3007,14 @@ function sequenzeDisponibiliBenvenuto(){
   const presenti = AppState.pattern || [];
   return presenti.concat(PATTERN_BASE_V2.filter(b => !presenti.some(p => p.id === b.id)));
 }
+function aggiornaGradoBenvenuto(){
+  const box = el('benvenutoGrado');
+  if(box) box.innerHTML = svgBadgeGrado(el('benvenutoQualifica').value);
+}
 function apriBenvenuto(){
   el('benvenutoQualifica').innerHTML = el('campoQualifica').innerHTML;
   el('benvenutoQualifica').value = 'Agente';
+  aggiornaGradoBenvenuto();
   el('benvenutoRegione').innerHTML = el('campoRegione').innerHTML;
   el('benvenutoRegione').value = 'Lazio';
   benvenuto.passo = 1; benvenuto.pattern = null; benvenuto.fase = 0; benvenuto.scritti = 0; benvenuto.fine = null;
@@ -3157,6 +3165,7 @@ async function aggiornaStatoNotificheBenvenuto(){
 }
 function inizializzaBenvenuto(){
   on('btnSaltaBenvenuto', 'click', chiudiBenvenuto);
+  on('benvenutoQualifica', 'change', aggiornaGradoBenvenuto);
   on('btnBenvenutoAvanti', 'click', avantiBenvenuto);
   on('btnBenvenutoIndietro', 'click', () => mostraPassoBenvenuto(Math.max(1, benvenuto.passo - 1)));
   on('btnBenvenutoNotifiche', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(aggiornaStatoNotificheBenvenuto, 600); });
