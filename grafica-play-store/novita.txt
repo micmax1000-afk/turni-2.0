@@ -1,5 +1,5 @@
 <it-IT>
-• Nuova scheda Assenze nella barra: quanto ti resta con anelli colorati
+• Nuova scheda Assenze: saldi di partenza e quanto ti resta con anelli colorati
 • Calendario: i giorni del mese prima e dopo, sbiaditi
 • Report e Turni molto più veloci
 • Agenda sotto il calendario (da Altro): i prossimi 14 giorni

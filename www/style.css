@@ -2104,3 +2104,35 @@ html[data-tema=scuro] .saldo-usati em,html[data-tema=scuro] .card-assenza.esauri
 #sezioneAssenze .griglia-saldi .card-assenza-compact > .saldo-corpo{display:flex;align-items:center;gap:10px}
 /* Aperta: i tre riquadri Disponibili/Utilizzati/Spettanti ripeterebbero i numeri già scritti sopra */
 #sezioneAssenze .griglia-saldi .card-assenza-aperta .card-assenza-main{display:none}
+
+/* ── v2.80 Saldi di partenza ── */
+.partenza-voce{border:1px solid var(--bordo);border-radius:16px;background:var(--carta);padding:12px 14px;margin:0 0 10px}
+.partenza-testa{display:flex;align-items:center;gap:10px;font-weight:800;font-size:.98rem;color:var(--testo)}
+.partenza-testa span{font-size:1.3rem}
+.partenza-riga{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:.88rem;color:var(--testo)}
+.partenza-testo{min-width:0}
+.partenza-testo small{display:block;color:var(--testo-tenue);font-size:.74rem;margin-top:2px}
+.partenza-campo{display:flex;align-items:center;gap:6px;flex:none}
+.partenza-campo span{font-size:.8rem;color:var(--testo-tenue);min-width:18px}
+.partenza-campo .contatore-anagrafica input{width:52px}
+.partenza-sotto{border-top:1px dashed var(--bordo);padding-top:8px}
+.partenza-nota{font-size:.78rem;color:var(--testo-tenue);background:var(--sfondo-secondario,#ECEFEA);border-radius:10px;padding:8px 10px;margin:8px 0 0;line-height:1.4}
+.partenza-nota:empty{display:none}
+.partenza-box{border:1.5px solid #3A55B4;background:color-mix(in srgb,#3A55B4 8%,var(--carta));border-radius:16px;padding:12px 14px;margin:0 0 12px}
+.partenza-box b{display:block;font-size:.95rem;color:var(--testo)}
+.partenza-box p{margin:4px 0 10px;font-size:.84rem;color:var(--testo-tenue);line-height:1.4}
+.partenza-box .btn-primario{width:100%}
+.partenza-riass{display:flex;align-items:center;gap:10px;border:1px solid var(--bordo);border-radius:14px;padding:10px 12px;margin:0 0 12px;background:var(--carta)}
+.partenza-riass > span{font-size:1.2rem}
+.partenza-riass i{flex:1;font-style:normal;font-size:.84rem;color:var(--testo)}
+.partenza-riass i small{display:block;color:var(--testo-tenue);font-size:.74rem;margin-top:2px}
+.partenza-riass button{border:1px solid var(--bordo);background:var(--carta);color:#3A55B4;border-radius:10px;padding:7px 10px;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
+html[data-tema=scuro] .partenza-riass button{color:#8FA6FF}
+#sezioneAssenze .griglia-saldi .card-assenza.card-da-inserire{grid-column:1/-1;border:1.5px dashed #E08A00;background:color-mix(in srgb,#E08A00 7%,var(--carta));padding:12px 14px}
+.card-da-inserire b{display:block;font-size:.95rem;color:var(--testo)}
+.card-da-inserire p{margin:4px 0 10px;font-size:.84rem;color:var(--testo-tenue);line-height:1.4}
+.card-da-inserire .btn-secondario{width:100%}
+/* Schede strette (telefoni da 360 px): anello più piccolo, "Usati … su …" su una riga sotto */
+#sezioneAssenze .saldo-anello,#sezioneAssenze .saldo-anello svg{width:44px;height:44px}
+#sezioneAssenze .saldo-numeri .saldo-etichetta{letter-spacing:.02em;font-size:.6rem}
+#sezioneAssenze .griglia-saldi .card-assenza-compact > .saldo-usati{display:block;margin-top:6px;white-space:nowrap}

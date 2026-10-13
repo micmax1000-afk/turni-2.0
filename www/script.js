@@ -3009,6 +3009,7 @@ function apriBenvenuto(){
   el('benvenutoRegione').innerHTML = el('campoRegione').innerHTML;
   el('benvenutoRegione').value = 'Lazio';
   benvenuto.passo = 1; benvenuto.pattern = null; benvenuto.fase = 0; benvenuto.scritti = 0; benvenuto.fine = null;
+  el('benvenutoSaldi').innerHTML = '';
   const modelli = AppState.modelliTurno || [];
   el('benvenutoStriscia').innerHTML = ['sera', 'pomeriggio', 'mattina', 'notte', 'riposo', 'sera', 'pomeriggio'].map(id => {
     const m = modelli.find(x => x.id === id);
@@ -3060,9 +3061,13 @@ function mostraPassoBenvenuto(n){
   document.querySelectorAll('[data-passo-benvenuto]').forEach(x => { x.hidden = Number(x.dataset.passoBenvenuto) !== n; });
   el('benvenutoPunti').querySelectorAll('i').forEach((x, i) => x.classList.toggle('attivo', i < n));
   el('btnBenvenutoIndietro').hidden = n === 1;
-  el('btnBenvenutoAvanti').textContent = n === 4 ? 'Vai al calendario' : n === 2 && benvenuto.pattern ? 'Crea i turni' : 'Avanti';
-  if(n === 3){ aggiornaTemiBenvenuto(); aggiornaStatoNotificheBenvenuto(); }
-  if(n === 4) renderRiepilogoBenvenuto();
+  el('btnBenvenutoAvanti').textContent = n === 5 ? 'Vai al calendario' : n === 2 && benvenuto.pattern ? 'Crea i turni' : 'Avanti';
+  if(n === 3 && !el('benvenutoSaldi').innerHTML){
+    el('benvenutoSaldi').innerHTML = formSaldiPartenzaHtml('benvenutoSaldo', valoriSaldiPartenza());
+    el('benvenutoNotaSaldi').innerHTML = notaSpettantiCongedo();
+  }
+  if(n === 4){ aggiornaTemiBenvenuto(); aggiornaStatoNotificheBenvenuto(); }
+  if(n === 5) renderRiepilogoBenvenuto();
   el('overlayBenvenuto').scrollTop = 0;
 }
 function aggiornaTemiBenvenuto(){
@@ -3124,12 +3129,18 @@ function avantiBenvenuto(){
     return;
   }
   if(benvenuto.passo === 3){
+    // Saldi di partenza: da qui in poi l'app conta congedo, recuperi e riposo compensativo.
+    salvaSaldiPartenza(leggiFormSaldiPartenza('benvenutoSaldo'));
+    mostraPassoBenvenuto(4);
+    return;
+  }
+  if(benvenuto.passo === 4){
     // Promemoria e widget: si accendono solo se li hai accesi qui (all'inizio sono spenti).
     [['benvenutoPromemoria', 'campoPromemoriaTurno'], ['benvenutoWidget', 'campoWidget']].forEach(([da, a]) => {
       const voluto = el(da).checked, campo = el(a);
       if(campo && campo.checked !== voluto){ campo.checked = voluto; campo.dispatchEvent(new Event('change', { bubbles: true })); }
     });
-    mostraPassoBenvenuto(4);
+    mostraPassoBenvenuto(5);
     return;
   }
   chiudiBenvenuto();

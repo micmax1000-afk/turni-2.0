@@ -658,6 +658,7 @@
     </div>
     <p class="sotto-titolo" id="sottotitoloAssenze">Quanto ti resta. Solo informativo: non cambia il cedolino.</p>
     <div id="assenzeSummaryGrid" class="saldi-hero" aria-live="polite"></div>
+    <div id="saldiPartenzaBox"></div>
     <div class="assenze-filtri-seg" role="group" aria-label="Filtra assenze">
       <button type="button" class="filtro-assenze attivo" data-filtro-assenze="tutte">Tutte</button>
       <button type="button" class="filtro-assenze" data-filtro-assenze="gg">Giorni</button>
@@ -1016,11 +1017,11 @@
 <!-- Primo avvio guidato: solo per chi installa l'app (nessuna anagrafica e nessun turno) -->
 <div class="benvenuto" id="overlayBenvenuto" hidden>
   <div class="benvenuto-testa">
-    <div class="benvenuto-punti" id="benvenutoPunti"><i></i><i></i><i></i><i></i></div>
+    <div class="benvenuto-punti" id="benvenutoPunti"><i></i><i></i><i></i><i></i><i></i></div>
     <button type="button" class="benvenuto-salta" id="btnSaltaBenvenuto">Salta</button>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="1">
-    <p class="benvenuto-prog">Passo 1 di 4</p>
+    <p class="benvenuto-prog">Passo 1 di 5</p>
     <div class="benvenuto-hero">
       <h2>Benvenuto! 👋</h2>
       <p>I tuoi turni, quanto arriva in busta e le ferie: tutto in un'app, e i dati restano sul telefono.</p>
@@ -1035,7 +1036,7 @@
     <p class="benvenuto-nota">Servono per stimare stipendio e tasse. Famiglia e sindacato li aggiungi dopo in Altro → Anagrafica.</p>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="2" hidden>
-    <p class="benvenuto-prog">Passo 2 di 4</p>
+    <p class="benvenuto-prog">Passo 2 di 5</p>
     <h2>Come lavori?</h2>
     <div class="lista-sequenze" id="benvenutoSequenze"></div>
     <div id="benvenutoFaseBox" hidden>
@@ -1047,7 +1048,14 @@
     </div>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="3" hidden>
-    <p class="benvenuto-prog">Passo 3 di 4</p>
+    <p class="benvenuto-prog">Passo 3 di 5</p>
+    <h2>Quanto ti resta?</h2>
+    <p class="benvenuto-nota" style="margin-top:0">Scrivi quello che hai oggi, come risulta all'ufficio: da domani conta l'app. Se non lo sai, premi Avanti e lo correggi dopo in Assenze.</p>
+    <div id="benvenutoSaldi"></div>
+    <p class="partenza-nota" id="benvenutoNotaSaldi"></p>
+  </div>
+  <div class="benvenuto-passo" data-passo-benvenuto="4" hidden>
+    <p class="benvenuto-prog">Passo 4 di 5</p>
     <h2>Come la vuoi?</h2>
     <p class="titolo-sezione-giorno">Tema</p>
     <div class="benvenuto-temi" id="benvenutoTemi">
@@ -1063,8 +1071,8 @@
     </div>
     <p class="benvenuto-nota">Tutto si cambia anche dopo, in Altro.</p>
   </div>
-  <div class="benvenuto-passo" data-passo-benvenuto="4" hidden>
-    <p class="benvenuto-prog">Passo 4 di 4</p>
+  <div class="benvenuto-passo" data-passo-benvenuto="5" hidden>
+    <p class="benvenuto-prog">Passo 5 di 5</p>
     <h2>Tutto pronto! 🎉</h2>
     <div class="benvenuto-card benvenuto-riepilogo" id="benvenutoRiepilogo"></div>
     <p class="titolo-sezione-giorno">Tre cose utili</p>
@@ -1075,6 +1083,18 @@
   <div class="benvenuto-piede">
     <button type="button" class="btn-secondario" id="btnBenvenutoIndietro" hidden>Indietro</button>
     <button type="button" class="btn-primario" id="btnBenvenutoAvanti">Avanti</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlaySaldiPartenza" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Saldi di partenza</h2><button class="btn-icona" id="btnChiudiSaldiPartenza" aria-label="Chiudi">✕</button></div>
+    <div class="modale-corpo">
+      <p class="sotto-titolo" style="margin-top:0;">Scrivi quello che hai oggi, come risulta all'ufficio: da domani conta l'app. Se l'ufficio ti dà un numero diverso, correggilo qui.</p>
+      <div id="formSaldiPartenza"></div>
+      <p class="partenza-nota" id="notaSaldiPartenza"></p>
+      <button type="button" class="btn-primario" id="btnSalvaSaldiPartenza" style="width:100%;margin-top:6px;">Salva</button>
+    </div>
   </div>
 </div>
 
