@@ -41,6 +41,7 @@ function turniDiProva(){
 const browser = await chromium.launch();
 async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true, scuro = false, nativo = false } = {}){
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome', colorScheme: scuro ? 'dark' : 'light' });
+  await ctx.route('https://micmax-apps.netlify.app/**', r => r.fulfill({ status: 404, body: '' }));
   const p = await ctx.newPage();
   const errori = [];
   p.on('pageerror', e => errori.push(e.message));
@@ -144,6 +145,8 @@ for(const stile of ['classico', 'moderno']){
     };
   });
   ok(`${stile}: 31 giorni nel calendario`, c.celle === 31);
+  const fm = await p.evaluate(() => { const f = [...document.querySelectorAll('#calendarioGriglia .giorno-cella.fuori-mese')]; return { n: f.length, primo: f[0]?.innerText.trim().split(/\s+/)[0], ultimo: f[f.length - 1]?.innerText.trim().split(/\s+/)[0], conTurno: f.filter(x => /Sera|Pom|Matt|Notte|Riposo|S|P|M|N|R/.test(x.innerText)).length, toccabili: f.filter(x => getComputedStyle(x).pointerEvents !== 'none').length }; });
+  ok(`${stile}: giorni del mese prima e dopo sbiaditi (28–30 settembre, 1 novembre), non toccabili`, fm.n === 4 && fm.primo === '28' && fm.ultimo === '1' && fm.toccabili === 0, JSON.stringify(fm));
   ok(`${stile}: stile applicato`, c.moderno === (stile === 'moderno'));
   if(stile === 'moderno'){
     ok('moderno: etichetta del 1/10 "Sera"', c.etichetta1 === 'Sera');
@@ -162,7 +165,7 @@ for(const stile of ['classico', 'moderno']){
     ok('moderno: icone di missione e reperibilità; servizio esterno e buono pasto nascosti all\'inizio', m.indennita === 'Missione,Reperibilità', m.indennita);
     ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
   }
-  ok(`${stile}: barra in basso con Calendario/Report/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Turni,Altro' && c.oggiIcona === '9');
+  ok(`${stile}: barra in basso con Calendario/Report/Assenze/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Assenze,Turni,Altro' && c.oggiIcona === '9', c.nomi);
   ok(`${stile}: matita tolta`, !c.matita);
   if(stile === 'moderno'){
     await p.evaluate(() => mostraToast('Prova', 'successo', 5000));
@@ -268,17 +271,47 @@ sezione('Turni: cambio orario di un modello');
 }
 
 // ─────────────────────────────────────────────────────────────
-sezione('Assenze in Altro e sequenza automatica');
+sezione('Assenze nella barra e sequenza automatica');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
-  await p.click('#tabAltro');
-  await p.click('#btnApriAssenzeV64');
-  ok('Altro → Assenze e permessi apre la pagina delle assenze', await p.evaluate(() => !!document.getElementById('sezioneAssenze').offsetParent && document.getElementById('tabAltro').classList.contains('attiva')));
-  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, tiles: document.querySelectorAll('#assenzeSummaryGrid .assenza-riepilogo').length, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nonUsate: document.getElementById('titoloAssenzeNonUsate').textContent, festivoInNonUsate: [...document.querySelectorAll('#corpoAssenzeNonUsate .card-assenza-compact-nome')].some(n => n.textContent.includes('Riposo festivo')) }));
-  ok('Assenze: titolo uguale alla voce di Altro, 3 riquadri in cima', ass.titolo === 'Assenze e permessi' && ass.tiles === 3);
-  ok('ogni voce: quanto resta su quanto spetta (Congedo ordinario 30 / 30 gg)', /Congedo ordinario 30 \/ 30 gg/.test(ass.congedo), ass.congedo);
+  await p.click('#tabAssenze');
+  ok('Assenze nella barra apre la pagina delle assenze', await p.evaluate(() => !!document.getElementById('sezioneAssenze').offsetParent && document.getElementById('tabAssenze').classList.contains('attiva') && !document.getElementById('btnApriAssenzeV64')));
+  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, hero: document.getElementById('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), anelli: document.querySelectorAll('#corpoAssenze .saldo-anello').length, colonne: getComputedStyle(document.getElementById('corpoAssenze')).gridTemplateColumns.split(' ').length, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nonUsate: document.getElementById('titoloAssenzeNonUsate').textContent, festivoInNonUsate: [...document.querySelectorAll('#corpoAssenzeNonUsate .card-assenza-compact-nome')].some(n => n.textContent.includes('Riposo festivo')) }));
+  ok('senza saldi di partenza: nessun numero inventato, "congedo ordinario da inserire"', ass.titolo === 'Assenze e permessi' && /Ti restano nel 2026 — giorni/.test(ass.hero) && /da inserire/.test(ass.hero) && /permesso breve/.test(ass.hero), ass.hero);
+  ok('…riquadro "Da dove partiamo?" e scheda del congedo che chiede i giorni', await p.evaluate(() => /Da dove partiamo/.test(el('saldiPartenzaBox').textContent) && /Quanti giorni ti restano oggi/.test(document.querySelector('#corpoAssenze .card-da-inserire')?.textContent || '')));
+  ok('ogni voce in una scheda con l\'anello, due per riga', ass.anelli > 3 && ass.colonne === 2, JSON.stringify(ass));
+  ok('ogni voce: quanto rimane e quanto è stato usato (Congedo straordinario: rimangono 45, usati 0 su 45)', /Congedo straordinario/.test(ass.congedo) && /Rimangono 45 gg/i.test(ass.congedo) && /Usati 0 su 45/.test(ass.congedo), ass.congedo);
+  // Saldi di partenza: un recupero guadagnato prima della data non conta, uno dopo sì.
+  await p.evaluate(() => { AppState.turni['2026-10-01'].compensazioneRiposo = true; AppState.turni['2026-10-15'].compensazioneRiposo = true; salvaTurniStorage(); });
+  await p.click('#saldiPartenzaBox [data-apri-saldi]');
+  ok('"Inserisci i saldi di partenza" apre la finestra con i campi', await p.evaluate(() => !el('overlaySaldiPartenza').hidden && !!el('saldoCongedo2026') && !!el('saldoCongedo2025') && !!el('saldoCongedo2024') && !!el('saldoRiposoCompensativo')));
+  await p.fill('#saldoCongedo2026', '30'); await p.fill('#saldoCongedo2025', '8'); await p.fill('#saldoCongedo2024', '3');
+  ok('congedo diviso per anno: il totale si calcola da solo (30 + 8 + 3 = 41)', await p.evaluate(() => el('saldoCongedoTotale').textContent === '41 giorni'), await p.evaluate(() => el('saldoCongedoTotale').textContent)); await p.fill('#saldoRecuperoRiposo', '2'); await p.fill('#saldoRiposoCompensativo', '6');
+  await p.click('[data-saldo-campo="saldoRecuperoFestivo"][data-saldo-delta="1"]');
+  await p.click('#btnSalvaSaldiPartenza');
+  const sp = await p.evaluate(() => { const v = n => saldoAssenza(AppState.assenze.find(a => a.nome === n), rifAssenze()); return { salvati: JSON.parse(localStorage.getItem('simCedolino_saldiPartenza_v1')), hero: el('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), riass: el('saldiPartenzaBox').innerText.replace(/\s+/g, ' '), co: v('Congedo ordinario').rimangono, rr: v('Recupero riposo').rimangono, rf: v('Recupero festivo').rimangono, rc: v('Riposo compensativo').rimangono }; });
+  ok('saldi salvati con la data di oggi (+1 col pulsante per il recupero festivo)', sp.salvati.data === '2026-10-09' && sp.salvati.congedo === 41 && sp.salvati.congedoVecchi === 11 && sp.salvati.congedoAnni['2024'] === 3 && sp.salvati.recuperoFestivo === 1, JSON.stringify(sp.salvati));
+  ok('dopo: 41 giorni di congedo in alto e riassunto "Saldi di partenza" con Correggi', /41 giorni/.test(sp.hero) && /Saldi di partenza al 9 ottobre 2026/.test(sp.riass) && /Correggi/.test(sp.riass), sp.hero + ' | ' + sp.riass);
+  ok('recupero riposo: 2 di partenza + quello del 15 (quello del 1° non conta più) = 3; festivo 1; riposo compensativo 6 h', sp.rr === 3 && sp.rf === 1 && sp.rc === 6, JSON.stringify(sp));
+  await p.evaluate(() => { window.__originali = { a: AppState.turni['2026-10-05'], b: AppState.turni['2026-10-21'] }; const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario').id; AppState.turni['2026-10-05'] = { data: '2026-10-05', assenzaTipo: co }; AppState.turni['2026-10-21'] = { data: '2026-10-21', assenzaTipo: co }; salvaTurniStorage(); renderAssenze(); });
+  const co2 = await p.evaluate(() => { const v = saldoAssenza(AppState.assenze.find(a => a.nome === 'Congedo ordinario'), rifAssenze()); const c = [...document.querySelectorAll('#corpoAssenze .card-assenza')].find(x => /Congedo ordinario/.test(x.textContent)); return { r: v.rimangono, u: v.usate, card: c.querySelector('.card-assenza-compact').innerText.replace(/\s+/g, ' ') }; });
+  ok('congedo: si scalano solo i giorni dopo i saldi (il 21 sì, il 5 no): 40, "Usati 1 su 41"', co2.r === 40 && co2.u === 1 && /Rimangono 40 gg/i.test(co2.card) && /Usati 1 su 41/.test(co2.card), JSON.stringify(co2));
+  const anni = await p.evaluate(() => { const s = calcolaSaldoCongedoOrdinario(2027); return s; });
+  ok('a gennaio 2027: i 40 avanzati + i 30 spettanti = 70', anni.valoreEffettivo === 70 && anni.riporto === 40, JSON.stringify(anni));
+  ok('per anno: il giorno usato si toglie dal 2024 (il più vecchio); nel 2027 restano 2024: 2, 2025: 8, 2026: 30, 2027: 30', JSON.stringify(anni.perAnno) === JSON.stringify({ 2024: 2, 2025: 8, 2026: 30, 2027: 30 }), JSON.stringify(anni.perAnno));
+  await p.click('#corpoAssenze .card-assenza[data-id] .card-assenza-compact');
+  ok('scheda Congedo ordinario aperta: rimasti per anno 2024 · 2025 · 2026', await p.evaluate(() => { const t = document.querySelector('#corpoAssenze .card-assenza-aperta .congedo-anni')?.innerText.replace(/\s+/g, ' ') || ''; return /2024 2 gg/.test(t) && /2025 8 gg/.test(t) && /2026 30 gg/.test(t); }), await p.evaluate(() => document.querySelector('#corpoAssenze .card-assenza-aperta')?.innerText.replace(/\s+/g, ' ').slice(0, 200)));
+  await p.click('#corpoAssenze .card-assenza[data-id] .card-assenza-compact');
+  await p.click('#saldiPartenzaBox [data-apri-saldi]');
+  ok('"Correggi" riapre i numeri per anno (a oggi, senza il congedo del 21 che verrà)', await p.evaluate(() => el('saldoCongedo2026').value === '30' && el('saldoCongedo2025').value === '8' && el('saldoCongedo2024').value === '3' && el('saldoRecuperoRiposo').value === '2'));
+  await p.click('#btnChiudiSaldiPartenza');
+  ok('saldi salvati col formato di prima (totale 45, di cui 8 dell\'anno scorso): diventano 2026: 37 e 2025: 8', await p.evaluate(() => { const prima = localStorage.getItem('simCedolino_saldiPartenza_v1'); localStorage.setItem('simCedolino_saldiPartenza_v1', JSON.stringify({ data: '2026-10-09', congedo: 45, congedoVecchi: 8, recuperoRiposo: 0, recuperoFestivo: 0, riposoCompensativoOre: 0 })); const a = saldiPartenza().congedoAnni; localStorage.setItem('simCedolino_saldiPartenza_v1', prima); return a[2026] === 37 && a[2025] === 8; }));
+  await p.evaluate(() => { AppState.turni['2026-10-05'] = window.__originali.a; AppState.turni['2026-10-21'] = window.__originali.b; salvaTurniStorage(); });
+  ok('i saldi di partenza finiscono nel backup', await p.evaluate(() => JSON.stringify(costruisciDatiBackup()).includes('saldiPartenza')));
   ok('voci a zero in "Non usate"', /^Non usate \(\d+\)$/.test(ass.nonUsate) && ass.festivoInNonUsate, ass.nonUsate);
-  await p.click('#btnChiudiAssenze');
+  await p.click('.card-assenza[data-id] .card-assenza-compact');
+  ok('tocco su una scheda: si apre il dettaglio a tutta larghezza', await p.evaluate(() => { const c = document.querySelector('#corpoAssenze .card-assenza-aperta'); return !!c && c.getBoundingClientRect().width > document.getElementById('corpoAssenze').getBoundingClientRect().width - 2; }));
+  await p.click('#tabAltro');
   await p.click('#settingsAnagrafica');
   await p.click('[data-passo="campoAnni"][data-delta="1"]');
   await p.selectOption('#campoRegione', 'Toscana');
@@ -339,7 +372,7 @@ sezione('Modifica il giorno, Tabelle, avvisi');
   await p.click('#tabAltro'); await p.click('#settingsTabelle');
   await p.click('#toggleTabelleAvanzate');
   await p.evaluate(() => { const i = document.querySelector('input[data-t="buonoPastoValore"]'); i.value = '8'; i.dispatchEvent(new Event('change', { bubbles: true })); });
-  ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
+  ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').modifiche.buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -360,9 +393,13 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
   await p.click('[data-benvenuto-fase="1"]');
   ok('guida: anteprima della settimana che parte da Pom. oggi', await p.evaluate(() => { const s = [...document.querySelectorAll('#benvenutoSettimana span')].map(x => x.textContent); return s.length === 7 && s[0] === 'P' && s[1] === 'M' && document.getElementById('btnBenvenutoAvanti').textContent === 'Crea i turni'; }));
   await p.click('#btnBenvenutoAvanti');
-  ok('guida passo 3: tema e avvisi, promemoria e widget spenti', await p.evaluate(() => !document.querySelector('[data-passo-benvenuto="3"]').hidden && !el('benvenutoPromemoria').checked && !el('benvenutoWidget').checked && document.querySelector('[data-benvenuto-tema="auto"]').classList.contains('attivo')));
+  ok('guida passo 3: "Quanto ti resta?" con congedo (30 proposti), recuperi e riposo compensativo', await p.evaluate(() => !document.querySelector('[data-passo-benvenuto="3"]').hidden && el('benvenutoSaldoCongedo2026').value === '30' && !!el('benvenutoSaldoCongedo2024') && !!el('benvenutoSaldoRecuperoRiposo') && !!el('benvenutoSaldoRiposoCompensativo')));
+  await p.fill('#benvenutoSaldoCongedo2026', '35');
   await p.click('#btnBenvenutoAvanti');
-  ok('guida passo 4: riepilogo con profilo e giorni inseriti', await p.evaluate(() => /Sovrintendente/.test(el('benvenutoRiepilogo').textContent) && /92 giorni nel calendario/.test(el('benvenutoRiepilogo').textContent) && document.getElementById('btnBenvenutoAvanti').textContent === 'Vai al calendario'));
+  ok('guida: saldi di partenza salvati (35 giorni)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_saldiPartenza_v1') || '{}').congedo === 35));
+  ok('guida passo 4: tema e avvisi, promemoria e widget spenti', await p.evaluate(() => !document.querySelector('[data-passo-benvenuto="4"]').hidden && !el('benvenutoPromemoria').checked && !el('benvenutoWidget').checked && document.querySelector('[data-benvenuto-tema="auto"]').classList.contains('attivo')));
+  await p.click('#btnBenvenutoAvanti');
+  ok('guida passo 5: riepilogo con profilo e giorni inseriti', await p.evaluate(() => /Sovrintendente/.test(el('benvenutoRiepilogo').textContent) && /92 giorni nel calendario/.test(el('benvenutoRiepilogo').textContent) && document.getElementById('btnBenvenutoAvanti').textContent === 'Vai al calendario'));
   await p.click('#btnBenvenutoAvanti');
   const b = await p.evaluate(() => ({ q: AppState.anagrafica.qualifica, oggi: AppState.turni['2026-10-09']?.modelloId, n: Object.keys(AppState.turni).length, chiuso: document.getElementById('overlayBenvenuto').hidden }));
   ok('guida: anagrafica salvata, "Oggi fai: Pom." e 3 mesi di turni', b.q === 'Sovrintendente' && b.oggi === 'pomeriggio' && b.n === 92 && b.chiuso, JSON.stringify(b));
@@ -570,13 +607,143 @@ sezione('Report: lordo, trattenute e netto');
   ok('cedolino: il netto è quello del calcolo', await p.evaluate(() => document.querySelector('.ced-cifra-v3').textContent === euro(generaCedolino(annoCorrente, meseCorrente).netto)));
   const mese = await p.evaluate(() => ({ righe: [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].map(b => b.textContent), str: document.querySelector('.mese-str-v3')?.textContent || '', zeri: !!document.getElementById('btnMeseZeriV3'), ore: document.getElementById('meseTileOre').textContent }));
   ok('Il mese: straordinario lordo → netto con il mese in cui arriva', /lordi.*netti, arrivano a dicembre/.test(mese.str), mese.str);
-  ok('Il mese: nessuna indennità a zero in vista', mese.righe.every(x => num(x) > 0) && mese.zeri, JSON.stringify(mese));
+  ok('Il mese: nessuna indennità a zero in vista', mese.righe.filter(x => !x.startsWith('~')).every(x => num(x) > 0) && mese.zeri, JSON.stringify(mese));
+  const nett = await p.evaluate(() => { const na = calcolaNettoAccessorie(annoCorrente, meseCorrente); const righe = [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 .netto-v3')].map(x => x.textContent); return { na, righe }; });
+  ok('indennità: ogni voce ha anche il netto, e il netto totale è tra 0 e il lordo', nett.righe.length > 0 && nett.righe.every(t => /^~\d+ €$/.test(t)) && nett.na.netto > 0 && nett.na.netto < nett.na.lordo, JSON.stringify(nett));
   await p.click('#btnMeseZeriV3');
   ok('"Mostra anche le voci a zero" le fa comparire', await p.evaluate(() => [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].some(b => b.textContent.startsWith('0,00'))));
   await p.click('#btnGeneraCedolino');
   ok('"Vedi tutte le voci" apre il cedolino completo', await p.evaluate(() => !document.getElementById('contenitoreCedolino').hidden && /Nascondi/.test(document.getElementById('btnGeneraCedolino').textContent)));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Tabelle: modifiche personali e aggiornamento dal sito');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  // Vecchio formato (copia completa con il buono pasto cambiato): diventa "solo le modifiche".
+  await p.evaluate(() => { const t = clonaTabelleConSoglie(TABELLE_PREDEFINITE); t.buonoPastoValore = 9; localStorage.setItem('simCedolino_tabelle_v1', JSON.stringify(t)); });
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  const mig = await p.evaluate(() => ({ salv: JSON.parse(localStorage.getItem('simCedolino_tabelle_v1')), bp: AppState.tabelle.buonoPastoValore }));
+  ok('tabelle salvate nel vecchio formato: restano solo le modifiche fatte a mano', mig.salv.formato === 2 && JSON.stringify(mig.salv.modifiche) === '{"buonoPastoValore":9}' && mig.bp === 9, JSON.stringify(mig.salv));
+  const agenteApp = await p.evaluate(() => AppState.tabelle.stipendiAnnuiAttuale['Agente']);
+  const nuovo = await p.evaluate(() => { const t = JSON.parse(JSON.stringify(TABELLE_PREDEFINITE)); t.stipendiAnnuiAttuale['Agente'] = 21000; t.buonoPastoValore = 8; return { formato: 1, versione: '2099.01', aggiornato: '2099-01-10', nota: 'Prova', tabelle: t }; });
+  await ctx.unroute('https://micmax-apps.netlify.app/**');
+  await ctx.route('https://micmax-apps.netlify.app/**', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(nuovo) }));
+  const agg = await p.evaluate(async () => ({ fatto: await aggiornaTabelleDalSito({ forza: true }), agente: AppState.tabelle.stipendiAnnuiAttuale['Agente'], bp: AppState.tabelle.buonoPastoValore, info: applicaTabelleSito() }));
+  ok('tabelle dal sito più nuove: i valori ufficiali si aggiornano', agg.fatto === true && agg.agente === 21000 && agenteApp !== 21000 && agg.info.versione === '2099.01', JSON.stringify(agg));
+  ok('…e le modifiche fatte a mano restano (buono pasto 9 €)', agg.bp === 9);
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('dopo la riapertura l\'app usa ancora le tabelle del sito', await p.evaluate(() => AppState.tabelle.stipendiAnnuiAttuale['Agente'] === 21000 && applicaTabelleSito().fonte === 'sito'));
+  const vecchia = await p.evaluate(async () => { localStorage.setItem('simCedolino_tabelleSitoControllo_v1', '0'); return aggiornaTabelleDalSito({ forza: true }); });
+  ok('stessa versione: non cambia niente', vecchia === false);
+  await ctx.unroute('https://micmax-apps.netlify.app/**');
+  await ctx.route('https://micmax-apps.netlify.app/**', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ formato: 1, versione: '2999.01', tabelle: { stipendiAnnuiAttuale: { Agente: 'tanti' } } }) }));
+  const rotto = await p.evaluate(async () => ({ r: await aggiornaTabelleDalSito({ forza: true }), agente: AppState.tabelle.stipendiAnnuiAttuale['Agente'] }));
+  ok('file del sito non valido: le tabelle restano quelle di prima', rotto.r === false && rotto.agente === 21000, JSON.stringify(rotto));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+sezione('Agenda sotto il calendario');
+{
+  const { p, errori } = await apri({ turni: turniDiProva(), eventi: { '2026-10-12': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }] } });
+  const prima = await p.evaluate(() => ({ nascosta: el('agendaSottoCalendario').hidden, campo: el('campoAgendaSotto').checked, prossimi: !el('prossimiEventiV2').hidden && getComputedStyle(el('prossimiEventiV2')).display !== 'none' }));
+  ok('all\'inizio l\'agenda è spenta e restano "Prossimi 7 giorni"', prima.nascosta && !prima.campo && prima.prossimi, JSON.stringify(prima));
+  await p.click('#tabAltro');
+  await p.evaluate(() => el('campoAgendaSotto').scrollIntoView({ block: 'center' }));
+  await p.click('#campoAgendaSotto', { force: true });
+  await p.click('#tabCalendario');
+  const a = await p.evaluate(() => {
+    const righe = [...document.querySelectorAll('.agenda-giorno')];
+    return { n: righe.length, primo: righe[0].dataset.agendaGiorno, oggi: righe[0].classList.contains('oggi'), testoPrimo: righe[0].textContent,
+      griglia: getComputedStyle(el('calendarioGriglia')).display, mese: el('etichettaMese').textContent, settimana: document.querySelector('.agenda-settimana').textContent,
+      riposo: document.querySelector('[data-agenda-giorno="2026-10-10"]').textContent, evento: document.querySelector('[data-agenda-giorno="2026-10-12"] .agenda-evento')?.textContent || '',
+      prossimi: getComputedStyle(el('prossimiEventiV2')).display };
+  });
+  ok('acceso da Altro: 14 giorni da oggi sotto il calendario, che resta visibile', a.n === 14 && a.primo === '2026-10-09' && a.oggi && a.griglia !== 'none' && /Ottobre 2026/.test(a.mese), JSON.stringify(a));
+  ok('Agenda: turno con nome e orario, riposo e "Oggi"', /Oggi/.test(a.testoPrimo) && /Notte/.test(a.testoPrimo) && /01:00 – 07:00/.test(a.testoPrimo) && /Riposo/.test(a.riposo), a.testoPrimo);
+  ok('Agenda: ore di servizio della settimana (30:00)', /Questa settimana/.test(a.settimana) && /30:00 ore di servizio/.test(a.settimana), a.settimana);
+  const om = await p.evaluate(() => { AppState.turni['2026-10-14'] = { data: '2026-10-14', oraInizio: '12:40', oraFine: '19:15', modelloId: 'pomeriggio' }; renderAgenda(); return document.querySelector('[data-agenda-giorno="2026-10-14"] .agenda-ore').textContent; });
+  ok('Agenda: ore in ore e minuti (12:40–19:15 = 6:35, non 6,58)', om === '6:35', om);
+  const tot = await p.evaluate(() => {
+    ['12','13','14','16','17','18'].forEach(g => { const iso = `2026-10-${g}`; AppState.turni[iso] = g === '16' ? { data: iso, oraInizio: '18:40', oraFine: '00:15', modelloId: 'sera' } : { data: iso, oraInizio: '12:40', oraFine: '19:15', modelloId: 'pomeriggio' }; });
+    AppState.turni['2026-10-15'] = { data: '2026-10-15', riposo: true };
+    renderAgenda(); return document.querySelectorAll('.agenda-settimana')[1].textContent;
+  });
+  ok('Agenda: il totale della settimana è la somma dei giorni (5 × 6:35 + 5:35 = 38:30)', /38:30 ore di servizio/.test(tot), tot);
+  ok('Agenda: eventi sotto il giorno, "Prossimi 7 giorni" nascosto', /10:00/.test(a.evento) && /Visita medica/.test(a.evento) && a.prossimi === 'none', JSON.stringify(a));
+  await p.click('#btnAgendaAltri');
+  ok('"Mostra altri" aggiunge altri 14 giorni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length === 28));
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('dopo la riapertura l\'agenda resta accesa', await p.evaluate(() => !el('agendaSottoCalendario').hidden && el('campoAgendaSotto').checked && document.querySelectorAll('.agenda-giorno').length === 14));
+  ok('la scelta finisce nel backup', await p.evaluate(() => JSON.stringify(costruisciDatiBackup()).includes('"agendaSottoCalendario":true')));
+  await p.click('[data-agenda-giorno="2026-10-13"] .agenda-corpo');
+  const g = await p.evaluate(() => ({ t: el('titoloModaleTurno').textContent, iso: giornoSelezionato }));
+  ok('tocco su un giorno: si apre la modifica di quel giorno', g.iso === '2026-10-13' && /13/.test(g.t), JSON.stringify(g));
+  await p.click('#btnChiudiTurno');
+  await p.click('[data-agenda-giorno="2026-10-12"] .agenda-evento');
+  ok('tocco su un evento: si apre la modifica dell\'evento', await p.evaluate(() => !el('overlayEvento').hidden && el('campoEventoTitolo').value === 'Visita medica'));
+  await p.evaluate(() => { el('overlayEvento').hidden = true; impostaAgendaSotto(false); });
+  ok('spenta di nuovo: sparisce e tornano "Prossimi 7 giorni"', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('prossimiEventiV2')).display !== 'none'));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await p.context().close();
+}
+
+sezione('Velocità del calcolo delle ore');
+{
+  const { p, errori } = await apri({ turni: turniDiProva() });
+  // Valori presi dal vecchio conteggio minuto per minuto: il nuovo (a blocchi di un'ora) deve dare gli stessi.
+  const attesi = [["2026-10-24","22:00","06:00",{"ordinarie":0,"notturne":2,"festive":0,"domenicali":0,"notturneFestive":7,"serali":0},"notte"],["2026-03-28","23:30","07:15",{"ordinarie":0,"notturne":0.5,"festive":0,"domenicali":1.25,"notturneFestive":5,"serali":0},"notte"],["2026-04-05","18:40","00:15",{"ordinarie":0,"notturne":0,"festive":0,"domenicali":3.33,"notturneFestive":2.25,"serali":3.33},"sera"],["2026-12-24","12:40","19:15",{"ordinarie":6.58,"notturne":0,"festive":0,"domenicali":0,"notturneFestive":0,"serali":1.25},"pomeriggio"]];
+  const r = await p.evaluate(attesi => attesi.map(([g, a, b, cat, momento]) => {
+    const [hs, ms] = a.split(':').map(Number), [he, me] = b.split(':').map(Number);
+    const i = new Date(g + 'T00:00:00'); i.setHours(hs, ms, 0, 0); const f = new Date(g + 'T00:00:00'); f.setHours(he, me, 0, 0); if(f <= i) f.setDate(f.getDate() + 1);
+    return JSON.stringify(classificaFinestra(i, f)) === JSON.stringify(cat) && categoriaTurno(a, b, g) === momento;
+  }), attesi);
+  ok('ore notturne, festive e serali uguali a prima (anche col cambio dell\'ora e a Pasqua)', r.every(Boolean), JSON.stringify(r));
+  const ms = await p.evaluate(() => { const s = performance.now(); for(let i = 0; i < 1000; i++) classificaTurno({ data: '2026-10-11', oraInizio: '18:40', oraFine: '00:15' }); return performance.now() - s; });
+  ok('1000 turni calcolati in meno di 300 ms', ms < 300, Math.round(ms) + ' ms');
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await p.context().close();
+}
+
+sezione('Colore dell\'app e Scrivi allo sviluppatore');
+{
+  const { p, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  ok('all\'inizio il colore è Blu (nessun cambio)', await p.evaluate(() => accentoScelto() === 'blu' && ![...document.documentElement.classList].some(c => c.startsWith('accento-'))));
+  await p.click('#tabAltro');
+  await p.click('[data-accento="verde"]');
+  const v = await p.evaluate(() => ({ cls: document.documentElement.classList.contains('accento-verde'), desc: el('descrizioneAccento').textContent, ink: getComputedStyle(document.documentElement).getPropertyValue('--inchiostro').trim(), salvato: localStorage.getItem('simCedolino_accento_v1') }));
+  ok('Verde: si applica subito e si salva', v.cls && v.desc === 'Verde' && v.ink.toUpperCase() === '#174A3E' && v.salvato === 'verde', JSON.stringify(v));
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('dopo la riapertura resta Verde, ed entra nel backup', await p.evaluate(() => document.documentElement.classList.contains('accento-verde') && JSON.stringify(costruisciDatiBackup()).includes('"accento":"verde"')));
+  await p.click('#tabAltro');
+  await p.click('#settingsSegnala');
+  ok('"Segnala un problema" apre la finestra con le informazioni dell\'app', await p.evaluate(() => !el('overlaySegnala').hidden && /Saldi di partenza: no/.test(el('infoSegnala').textContent) && /Colore Verde/.test(el('infoSegnala').textContent)));
+  await p.click('[data-tipo-segnala="Idea"]');
+  await p.fill('#testoSegnala', 'Vorrei il turno spezzato');
+  const link = await p.evaluate(() => linkEmailSegnalazione());
+  ok('email già scritta: indirizzo, oggetto "Idea" e messaggio con le informazioni', link.startsWith('mailto:mic.max.1000@gmail.com?subject=') && decodeURIComponent(link).includes('[Turni & Accessorio PS] Idea') && decodeURIComponent(link).includes('Vorrei il turno spezzato') && decodeURIComponent(link).includes('Informazioni dell\'app'), link.slice(0, 160));
+  await p.click('#campoInfoSegnala');
+  ok('senza informazioni dell\'app: solo il messaggio', await p.evaluate(() => !decodeURIComponent(linkEmailSegnalazione()).includes('Informazioni dell\'app')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await p.context().close();
+}
+
+sezione('Anagrafica: un solo riquadro e distintivo del grado');
+{
+  const { p, errori } = await apri({ turni: turniDiProva() });
+  await p.click('#tabAltro');
+  ok('in Altro la riga Anagrafica mostra il distintivo del grado', await p.evaluate(() => !!el('gradoAltro').querySelector('svg')));
+  await p.click('#settingsAnagrafica');
+  const g = await p.evaluate(() => ({ gruppi: document.querySelectorAll('#sezioneAnagrafica .gruppo-anagrafica').length, titoli: [...document.querySelectorAll('#sezioneAnagrafica .strumenti-turni-titolo')].map(x => x.textContent).join('|'), campi: ['campoQualifica','campoAnni','campoRegione','campoConiugeACarico','campoFigliOver21','campoSindacato'].every(id => el(id).closest('.gruppo-anagrafica')) }));
+  ok('Anagrafica: un solo riquadro "I tuoi dati" con tutti e sei i campi', g.gruppi === 1 && g.titoli === 'I tuoi dati' && g.campi, JSON.stringify(g));
+  await p.selectOption('#campoQualifica', 'Ispettore');
+  await p.click('#btnChiudiAnagrafica');
+  ok('cambiata la qualifica (Ispettore), in Altro il distintivo si aggiorna', await p.evaluate(() => el('gradoAltro').querySelectorAll('polygon').length === 2 && !el('gradoAltro').querySelector('rect[width="1.8"]')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await p.context().close();
 }
 
 await browser.close();

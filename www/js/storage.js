@@ -226,25 +226,82 @@ function caricaSequenza(){
 
 function salvaSequenzaStorage(){ TurniPSStorage.setItem(CHIAVE_SEQUENZA, JSON.stringify(AppState.sequenzaTurni)); }
 
+// Tabelle: i valori ufficiali sono quelli dell'app (tabelle-2026.js), eventualmente sostituiti da
+// quelli scaricati dal sito se più nuovi; sul telefono si salvano SOLO le modifiche fatte a mano
+// (formato 2), così un aggiornamento dei valori ufficiali arriva anche a chi ha toccato le tabelle.
+const CHIAVE_TABELLE_SITO = 'simCedolino_tabelleSito_v1';
+function versioneTabelleMaggiore(a, b){
+  const n = v => String(v || '0').split(/[.\-]/).map(x => Number(x) || 0);
+  const x = n(a), y = n(b);
+  for(let i = 0; i < Math.max(x.length, y.length); i++){ if((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }
+  return false;
+}
+function unisciTabelleProfondo(base, sopra){
+  if(!sopra || typeof sopra !== 'object') return base;
+  for(const k of Object.keys(sopra)){
+    const v = sopra[k];
+    if(v && typeof v === 'object' && !Array.isArray(v) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) unisciTabelleProfondo(base[k], v);
+    else base[k] = (v && typeof v === 'object') ? JSON.parse(JSON.stringify(v)) : v;
+  }
+  return base;
+}
+// Le differenze tra le tabelle in uso e quelle ufficiali (solo ciò che l'utente ha cambiato).
+function differenzeTabelle(attuali, ufficiali){
+  const out = {};
+  for(const k of Object.keys(attuali || {})){
+    const a = attuali[k], u = ufficiali ? ufficiali[k] : undefined;
+    if(a && typeof a === 'object' && !Array.isArray(a) && u && typeof u === 'object' && !Array.isArray(u)){
+      const d = differenzeTabelle(a, u);
+      if(Object.keys(d).length) out[k] = d;
+    } else if(Array.isArray(a) || (a && typeof a === 'object')){
+      if(JSON.stringify(a) !== JSON.stringify(u)) out[k] = JSON.parse(JSON.stringify(a));
+    } else if(!(typeof a === 'number' && typeof u === 'number' ? Math.abs(a - u) < 1e-9 : a === u)){
+      out[k] = a;
+    }
+  }
+  return out;
+}
+let infoTabelleUfficiali = null;
+// Applica (una volta) le tabelle del sito ai valori ufficiali dell'app, se più nuove.
+function applicaTabelleSito(){
+  const dati = window.TurniPSData || {};
+  if(infoTabelleUfficiali) return infoTabelleUfficiali;
+  infoTabelleUfficiali = { versione: dati.VERSIONE_TABELLE || '0', aggiornato: dati.AGGIORNAMENTO_TABELLE || '', fonte: 'app' };
+  try{
+    const sito = JSON.parse(TurniPSStorage.getItem(CHIAVE_TABELLE_SITO) || 'null');
+    if(sito && sito.tabelle && versioneTabelleMaggiore(sito.versione, infoTabelleUfficiali.versione)){
+      unisciTabelleProfondo(TABELLE_PREDEFINITE, ripristinaSoglieInfinite(JSON.parse(JSON.stringify(sito.tabelle))));
+      infoTabelleUfficiali = { versione: sito.versione, aggiornato: sito.aggiornato || '', fonte: 'sito', nota: sito.nota || '' };
+    }
+  }catch(e){}
+  return infoTabelleUfficiali;
+}
 function caricaTabelle(){
+  applicaTabelleSito();
+  const base = () => clonaTabelleConSoglie(TABELLE_PREDEFINITE);
   try{
     const salvate = JSON.parse(TurniPSStorage.getItem(CHIAVE_TABELLE));
-    if(!salvate) return clonaTabelleConSoglie(TABELLE_PREDEFINITE);
-    // Migrazione: le vecchie AppState.tabelle salvate avevano lo straordinario a 4 gruppi
-    // (es. "Agenti/Assistenti"), incompatibile con la nuova struttura per qualifica.
+    if(!salvate) return base();
+    if(salvate.formato === 2) return ripristinaSoglieInfinite(unisciTabelleProfondo(base(), salvate.modifiche || {}));
+    // Vecchio formato: copia completa delle tabelle. Migrazioni di struttura, poi si tengono solo
+    // i valori diversi da quelli ufficiali e si risalva nel formato nuovo.
     if(salvate.straordinarioOrario && !salvate.straordinarioOrario['Agente']){
       delete salvate.straordinarioOrario;
     }
-    // Migrazione: il vecchio assegno di funzione era un unico valore per tutti i ruoli,
-    // incompatibile con la nuova struttura differenziata per ruolo.
     if(salvate.assegnoFunzioneAnnuo && !salvate.assegnoFunzioneAnnuo.truppa){
       delete salvate.assegnoFunzioneAnnuo;
     }
-    return ripristinaSoglieInfinite({ ...clonaTabelleConSoglie(TABELLE_PREDEFINITE), ...salvate });
-  }catch{ return clonaTabelleConSoglie(TABELLE_PREDEFINITE); }
+    const complete = ripristinaSoglieInfinite({ ...base(), ...salvate });
+    const modifiche = differenzeTabelle(complete, base());
+    TurniPSStorage.setItem(CHIAVE_TABELLE, JSON.stringify({ formato: 2, modifiche }));
+    return ripristinaSoglieInfinite(unisciTabelleProfondo(base(), modifiche));
+  }catch{ return base(); }
 }
 
-function salvaTabelleStorage(){ TurniPSStorage.setItem(CHIAVE_TABELLE, JSON.stringify(AppState.tabelle)); }
+function salvaTabelleStorage(){
+  const modifiche = differenzeTabelle(AppState.tabelle, clonaTabelleConSoglie(TABELLE_PREDEFINITE));
+  TurniPSStorage.setItem(CHIAVE_TABELLE, JSON.stringify({ formato: 2, modifiche }));
+}
 
 function caricaConguagli(){
   try{ return JSON.parse(TurniPSStorage.getItem(CHIAVE_CONGUAGLI)) || {}; }catch{ return {}; }

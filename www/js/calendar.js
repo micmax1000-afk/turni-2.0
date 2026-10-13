@@ -45,14 +45,18 @@ function categoriaTurno(oraInizio, oraFine, dataStr){
   if(fine <= inizio) fine.setDate(fine.getDate() + 1);
 
   const minuti = { mattina:0, pomeriggio:0, sera:0, notte:0 };
-  let cursore = new Date(inizio);
-  while(cursore < fine){
+  // A blocchi di un'ora come in classificaFinestra: stesso risultato, molti meno passaggi.
+  let t = inizio.getTime();
+  const fineMs = fine.getTime();
+  while(t < fineMs){
+    const cursore = new Date(t);
+    const passo = Math.max(1, Math.min(60 - cursore.getMinutes(), Math.ceil((fineMs - t) / 60000)));
     const h = cursore.getHours();
-    if(h >= 6 && h < 12) minuti.mattina++;
-    else if(h >= 12 && h < 18) minuti.pomeriggio++;
-    else if(h >= 18) minuti.sera++;
-    else minuti.notte++;
-    cursore = new Date(cursore.getTime() + 60000);
+    if(h >= 6 && h < 12) minuti.mattina += passo;
+    else if(h >= 12 && h < 18) minuti.pomeriggio += passo;
+    else if(h >= 18) minuti.sera += passo;
+    else minuti.notte += passo;
+    t += passo * 60000;
   }
   return Object.entries(minuti).sort((a, b) => b[1] - a[1])[0][0];
 }
@@ -77,20 +81,26 @@ function eFestivoOdDomenica(dataStr){ return eDomenica(dataStr) || eFestivoFisso
 function classificaFinestra(inizio, fine){
   const cat = { ordinarie:0, notturne:0, festive:0, domenicali:0, notturneFestive:0, serali:0 };
   if(!(fine > inizio)) return cat;
-  let cursore = new Date(inizio);
-  while(cursore < fine){
+  // Si contano i minuti a blocchi: dentro la stessa ora tutti i minuti hanno la stessa fascia
+  // (stessa ora, stesso giorno), quindi il risultato è identico al conteggio minuto per minuto,
+  // ma con una decina di passaggi invece di centinaia (prima rallentava Report e Turni).
+  let t = new Date(inizio).getTime();
+  const fineMs = fine.getTime();
+  while(t < fineMs){
+    const cursore = new Date(t);
+    const passo = Math.max(1, Math.min(60 - cursore.getMinutes(), Math.ceil((fineMs - t) / 60000)));
     const ora = cursore.getHours();
     const notte = ora >= 22 || ora < 6;
     const iso = dataISO(cursore);
     const domenica = eDomenica(iso);
     const festivo = !domenica && eFestivoFisso(iso);
-    if(notte && (domenica || festivo)) cat.notturneFestive++;
-    else if(domenica) cat.domenicali++;
-    else if(festivo) cat.festive++;
-    else if(notte) cat.notturne++;
-    else cat.ordinarie++;
-    if(ora >= 18 && ora < 22) cat.serali++; // fascia serale, tracciata a parte per il controllo del territorio
-    cursore = new Date(cursore.getTime() + 60000); // passo di 1 minuto
+    if(notte && (domenica || festivo)) cat.notturneFestive += passo;
+    else if(domenica) cat.domenicali += passo;
+    else if(festivo) cat.festive += passo;
+    else if(notte) cat.notturne += passo;
+    else cat.ordinarie += passo;
+    if(ora >= 18 && ora < 22) cat.serali += passo; // fascia serale, tracciata a parte per il controllo del territorio
+    t += passo * 60000;
   }
   for(const k in cat) cat[k] = round2(cat[k] / 60); // minuti → ore
   return cat;
@@ -407,7 +417,7 @@ function impostaFiltroCalendario(filtro){
   const select = el('filtroCalendarioSelect');
   if(select) select.value = filtroCalendario;
   aggiornaFiltriCalendario();
-  document.querySelectorAll('#calendarioGriglia .giorno-cella:not(.vuota)').forEach(cella => {
+  document.querySelectorAll('#calendarioGriglia .giorno-cella:not(.vuota):not(.fuori-mese)').forEach(cella => {
     const tipo = cella.dataset.filtro || 'vuoto';
     const visibile = filtroCalendario === 'tutti' || tipo === filtroCalendario || (filtroCalendario === 'turni' && tipo === 'extra');
     cella.classList.toggle('filtro-nascosto', !visibile);
@@ -537,15 +547,10 @@ function renderCalendario(){
       : dataISO(new Date(annoCorrente, meseCorrente, 1));
   }
 
-  for(let i = 0; i < offset; i++){
-    const vuota = document.createElement('div');
-    vuota.className = 'giorno-cella vuota';
-    vuota.setAttribute('aria-hidden','true');
-    griglia.appendChild(vuota);
-  }
-
-  for(let g = 1; g <= giorniNelMese; g++){
-    const d = new Date(annoCorrente, meseCorrente, g);
+  // Costruisce la casella di un giorno. Usata per i giorni del mese e, sbiaditi e non toccabili,
+  // per quelli del mese prima e dopo che riempiono la prima e l'ultima settimana.
+  const costruisciCella = (d) => {
+    const g = d.getDate(), meseCella = d.getMonth(), annoCella = d.getFullYear();
     const iso = dataISO(d);
     const t = AppState.turni[iso];
     const sabato = d.getDay() === 6;
@@ -715,8 +720,8 @@ function renderCalendario(){
     cella.className = classi;
     cella.dataset.data = iso;
     cella.dataset.filtro = categoriaFiltroCalendario(t, categoria);
-    cella.setAttribute('aria-label', `${g} ${NOMI_MESI[meseCorrente]} ${annoCorrente}: ${nomeCategoria}${orario ? ', ' + t.oraInizio + '–' + t.oraFine : ''}${haStraordinario ? ', straordinario' : ''}${haMissione ? ', missione' : ''}${haAssenza ? ', assenza' : ''}`);
-    cella.title = `${g} ${NOMI_MESI[meseCorrente]} — ${nomeCategoria}${haStraordinario ? ' · Straordinario' : ''}${haMissione ? ' · Missione' : ''}`;
+    cella.setAttribute('aria-label', `${g} ${NOMI_MESI[meseCella]} ${annoCella}: ${nomeCategoria}${orario ? ', ' + t.oraInizio + '–' + t.oraFine : ''}${haStraordinario ? ', straordinario' : ''}${haMissione ? ', missione' : ''}${haAssenza ? ', assenza' : ''}`);
+    cella.title = `${g} ${NOMI_MESI[meseCella]} — ${nomeCategoria}${haStraordinario ? ' · Straordinario' : ''}${haMissione ? ' · Missione' : ''}`;
 
     // Eventi del giorno: il titolo del primo in una striscia in fondo alla casella, "+N" se sono di più.
     const eventiCella = typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : (AppState.eventiGiorno[iso] || []).map(ev => ({ ev }));
@@ -750,8 +755,7 @@ function renderCalendario(){
         ${rigaEvento}
       `;
       cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
-      griglia.appendChild(cella);
-      continue;
+      return cella;
     }
 
     cella.innerHTML = `
@@ -777,8 +781,27 @@ function renderCalendario(){
     }
 
     cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
-    griglia.appendChild(cella);
-  }
+    return cella;
+  };
+
+  // Giorni del mese prima e del mese dopo: si vede come continua la turnazione, ma sono solo da guardare.
+  const cellaFuoriMese = (d) => {
+    const cella = costruisciCella(d);
+    const copia = cella.cloneNode(true); // la copia non porta con sé il tocco: non si possono aprire
+    copia.classList.add('fuori-mese');
+    copia.classList.remove('oggi', 'selezionata');
+    delete copia.dataset.data;
+    delete copia.dataset.filtro;
+    copia.removeAttribute('title');
+    copia.setAttribute('aria-hidden', 'true');
+    copia.tabIndex = -1;
+    if(copia.tagName === 'BUTTON') copia.disabled = true;
+    return copia;
+  };
+  for(let i = offset; i > 0; i--) griglia.appendChild(cellaFuoriMese(new Date(annoCorrente, meseCorrente, 1 - i)));
+  for(let g = 1; g <= giorniNelMese; g++) griglia.appendChild(costruisciCella(new Date(annoCorrente, meseCorrente, g)));
+  const finali = (7 - (offset + giorniNelMese) % 7) % 7;
+  for(let i = 1; i <= finali; i++) griglia.appendChild(cellaFuoriMese(new Date(annoCorrente, meseCorrente, giorniNelMese + i)));
 
   aggiornaFiltriCalendario();
   impostaFiltroCalendario(filtroCalendario);
@@ -790,6 +813,7 @@ function renderCalendario(){
   if(typeof aggiornaRiepilogoVisualeMese === 'function') aggiornaRiepilogoVisualeMese();
   if(typeof aggiornaRiepilogoGiornoSelezionatoV2 === 'function') aggiornaRiepilogoGiornoSelezionatoV2();
   if(typeof renderProssimiEventiV2 === 'function') renderProssimiEventiV2();
+  if(typeof aggiornaVistaCalendario === 'function') aggiornaVistaCalendario();
   if(typeof renderReportHero === 'function') renderReportHero();
 }
 
@@ -1022,3 +1046,118 @@ else inizializzaFiltriCalendario();
     total.textContent = value;
   };
 })();
+
+// ── Agenda sotto il calendario: i prossimi giorni in elenco, sotto la griglia del mese ──
+// Mostra solo dati già salvati (turni, assenze, indennità, eventi): non calcola niente di nuovo.
+// Si accende da Altro → "Agenda sotto il calendario" (all'inizio è spenta); quando è accesa
+// prende il posto di "Prossimi 7 giorni", che mostrerebbe gli stessi eventi una seconda volta.
+const CHIAVE_AGENDA_SOTTO = 'simCedolino_agendaSottoCalendario_v1';
+const GIORNI_AGENDA_PASSO = 14;
+const GIORNI_SETTIMANA_BREVI = ['dom','lun','mar','mer','gio','ven','sab'];
+let giorniAgenda = GIORNI_AGENDA_PASSO;
+
+function agendaSottoAttiva(){
+  try{ return TurniPSStorage.getItem(CHIAVE_AGENDA_SOTTO) === '1'; }catch(e){ return false; }
+}
+function impostaAgendaSotto(attiva){
+  try{ TurniPSStorage.setItem(CHIAVE_AGENDA_SOTTO, attiva ? '1' : '0'); }catch(e){}
+  giorniAgenda = GIORNI_AGENDA_PASSO;
+  aggiornaVistaCalendario();
+}
+function aggiornaVistaCalendario(){
+  const sez = document.querySelector('.scheda-calendario-v2');
+  const box = el('agendaSottoCalendario');
+  if(!sez || !box) return;
+  const attiva = agendaSottoAttiva();
+  sez.classList.toggle('con-agenda', attiva);
+  box.hidden = !attiva;
+  const campo = el('campoAgendaSotto');
+  if(campo) campo.checked = attiva;
+  if(attiva) renderAgenda();
+}
+// Ore e minuti (6:35), come nel riquadro del giorno: "6,58 h" si leggerebbe come 6 ore e 58 minuti.
+function oreAgenda(n){ return formatOreMinuti(n); }
+function meseBreveAgenda(d){ return d.toLocaleDateString('it-IT', { month: 'short' }).replace('.', ''); }
+function oreServizioGiorno(t){
+  return t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? Number(classificaTurno(t).oreTotali || 0) : 0;
+}
+function intestazioneSettimanaAgenda(lun, questa){
+  const dom = new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + 6, 12);
+  // Si sommano i minuti di ogni giorno (come sono scritti sotto), non le ore con i decimali
+  // arrotondati: sei turni da 6:35 devono fare 39:30, non 39:29.
+  let minuti = 0;
+  for(let k = 0; k < 7; k++) minuti += Math.round(oreServizioGiorno(AppState.turni[dataISO(new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + k, 12))]) * 60);
+  const ore = minuti / 60;
+  const periodo = questa ? 'Questa settimana'
+    : lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${meseBreveAgenda(dom)}`
+    : `${lun.getDate()} ${meseBreveAgenda(lun)} – ${dom.getDate()} ${meseBreveAgenda(dom)}`;
+  return `<div class="agenda-settimana"><span>${periodo}</span>${ore > 0 ? `<b>${oreAgenda(ore)} ore di servizio</b>` : ''}</div>`;
+}
+function corpoGiornoAgenda(iso, t, nascoste){
+  if(t && t.riposo) return '<span class="agenda-semplice">💤 Riposo</span>';
+  if(t && t.assenzaTipo){
+    const voce = AppState.assenze.find(a => a.id === t.assenzaTipo);
+    const nome = voce ? voce.nome : 'Assenza';
+    return `<span class="agenda-assenza"><span aria-hidden="true">${iconaAssenza(nome)}</span>${escapeHtml(nome)}</span>`;
+  }
+  if(!(t && t.oraInizio && t.oraFine)) return '<span class="agenda-semplice agenda-libero">Nessun turno</span>';
+  const categoria = categoriaTurno(t.oraInizio, t.oraFine, iso);
+  const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+  // Come nel calendario: Ufficio, Aggiornamento e Tiro hanno un colore proprio anche se l'orario è di mattina.
+  const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
+  const colore = (modello && modello.colore) || coloreCategoria(categoriaColore);
+  const nome = modello ? modello.nome : (INIZIALE_CATEGORIA[categoria] || 'Turno');
+  const presenti = {
+    straordinario: !!((t.straordinarioPrimaInizio && t.straordinarioPrimaFine) || (t.straordinarioDopoInizio && t.straordinarioDopoFine) || (t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine)),
+    missione: !!t.missione, servizioEsterno: !!t.servizioEsterno, ordinePubblico: !!t.ordinePubblico, reperibilita: !!t.reperibilita,
+    controlloTerritorio: !!t.controlloTerritorio, buonoPasto: !!t.buonoPasto, cambioTurno: !!t.cambioTurno,
+    compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
+  };
+  const chip = ELENCO_INDENNITA.filter(x => presenti[x.chiave] && !nascoste.includes(x.chiave))
+    .map(x => `<span>${iconaIndennita(x.chiave)}${escapeHtml(x.nome)}</span>`).join('');
+  return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">${svgIconaMomento(categoria)}`
+    + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>`
+    + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}</span>`
+    + `<span class="agenda-ore">${oreAgenda(oreServizioGiorno(t))}</span></span>`;
+}
+function renderAgenda(){
+  const host = el('agendaCalendario');
+  if(!host) return;
+  const oggi = new Date(); oggi.setHours(12, 0, 0, 0);
+  const nascoste = indennitaNascoste();
+  let html = '', lunedi = null;
+  for(let i = 0; i < giorniAgenda; i++){
+    const d = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() + i, 12);
+    const iso = dataISO(d);
+    const lun = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7, 12);
+    if(dataISO(lun) !== lunedi){ lunedi = dataISO(lun); html += intestazioneSettimanaAgenda(lun, i === 0); }
+    const t = AppState.turni[iso];
+    const eventi = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : [])
+      .slice().sort((a, b) => (a.ev.tuttoIlGiorno ? '' : a.ev.oraInizio || '').localeCompare(b.ev.tuttoIlGiorno ? '' : b.ev.oraInizio || ''));
+    const righeEventi = eventi.map(({ ev, isoOrigine }) =>
+      `<button type="button" class="agenda-evento" data-evento-giorno="${iso}" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">`
+      + `<i style="background:${coloreEvento(ev)}" aria-hidden="true"></i><em>${ev.tuttoIlGiorno ? 'Tutto il giorno' : escapeHtml(ev.oraInizio || '')}</em>`
+      + `<span>${escapeHtml(ev.titolo || 'Senza titolo')}</span></button>`).join('');
+    const quando = i === 0 ? '<span class="agenda-quando">Oggi</span>' : i === 1 ? '<span class="agenda-quando">Domani</span>' : '';
+    const classi = 'agenda-giorno' + (i === 0 ? ' oggi' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
+    html += `<div class="${classi}" data-agenda-giorno="${iso}">`
+      + `<div class="agenda-data" aria-hidden="true"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b></div>`
+      + `<div class="agenda-righe">${quando}<button type="button" class="agenda-corpo" aria-label="${d.getDate()} ${NOMI_MESI[d.getMonth()]}: apri il giorno">${corpoGiornoAgenda(iso, t, nascoste)}</button>${righeEventi}</div></div>`;
+  }
+  html += `<button type="button" class="btn-secondario agenda-altri" id="btnAgendaAltri">Mostra altri ${GIORNI_AGENDA_PASSO} giorni</button>`;
+  host.innerHTML = html;
+}
+function clicAgenda(e){
+  const evento = e.target.closest('[data-evento-id]');
+  if(evento){ apriEventoDaProssimi(evento); return; }
+  if(e.target.closest('#btnAgendaAltri')){ giorniAgenda += GIORNI_AGENDA_PASSO; renderAgenda(); return; }
+  const riga = e.target.closest('[data-agenda-giorno]');
+  if(!riga) return;
+  const iso = riga.dataset.agendaGiorno;
+  const d = dataDaIso(iso);
+  meseCorrente = d.getMonth();
+  annoCorrente = d.getFullYear();
+  giornoSelezionato = iso;
+  renderCalendario();
+  apriModaleTurno(iso);
+}

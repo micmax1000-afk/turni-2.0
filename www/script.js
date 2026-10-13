@@ -485,6 +485,8 @@ function inizializza(){
   inizializzaPromemoriaTurno();
   inizializzaWidget();
   inizializzaEsportaCalendario();
+  inizializzaSegnalaEAccento();
+  setTimeout(() => aggiornaTabelleDalSito(), 4000);
   inizializzaBenvenuto();
   on('btnReportMesePrec', 'click', () => el('btnMesePrec').click());
   on('btnReportMeseSucc', 'click', () => el('btnMeseSucc').click());
@@ -608,7 +610,7 @@ function inizializza(){
     if(p && p.hidden) apriPannelloColori();
     else p?.scrollIntoView({behavior:'smooth',block:'start'});
   });
-  on('btnApriAssenzeV64','click', () => mostraScheda('assenze'));
+  on('tabAssenze','click', () => mostraScheda('assenze'));
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
   on('settingsDrive','click', () => mostraImpostazioniBackup('sezioneBackupDrive'));
   on('btnChiudiSettingsBackup','click', () => { const p=el('impostazioniBackupPanel'); if(p) p.hidden = true; });
@@ -662,10 +664,11 @@ function inizializza(){
 
   on('filtroCalendarioSelect','change', e => impostaFiltroCalendario(e.target.value));
   on('btnModificaGiornoSelezionatoV2','click', () => { if(giornoSelezionato) apriModaleTurno(giornoSelezionato); });
+  on('campoAgendaSotto','change', e => impostaAgendaSotto(e.target.checked));
+  on('agendaCalendario','click', clicAgenda);
 
   on('settingsSequenza','click', () => mostraScheda('sequenza'));
   on('btnChiudiSequenza','click', () => mostraScheda('turni'));
-  on('btnChiudiAssenze','click', () => mostraScheda('altro'));
   const listaPatternSempliceHost = el('listaPatternSempliceV2');
   if(listaPatternSempliceHost) listaPatternSempliceHost.addEventListener('click', (e) => {
     if(e.target.closest('#btnNuovoPatternV2')){ nuovoPatternV2(); return; }
@@ -1653,15 +1656,20 @@ function renderMeseV3(){
     [iconaIndennita('straordinario'), 'Straordinario', h(str), strLordo]
   ].filter(x => meseMostraZeriV3 || x[3] > 0);
   const totInd = round2(ind.reduce((s, x) => s + (x[3] || 0), 0));
+  // Netto: totale dal cedolino rifatto senza accessorie; per voce, in proporzione al lordo.
+  const na = calcolaNettoAccessorie(annoCorrente, meseCorrente);
+  const quotaNetta = na.lordo > 0 ? na.netto / na.lordo : 0;
+  const nettoVoce = v => Math.round((v || 0) * quotaNetta);
   const ciSonoZeri = !meseMostraZeriV3 && ([t.ordinarie, t.notturne, t.festive + t.domenicali + t.notturneFestive, str].some(v => !v) || [a.indOP, a.indReperibilita, a.indMissioni, a.indCambioTurno].some(v => !v));
   host.innerHTML = `
     ${str > 0 ? `<p class="mese-str-v3">Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} <span class="tag-importo tag-lordo">lordi</span> → <b>+${f(ns.netto)}</b> <span class="tag-importo tag-netto">netti</span>, arrivano a ${pag}.</p>` : ''}
     <div class="mese-gruppo-v3"><h3>Ore lavorate · ${h(ore)}</h3>
       ${righeOre.length ? righeOre.map(([n, v, cls, sub]) => `<div class="mese-riga-v3"><span>${n}</span><b>${h(v)}</b><div class="mese-barra-v3"><i class="${cls}" style="width:${ore ? Math.round(v / ore * 100) : 0}%"></i></div>${sub ? `<small>${sub}</small>` : ''}</div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna ora in questo mese.</p>'}
     </div>
-    <div class="mese-gruppo-v3"><h3>Indennità del mese <span class="tag-importo tag-lordo">lordo</span></h3>
-      ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}</span><em>${q}</em><b>${f(e || 0)}</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
-      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)}</span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}</div>` : ''}
+    <div class="mese-gruppo-v3"><h3>Indennità del mese</h3>
+      ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span><span class="tag-importo tag-lordo">lordo</span></span><span><span class="tag-importo tag-netto">netto</span></span></div>` : ''}
+      ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
+      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)} <span class="netto-v3">~${f(round2(totInd * quotaNetta))}</span></span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}. Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (tassazione agevolata compresa), la singola voce è in proporzione.</div>` : ''}
       ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi le voci a zero ▴' : 'Mostra anche le voci a zero ▾'}</button>` : ''}
     </div>
     ${r.buoniPasto ? `<div class="mese-gruppo-v3"><h3>Fuori busta paga</h3><div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">🍽️</span><span>Buoni pasto</span><em>${r.buoniPasto}</em><b>${f(round2(r.buoniPasto * (AppState.tabelle.buonoPastoValore || 0)))}</b></div></div>` : ''}`;
@@ -1791,6 +1799,9 @@ function aggiornaRiassuntoAnagraficaAltro(){
   const a = AppState.anagrafica || {};
   const parti = [a.qualifica, a.regione].filter(Boolean);
   box.textContent = parti.length ? parti.join(' · ') : 'Da compilare: serve per il cedolino';
+  // Al posto dell'icona, il distintivo del grado (lo stesso della testata di Anagrafica).
+  const grado = el('gradoAltro');
+  if(grado) grado.innerHTML = a.qualifica && typeof svgBadgeGrado === 'function' ? svgBadgeGrado(a.qualifica) : '🪪';
 }
 
 function renderListaModelliTurniV2(){
@@ -2996,12 +3007,18 @@ function sequenzeDisponibiliBenvenuto(){
   const presenti = AppState.pattern || [];
   return presenti.concat(PATTERN_BASE_V2.filter(b => !presenti.some(p => p.id === b.id)));
 }
+function aggiornaGradoBenvenuto(){
+  const box = el('benvenutoGrado');
+  if(box) box.innerHTML = svgBadgeGrado(el('benvenutoQualifica').value);
+}
 function apriBenvenuto(){
   el('benvenutoQualifica').innerHTML = el('campoQualifica').innerHTML;
   el('benvenutoQualifica').value = 'Agente';
+  aggiornaGradoBenvenuto();
   el('benvenutoRegione').innerHTML = el('campoRegione').innerHTML;
   el('benvenutoRegione').value = 'Lazio';
   benvenuto.passo = 1; benvenuto.pattern = null; benvenuto.fase = 0; benvenuto.scritti = 0; benvenuto.fine = null;
+  el('benvenutoSaldi').innerHTML = '';
   const modelli = AppState.modelliTurno || [];
   el('benvenutoStriscia').innerHTML = ['sera', 'pomeriggio', 'mattina', 'notte', 'riposo', 'sera', 'pomeriggio'].map(id => {
     const m = modelli.find(x => x.id === id);
@@ -3053,9 +3070,13 @@ function mostraPassoBenvenuto(n){
   document.querySelectorAll('[data-passo-benvenuto]').forEach(x => { x.hidden = Number(x.dataset.passoBenvenuto) !== n; });
   el('benvenutoPunti').querySelectorAll('i').forEach((x, i) => x.classList.toggle('attivo', i < n));
   el('btnBenvenutoIndietro').hidden = n === 1;
-  el('btnBenvenutoAvanti').textContent = n === 4 ? 'Vai al calendario' : n === 2 && benvenuto.pattern ? 'Crea i turni' : 'Avanti';
-  if(n === 3){ aggiornaTemiBenvenuto(); aggiornaStatoNotificheBenvenuto(); }
-  if(n === 4) renderRiepilogoBenvenuto();
+  el('btnBenvenutoAvanti').textContent = n === 5 ? 'Vai al calendario' : n === 2 && benvenuto.pattern ? 'Crea i turni' : 'Avanti';
+  if(n === 3 && !el('benvenutoSaldi').innerHTML){
+    el('benvenutoSaldi').innerHTML = formSaldiPartenzaHtml('benvenutoSaldo', valoriSaldiPartenza());
+    el('benvenutoNotaSaldi').innerHTML = notaSpettantiCongedo();
+  }
+  if(n === 4){ aggiornaTemiBenvenuto(); aggiornaStatoNotificheBenvenuto(); }
+  if(n === 5) renderRiepilogoBenvenuto();
   el('overlayBenvenuto').scrollTop = 0;
 }
 function aggiornaTemiBenvenuto(){
@@ -3117,12 +3138,18 @@ function avantiBenvenuto(){
     return;
   }
   if(benvenuto.passo === 3){
+    // Saldi di partenza: da qui in poi l'app conta congedo, recuperi e riposo compensativo.
+    salvaSaldiPartenza(leggiFormSaldiPartenza('benvenutoSaldo'));
+    mostraPassoBenvenuto(4);
+    return;
+  }
+  if(benvenuto.passo === 4){
     // Promemoria e widget: si accendono solo se li hai accesi qui (all'inizio sono spenti).
     [['benvenutoPromemoria', 'campoPromemoriaTurno'], ['benvenutoWidget', 'campoWidget']].forEach(([da, a]) => {
       const voluto = el(da).checked, campo = el(a);
       if(campo && campo.checked !== voluto){ campo.checked = voluto; campo.dispatchEvent(new Event('change', { bubbles: true })); }
     });
-    mostraPassoBenvenuto(4);
+    mostraPassoBenvenuto(5);
     return;
   }
   chiudiBenvenuto();
@@ -3138,6 +3165,7 @@ async function aggiornaStatoNotificheBenvenuto(){
 }
 function inizializzaBenvenuto(){
   on('btnSaltaBenvenuto', 'click', chiudiBenvenuto);
+  on('benvenutoQualifica', 'change', aggiornaGradoBenvenuto);
   on('btnBenvenutoAvanti', 'click', avantiBenvenuto);
   on('btnBenvenutoIndietro', 'click', () => mostraPassoBenvenuto(Math.max(1, benvenuto.passo - 1)));
   on('btnBenvenutoNotifiche', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(aggiornaStatoNotificheBenvenuto, 600); });
@@ -3383,5 +3411,144 @@ function inizializzaEsportaCalendario(){
     const [da] = intervalloEsporta();
     await salvaOCondividiFile(`turni-${dataISO(da).slice(0, 7)}.ics`, testo, 'text/calendar');
     mostraToast(`File con ${quanti} giorni pronto`, 'successo');
+  });
+}
+
+
+// ===================== Tabelle aggiornate dal sito =====================
+// Una volta a settimana (se c'è rete) l'app legge il file pubblico turni/tabelle.json sul sito e, se
+// ha una versione più nuova, aggiorna i valori ufficiali. Non invia nulla. Le modifiche fatte a mano
+// dall'utente restano (sono salvate a parte). Senza rete o con un file non valido non cambia niente.
+const URL_TABELLE_SITO = 'https://micmax-apps.netlify.app/turni/tabelle.json';
+const URL_PAGINA_TABELLE = 'https://micmax-apps.netlify.app/tabelle-turni.html';
+const CHIAVE_TABELLE_SITO_CONTROLLO = 'simCedolino_tabelleSitoControllo_v1';
+function tabelleSitoValide(j){
+  if(!j || j.formato !== 1 || typeof j.versione !== 'string' || !j.tabelle || typeof j.tabelle !== 'object') return false;
+  const t = j.tabelle, base = TABELLE_PREDEFINITE;
+  if(!t.stipendiAnnuiAttuale || !(Number(t.stipendiAnnuiAttuale['Agente']) > 0)) return false;
+  // Ogni voce deve avere lo stesso tipo di quella dell'app, e i numeri devono essere sensati.
+  const ok = (v, b) => {
+    if(b === undefined) return true;
+    if(typeof b === 'number') return v === null ? false : (typeof v === 'number' && isFinite(v) && v >= 0);
+    if(Array.isArray(b)) return Array.isArray(v);
+    if(b && typeof b === 'object') return v && typeof v === 'object' && Object.keys(v).every(k => ok(v[k], b[k]) || (k === 'fino' && v[k] === null));
+    return true;
+  };
+  return Object.keys(t).every(k => ok(t[k], base[k]));
+}
+async function aggiornaTabelleDalSito({ forza = false, avvisaSeUguali = false } = {}){
+  const adesso = Date.now();
+  const ultimo = Number(TurniPSStorage.getItem(CHIAVE_TABELLE_SITO_CONTROLLO) || 0);
+  if(!forza && adesso - ultimo < 7 * 86400000) return false;
+  let j = null;
+  try{
+    const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = setTimeout(() => ctrl && ctrl.abort(), 8000);
+    const r = await fetch(URL_TABELLE_SITO, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined });
+    clearTimeout(timer);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    j = await r.json();
+  }catch(e){
+    if(avvisaSeUguali) mostraToast('Non riesco a controllare: serve la connessione a internet.', 'avviso');
+    return false;
+  }
+  TurniPSStorage.setItem(CHIAVE_TABELLE_SITO_CONTROLLO, String(adesso));
+  if(!tabelleSitoValide(j)){ if(avvisaSeUguali) mostraToast('Il file delle tabelle sul sito non è valido: restano quelle attuali.', 'avviso'); return false; }
+  const info = applicaTabelleSito();
+  if(!versioneTabelleMaggiore(j.versione, info.versione)){
+    if(avvisaSeUguali) mostraToast(`Le tabelle sono già aggiornate (versione ${info.versione}).`, 'successo');
+    return false;
+  }
+  // Le modifiche fatte a mano si tengono da parte, si aggiornano i valori ufficiali e si riapplicano.
+  const modifiche = differenzeTabelle(AppState.tabelle, clonaTabelleConSoglie(TABELLE_PREDEFINITE));
+  TurniPSStorage.setItem(CHIAVE_TABELLE_SITO, JSON.stringify({ versione: j.versione, aggiornato: j.aggiornato || '', nota: j.nota || '', tabelle: j.tabelle }));
+  unisciTabelleProfondo(TABELLE_PREDEFINITE, ripristinaSoglieInfinite(JSON.parse(JSON.stringify(j.tabelle))));
+  infoTabelleUfficiali = { versione: j.versione, aggiornato: j.aggiornato || '', fonte: 'sito', nota: j.nota || '' };
+  AppState.tabelle = ripristinaSoglieInfinite(unisciTabelleProfondo(clonaTabelleConSoglie(TABELLE_PREDEFINITE), modifiche));
+  salvaTabelleStorage();
+  try{ renderCalendario(); if(el('vistaTabelle') && !el('vistaTabelle').hidden) renderTabelle(); }catch(e){}
+  mostraToast(`Tabelle aggiornate (versione ${j.versione})${j.nota ? ': ' + j.nota : ''}`, 'successo');
+  return true;
+}
+
+// ===================== Colore dell'app =====================
+// Si somma al tema (chiaro/scuro): cambia pulsanti, titoli, scheda attiva, oggi nel calendario e il
+// riquadro di Assenze. I colori dei turni restano quelli scelti. All'inizio è Blu (nessuna classe).
+const CHIAVE_ACCENTO = 'simCedolino_accento_v1';
+const ACCENTI = { blu: 'Blu', verde: 'Verde', bordeaux: 'Bordeaux', viola: 'Viola', petrolio: 'Petrolio', arancio: 'Arancio' };
+function accentoScelto(){
+  let a = 'blu';
+  try{ a = TurniPSStorage.getItem(CHIAVE_ACCENTO) || 'blu'; }catch(e){}
+  return ACCENTI[a] ? a : 'blu';
+}
+function applicaAccento(){
+  const a = accentoScelto();
+  const radice = document.documentElement;
+  Object.keys(ACCENTI).forEach(k => radice.classList.toggle('accento-' + k, k === a && k !== 'blu'));
+  const descrizione = el('descrizioneAccento');
+  if(descrizione) descrizione.textContent = ACCENTI[a];
+  document.querySelectorAll('[data-accento]').forEach(b => {
+    b.classList.toggle('attivo', b.dataset.accento === a);
+    b.setAttribute('aria-pressed', b.dataset.accento === a ? 'true' : 'false');
+  });
+}
+function scegliAccento(a){
+  try{ TurniPSStorage.setItem(CHIAVE_ACCENTO, ACCENTI[a] ? a : 'blu'); }catch(e){}
+  applicaAccento();
+}
+
+// ===================== Segnala un problema o un'idea =====================
+// Apre l'app email con oggetto e testo già scritti. Nessun dato dei turni viene inviato.
+const EMAIL_ASSISTENZA = 'mic.max.1000@gmail.com';
+let tipoSegnalazione = 'Problema';
+let versioneAppSegnala = '';
+function infoAppSegnalazione(){
+  const ua = navigator.userAgent || '';
+  const android = (ua.match(/Android\s([\d.]+)/) || [])[1];
+  const modello = (ua.match(/Android[^;]*;\s*([^;)]+?)(?:\sBuild|\))/) || [])[1];
+  const temi = { auto: 'Automatico', luce: 'Luce', chiaro: 'Chiaro', grigio: 'Grigio', nero: 'Nero' };
+  const tema = typeof temaScelto === 'function' ? (temi[temaScelto()] || temaScelto()) : '';
+  const righe = [
+    [etichettaVersioneSegnala(), android ? `Android ${android}` : '', modello ? modello.trim() : ''].filter(Boolean).join(' · '),
+    [tema ? `Tema ${tema}` : '', `Colore ${ACCENTI[accentoScelto()]}`, AppState.anagrafica && AppState.anagrafica.qualifica ? `Qualifica ${AppState.anagrafica.qualifica}` : ''].filter(Boolean).join(' · '),
+    `Saldi di partenza: ${typeof saldiPartenza === 'function' && saldiPartenza() ? 'sì' : 'no'}`
+  ];
+  return righe.filter(Boolean).join('\n');
+}
+function etichettaVersioneSegnala(){ return versioneAppSegnala ? `Versione ${versioneAppSegnala}` : 'Turni & Accessorio PS'; }
+function aggiornaTipoSegnala(){
+  document.querySelectorAll('[data-tipo-segnala]').forEach(b => b.classList.toggle('attivo', b.dataset.tipoSegnala === tipoSegnalazione));
+}
+function apriSegnala(){
+  tipoSegnalazione = 'Problema';
+  aggiornaTipoSegnala();
+  el('testoSegnala').value = '';
+  el('campoInfoSegnala').checked = true;
+  el('infoSegnala').textContent = infoAppSegnalazione();
+  el('infoSegnala').hidden = false;
+  el('overlaySegnala').hidden = false;
+  fetch('manifest.json').then(r => r.json()).then(m => {
+    if(m && m.version){ versioneAppSegnala = m.version; el('infoSegnala').textContent = infoAppSegnalazione(); }
+  }).catch(() => {});
+}
+function linkEmailSegnalazione(){
+  const testo = el('testoSegnala').value.trim();
+  const oggetto = `[Turni & Accessorio PS] ${tipoSegnalazione}${versioneAppSegnala ? ' · v' + versioneAppSegnala : ''}`;
+  let corpo = testo || '';
+  if(el('campoInfoSegnala').checked) corpo += `\n\n— Informazioni dell'app —\n${infoAppSegnalazione()}`;
+  return `mailto:${EMAIL_ASSISTENZA}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpo.trim())}`;
+}
+function inizializzaSegnalaEAccento(){
+  applicaAccento();
+  document.querySelectorAll('[data-accento]').forEach(b => b.addEventListener('click', () => scegliAccento(b.dataset.accento)));
+  on('settingsSegnala', 'click', apriSegnala);
+  on('btnChiudiSegnala', 'click', () => { el('overlaySegnala').hidden = true; });
+  document.querySelectorAll('[data-tipo-segnala]').forEach(b => b.addEventListener('click', () => { tipoSegnalazione = b.dataset.tipoSegnala; aggiornaTipoSegnala(); }));
+  on('campoInfoSegnala', 'change', e => { el('infoSegnala').hidden = !e.target.checked; });
+  on('btnInviaSegnala', 'click', () => {
+    if(!el('testoSegnala').value.trim()){ mostraToast('Scrivi prima cosa vuoi segnalare.', 'avviso'); return; }
+    // Nell'app Android il link mailto apre l'app email del telefono.
+    window.location.href = linkEmailSegnalazione();
+    el('overlaySegnala').hidden = true;
   });
 }

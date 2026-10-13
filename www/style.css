@@ -1308,7 +1308,7 @@ body.calendario-moderno .mod-evento i{color:#2196F3;font-style:normal;margin-rig
 
 /* Barra di navigazione in basso (v2.53.0): icone e nomi, sempre a portata di pollice */
 .barra-schede{position:fixed;top:auto;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:90;max-width:none;margin:0;padding:6px;background:color-mix(in srgb,var(--pannello,#fff) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--bordo);border-bottom:1px solid var(--bordo);border-radius:24px;box-shadow:0 8px 28px rgba(27,36,64,.14)}
-.barra-schede .riga-schede-icone{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0;padding:0}
+.barra-schede .riga-schede-icone{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:0;padding:0}
 .barra-schede .riga-schede-icone .scheda-nav{height:56px;min-height:56px;padding:0!important;border:0;border-radius:18px;background:transparent;color:var(--testo-tenue);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:none;font-size:inherit}
 .barra-schede .riga-schede-icone .scheda-nav.attiva{background:#E8ECF7;color:var(--inchiostro)}
 .barra-schede .scheda-nav svg{pointer-events:none;flex-shrink:0}
@@ -2001,3 +2001,199 @@ html[data-tema="scuro"] .benvenuto-temi button.attivo{color:#8FB0FF;border-color
 .benvenuto-consiglio>span{font-size:1.2rem}
 .benvenuto .card-sequenza .stato-sequenza small{font-size:.84rem}
 .benvenuto-ok.da-fare b{color:var(--testo-tenue)}
+
+/* v2.74 — indennità con lordo e netto */
+.mese-ind-v3{grid-template-columns:24px 1fr auto auto!important}
+.mese-ind-v3>span:nth-child(2) small{grid-column:auto;display:block;font-size:.75rem;color:var(--testo-tenue)}
+.mese-ind-v3 .netto-v3{min-width:58px}
+.netto-v3{color:#1E7A46;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+html[data-tema="scuro"] .netto-v3{color:#7FE0A6}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .netto-v3{color:#7FE0A6}}
+.mese-ind-testa-v3{display:grid;grid-template-columns:24px 1fr auto auto;gap:3px 10px;padding:0 0 2px}
+.mese-ind-testa-v3>span:nth-child(3){text-align:right}
+.mese-ind-testa-v3>span:nth-child(4){text-align:right;min-width:58px}
+.mese-ind-testa-v3+.mese-riga-v3{border-top:0}
+.mese-sub-v3{line-height:1.4}
+
+/* v2.75 — versione delle tabelle e link al sito */
+.tabelle-versione-v3{margin:6px 0 0;font-size:.82rem;color:var(--testo-tenue);line-height:1.4}
+.tabelle-versione-v3 a,.link-tabelle-v3{color:#1D5FE0;font-weight:600;text-decoration:none;background:none;border:0;padding:0;font:inherit;font-weight:600;cursor:pointer}
+html[data-tema="scuro"] .tabelle-versione-v3 a,html[data-tema="scuro"] .link-tabelle-v3{color:#8FB0FF}
+.tabelle-hero-v17 .tabelle-versione-v3{color:rgba(255,255,255,.78)}
+.tabelle-hero-v17 .tabelle-versione-v3 b{color:#fff}
+.tabelle-hero-v17 .tabelle-versione-v3 a,.tabelle-hero-v17 .link-tabelle-v3{color:#B9CCFF!important;text-decoration:underline;text-underline-offset:2px}
+
+/* ── v2.76 Agenda sotto il calendario ── */
+.scheda-calendario-v2.con-agenda > #prossimiEventiV2{display:none!important}
+.agenda-sotto-calendario{margin-top:14px}
+.agenda-sotto-titolo{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:4px 2px 0;font-weight:800;font-size:1rem;color:var(--testo)}
+.agenda-sotto-titolo small{font-weight:600;font-size:.78rem;color:var(--testo-tenue)}
+.agenda-settimana{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 2px 4px;font-size:.74rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--testo-tenue)}
+.agenda-settimana:first-child{margin-top:4px}
+.agenda-settimana b{font-weight:700;letter-spacing:0;text-transform:none;font-size:.8rem}
+.agenda-giorno{display:grid;grid-template-columns:46px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--bordo);cursor:pointer}
+.agenda-data{text-align:center;line-height:1.05;padding-top:2px}
+.agenda-data small{display:block;font-size:.68rem;font-weight:800;text-transform:uppercase;color:var(--testo-tenue)}
+.agenda-data b{font-size:1.35rem;font-variant-numeric:tabular-nums;color:var(--testo)}
+.agenda-giorno.festivo .agenda-data small,.agenda-giorno.festivo .agenda-data b{color:#C0392B}
+.agenda-giorno.oggi .agenda-data b{background:#3A55B4;color:#fff;border-radius:50%;display:inline-grid;place-items:center;width:34px;height:34px;font-size:1.1rem;margin-top:2px}
+.agenda-righe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.agenda-quando{font-size:.7rem;font-weight:800;color:#3A55B4;text-transform:uppercase;letter-spacing:.04em}
+.agenda-corpo{display:block;width:100%;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.agenda-turno{display:flex;align-items:center;gap:10px;border-radius:12px;padding:8px 10px;border-left:5px solid var(--colore-turno);background:color-mix(in srgb,var(--colore-turno) 16%,var(--carta,#fff))}
+.agenda-turno > svg{width:30px;height:30px;flex:none;border-radius:8px}
+.agenda-turno-testo{flex:1;min-width:0}
+.agenda-turno-testo b{display:block;font-size:.95rem;color:var(--testo)}
+.agenda-turno-testo small{font-size:.82rem;color:var(--testo-tenue);font-variant-numeric:tabular-nums}
+.agenda-ore{font-weight:800;font-size:.85rem;font-variant-numeric:tabular-nums;color:var(--testo-tenue);white-space:nowrap}
+.agenda-indennita{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.agenda-indennita span{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:700;border-radius:20px;padding:2px 7px;background:var(--carta,#fff);color:var(--testo)}
+.agenda-indennita svg{width:13px;height:13px}
+.agenda-semplice{display:block;font-size:.9rem;color:var(--testo-tenue);padding:6px 2px}
+.agenda-libero{font-style:italic;opacity:.75}
+.agenda-assenza{display:flex;align-items:center;gap:8px;border-radius:12px;padding:8px 10px;background:color-mix(in srgb,#E08A00 14%,var(--carta,#fff));font-weight:700;font-size:.92rem;color:var(--testo)}
+.agenda-evento{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:2px;font:inherit;font-size:.88rem;color:var(--testo);text-align:left;cursor:pointer}
+.agenda-evento i{width:9px;height:9px;border-radius:50%;flex:none}
+.agenda-evento em{font-style:normal;color:var(--testo-tenue);font-variant-numeric:tabular-nums;white-space:nowrap}
+.agenda-evento span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agenda-altri{display:block;width:100%;margin-top:12px}
+html[data-tema=scuro] .agenda-giorno.oggi .agenda-data b{background:#8FA6FF;color:#111}
+html[data-tema=scuro] .agenda-quando{color:#8FA6FF}
+html[data-tema=scuro] .agenda-giorno.festivo .agenda-data small,html[data-tema=scuro] .agenda-giorno.festivo .agenda-data b{color:#FF8A80}
+
+/* ── v2.79 Assenze e permessi: riquadro in alto e schede con l'anello ── */
+.saldi-hero{background:linear-gradient(135deg,#24345E,#3A55B4);color:#fff;border-radius:18px;padding:16px 18px;margin:6px 0 14px}
+.saldi-hero-anno{display:block;opacity:.82;font-size:.8rem;font-weight:600}
+.saldi-hero-numero{display:block;font-size:2.2rem;line-height:1.1;margin:2px 0 8px;font-variant-numeric:tabular-nums}
+.saldi-hero-voci{display:flex;gap:6px;flex-wrap:wrap}
+.saldi-hero-voci span{background:rgba(255,255,255,.14);border-radius:20px;padding:4px 10px;font-size:.8rem;font-weight:700}
+#sezioneAssenze .griglia-saldi{display:grid;grid-template-columns:1fr 1fr;gap:10px;border:0;background:none;overflow:visible}
+#sezioneAssenze .griglia-saldi > p{grid-column:1/-1;border:1px solid var(--bordo);border-radius:14px}
+#sezioneAssenze .griglia-saldi .card-assenza{margin:0;border:1px solid var(--bordo);border-radius:16px;background:var(--carta);box-shadow:none;padding:0;min-width:0;position:relative}
+#sezioneAssenze .griglia-saldi .card-assenza.assenza-nascosta{display:none}
+#sezioneAssenze .griglia-saldi .card-assenza-aperta{grid-column:1/-1;padding:0 12px 12px}
+#sezioneAssenze .griglia-saldi .card-assenza-compact{display:block;background:none;padding:10px 12px 12px;border-radius:16px}
+#sezioneAssenze .griglia-saldi .card-assenza-aperta .card-assenza-compact{padding:10px 0 4px}
+#sezioneAssenze .griglia-saldi .card-assenza-compact-nome{display:block;white-space:normal;overflow:visible;padding-right:16px;margin-bottom:6px}
+#sezioneAssenze .griglia-saldi .card-assenza-compact-nome strong{font-size:.9rem;font-weight:800;line-height:1.2}
+#sezioneAssenze .griglia-saldi .card-assenza-apri{position:absolute;top:10px;right:10px;font-size:.8rem;opacity:.7}
+#sezioneAssenze .griglia-saldi .barra-residuo-assenza{display:none}
+#sezioneAssenze .griglia-saldi .card-assenza-head .card-assenza-icon,#sezioneAssenze .griglia-saldi .card-assenza-head strong,#sezioneAssenze .griglia-saldi .saldo-progress{display:none}
+#sezioneAssenze .griglia-saldi .card-assenza-head{margin-top:2px}
+#sezioneAssenze .griglia-saldi .card-assenza-main{margin-top:6px}
+.saldo-corpo{display:flex;align-items:center;gap:10px}
+.saldo-anello{width:50px;height:50px;flex:none;position:relative;display:block}
+.saldo-anello svg{width:50px;height:50px;transform:rotate(-90deg);display:block}
+#sezioneAssenze .saldo-anello .card-assenza-icon{position:absolute;inset:0;display:grid;place-items:center;font-size:1.05rem;width:auto;height:auto;background:none;opacity:1}
+.saldo-numeri{display:flex;flex-direction:column;gap:2px;min-width:0}
+#sezioneAssenze .saldo-numeri .saldo-etichetta{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--testo-tenue);opacity:1}
+.saldo-resta{display:block;line-height:1.05;color:#1E7A46;white-space:nowrap}
+#sezioneAssenze .saldo-resta strong{font-size:1.45rem;font-weight:900;font-variant-numeric:tabular-nums;color:inherit}
+#sezioneAssenze .saldo-resta small{font-size:.75rem;font-weight:700;opacity:1;color:inherit}
+#sezioneAssenze .saldo-usati{font-size:.74rem;color:var(--testo-tenue);font-weight:600;opacity:1}
+.saldo-usati em{font-style:normal;font-weight:800;color:#C0392B}
+.card-assenza.esaurito .saldo-resta{color:#C0392B}
+html[data-tema=scuro] .saldo-resta{color:#7FE0A6}
+html[data-tema=scuro] .saldo-usati em,html[data-tema=scuro] .card-assenza.esaurito .saldo-resta{color:#FF8A80}
+
+/* Calendario: giorni del mese prima e dopo, sbiaditi e non toccabili */
+#calendarioGriglia .giorno-cella.fuori-mese{opacity:.38;pointer-events:none;filter:saturate(.7);box-shadow:none}
+#sezioneAssenze .griglia-saldi .card-assenza-compact span{opacity:1;font-size:inherit}
+#sezioneAssenze .griglia-saldi .card-assenza-compact-nome strong{display:block;line-height:1.25}
+#sezioneAssenze .saldo-usati .saldo-su{font-weight:700;color:var(--testo-tenue)}
+#sezioneAssenze .griglia-saldi .card-assenza-compact > .saldo-corpo{display:flex;align-items:center;gap:10px}
+/* Aperta: i tre riquadri Disponibili/Utilizzati/Spettanti ripeterebbero i numeri già scritti sopra */
+#sezioneAssenze .griglia-saldi .card-assenza-aperta .card-assenza-main{display:none}
+
+/* ── v2.80 Saldi di partenza ── */
+.partenza-voce{border:1px solid var(--bordo);border-radius:16px;background:var(--carta);padding:12px 14px;margin:0 0 10px}
+.partenza-testa{display:flex;align-items:center;gap:10px;font-weight:800;font-size:.98rem;color:var(--testo)}
+.partenza-testa span{font-size:1.3rem}
+.partenza-riga{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:.88rem;color:var(--testo)}
+.partenza-testo{min-width:0}
+.partenza-testo small{display:block;color:var(--testo-tenue);font-size:.74rem;margin-top:2px}
+.partenza-campo{display:flex;align-items:center;gap:6px;flex:none}
+.partenza-campo span{font-size:.8rem;color:var(--testo-tenue);min-width:18px}
+.partenza-campo .contatore-anagrafica input{width:52px}
+.partenza-sotto{border-top:1px dashed var(--bordo);padding-top:8px}
+.partenza-nota{font-size:.78rem;color:var(--testo-tenue);background:var(--sfondo-secondario,#ECEFEA);border-radius:10px;padding:8px 10px;margin:8px 0 0;line-height:1.4}
+.partenza-nota:empty{display:none}
+.partenza-box{border:1.5px solid #3A55B4;background:color-mix(in srgb,#3A55B4 8%,var(--carta));border-radius:16px;padding:12px 14px;margin:0 0 12px}
+.partenza-box b{display:block;font-size:.95rem;color:var(--testo)}
+.partenza-box p{margin:4px 0 10px;font-size:.84rem;color:var(--testo-tenue);line-height:1.4}
+.partenza-box .btn-primario{width:100%}
+.partenza-riass{display:flex;align-items:center;gap:10px;border:1px solid var(--bordo);border-radius:14px;padding:10px 12px;margin:0 0 12px;background:var(--carta)}
+.partenza-riass > span{font-size:1.2rem}
+.partenza-riass i{flex:1;font-style:normal;font-size:.84rem;color:var(--testo)}
+.partenza-riass i small{display:block;color:var(--testo-tenue);font-size:.74rem;margin-top:2px}
+.partenza-riass button{border:1px solid var(--bordo);background:var(--carta);color:#3A55B4;border-radius:10px;padding:7px 10px;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
+html[data-tema=scuro] .partenza-riass button{color:#8FA6FF}
+#sezioneAssenze .griglia-saldi .card-assenza.card-da-inserire{grid-column:1/-1;border:1.5px dashed #E08A00;background:color-mix(in srgb,#E08A00 7%,var(--carta));padding:12px 14px}
+.card-da-inserire b{display:block;font-size:.95rem;color:var(--testo)}
+.card-da-inserire p{margin:4px 0 10px;font-size:.84rem;color:var(--testo-tenue);line-height:1.4}
+.card-da-inserire .btn-secondario{width:100%}
+/* Schede strette (telefoni da 360 px): anello più piccolo, "Usati … su …" su una riga sotto */
+#sezioneAssenze .saldo-anello,#sezioneAssenze .saldo-anello svg{width:44px;height:44px}
+#sezioneAssenze .saldo-numeri .saldo-etichetta{letter-spacing:.02em;font-size:.6rem}
+#sezioneAssenze .griglia-saldi .card-assenza-compact > .saldo-usati{display:block;margin-top:6px;white-space:nowrap}
+
+/* ── v2.81 Colore dell'app (si somma al tema) ── */
+.scelta-accento{flex:1 1 100%;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:8px 0 0}
+.scelta-accento button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;font:inherit;font-size:.66rem;font-weight:700;color:var(--testo-tenue);padding:5px 0;border-radius:10px;cursor:pointer;min-width:0}
+.pallino-accento{width:28px;height:28px;border-radius:50%;display:block;flex:none}
+.scelta-accento button.attivo{color:var(--testo);background:var(--sfondo-secondario,#F4F6FA)}
+.scelta-accento button.attivo .pallino-accento{outline:2.5px solid var(--testo);outline-offset:2px}
+html.accento-verde{--acc:#2E8B6E;--acc-scuro:#174A3E;--acc-tinta:#DCEFE6;--acc-chiaro:#A8E0CB}
+html.accento-bordeaux{--acc:#A3354F;--acc-scuro:#6B1F33;--acc-tinta:#F4DDE3;--acc-chiaro:#F2B6C4}
+html.accento-viola{--acc:#6B4FB3;--acc-scuro:#3F2C78;--acc-tinta:#E8E1F7;--acc-chiaro:#CBBDF2}
+html.accento-petrolio{--acc:#1F7A99;--acc-scuro:#134B5F;--acc-tinta:#DCEEF4;--acc-chiaro:#A7DBEC}
+html.accento-arancio{--acc:#C76A1A;--acc-scuro:#7A3E0B;--acc-tinta:#FBE9D8;--acc-chiaro:#F6C79A}
+html[class*="accento-"]{--inchiostro:var(--acc-scuro);--inchiostro-chiaro:var(--acc)}
+html[class*="accento-"][data-tema="scuro"]{--inchiostro:var(--acc-chiaro);--inchiostro-chiaro:var(--acc-chiaro)}
+html[class*="accento-"] .saldi-hero{background:linear-gradient(135deg,var(--acc-scuro),var(--acc))}
+html[class*="accento-"] .barra-schede .riga-schede-icone .scheda-nav.attiva{background:var(--acc-tinta)!important;color:var(--acc-scuro)!important}
+html[class*="accento-"][data-tema="scuro"] .barra-schede .riga-schede-icone .scheda-nav.attiva{background:color-mix(in srgb,var(--acc) 45%,#1E2129)!important;color:#fff!important}
+html[class*="accento-"] body.calendario-moderno .oggi .mod-numero{background:var(--acc)}
+html[class*="accento-"] #calendarioGriglia .giorno-cella.selezionata{border-color:var(--acc)!important;box-shadow:inset 0 0 0 2px var(--acc),0 5px 14px color-mix(in srgb,var(--acc) 15%,transparent)!important}
+html[class*="accento-"] #calendarioGriglia .giorno-cella.selezionata:after,html[class*="accento-"] #calendarioGriglia .giorno-cella.selezionata:before{background:var(--acc)}
+html[class*="accento-"] .agenda-giorno.oggi .agenda-data b{background:var(--acc)}
+html[class*="accento-"] .agenda-quando{color:var(--acc)}
+html[class*="accento-"] .partenza-box{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--carta))}
+html[class*="accento-"] .partenza-riass button{color:var(--acc)}
+@media (prefers-color-scheme: dark){
+  html[class*="accento-"]:not([data-tema="chiaro"]){--inchiostro:var(--acc-chiaro);--inchiostro-chiaro:var(--acc-chiaro)}
+  html[class*="accento-"]:not([data-tema="chiaro"]) .barra-schede .riga-schede-icone .scheda-nav.attiva{background:color-mix(in srgb,var(--acc) 45%,#1E2129)!important;color:#fff!important}
+}
+
+/* ── v2.81 Scrivi allo sviluppatore ── */
+.fb-chips{display:flex;gap:6px;margin:0 0 10px}
+.fb-chips button{flex:1;border:1px solid var(--bordo);background:var(--carta);border-radius:12px;padding:9px 4px;font:inherit;font-size:.86rem;font-weight:700;color:var(--testo);cursor:pointer}
+.fb-chips button.attivo{background:var(--inchiostro);color:var(--pannello,#fff);border-color:var(--inchiostro)}
+.fb-testo{width:100%;min-height:110px;border:1px solid var(--bordo);border-radius:12px;padding:10px 12px;font:inherit;font-size:.92rem;background:var(--pannello,#fff);color:var(--testo);box-sizing:border-box;resize:vertical}
+.fb-info{border:1px solid var(--bordo);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:.84rem}
+.fb-info label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700;color:var(--testo)}
+.fb-info pre{margin:8px 0 0;font:inherit;font-size:.76rem;color:var(--testo-tenue);white-space:pre-wrap;background:var(--sfondo-secondario,#F4F6FA);border-radius:8px;padding:8px}
+.fb-nota{font-size:.78rem;color:var(--testo-tenue);line-height:1.4;margin:0 0 10px}
+html[class*="accento-"][data-tema="scuro"] .btn-primario{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff!important}
+@media (prefers-color-scheme: dark){
+  html[class*="accento-"]:not([data-tema="chiaro"]) .btn-primario{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff!important}
+}
+
+/* ── v2.82 Distintivo del grado in Altro e nell'apertura guidata ── */
+.grado-altro{display:grid!important;place-items:center;width:40px;flex:none}
+.grado-altro svg{width:40px!important;height:23px!important}
+.grado-benvenuto{display:inline-grid;place-items:center;margin-left:auto;margin-right:8px;flex:none}
+.grado-benvenuto svg{width:36px!important;height:20px!important}
+
+/* ── v2.83 Congedo ordinario per anno ── */
+.partenza-totale{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bordo);font-weight:800;color:var(--testo)}
+.partenza-totale b{font-size:1.15rem;color:#1E7A46}
+html[data-tema=scuro] .partenza-totale b{color:#7FE0A6}
+.congedo-anni-titolo{margin:8px 0 6px;font-size:.8rem;color:var(--testo-tenue)}
+.congedo-anni{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px;margin-bottom:6px}
+.congedo-anni div{border:1px solid var(--bordo);border-radius:12px;padding:8px 4px;text-align:center;background:var(--pannello,#fff)}
+.congedo-anni small{display:block;color:var(--testo-tenue);font-weight:700;font-size:.74rem}
+.congedo-anni small:last-child{display:inline}
+.congedo-anni b{font-size:1.2rem;color:#1E7A46;font-variant-numeric:tabular-nums}
+.congedo-anni b.negativo{color:#C0392B}
+html[data-tema=scuro] .congedo-anni b{color:#7FE0A6}

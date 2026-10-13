@@ -1,0 +1,25 @@
+=== DESCRIZIONE BREVE (max 80 caratteri) ===
+Turni, indennità e cedolino per la Polizia di Stato. Dati solo sul telefono.
+
+=== DESCRIZIONE COMPLETA (max 4000 caratteri) ===
+Turni & Accessorio PS calcola automaticamente i tuoi turni di lavoro, le indennità accessorie e una simulazione del cedolino, pensata per il personale della Polizia di Stato.
+
+COSA FA L'APP
+- Calendario turni a colori, con generazione automatica dei cicli (turno in quinta, settimana corta/lunga e sequenze personalizzate) e anteprima della settimana
+- Riconoscimento automatico di ore ordinarie, serali, notturne, festive e domenicali
+- Straordinario, rientri, missioni, ordine pubblico, servizio esterno, controllo territorio e reperibilità, con simboli nel calendario
+- Assenze (congedo ordinario, permessi, recupero riposo/festivo e altro), con quanto ti resta calcolato in automatico
+- Quanto arriva sul conto ogni mese, con lordo, trattenute e netto ben distinti
+- Cedolino simulato, con conguagli manuali e tredicesima automatica a dicembre
+- Statistiche mensili e annuali
+- Promemoria del turno (la sera prima o poco prima dell'inizio) e widget per la schermata Home, da accendere se vuoi
+- Esportazione dei turni in Google Calendar
+- Tema chiaro, grigio, nero oppure automatico in base alla luce
+- Apertura guidata: in pochi passi l'app è pronta
+- Backup manuale dei dati in un file, e backup automatico opzionale su Google Drive (a pagamento)
+
+PRIVACY PRIMA DI TUTTO
+Tutti i tuoi dati restano sul tuo telefono. L'app non mostra pubblicità, non traccia il tuo utilizzo e non condivide nulla con terze parti.
+
+IMPORTANTE
+Questa è un'app indipendente, non ufficiale e non affiliata alla Polizia di Stato né ad alcun ente pubblico. I valori delle tabelle retributive sono stati reperiti da fonti pubbliche disponibili online e possono contenere errori o non essere aggiornati: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni economiche o personali. L'autore declina ogni responsabilità per incongruenze o danni derivanti dall'uso dell'app.

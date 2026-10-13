@@ -86,7 +86,10 @@ function costruisciDatiBackup(){
     sequenzaUltimoGiorno: TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO) || null,
     sequenzaPattern: TurniPSStorage.getItem(CHIAVE_SEQUENZA_PATTERN) || null,
     promemoriaTurno: TurniPSStorage.getItem(CHIAVE_PROMEMORIA_TURNO) || null,
-    widget: TurniPSStorage.getItem(CHIAVE_WIDGET) || null
+    widget: TurniPSStorage.getItem(CHIAVE_WIDGET) || null,
+    agendaSottoCalendario: typeof agendaSottoAttiva === 'function' ? agendaSottoAttiva() : false,
+    saldiPartenza: TurniPSStorage.getItem(CHIAVE_SALDI_PARTENZA) || null,
+    accento: typeof accentoScelto === 'function' ? accentoScelto() : 'blu'
   };
 }
 
@@ -689,6 +692,9 @@ function importaBackup(file, datiGiaLetti){
         if(['auto', 'luce', 'chiaro', 'scuro', 'grigio', 'nero'].includes(dati.tema)){ TurniPSStorage.setItem(CHIAVE_TEMA, dati.tema === 'scuro' ? 'grigio' : dati.tema); if(dati.temaScuro === 'nero' || dati.temaScuro === 'grigio') TurniPSStorage.setItem(CHIAVE_TEMA_SCURO, dati.temaScuro); if(typeof applicaTema === 'function') applicaTema(); }
         if(typeof aggiornaClasseCalendarioColori === 'function') aggiornaClasseCalendarioColori();
       }
+      if(typeof dati.saldiPartenza === 'string'){ try{ const sp = JSON.parse(dati.saldiPartenza); if(sp && /^\d{4}-\d{2}-\d{2}$/.test(sp.data)) TurniPSStorage.setItem(CHIAVE_SALDI_PARTENZA, dati.saldiPartenza); }catch(e){} }
+      if(typeof dati.accento === 'string' && typeof ACCENTI !== 'undefined' && ACCENTI[dati.accento]){ TurniPSStorage.setItem(CHIAVE_ACCENTO, dati.accento); if(typeof applicaAccento === 'function') applicaAccento(); }
+      if(typeof dati.agendaSottoCalendario === 'boolean') TurniPSStorage.setItem(CHIAVE_AGENDA_SOTTO, dati.agendaSottoCalendario ? '1' : '0');
       if(dati.coloriTurni && typeof dati.coloriTurni === 'object'){
         AppState.coloriTurni = Object.assign({}, dati.coloriTurni);
         salvaColoriTurniStorage();

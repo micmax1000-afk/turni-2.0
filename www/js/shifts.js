@@ -309,9 +309,12 @@ function aggiornaAnteprima(){
       if(f.ore > 0){
         const eRC = voceSel.nome === 'Riposo compensativo';
         const totaleDisponibile = eRC ? calcolaOreCompensateAccumulate() : voceSel.valore;
-        const oreStessoGiornoAltrove = (giornoSelezionato && AppState.turni[giornoSelezionato] && AppState.turni[giornoSelezionato].assenzaTipo === voceSel.id)
+        // Con i saldi di partenza, il riposo compensativo conta solo i giorni dopo la loro data.
+        const sp = eRC && typeof saldiPartenza === 'function' ? saldiPartenza() : null;
+        const daData = sp ? sp.data : null;
+        const oreStessoGiornoAltrove = (giornoSelezionato && (!daData || giornoSelezionato > daData) && AppState.turni[giornoSelezionato] && AppState.turni[giornoSelezionato].assenzaTipo === voceSel.id)
           ? finestraDaOrari(AppState.turni[giornoSelezionato].data, AppState.turni[giornoSelezionato].riposoCompensativoOraInizio, AppState.turni[giornoSelezionato].riposoCompensativoOraFine).ore : 0;
-        const usateAltrove = calcolaOreAssenzaUsate(voceSel.id) - oreStessoGiornoAltrove;
+        const usateAltrove = calcolaOreAssenzaUsate(voceSel.id, daData) - oreStessoGiornoAltrove;
         const rimanentiDopo = round2(totaleDisponibile - usateAltrove - f.ore);
         boxRC.textContent = `Consuma ${f.ore}h dal saldo di ${voceSel.nome}` + (rimanentiDopo < 0 ? ` — ⚠ saldo insufficiente, andresti a ${rimanentiDopo}h` : ` (resterebbero ${rimanentiDopo}h).`);
       } else {
