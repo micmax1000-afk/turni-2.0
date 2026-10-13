@@ -2136,3 +2136,45 @@ html[data-tema=scuro] .partenza-riass button{color:#8FA6FF}
 #sezioneAssenze .saldo-anello,#sezioneAssenze .saldo-anello svg{width:44px;height:44px}
 #sezioneAssenze .saldo-numeri .saldo-etichetta{letter-spacing:.02em;font-size:.6rem}
 #sezioneAssenze .griglia-saldi .card-assenza-compact > .saldo-usati{display:block;margin-top:6px;white-space:nowrap}
+
+/* ── v2.81 Colore dell'app (si somma al tema) ── */
+.scelta-accento{flex:1 1 100%;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:8px 0 0}
+.scelta-accento button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;font:inherit;font-size:.66rem;font-weight:700;color:var(--testo-tenue);padding:5px 0;border-radius:10px;cursor:pointer;min-width:0}
+.pallino-accento{width:28px;height:28px;border-radius:50%;display:block;flex:none}
+.scelta-accento button.attivo{color:var(--testo);background:var(--sfondo-secondario,#F4F6FA)}
+.scelta-accento button.attivo .pallino-accento{outline:2.5px solid var(--testo);outline-offset:2px}
+html.accento-verde{--acc:#2E8B6E;--acc-scuro:#174A3E;--acc-tinta:#DCEFE6;--acc-chiaro:#A8E0CB}
+html.accento-bordeaux{--acc:#A3354F;--acc-scuro:#6B1F33;--acc-tinta:#F4DDE3;--acc-chiaro:#F2B6C4}
+html.accento-viola{--acc:#6B4FB3;--acc-scuro:#3F2C78;--acc-tinta:#E8E1F7;--acc-chiaro:#CBBDF2}
+html.accento-petrolio{--acc:#1F7A99;--acc-scuro:#134B5F;--acc-tinta:#DCEEF4;--acc-chiaro:#A7DBEC}
+html.accento-arancio{--acc:#C76A1A;--acc-scuro:#7A3E0B;--acc-tinta:#FBE9D8;--acc-chiaro:#F6C79A}
+html[class*="accento-"]{--inchiostro:var(--acc-scuro);--inchiostro-chiaro:var(--acc)}
+html[class*="accento-"][data-tema="scuro"]{--inchiostro:var(--acc-chiaro);--inchiostro-chiaro:var(--acc-chiaro)}
+html[class*="accento-"] .saldi-hero{background:linear-gradient(135deg,var(--acc-scuro),var(--acc))}
+html[class*="accento-"] .barra-schede .riga-schede-icone .scheda-nav.attiva{background:var(--acc-tinta)!important;color:var(--acc-scuro)!important}
+html[class*="accento-"][data-tema="scuro"] .barra-schede .riga-schede-icone .scheda-nav.attiva{background:color-mix(in srgb,var(--acc) 45%,#1E2129)!important;color:#fff!important}
+html[class*="accento-"] body.calendario-moderno .oggi .mod-numero{background:var(--acc)}
+html[class*="accento-"] #calendarioGriglia .giorno-cella.selezionata{border-color:var(--acc)!important;box-shadow:inset 0 0 0 2px var(--acc),0 5px 14px color-mix(in srgb,var(--acc) 15%,transparent)!important}
+html[class*="accento-"] #calendarioGriglia .giorno-cella.selezionata:after,html[class*="accento-"] #calendarioGriglia .giorno-cella.selezionata:before{background:var(--acc)}
+html[class*="accento-"] .agenda-giorno.oggi .agenda-data b{background:var(--acc)}
+html[class*="accento-"] .agenda-quando{color:var(--acc)}
+html[class*="accento-"] .partenza-box{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--carta))}
+html[class*="accento-"] .partenza-riass button{color:var(--acc)}
+@media (prefers-color-scheme: dark){
+  html[class*="accento-"]:not([data-tema="chiaro"]){--inchiostro:var(--acc-chiaro);--inchiostro-chiaro:var(--acc-chiaro)}
+  html[class*="accento-"]:not([data-tema="chiaro"]) .barra-schede .riga-schede-icone .scheda-nav.attiva{background:color-mix(in srgb,var(--acc) 45%,#1E2129)!important;color:#fff!important}
+}
+
+/* ── v2.81 Scrivi allo sviluppatore ── */
+.fb-chips{display:flex;gap:6px;margin:0 0 10px}
+.fb-chips button{flex:1;border:1px solid var(--bordo);background:var(--carta);border-radius:12px;padding:9px 4px;font:inherit;font-size:.86rem;font-weight:700;color:var(--testo);cursor:pointer}
+.fb-chips button.attivo{background:var(--inchiostro);color:var(--pannello,#fff);border-color:var(--inchiostro)}
+.fb-testo{width:100%;min-height:110px;border:1px solid var(--bordo);border-radius:12px;padding:10px 12px;font:inherit;font-size:.92rem;background:var(--pannello,#fff);color:var(--testo);box-sizing:border-box;resize:vertical}
+.fb-info{border:1px solid var(--bordo);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:.84rem}
+.fb-info label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700;color:var(--testo)}
+.fb-info pre{margin:8px 0 0;font:inherit;font-size:.76rem;color:var(--testo-tenue);white-space:pre-wrap;background:var(--sfondo-secondario,#F4F6FA);border-radius:8px;padding:8px}
+.fb-nota{font-size:.78rem;color:var(--testo-tenue);line-height:1.4;margin:0 0 10px}
+html[class*="accento-"][data-tema="scuro"] .btn-primario{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff!important}
+@media (prefers-color-scheme: dark){
+  html[class*="accento-"]:not([data-tema="chiaro"]) .btn-primario{background:var(--acc)!important;border-color:var(--acc)!important;color:#fff!important}
+}

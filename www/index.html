@@ -969,6 +969,18 @@
             <button type="button" data-tema="nero"><span class="cerchio-tema cerchio-tema-nero" aria-hidden="true"></span>Nero</button>
           </div>
         </div>
+        <div class="riga-strumento-turni riga-tema">
+          <span>🎨</span><i>Colore dell'app<small id="descrizioneAccento">Blu</small></i>
+          <div class="scelta-accento" role="group" aria-label="Colore dell'app">
+            <button type="button" data-accento="blu"><span class="pallino-accento" style="background:#3A55B4" aria-hidden="true"></span>Blu</button>
+            <button type="button" data-accento="verde"><span class="pallino-accento" style="background:#2E8B6E" aria-hidden="true"></span>Verde</button>
+            <button type="button" data-accento="bordeaux"><span class="pallino-accento" style="background:#A3354F" aria-hidden="true"></span>Bordeaux</button>
+            <button type="button" data-accento="viola"><span class="pallino-accento" style="background:#6B4FB3" aria-hidden="true"></span>Viola</button>
+            <button type="button" data-accento="petrolio"><span class="pallino-accento" style="background:#1F7A99" aria-hidden="true"></span>Petrolio</button>
+            <button type="button" data-accento="arancio"><span class="pallino-accento" style="background:#C76A1A" aria-hidden="true"></span>Arancio</button>
+          </div>
+        </div>
+        <button type="button" class="riga-strumento-turni" id="settingsSegnala"><span>💬</span><i>Segnala un problema o un'idea<small>Scrivi allo sviluppatore</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="btnInstallaAppV23" hidden><span>📲</span><i>Installa l'app<small>Aggiungila alla schermata Home</small></i><b>›</b></button>
       </div>
       <!-- I backup sono sempre visibili qui sotto: questi due tasti restano solo per compatibilità -->
@@ -1083,6 +1095,26 @@
   <div class="benvenuto-piede">
     <button type="button" class="btn-secondario" id="btnBenvenutoIndietro" hidden>Indietro</button>
     <button type="button" class="btn-primario" id="btnBenvenutoAvanti">Avanti</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlaySegnala" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Scrivi allo sviluppatore</h2><button class="btn-icona" id="btnChiudiSegnala" aria-label="Chiudi">✕</button></div>
+    <div class="modale-corpo">
+      <div class="fb-chips" role="group" aria-label="Tipo di messaggio">
+        <button type="button" data-tipo-segnala="Problema" class="attivo">🐞 Problema</button>
+        <button type="button" data-tipo-segnala="Idea">💡 Idea</button>
+        <button type="button" data-tipo-segnala="Domanda">❓ Domanda</button>
+      </div>
+      <textarea class="fb-testo" id="testoSegnala" placeholder="Scrivi qui cosa succede o cosa ti piacerebbe…" aria-label="Messaggio"></textarea>
+      <div class="fb-info">
+        <label for="campoInfoSegnala">Aggiungi le informazioni dell'app <input type="checkbox" class="interruttore" id="campoInfoSegnala" checked></label>
+        <pre id="infoSegnala"></pre>
+      </div>
+      <p class="fb-nota">Si apre l'app email con tutto già scritto: puoi aggiungere uno screenshot prima di inviare. I tuoi turni e i tuoi dati non vengono inviati.</p>
+      <button type="button" class="btn-primario" id="btnInviaSegnala" style="width:100%;">✉️ Scrivi l'email</button>
+    </div>
   </div>
 </div>
 

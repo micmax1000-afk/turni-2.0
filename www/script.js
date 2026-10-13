@@ -485,6 +485,7 @@ function inizializza(){
   inizializzaPromemoriaTurno();
   inizializzaWidget();
   inizializzaEsportaCalendario();
+  inizializzaSegnalaEAccento();
   setTimeout(() => aggiornaTabelleDalSito(), 4000);
   inizializzaBenvenuto();
   on('btnReportMesePrec', 'click', () => el('btnMesePrec').click());
@@ -3459,4 +3460,86 @@ async function aggiornaTabelleDalSito({ forza = false, avvisaSeUguali = false } 
   try{ renderCalendario(); if(el('vistaTabelle') && !el('vistaTabelle').hidden) renderTabelle(); }catch(e){}
   mostraToast(`Tabelle aggiornate (versione ${j.versione})${j.nota ? ': ' + j.nota : ''}`, 'successo');
   return true;
+}
+
+// ===================== Colore dell'app =====================
+// Si somma al tema (chiaro/scuro): cambia pulsanti, titoli, scheda attiva, oggi nel calendario e il
+// riquadro di Assenze. I colori dei turni restano quelli scelti. All'inizio è Blu (nessuna classe).
+const CHIAVE_ACCENTO = 'simCedolino_accento_v1';
+const ACCENTI = { blu: 'Blu', verde: 'Verde', bordeaux: 'Bordeaux', viola: 'Viola', petrolio: 'Petrolio', arancio: 'Arancio' };
+function accentoScelto(){
+  let a = 'blu';
+  try{ a = TurniPSStorage.getItem(CHIAVE_ACCENTO) || 'blu'; }catch(e){}
+  return ACCENTI[a] ? a : 'blu';
+}
+function applicaAccento(){
+  const a = accentoScelto();
+  const radice = document.documentElement;
+  Object.keys(ACCENTI).forEach(k => radice.classList.toggle('accento-' + k, k === a && k !== 'blu'));
+  const descrizione = el('descrizioneAccento');
+  if(descrizione) descrizione.textContent = ACCENTI[a];
+  document.querySelectorAll('[data-accento]').forEach(b => {
+    b.classList.toggle('attivo', b.dataset.accento === a);
+    b.setAttribute('aria-pressed', b.dataset.accento === a ? 'true' : 'false');
+  });
+}
+function scegliAccento(a){
+  try{ TurniPSStorage.setItem(CHIAVE_ACCENTO, ACCENTI[a] ? a : 'blu'); }catch(e){}
+  applicaAccento();
+}
+
+// ===================== Segnala un problema o un'idea =====================
+// Apre l'app email con oggetto e testo già scritti. Nessun dato dei turni viene inviato.
+const EMAIL_ASSISTENZA = 'mic.max.1000@gmail.com';
+let tipoSegnalazione = 'Problema';
+let versioneAppSegnala = '';
+function infoAppSegnalazione(){
+  const ua = navigator.userAgent || '';
+  const android = (ua.match(/Android\s([\d.]+)/) || [])[1];
+  const modello = (ua.match(/Android[^;]*;\s*([^;)]+?)(?:\sBuild|\))/) || [])[1];
+  const temi = { auto: 'Automatico', luce: 'Luce', chiaro: 'Chiaro', grigio: 'Grigio', nero: 'Nero' };
+  const tema = typeof temaScelto === 'function' ? (temi[temaScelto()] || temaScelto()) : '';
+  const righe = [
+    [etichettaVersioneSegnala(), android ? `Android ${android}` : '', modello ? modello.trim() : ''].filter(Boolean).join(' · '),
+    [tema ? `Tema ${tema}` : '', `Colore ${ACCENTI[accentoScelto()]}`, AppState.anagrafica && AppState.anagrafica.qualifica ? `Qualifica ${AppState.anagrafica.qualifica}` : ''].filter(Boolean).join(' · '),
+    `Saldi di partenza: ${typeof saldiPartenza === 'function' && saldiPartenza() ? 'sì' : 'no'}`
+  ];
+  return righe.filter(Boolean).join('\n');
+}
+function etichettaVersioneSegnala(){ return versioneAppSegnala ? `Versione ${versioneAppSegnala}` : 'Turni & Accessorio PS'; }
+function aggiornaTipoSegnala(){
+  document.querySelectorAll('[data-tipo-segnala]').forEach(b => b.classList.toggle('attivo', b.dataset.tipoSegnala === tipoSegnalazione));
+}
+function apriSegnala(){
+  tipoSegnalazione = 'Problema';
+  aggiornaTipoSegnala();
+  el('testoSegnala').value = '';
+  el('campoInfoSegnala').checked = true;
+  el('infoSegnala').textContent = infoAppSegnalazione();
+  el('infoSegnala').hidden = false;
+  el('overlaySegnala').hidden = false;
+  fetch('manifest.json').then(r => r.json()).then(m => {
+    if(m && m.version){ versioneAppSegnala = m.version; el('infoSegnala').textContent = infoAppSegnalazione(); }
+  }).catch(() => {});
+}
+function linkEmailSegnalazione(){
+  const testo = el('testoSegnala').value.trim();
+  const oggetto = `[Turni & Accessorio PS] ${tipoSegnalazione}${versioneAppSegnala ? ' · v' + versioneAppSegnala : ''}`;
+  let corpo = testo || '';
+  if(el('campoInfoSegnala').checked) corpo += `\n\n— Informazioni dell'app —\n${infoAppSegnalazione()}`;
+  return `mailto:${EMAIL_ASSISTENZA}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpo.trim())}`;
+}
+function inizializzaSegnalaEAccento(){
+  applicaAccento();
+  document.querySelectorAll('[data-accento]').forEach(b => b.addEventListener('click', () => scegliAccento(b.dataset.accento)));
+  on('settingsSegnala', 'click', apriSegnala);
+  on('btnChiudiSegnala', 'click', () => { el('overlaySegnala').hidden = true; });
+  document.querySelectorAll('[data-tipo-segnala]').forEach(b => b.addEventListener('click', () => { tipoSegnalazione = b.dataset.tipoSegnala; aggiornaTipoSegnala(); }));
+  on('campoInfoSegnala', 'change', e => { el('infoSegnala').hidden = !e.target.checked; });
+  on('btnInviaSegnala', 'click', () => {
+    if(!el('testoSegnala').value.trim()){ mostraToast('Scrivi prima cosa vuoi segnalare.', 'avviso'); return; }
+    // Nell'app Android il link mailto apre l'app email del telefono.
+    window.location.href = linkEmailSegnalazione();
+    el('overlaySegnala').hidden = true;
+  });
 }

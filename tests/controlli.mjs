@@ -702,6 +702,29 @@ sezione('Velocità del calcolo delle ore');
   await p.context().close();
 }
 
+sezione('Colore dell\'app e Scrivi allo sviluppatore');
+{
+  const { p, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  ok('all\'inizio il colore è Blu (nessun cambio)', await p.evaluate(() => accentoScelto() === 'blu' && ![...document.documentElement.classList].some(c => c.startsWith('accento-'))));
+  await p.click('#tabAltro');
+  await p.click('[data-accento="verde"]');
+  const v = await p.evaluate(() => ({ cls: document.documentElement.classList.contains('accento-verde'), desc: el('descrizioneAccento').textContent, ink: getComputedStyle(document.documentElement).getPropertyValue('--inchiostro').trim(), salvato: localStorage.getItem('simCedolino_accento_v1') }));
+  ok('Verde: si applica subito e si salva', v.cls && v.desc === 'Verde' && v.ink.toUpperCase() === '#174A3E' && v.salvato === 'verde', JSON.stringify(v));
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  ok('dopo la riapertura resta Verde, ed entra nel backup', await p.evaluate(() => document.documentElement.classList.contains('accento-verde') && JSON.stringify(costruisciDatiBackup()).includes('"accento":"verde"')));
+  await p.click('#tabAltro');
+  await p.click('#settingsSegnala');
+  ok('"Segnala un problema" apre la finestra con le informazioni dell\'app', await p.evaluate(() => !el('overlaySegnala').hidden && /Saldi di partenza: no/.test(el('infoSegnala').textContent) && /Colore Verde/.test(el('infoSegnala').textContent)));
+  await p.click('[data-tipo-segnala="Idea"]');
+  await p.fill('#testoSegnala', 'Vorrei il turno spezzato');
+  const link = await p.evaluate(() => linkEmailSegnalazione());
+  ok('email già scritta: indirizzo, oggetto "Idea" e messaggio con le informazioni', link.startsWith('mailto:mic.max.1000@gmail.com?subject=') && decodeURIComponent(link).includes('[Turni & Accessorio PS] Idea') && decodeURIComponent(link).includes('Vorrei il turno spezzato') && decodeURIComponent(link).includes('Informazioni dell\'app'), link.slice(0, 160));
+  await p.click('#campoInfoSegnala');
+  ok('senza informazioni dell\'app: solo il messaggio', await p.evaluate(() => !decodeURIComponent(linkEmailSegnalazione()).includes('Informazioni dell\'app')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await p.context().close();
+}
+
 await browser.close();
 server.close();
 console.log(`\n${superati} controlli superati, ${falliti} falliti`);

@@ -88,7 +88,8 @@ function costruisciDatiBackup(){
     promemoriaTurno: TurniPSStorage.getItem(CHIAVE_PROMEMORIA_TURNO) || null,
     widget: TurniPSStorage.getItem(CHIAVE_WIDGET) || null,
     agendaSottoCalendario: typeof agendaSottoAttiva === 'function' ? agendaSottoAttiva() : false,
-    saldiPartenza: TurniPSStorage.getItem(CHIAVE_SALDI_PARTENZA) || null
+    saldiPartenza: TurniPSStorage.getItem(CHIAVE_SALDI_PARTENZA) || null,
+    accento: typeof accentoScelto === 'function' ? accentoScelto() : 'blu'
   };
 }
 
@@ -692,6 +693,7 @@ function importaBackup(file, datiGiaLetti){
         if(typeof aggiornaClasseCalendarioColori === 'function') aggiornaClasseCalendarioColori();
       }
       if(typeof dati.saldiPartenza === 'string'){ try{ const sp = JSON.parse(dati.saldiPartenza); if(sp && /^\d{4}-\d{2}-\d{2}$/.test(sp.data)) TurniPSStorage.setItem(CHIAVE_SALDI_PARTENZA, dati.saldiPartenza); }catch(e){} }
+      if(typeof dati.accento === 'string' && typeof ACCENTI !== 'undefined' && ACCENTI[dati.accento]){ TurniPSStorage.setItem(CHIAVE_ACCENTO, dati.accento); if(typeof applicaAccento === 'function') applicaAccento(); }
       if(typeof dati.agendaSottoCalendario === 'boolean') TurniPSStorage.setItem(CHIAVE_AGENDA_SOTTO, dati.agendaSottoCalendario ? '1' : '0');
       if(dati.coloriTurni && typeof dati.coloriTurni === 'object'){
         AppState.coloriTurni = Object.assign({}, dati.coloriTurni);
