@@ -8,16 +8,31 @@ const CHIAVE_SALDI_PARTENZA = 'simCedolino_saldiPartenza_v1';
 function saldiPartenza(){
   try{
     const s = JSON.parse(TurniPSStorage.getItem(CHIAVE_SALDI_PARTENZA) || 'null');
-    if(s && /^\d{4}-\d{2}-\d{2}$/.test(s.data)) return s;
+    if(s && /^\d{4}-\d{2}-\d{2}$/.test(s.data)){
+      // Saldi salvati prima della divisione per anno: totale e "di cui dell'anno scorso".
+      if(!s.congedoAnni){
+        const y = Number(s.data.slice(0, 4)), vecchi = Number(s.congedoVecchi) || 0;
+        s.congedoAnni = { [y]: round2((Number(s.congedo) || 0) - vecchi), [y - 1]: vecchi };
+      }
+      return s;
+    }
   }catch(e){}
   return null;
 }
 function salvaSaldiPartenza(valori){
   const n = v => Math.max(0, round2(Number(v) || 0));
+  const oggi = new Date();
+  const annoOggi = oggi.getFullYear();
+  // Congedo per anno ({ 2026: 37, 2025: 15, 2024: 3 }); totale e "anni prima" restano per compatibilità.
+  const anni = {};
+  Object.entries(valori.congedoAnni || {}).forEach(([y, g]) => { if(n(g) > 0 || Number(y) === annoOggi) anni[y] = n(g); });
+  const totale = round2(Object.values(anni).reduce((a, b) => a + b, 0));
+  const vecchi = round2(Object.entries(anni).filter(([y]) => Number(y) < annoOggi).reduce((a, [, g]) => a + g, 0));
   const s = {
-    data: dataISO(new Date()),
-    congedo: n(valori.congedo),
-    congedoVecchi: Math.min(n(valori.congedoVecchi), n(valori.congedo)),
+    data: dataISO(oggi),
+    congedoAnni: anni,
+    congedo: totale,
+    congedoVecchi: vecchi,
     recuperoRiposo: n(valori.recuperoRiposo),
     recuperoFestivo: n(valori.recuperoFestivo),
     riposoCompensativoOre: n(valori.riposoCompensativoOre)
@@ -140,10 +155,41 @@ function calcolaSaldoCongedoOrdinario(anno){
   const anno0 = s ? Number(s.data.slice(0, 4)) : null;
   if(!s || anno < anno0) return { valoreEffettivo: voce.valore, usate: contaGiorniUsatiAssenzaNelAnno(voce.id, anno), riporto: 0, daInserire: !s };
   const usatiDopo = y => Object.entries(AppState.turni).filter(([iso, t]) => iso.startsWith(`${y}-`) && t.assenzaTipo === voce.id && dopoSaldi(iso, s)).length;
-  if(anno === anno0) return { valoreEffettivo: round2(s.congedo), usate: usatiDopo(anno0), riporto: round2(s.congedoVecchi || 0) };
-  let residuo = s.congedo - usatiDopo(anno0);
-  for(let y = anno0 + 1; y < anno; y++) residuo += voce.valore - usatiDopo(y);
-  return { valoreEffettivo: round2(voce.valore + residuo), usate: usatiDopo(anno), riporto: round2(residuo) };
+  const somma = o => round2(Object.values(o).reduce((a, b) => a + b, 0));
+  if(anno === anno0){
+    const vecchi = round2(Object.entries(s.congedoAnni).filter(([y]) => Number(y) < anno0).reduce((a, [, g]) => a + g, 0));
+    return { valoreEffettivo: somma(s.congedoAnni), usate: usatiDopo(anno0), riporto: vecchi, perAnno: congedoPerAnno(anno) };
+  }
+  const residuo = somma(congedoPerAnno(anno - 1));
+  return { valoreEffettivo: round2(voce.valore + residuo), usate: usatiDopo(anno), riporto: residuo, perAnno: congedoPerAnno(anno) };
+}
+
+// Quanti giorni di congedo restano per ogni anno ({ 2024: 2, 2025: 15, 2026: 37 }) alla fine
+// dell'anno indicato, oppure fino a una data (finoA, compresa). I giorni non scadono mai: ogni
+// congedo segnato si toglie dall'anno più vecchio che ne ha ancora; a gennaio arrivano gli spettanti.
+function congedoPerAnno(anno, finoA){
+  const voce = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
+  const s = saldiPartenza();
+  if(!voce || !s) return {};
+  const anno0 = Number(s.data.slice(0, 4));
+  const conti = {};
+  Object.entries(s.congedoAnni).forEach(([y, g]) => { conti[y] = Number(g) || 0; });
+  const usati = Object.entries(AppState.turni)
+    .filter(([iso, t]) => t.assenzaTipo === voce.id && dopoSaldi(iso, s) && (!finoA || iso <= finoA))
+    .map(([iso]) => Number(iso.slice(0, 4)));
+  for(let y = anno0; y <= anno; y++){
+    if(y > anno0) conti[y] = (conti[y] || 0) + voce.valore;
+    let daTogliere = usati.filter(x => x === y).length;
+    const anni = Object.keys(conti).map(Number).filter(x => x <= y).sort((a, b) => a - b);
+    for(const x of anni){
+      if(!daTogliere) break;
+      const preso = Math.min(daTogliere, Math.max(0, conti[x]));
+      conti[x] -= preso; daTogliere -= preso;
+    }
+    if(daTogliere) conti[y] = (conti[y] || 0) - daTogliere; // più giorni di quelli disponibili
+  }
+  Object.keys(conti).forEach(k => { conti[k] = round2(conti[k]); });
+  return conti;
 }
 
 // Il conto di prima (riporto da ogni anno con turni): serve solo a proporre i numeri da confermare
@@ -167,7 +213,7 @@ function stimaSaldiPartenza(){
     if(!t.riposo && !t.assenzaTipo) oreRc += classificaTurno(t).oreCompensate || 0;
     if(rc && t.assenzaTipo === rc.id) oreRc -= finestraDaOrari(t.data, t.riposoCompensativoOraInizio, t.riposoCompensativoOraFine).ore;
   }
-  return { congedo, congedoVecchi, recuperoRiposo, recuperoFestivo, riposoCompensativoOre: Math.max(0, round2(oreRc)) };
+  return { congedoAnni: { [anno]: round2(congedo - congedoVecchi), [anno - 1]: congedoVecchi, [anno - 2]: 0 }, recuperoRiposo, recuperoFestivo, riposoCompensativoOre: Math.max(0, round2(oreRc)) };
 }
 
 function calcolaSaldoCongedoOrdinarioStimato(anno){
@@ -367,7 +413,11 @@ function renderCardAssenzaItem(a){
 
     // Congedo ordinario: i giorni riportati dall'anno prima si consumano per primi (FIFO)
     let dettaglioRiporto = '';
-    if(eCongedoOrdinario && saldoCO.riporto !== 0){
+    if(eCongedoOrdinario && saldoCO.perAnno){
+      // Con i saldi di partenza: quanto resta di ogni anno (si usano prima i più vecchi, non scadono).
+      const anniCO = Object.entries(saldoCO.perAnno).filter(([y, g]) => g !== 0 || Number(y) === anno).sort((a, b) => a[0] - b[0]);
+      dettaglioRiporto = `<p class="congedo-anni-titolo">Rimasti per anno · si usano prima i più vecchi</p><div class="congedo-anni">${anniCO.map(([y, g]) => `<div><small>${y}</small><b${g < 0 ? ' class="negativo"' : ''}>${numeroIt(g)}</b> <small>gg</small></div>`).join('')}</div>`;
+    } else if(eCongedoOrdinario && saldoCO.riporto !== 0){
       const poolVecchi = Math.max(0, saldoCO.riporto);
       const vecchiRimasti = round2(Math.max(0, poolVecchi - usate));
       const nuoviRimasti = round2(rimangono - vecchiRimasti);
@@ -588,18 +638,41 @@ function formSaldiPartenzaHtml(prefisso, v){
   const campo = (id, val, unita, passo) => `<div class="partenza-campo"><div class="contatore-anagrafica"><button type="button" data-saldo-campo="${prefisso}${id}" data-saldo-delta="-${passo}" aria-label="Meno">−</button><input type="number" id="${prefisso}${id}" min="0" step="${passo === 1 ? 1 : 0.5}" inputmode="decimal" value="${val}"><button type="button" data-saldo-campo="${prefisso}${id}" data-saldo-delta="${passo}" aria-label="Più">+</button></div><span>${unita}</span></div>`;
   const riga = (testo, sotto, id, val, unita, passo, cls) => `<div class="partenza-riga${cls ? ' ' + cls : ''}"><div class="partenza-testo">${testo}<small>${sotto}</small></div>${campo(id, val, unita, passo)}</div>`;
   const voce = (icona, nome, righe) => `<div class="partenza-voce"><div class="partenza-testa"><span aria-hidden="true">${icona}</span>${nome}</div>${righe}</div>`;
-  return voce('🌴', 'Congedo ordinario', riga('Giorni che ti restano oggi', 'compresi quelli dell\'anno scorso', 'Congedo', numeroIt(v.congedo).replace(',', '.'), 'gg', 1)
-      + riga('di cui dell\'anno scorso', 'si usano per primi', 'CongedoVecchi', numeroIt(v.congedoVecchi).replace(',', '.'), 'gg', 1, 'partenza-sotto'))
+  // Congedo: un campo per anno (quello di oggi e i due prima, più gli anni più vecchi con giorni rimasti).
+  const annoOggi = new Date().getFullYear();
+  const valAnni = v.congedoAnni || {};
+  const anni = [...new Set([annoOggi, annoOggi - 1, annoOggi - 2, ...Object.keys(valAnni).map(Number).filter(y => y < annoOggi && valAnni[y] > 0)])].sort((a, b) => b - a);
+  const righeAnni = anni.map((y, i) => riga(`Giorni del ${y}`, y === annoOggi ? 'che ti restano' : 'non ancora goduti', `Congedo${y}`, numeroIt(Math.max(0, valAnni[y] || 0)).replace(',', '.'), 'gg', 1, i ? 'partenza-sotto' : '').replace('class="partenza-riga', `data-anno-congedo="${y}" data-prefisso="${prefisso}" class="partenza-riga`)).join('');
+  const totale = round2(anni.reduce((a, y) => a + Math.max(0, valAnni[y] || 0), 0));
+  const vecchio = anni[anni.length - 1];
+  return voce('🌴', 'Congedo ordinario', righeAnni
+      + `<div class="partenza-totale"><span>Totale</span><b id="${prefisso}CongedoTotale">${numeroIt(totale)} ${totale === 1 ? 'giorno' : 'giorni'}</b></div>`
+      + `<p class="partenza-nota">Si usano prima i giorni più vecchi (dal ${vecchio} in poi). Non scadono.</p>`)
     + voce('🔄', 'Recupero riposo', riga('Giorni da recuperare', 'riposi lavorati non ancora recuperati', 'RecuperoRiposo', v.recuperoRiposo, 'gg', 1))
     + voce('🔄', 'Recupero festivo', riga('Giorni da recuperare', 'festivi lavorati non ancora recuperati', 'RecuperoFestivo', v.recuperoFestivo, 'gg', 1))
     + voce('♻️', 'Riposo compensativo', riga('Ore accumulate', 'straordinario messo a riposo', 'RiposoCompensativo', numeroIt(v.riposoCompensativoOre).replace(',', '.'), 'h', 1));
 }
 function leggiFormSaldiPartenza(prefisso){
   const n = id => Number((el(prefisso + id) || {}).value) || 0;
-  return { congedo: n('Congedo'), congedoVecchi: n('CongedoVecchi'), recuperoRiposo: n('RecuperoRiposo'), recuperoFestivo: n('RecuperoFestivo'), riposoCompensativoOre: n('RiposoCompensativo') };
+  const congedoAnni = {};
+  document.querySelectorAll(`[data-anno-congedo][data-prefisso="${prefisso}"]`).forEach(r => { congedoAnni[r.dataset.annoCongedo] = n('Congedo' + r.dataset.annoCongedo); });
+  return { congedoAnni, recuperoRiposo: n('RecuperoRiposo'), recuperoFestivo: n('RecuperoFestivo'), riposoCompensativoOre: n('RiposoCompensativo') };
 }
-// Valori da proporre: quelli già inseriti, oppure il conto fatto fin qui dall'app.
-function valoriSaldiPartenza(){ return saldiPartenza() || stimaSaldiPartenza(); }
+// Valori da proporre: con i saldi già inseriti, quanto resta oggi per anno (senza i congedi già
+// segnati nei prossimi giorni, che si contano dopo); altrimenti il conto fatto fin qui dall'app.
+function valoriSaldiPartenza(){
+  const s = saldiPartenza();
+  if(!s) return stimaSaldiPartenza();
+  const oggi = new Date();
+  return Object.assign({}, s, { congedoAnni: congedoPerAnno(oggi.getFullYear(), dataISO(oggi)) });
+}
+// Il totale del congedo si aggiorna mentre si scrivono i giorni dei singoli anni.
+function aggiornaTotaleCongedoForm(prefisso){
+  const box = el(prefisso + 'CongedoTotale');
+  if(!box) return;
+  const t = round2([...document.querySelectorAll(`[data-anno-congedo][data-prefisso="${prefisso}"] input`)].reduce((a, i) => a + Math.max(0, Number(i.value) || 0), 0));
+  box.textContent = `${numeroIt(t)} ${t === 1 ? 'giorno' : 'giorni'}`;
+}
 function notaSpettantiCongedo(){
   const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
   return co ? `📅 A gennaio l'app aggiunge da sola i <b>${numeroIt(co.valore)} giorni</b> dell'anno nuovo (li cambi in Assenze, nella scheda del Congedo ordinario).` : '';
@@ -621,9 +694,15 @@ function inizializzaSaldiPartenza(){
     if(passo){
       const c = el(passo.dataset.saldoCampo);
       if(c) c.value = Math.max(0, round2((Number(c.value) || 0) + Number(passo.dataset.saldoDelta)));
+      const r = passo.closest('[data-anno-congedo]');
+      if(r) aggiornaTotaleCongedoForm(r.dataset.prefisso);
       return;
     }
     if(e.target.closest('[data-apri-saldi]')) apriSaldiPartenza();
+  });
+  document.addEventListener('input', e => {
+    const r = e.target.closest && e.target.closest('[data-anno-congedo]');
+    if(r) aggiornaTotaleCongedoForm(r.dataset.prefisso);
   });
   const chiudi = el('btnChiudiSaldiPartenza');
   if(chiudi) chiudi.addEventListener('click', () => { el('overlaySaldiPartenza').hidden = true; });
