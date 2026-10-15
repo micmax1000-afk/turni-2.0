@@ -2200,3 +2200,69 @@ html[data-tema=scuro] .congedo-anni b{color:#7FE0A6}
 
 /* v2.84 – Guida all'app: riga link come le altre */
 a.riga-strumento-turni{text-decoration:none;color:inherit}
+
+/* v2.85 – Evento: la giornata a ore dietro e una scheda dal basso (come Google Calendar) */
+.solo-lettori{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;margin:0;padding:0}
+#overlayEvento.overlay-giornata-evento{padding:0;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;background:var(--pannello)!important;z-index:120}
+#overlayEvento.overlay-giornata-evento[hidden]{display:none}
+.giornata-evento-testa{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;border-bottom:1px solid var(--bordo);flex:none}
+.giornata-evento-testa .btn-icona{font-size:1.35rem;color:var(--testo)}
+.giornata-evento-nome{flex:1;min-width:0}
+.giornata-evento-nome b{display:block;font-size:1.05rem;color:var(--testo)}
+.giornata-evento-nome small{display:block;color:var(--testo-tenue);font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.giornata-evento-numero{width:38px;height:38px;border-radius:50%;background:var(--inchiostro);color:#fff;display:grid;place-items:center;font-weight:800;flex:none}
+html[data-tema="scuro"] .giornata-evento-numero{background:#3A55B4}
+.giornata-evento-scorri{flex:1;overflow-y:auto;position:relative;padding:14px 0 85vh;overscroll-behavior:contain}
+.giornata-evento-tutto{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px 10px 58px}
+.giornata-evento-tutto[hidden]{display:none}
+.giornata-evento-tutto span{background:var(--colore-blocco);color:#fff;border-radius:8px;padding:4px 9px;font-size:.8rem;font-weight:700}
+.giornata-evento-tutto span.nuovo{background:color-mix(in srgb,var(--colore-blocco) 15%,var(--pannello));color:var(--testo);box-shadow:inset 0 0 0 2px var(--colore-blocco)}
+.giornata-evento-ore{position:relative;cursor:pointer}
+.giornata-ora{position:absolute;left:52px;right:0;border-top:1px solid color-mix(in srgb,var(--bordo) 75%,transparent)}
+.giornata-ora span{position:absolute;left:-46px;top:-8px;font-size:.72rem;color:var(--testo-tenue);font-variant-numeric:tabular-nums}
+.giornata-colonne{position:absolute;top:0;bottom:0;left:58px;right:6px}
+.giornata-blocco{position:absolute;border-radius:10px;padding:4px 8px;box-sizing:border-box;overflow:hidden;font-size:.76rem;line-height:1.25}
+.giornata-blocco b{display:block;font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.giornata-blocco small{display:block;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.giornata-blocco.basso{display:flex;gap:6px;align-items:center;padding:1px 8px}
+.giornata-blocco.basso b,.giornata-blocco.basso small{display:inline}
+.giornata-evento{background:var(--colore-blocco);color:#fff}
+.giornata-turno{background:color-mix(in srgb,var(--colore-blocco) 18%,var(--pannello));border-left:4px solid var(--colore-blocco);color:var(--testo)}
+.giornata-nuovo{background:color-mix(in srgb,var(--colore-blocco) 15%,var(--pannello));box-shadow:inset 0 0 0 2px var(--colore-blocco),0 4px 12px rgba(27,36,64,.15);color:var(--testo);z-index:1}
+#overlayEvento .foglio-evento{position:absolute;z-index:5;left:0;right:0;bottom:0;top:auto;max-width:none;width:auto;max-height:none;border-radius:22px 22px 0 0;box-shadow:0 -8px 28px rgba(20,25,40,.22);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+#overlayEvento.espanso .foglio-evento{top:max(118px,22%)}
+#overlayEvento .foglio-evento .modale-corpo{padding:0 16px;gap:0;overflow-y:auto;flex:1}
+#overlayEvento.compatto .foglio-evento .modale-corpo{flex:none;overflow:visible}
+.foglio-evento-maniglia{display:block;border:0;background:none;padding:10px 0 8px;width:100%;cursor:pointer;flex:none}
+.foglio-evento-maniglia::before{content:'';display:block;width:42px;height:5px;border-radius:5px;background:var(--bordo);margin:0 auto}
+#overlayEvento.compatto .solo-espanso{display:none!important}
+#overlayEvento.espanso .solo-compatto{display:none!important}
+.foglio-evento-titolo{width:100%;border:0!important;border-bottom:2px solid var(--inchiostro)!important;border-radius:0!important;background:none!important;font:inherit;font-size:1.3rem!important;font-weight:700;padding:4px 0 8px!important;color:var(--testo);outline:0;box-sizing:border-box;box-shadow:none!important}
+html[data-tema="scuro"] .foglio-evento-titolo{border-bottom-color:#7C93E8!important}
+.foglio-evento-riga{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);font-size:.92rem;color:var(--testo);margin:0}
+.foglio-evento-riga > span:first-child{width:22px;text-align:center;flex:none}
+.foglio-evento-riga i{font-style:normal;flex:1}
+#overlayEvento .foglio-evento-riga:has(.scelta-colore-evento){flex-wrap:wrap;row-gap:8px}
+#overlayEvento .foglio-evento-riga .scelta-colore-evento{margin:0;flex:1 1 100%;padding-left:34px;gap:8px}
+.foglio-evento-quando{flex-wrap:wrap;row-gap:8px}
+.foglio-evento-data{background:var(--carta);border-radius:10px;padding:7px 10px;font-size:.9rem}
+#overlayEvento .orari-evento,#overlayEvento #campiEventoOrario{display:flex;align-items:center;gap:6px;margin:0}
+#overlayEvento .orari-evento[hidden],#overlayEvento #campiEventoOrario[hidden]{display:none}
+.orari-evento input::-webkit-calendar-picker-indicator{display:none}
+.orari-evento input{margin:0!important;height:auto!important;border:0!important;background:var(--carta)!important;border-radius:10px!important;padding:7px 8px!important;font:inherit;font-weight:700;font-size:.92rem!important;color:var(--testo);width:auto!important;min-width:0}
+.avviso-sovrapposizione-evento{background:#FFF4DC;color:#7A5200;border-radius:12px;padding:8px 10px;font-size:.82rem;margin:8px 0 0}
+.avviso-sovrapposizione-evento[hidden]{display:none}
+html[data-tema="scuro"] .avviso-sovrapposizione-evento{background:#3A2E12;color:#F2D58A}
+.foglio-evento-scorciatoie{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 2px}
+.foglio-evento-scorciatoie button{white-space:nowrap}
+.foglio-evento-scorciatoie button{border:1px solid var(--bordo);background:var(--pannello);border-radius:999px;padding:6px 9px;font:inherit;font-size:.76rem;font-weight:700;color:var(--testo);cursor:pointer}
+.foglio-evento-opzioni{display:flex;flex-direction:column;gap:10px;padding:12px 0 6px}
+#overlayEvento .foglio-evento-azioni{display:flex;gap:10px;align-items:flex-end;padding:12px 16px 14px;border-top:0}
+#overlayEvento .foglio-evento-azioni > .btn-secondario,#overlayEvento .foglio-evento-azioni > .btn-primario{flex:1;padding:12px;border-radius:14px}
+#overlayEvento .foglio-evento-azioni .gruppo-elimina-evento{flex:1}
+#overlayEvento .foglio-evento-azioni .gruppo-elimina-evento:not(:has(button:not([hidden]))){display:none}
+@media (prefers-color-scheme: dark){
+  html:not([data-tema="chiaro"]) .avviso-sovrapposizione-evento{background:#3A2E12;color:#F2D58A}
+  html:not([data-tema="chiaro"]) .foglio-evento-titolo{border-bottom-color:#7C93E8!important}
+  html:not([data-tema="chiaro"]) .giornata-evento-numero{background:#3A55B4}
+}

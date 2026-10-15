@@ -1100,6 +1100,7 @@ function inizializza(){
   on('btnEliminaEvento','click', eliminaEventoV2);
   on('btnEliminaEventoGiorno','click', eliminaEventoSoloGiornoV2);
   on('campoEventoRipeti','change', aggiornaVistaRipetiEvento);
+  inizializzaFoglioEvento();
   on('btnAttivaNotificheEvento','click', attivaNotifichePromemoria);
   // Tornando dalle impostazioni di Android: si ricontrolla se le notifiche sono state attivate.
   document.addEventListener('visibilitychange', () => {
@@ -2294,8 +2295,233 @@ function apriModificaEventoV2(id, isoOrigine){
   el('btnEliminaEvento').hidden = !ev;
   el('btnEliminaEvento').textContent = ev && ev.ripeti ? '🗑️ Tutta la serie' : '🗑️ Elimina';
   el('btnEliminaEventoGiorno').hidden = !(ev && ev.ripeti);
+  intestaGiornataEvento(giornoSelezionato);
+  impostaFoglioEvento(!!ev);
+  inizioEventoPrecedente = el('campoEventoOraInizio').value;
   el('overlayEvento').hidden = false;
+  aggiornaGiornataEvento();
+  portaInVistaEvento();
+  if(!ev) setTimeout(() => { try{ el('campoEventoTitolo').focus(); }catch(e){} }, 60);
   controllaPermessiPromemoria();
+}
+
+// ===================== Evento: la giornata a ore e la scheda dal basso =====================
+// Dietro la scheda si vede il giorno ora per ora: il turno (anche quello della notte prima che
+// finisce stamattina), gli altri eventi e, evidenziato, quello che si sta scrivendo.
+const ALTEZZA_ORA_GIORNATA = 48;
+let inizioEventoPrecedente = '';
+function minutiDaOrario(hhmm){
+  if(!hhmm || !/^\d{1,2}:\d{2}$/.test(hhmm)) return null;
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+function orarioDaMinuti(min){
+  const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  return `${due(Math.floor(m / 60))}:${due(m % 60)}`;
+}
+// Inizio e fine in minuti dall'inizio del giorno; una fine "prima" dell'inizio vuol dire dopo mezzanotte.
+function intervalloOrari(inizio, fine, durataSenzaFine){
+  const a = minutiDaOrario(inizio);
+  if(a === null) return null;
+  let b = minutiDaOrario(fine);
+  if(b === null) b = a + (durataSenzaFine || 60);
+  else if(b <= a) b += 1440;
+  return { da: a, a: b };
+}
+function infoTurnoGiornata(t, iso){
+  const categoria = categoriaTurno(t.oraInizio, t.oraFine, iso);
+  const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+  const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
+  return {
+    nome: modello ? modello.nome : (INIZIALE_CATEGORIA[categoria] || 'Turno'),
+    colore: (modello && modello.colore) || coloreCategoria(categoriaColore),
+    icona: ICONA_CATEGORIA[categoria] || '🕒'
+  };
+}
+// I turni che occupano il giorno, in minuti (0 = mezzanotte, 1440 = mezzanotte dopo).
+function turniNellaGiornata(iso){
+  const out = [];
+  const valido = t => t && !t.riposo && !t.assenzaTipo && t.oraInizio && t.oraFine;
+  const t = AppState.turni[iso];
+  if(valido(t)){
+    const info = infoTurnoGiornata(t, iso);
+    const r = intervalloOrari(t.oraInizio, t.oraFine);
+    out.push({ ...r, ...info, orario: `${t.oraInizio} – ${t.oraFine}` });
+    if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine){
+      const r2 = intervalloOrari(t.secondoOraInizio, t.secondoOraFine);
+      if(r2) out.push({ ...r2, ...info, nome: 'Rientro', orario: `${t.secondoOraInizio} – ${t.secondoOraFine}` });
+    }
+  }
+  const d = dataDaIso(iso);
+  const ieri = dataISO(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
+  const ty = AppState.turni[ieri];
+  if(valido(ty)){
+    const r = intervalloOrari(ty.oraInizio, ty.oraFine);
+    if(r && r.a > 1440) out.push({ da: 0, a: r.a - 1440, ...infoTurnoGiornata(ty, ieri), orario: `${ty.oraInizio} – ${ty.oraFine}`, daIeri: true });
+  }
+  return out.sort((x, y) => x.da - y.da);
+}
+function intestaGiornataEvento(iso){
+  const d = dataDaIso(iso);
+  const lungo = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+  const breve = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+  el('giornataEventoTitolo').textContent = lungo.charAt(0).toUpperCase() + lungo.slice(1);
+  el('giornataEventoNumero').textContent = String(d.getDate());
+  el('dataEventoFoglio').textContent = breve.charAt(0).toUpperCase() + breve.slice(1);
+  const t = AppState.turni[iso];
+  let sotto;
+  if(t && t.riposo) sotto = 'Riposo';
+  else if(t && t.assenzaTipo){ const v = AppState.assenze.find(a => a.id === t.assenzaTipo); sotto = v ? v.nome : 'Assenza'; }
+  else {
+    const turno = turniNellaGiornata(iso).find(x => !x.daIeri);
+    sotto = turno ? `Turno ${turno.nome} ${turno.orario}` : 'Nessun turno';
+  }
+  const n = eventiDelGiorno(iso).length;
+  el('giornataEventoSotto').textContent = sotto + (n ? ` · ${n} ${n === 1 ? 'evento' : 'eventi'}` : '');
+}
+// Compatta: titolo, orario e Salva. Aperta: tutte le opzioni.
+function impostaFoglioEvento(espanso){
+  const o = el('overlayEvento');
+  o.classList.toggle('espanso', espanso);
+  o.classList.toggle('compatto', !espanso);
+  el('manigliaFoglioEvento').setAttribute('aria-label', espanso ? 'Riduci la scheda' : 'Altre opzioni');
+  aggiornaScorciatoieEvento();
+  if(!o.hidden) portaInVistaEvento();
+}
+function aggiornaScorciatoieEvento(){
+  const sel = el('campoEventoRipeti');
+  el('scorciatoiaRipetiEvento').textContent = sel.value ? sel.options[sel.selectedIndex].text : 'Non si ripete';
+  const n = el('listaPromemoriaEvento').children.length;
+  el('scorciatoiaPromemoriaEvento').textContent = n ? (n === 1 ? '1 promemoria' : `${n} promemoria`) : 'Promemoria';
+}
+function intervalloEventoNelForm(){
+  if(el('campoEventoTuttoIlGiorno').checked) return null;
+  return intervalloOrari(el('campoEventoOraInizio').value, el('campoEventoOraFine').value);
+}
+// Mette uno accanto all'altro i blocchi che si sovrappongono (come Google Calendar).
+function colonneBlocchiGiornata(blocchi){
+  const ordinati = blocchi.slice().sort((x, y) => x.da - y.da || y.a - x.a);
+  let gruppo = [], fineGruppo = -1;
+  const chiudi = () => { const n = Math.max(1, ...gruppo.map(b => b.col + 1)); gruppo.forEach(b => { b.n = n; }); gruppo = []; };
+  ordinati.forEach(b => {
+    if(gruppo.length && b.da >= fineGruppo){ chiudi(); fineGruppo = -1; }
+    const occupate = new Set(gruppo.filter(x => x.a > b.da).map(x => x.col));
+    let c = 0; while(occupate.has(c)) c++;
+    b.col = c; gruppo.push(b); fineGruppo = Math.max(fineGruppo, b.a);
+  });
+  if(gruppo.length) chiudi();
+  return ordinati;
+}
+function aggiornaGiornataEvento(){
+  const iso = giornoSelezionato;
+  const host = el('giornataEventoOre');
+  if(!iso || !host) return;
+  const H = ALTEZZA_ORA_GIORNATA;
+  const inModifica = eventoInModificaV2 ? eventoInModificaV2.id : null;
+  const blocchi = [];
+  const tutto = [];
+  turniNellaGiornata(iso).forEach(x => blocchi.push({ tipo: 'turno', da: x.da, a: Math.min(x.a, 1440), titolo: `${x.icona} ${x.daIeri ? x.nome + ' (da ieri)' : 'Turno ' + x.nome}`, sotto: x.orario, colore: x.colore }));
+  eventiDelGiorno(iso).forEach(({ ev }) => {
+    if(ev.id === inModifica) return;
+    if(ev.tuttoIlGiorno){ tutto.push({ titolo: ev.titolo, colore: coloreEvento(ev) }); return; }
+    const r = intervalloOrari(ev.oraInizio, ev.oraFine);
+    if(r) blocchi.push({ tipo: 'evento', da: r.da, a: Math.min(r.a, 1440), titolo: ev.titolo, sotto: ev.oraFine ? `${ev.oraInizio} – ${ev.oraFine}` : ev.oraInizio, colore: coloreEvento(ev) });
+  });
+  const titolo = el('campoEventoTitolo').value.trim() || (inModifica ? 'Evento' : '(Nuovo evento)');
+  const r = intervalloEventoNelForm();
+  if(el('campoEventoTuttoIlGiorno').checked) tutto.push({ titolo, colore: coloreEventoScelto, nuovo: true });
+  else if(r) blocchi.push({ tipo: 'nuovo', da: r.da, a: Math.min(r.a, 1440), titolo, sotto: `${el('campoEventoOraInizio').value} – ${el('campoEventoOraFine').value || '…'}`, colore: coloreEventoScelto });
+  const righe = [...Array(24)].map((_, h) => `<div class="giornata-ora" style="top:${h * H}px"><span>${due(h)}:00</span></div>`).join('');
+  const html = colonneBlocchiGiornata(blocchi).map(b => {
+    const alto = Math.max(22, (b.a - b.da) / 60 * H - 3);
+    const stile = `top:${b.da / 60 * H + 1}px;height:${alto}px;left:${b.col / b.n * 100}%;width:calc(${100 / b.n}% - 4px);--colore-blocco:${escapeHtml(b.colore || '#3A55B4')}`;
+    return `<div class="giornata-blocco giornata-${b.tipo}${alto < 40 ? ' basso' : ''}" style="${stile}"><b>${escapeHtml(b.titolo)}</b><small>${escapeHtml(b.sotto || '')}</small></div>`;
+  }).join('');
+  host.style.height = `${24 * H}px`;
+  host.innerHTML = `${righe}<div class="giornata-colonne">${html}</div>`;
+  const striscia = el('giornataEventoTutto');
+  striscia.hidden = !tutto.length;
+  striscia.innerHTML = tutto.map(x => `<span class="${x.nuovo ? 'nuovo' : ''}" style="--colore-blocco:${escapeHtml(x.colore)}">${escapeHtml(x.titolo)}</span>`).join('');
+  aggiornaAvvisoSovrapposizione();
+}
+function aggiornaAvvisoSovrapposizione(){
+  const box = el('avvisoSovrapposizioneEvento');
+  const r = intervalloEventoNelForm();
+  const turno = r ? turniNellaGiornata(giornoSelezionato).find(x => r.da < x.a && x.da < r.a) : null;
+  box.hidden = !turno;
+  if(turno) box.innerHTML = `⚠️ Si sovrappone al tuo <b>${turno.daIeri ? 'turno di ieri' : 'turno ' + escapeHtml(turno.nome)}</b> (${escapeHtml(turno.orario)}).`;
+}
+function portaInVistaEvento(){
+  const scorri = el('giornataEventoScorri');
+  const r = intervalloEventoNelForm();
+  const ora = r ? r.da / 60 : 8;
+  // Lo spazio libero è quello sopra la scheda (poco, con la scheda aperta): l'evento va lì.
+  const foglio = el('overlayEvento').querySelector('.foglio-evento');
+  const libero = foglio.getBoundingClientRect().top - scorri.getBoundingClientRect().top;
+  const margine = Math.min(1.5 * ALTEZZA_ORA_GIORNATA, Math.max(0, libero * 0.3));
+  scorri.scrollTop = Math.max(0, el('giornataEventoOre').offsetTop + ora * ALTEZZA_ORA_GIORNATA - margine);
+}
+// Tocco su un'ora della giornata: l'evento parte da lì (alla mezz'ora), con la stessa durata.
+function scegliOraDallaGiornata(e){
+  const host = el('giornataEventoOre');
+  const y = e.clientY - host.getBoundingClientRect().top;
+  if(!(y >= 0)) return;
+  const inizio = Math.min(23 * 60 + 30, Math.floor(y / ALTEZZA_ORA_GIORNATA * 2) * 30);
+  const r = intervalloOrari(el('campoEventoOraInizio').value, el('campoEventoOraFine').value);
+  const durata = r ? r.a - r.da : 60;
+  el('campoEventoTuttoIlGiorno').checked = false;
+  aggiornaVistaOrariEvento();
+  el('campoEventoOraInizio').value = orarioDaMinuti(inizio);
+  el('campoEventoOraFine').value = inizio + durata >= 1440 ? '23:59' : orarioDaMinuti(inizio + durata);
+  inizioEventoPrecedente = el('campoEventoOraInizio').value;
+  aggiornaGiornataEvento();
+}
+// Cambiando l'inizio, la fine si sposta con lui (la durata resta uguale).
+function cambiaInizioEvento(){
+  const vecchio = intervalloOrari(inizioEventoPrecedente, el('campoEventoOraFine').value);
+  const nuovo = minutiDaOrario(el('campoEventoOraInizio').value);
+  if(vecchio && nuovo !== null){
+    const fine = nuovo + (vecchio.a - vecchio.da);
+    el('campoEventoOraFine').value = fine >= 1440 ? '23:59' : orarioDaMinuti(fine);
+  }
+  inizioEventoPrecedente = el('campoEventoOraInizio').value;
+  aggiornaGiornataEvento();
+  portaInVistaEvento();
+}
+function apriOpzioneEvento(quale){
+  impostaFoglioEvento(true);
+  const dove = { colore: 'sceltaColoreEvento', ripeti: 'campoEventoRipeti', promemoria: 'campoEventoPromemoriaWrap' }[quale];
+  const nodo = dove && el(dove);
+  if(nodo) setTimeout(() => { nodo.scrollIntoView({ block: 'center', behavior: 'smooth' }); if(quale === 'ripeti') try{ nodo.focus(); }catch(e){} }, 60);
+}
+function inizializzaFoglioEvento(){
+  const o = el('overlayEvento');
+  if(!o) return;
+  on('btnAltreOpzioniEvento', 'click', () => impostaFoglioEvento(true));
+  on('manigliaFoglioEvento', 'click', () => impostaFoglioEvento(!o.classList.contains('espanso')));
+  o.querySelectorAll('[data-opzione-evento]').forEach(b => b.addEventListener('click', () => apriOpzioneEvento(b.dataset.opzioneEvento)));
+  on('giornataEventoOre', 'click', scegliOraDallaGiornata);
+  on('campoEventoOraInizio', 'change', cambiaInizioEvento);
+  on('campoEventoOraFine', 'change', aggiornaGiornataEvento);
+  on('campoEventoTitolo', 'input', aggiornaGiornataEvento);
+  on('campoEventoTitolo', 'keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); salvaEventoV2(); } });
+  on('sceltaColoreEvento', 'click', () => setTimeout(aggiornaGiornataEvento, 0));
+  o.addEventListener('change', aggiornaScorciatoieEvento);
+  o.addEventListener('click', () => setTimeout(aggiornaScorciatoieEvento, 0));
+  // Trascinando la maniglia (o il bordo della scheda) in su si apre, in giù si riduce.
+  const foglio = o.querySelector('.foglio-evento');
+  let y0 = null;
+  foglio.addEventListener('touchstart', e => {
+    const presa = e.target.closest('.foglio-evento-maniglia') || (o.classList.contains('compatto') && !e.target.closest('input,select,textarea,button'));
+    y0 = presa ? e.touches[0].clientY : null;
+  }, { passive: true });
+  foglio.addEventListener('touchend', e => {
+    if(y0 === null) return;
+    const dy = e.changedTouches[0].clientY - y0;
+    y0 = null;
+    if(dy < -30) impostaFoglioEvento(true);
+    else if(dy > 30 && o.classList.contains('espanso')) impostaFoglioEvento(false);
+  }, { passive: true });
 }
 
 function aggiornaVistaRipetiEvento(){
@@ -2408,7 +2634,9 @@ function orariPredefinitiEvento(iso){
 function aggiornaVistaOrariEvento(){
   const tutt = el('campoEventoTuttoIlGiorno').checked;
   el('campiEventoOrario').hidden = tutt;
+  el('etichettaTuttoGiornoEvento').hidden = !tutt;
   el('campoEventoOraPromemoriaWrap').hidden = !tutt;
+  if(!el('overlayEvento').hidden) aggiornaGiornataEvento();
 }
 function aggiungiRigaPromemoria(p){
   const tutt = el('campoEventoTuttoIlGiorno').checked;

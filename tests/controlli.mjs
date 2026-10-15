@@ -208,8 +208,12 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); });
   await p.click('#btnNuovoEventoGiornoV2');
+  await p.waitForTimeout(150);
   ok('modulo evento aperto, riquadro "notifiche disattivate" nascosto', await p.evaluate(() => !document.getElementById('overlayEvento').hidden && !document.getElementById('avvisoPermessiEvento').offsetParent));
+  ok('nuovo evento: scheda compatta, titolo pronto, opzioni nascoste', await p.evaluate(() => el('overlayEvento').classList.contains('compatto') && document.activeElement === el('campoEventoTitolo') && !el('sceltaColoreEvento').offsetParent && !!el('btnSalvaEvento').offsetParent));
   await p.fill('#campoEventoTitolo', 'Palestra');
+  await p.click('#btnAltreOpzioniEvento');
+  ok('"Altre opzioni" apre la scheda con tutte le opzioni', await p.evaluate(() => el('overlayEvento').classList.contains('espanso') && !!el('sceltaColoreEvento').offsetParent && !el('btnAltreOpzioniEvento').offsetParent));
   await p.click('#sceltaColoreEvento [data-colore-evento="#2E9E5B"]');
   await p.selectOption('#campoEventoRipeti', 'settimana');
   await p.click('#btnAggiungiPromemoria');
@@ -226,6 +230,54 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
   await p.locator('#listaEventiGiornoV2 [data-evento-id]').first().click();
   await p.click('#btnEliminaEvento');
   ok('"Tutta la serie" elimina tutto', await p.evaluate(() => !AppState.eventiGiorno['2026-10-20'] && eventiDelGiorno('2026-11-03').length === 0));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Evento: giornata a ore e scheda dal basso');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno', eventi: { '2026-10-17': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', oraFine: '11:00', colore: '#2E9E5B' }] } });
+  // 17/10: Pomeriggio 13–19; il 16 c'è la Sera 19–01 che finisce dopo mezzanotte.
+  await p.evaluate(() => { giornoSelezionato = '2026-10-17'; renderCalendario(); });
+  await p.click('#btnNuovoEventoGiornoV2');
+  const g = await p.evaluate(() => ({
+    ore: document.querySelectorAll('#giornataEventoOre .giornata-ora').length,
+    turni: [...document.querySelectorAll('.giornata-turno b')].map(b => b.textContent).join(' | '),
+    eventi: [...document.querySelectorAll('.giornata-evento b')].map(b => b.textContent).join(),
+    nuovo: document.querySelectorAll('.giornata-nuovo').length,
+    testa: el('giornataEventoTitolo').textContent + ' / ' + el('giornataEventoSotto').textContent
+  }));
+  ok('la giornata ha 24 ore, il turno del giorno e quello di ieri che finisce stanotte', g.ore === 24 && /Turno Pomeriggio/.test(g.turni) && /Sera \(da ieri\)/.test(g.turni), JSON.stringify(g));
+  ok('si vedono gli altri eventi e il nuovo evento evidenziato', g.eventi === 'Visita medica' && g.nuovo === 1, JSON.stringify(g));
+  ok('in alto il giorno e il turno', /Sabato 17 ottobre/.test(g.testa) && /Turno Pomeriggio 13:00 – 19:00 · 1 evento/.test(g.testa), g.testa);
+  await p.locator('#giornataEventoScorri').evaluate(n => { n.scrollTop = 21 * ALTEZZA_ORA_GIORNATA - 100; });
+  const box2 = await p.locator('#giornataEventoOre').boundingBox();
+  await p.mouse.click(box2.x + box2.width - 30, box2.y + 21.2 * 48);
+  ok('tocco su un\'ora: l\'evento parte da lì e dura sempre 1 ora', await p.evaluate(() => el('campoEventoOraInizio').value === '21:00' && el('campoEventoOraFine').value === '22:00'), await p.evaluate(() => el('campoEventoOraInizio').value + '-' + el('campoEventoOraFine').value));
+  ok('nessun avviso se l\'evento è fuori dal turno', await p.evaluate(() => el('avvisoSovrapposizioneEvento').hidden));
+  await p.fill('#campoEventoOraInizio', '18:30'); await p.dispatchEvent('#campoEventoOraInizio', 'change');
+  const sov = await p.evaluate(() => ({ fine: el('campoEventoOraFine').value, avviso: el('avvisoSovrapposizioneEvento').hidden ? '' : el('avvisoSovrapposizioneEvento').textContent, affiancati: document.querySelector('.giornata-nuovo').style.width }));
+  ok('cambiando l\'inizio la fine si sposta con lui', sov.fine === '19:30', sov.fine);
+  ok('evento sopra al turno: avviso e blocchi affiancati', /Si sovrappone al tuo turno Pomeriggio \(13:00 – 19:00\)/.test(sov.avviso) && /50%/.test(sov.affiancati), JSON.stringify(sov));
+  await p.fill('#campoEventoOraInizio', '00:15'); await p.dispatchEvent('#campoEventoOraInizio', 'change');
+  ok('anche con il turno di ieri che finisce stanotte', await p.evaluate(() => /turno di ieri/.test(el('avvisoSovrapposizioneEvento').textContent) && !el('avvisoSovrapposizioneEvento').hidden));
+  await p.fill('#campoEventoTitolo', 'Dentista');
+  ok('il titolo scritto compare nella giornata', await p.evaluate(() => document.querySelector('.giornata-nuovo b').textContent === 'Dentista'));
+  await p.click('[data-opzione-evento="ripeti"]');
+  ok('scorciatoia "Non si ripete": apre la scheda', await p.evaluate(() => el('overlayEvento').classList.contains('espanso') && !!el('campoEventoRipeti').offsetParent));
+  await p.click('#manigliaFoglioEvento');
+  ok('la maniglia riduce di nuovo la scheda', await p.evaluate(() => el('overlayEvento').classList.contains('compatto')));
+  await p.press('#campoEventoTitolo', 'Enter');
+  const salvato = await p.evaluate(() => (AppState.eventiGiorno['2026-10-17'] || []).find(e => e.titolo === 'Dentista'));
+  ok('Invio sulla tastiera salva l\'evento con l\'orario scelto', salvato && salvato.oraInizio === '00:15' && salvato.oraFine === '01:15' && await p.evaluate(() => el('overlayEvento').hidden), JSON.stringify(salvato));
+  await p.evaluate(() => { giornoSelezionato = '2026-10-17'; renderListaEventiGiornoV2(); });
+  await p.locator('#listaEventiGiornoV2 [data-evento-id="evento_1"]').first().click();
+  ok('modifica di un evento: scheda già aperta, l\'evento non è doppio nella giornata', await p.evaluate(() => el('overlayEvento').classList.contains('espanso') && document.querySelectorAll('.giornata-evento').length === 1 && document.querySelector('.giornata-nuovo b').textContent === 'Visita medica'));
+  await p.click('#campoEventoTuttoIlGiorno');
+  ok('"Tutto il giorno": l\'evento va nella striscia in alto e gli orari spariscono', await p.evaluate(() => !el('giornataEventoTutto').hidden && /Visita medica/.test(el('giornataEventoTutto').textContent) && !document.querySelector('.giornata-nuovo') && el('campiEventoOrario').hidden && !el('etichettaTuttoGiornoEvento').hidden));
+  await p.click('#btnChiudiEvento');
+  ok('← chiude senza salvare', await p.evaluate(() => el('overlayEvento').hidden && !AppState.eventiGiorno['2026-10-17'].find(e => e.id === 'evento_1').tuttoIlGiorno));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

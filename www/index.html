@@ -178,18 +178,40 @@
     </div>
 
     <!-- Nuovo evento / modifica evento — separato dal turno, può essercene più di uno per giorno -->
-    <div class="overlay" id="overlayEvento" hidden>
-      <div class="modale">
-        <div class="modale-header"><h2 id="titoloModaleEvento">Nuovo evento</h2><button class="btn-icona" id="btnChiudiEvento" aria-label="Chiudi">✕</button></div>
+    <!-- Evento: la giornata a ore dietro e una scheda dal basso (compatta per scrivere subito, aperta per tutte le opzioni) -->
+    <div class="overlay overlay-giornata-evento compatto" id="overlayEvento" hidden>
+      <div class="giornata-evento-testa">
+        <button class="btn-icona" id="btnChiudiEvento" type="button" aria-label="Chiudi">←</button>
+        <div class="giornata-evento-nome"><b id="giornataEventoTitolo"></b><small id="giornataEventoSotto"></small></div>
+        <span class="giornata-evento-numero" id="giornataEventoNumero" aria-hidden="true"></span>
+      </div>
+      <div class="giornata-evento-scorri" id="giornataEventoScorri">
+        <div class="giornata-evento-tutto" id="giornataEventoTutto" hidden></div>
+        <div class="giornata-evento-ore" id="giornataEventoOre"></div>
+      </div>
+      <div class="modale foglio-evento" role="dialog" aria-labelledby="titoloModaleEvento">
+        <button type="button" class="foglio-evento-maniglia" id="manigliaFoglioEvento" aria-label="Altre opzioni"></button>
+        <h2 id="titoloModaleEvento" class="solo-lettori">Nuovo evento</h2>
         <div class="modale-corpo">
-          <label class="campo-modale">Titolo<input type="text" id="campoEventoTitolo" placeholder="es. Visita medica, Palestra..."></label>
-          <div class="campo-modale">Colore<div class="scelta-colore-evento" id="sceltaColoreEvento" role="radiogroup" aria-label="Colore dell'evento"></div></div>
-          <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoEventoTuttoIlGiorno"><span>Tutto il giorno</span></label>
-          <div id="campiEventoOrario" class="orari-giorno">
-            <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoEventoOraInizio"></label>
-            <span aria-hidden="true">→</span>
-            <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoEventoOraFine"></label>
+          <input type="text" id="campoEventoTitolo" class="foglio-evento-titolo" placeholder="Aggiungi un titolo" aria-label="Titolo dell'evento" enterkeyhint="done">
+          <div class="foglio-evento-riga solo-espanso"><span aria-hidden="true">🎨</span><i>Colore</i><div class="scelta-colore-evento" id="sceltaColoreEvento" role="radiogroup" aria-label="Colore dell'evento"></div></div>
+          <label class="foglio-evento-riga solo-espanso"><span aria-hidden="true">☀️</span><i>Tutto il giorno</i><input type="checkbox" class="interruttore" id="campoEventoTuttoIlGiorno"></label>
+          <div class="foglio-evento-riga foglio-evento-quando"><span aria-hidden="true">🕒</span>
+            <b class="foglio-evento-data" id="dataEventoFoglio"></b>
+            <div id="campiEventoOrario" class="orari-evento">
+              <input type="time" id="campoEventoOraInizio" aria-label="Inizio">
+              <span aria-hidden="true">→</span>
+              <input type="time" id="campoEventoOraFine" aria-label="Fine">
+            </div>
+            <b class="foglio-evento-data" id="etichettaTuttoGiornoEvento" hidden>Tutto il giorno</b>
           </div>
+          <p class="avviso-sovrapposizione-evento" id="avvisoSovrapposizioneEvento" hidden></p>
+          <div class="foglio-evento-scorciatoie solo-compatto">
+            <button type="button" data-opzione-evento="colore">🎨 Colore</button>
+            <button type="button" data-opzione-evento="ripeti">🔁 <span id="scorciatoiaRipetiEvento">Non si ripete</span></button>
+            <button type="button" data-opzione-evento="promemoria">🔔 <span id="scorciatoiaPromemoriaEvento">Promemoria</span></button>
+          </div>
+          <div class="solo-espanso foglio-evento-opzioni">
           <label class="campo-modale">Ripeti
             <select id="campoEventoRipeti">
               <option value="" selected>Non si ripete</option>
@@ -237,9 +259,11 @@
             <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
             <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
           </details>
+          </div>
         </div>
-        <div class="modale-footer" style="justify-content:space-between;align-items:flex-end;gap:8px;">
-          <div class="gruppo-elimina-evento">
+        <div class="modale-footer foglio-evento-azioni">
+          <button class="btn-secondario solo-compatto" id="btnAltreOpzioniEvento" type="button">Altre opzioni ⌃</button>
+          <div class="gruppo-elimina-evento solo-espanso">
             <button class="btn-secondario" id="btnEliminaEventoGiorno" type="button" hidden>🗑️ Solo questo giorno</button>
             <button class="btn-secondario" id="btnEliminaEvento" type="button">🗑️ Elimina</button>
           </div>
