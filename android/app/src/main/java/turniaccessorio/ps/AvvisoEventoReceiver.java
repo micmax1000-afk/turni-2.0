@@ -84,11 +84,6 @@ public class AvvisoEventoReceiver extends BroadcastReceiver {
             case AvvisoEventoGestore.AZIONE_POSTICIPA:
                 AvvisoEventoGestore.posticipa(context, id);
                 break;
-            case Intent.ACTION_BOOT_COMPLETED:
-            case "android.intent.action.QUICKBOOT_POWERON":
-            case Intent.ACTION_MY_PACKAGE_REPLACED:
-                AvvisoEventoGestore.ripristina(context);
-                break;
             default:
                 break;
         }

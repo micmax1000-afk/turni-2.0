@@ -1100,6 +1100,7 @@ function inizializza(){
   on('btnEliminaEvento','click', eliminaEventoV2);
   on('btnEliminaEventoGiorno','click', eliminaEventoSoloGiornoV2);
   on('campoEventoRipeti','change', aggiornaVistaRipetiEvento);
+  inizializzaFoglioEvento();
   on('btnAttivaNotificheEvento','click', attivaNotifichePromemoria);
   // Tornando dalle impostazioni di Android: si ricontrolla se le notifiche sono state attivate.
   document.addEventListener('visibilitychange', () => {
@@ -2294,8 +2295,233 @@ function apriModificaEventoV2(id, isoOrigine){
   el('btnEliminaEvento').hidden = !ev;
   el('btnEliminaEvento').textContent = ev && ev.ripeti ? '🗑️ Tutta la serie' : '🗑️ Elimina';
   el('btnEliminaEventoGiorno').hidden = !(ev && ev.ripeti);
+  intestaGiornataEvento(giornoSelezionato);
+  impostaFoglioEvento(!!ev);
+  inizioEventoPrecedente = el('campoEventoOraInizio').value;
   el('overlayEvento').hidden = false;
+  aggiornaGiornataEvento();
+  portaInVistaEvento();
+  if(!ev) setTimeout(() => { try{ el('campoEventoTitolo').focus(); }catch(e){} }, 60);
   controllaPermessiPromemoria();
+}
+
+// ===================== Evento: la giornata a ore e la scheda dal basso =====================
+// Dietro la scheda si vede il giorno ora per ora: il turno (anche quello della notte prima che
+// finisce stamattina), gli altri eventi e, evidenziato, quello che si sta scrivendo.
+const ALTEZZA_ORA_GIORNATA = 48;
+let inizioEventoPrecedente = '';
+function minutiDaOrario(hhmm){
+  if(!hhmm || !/^\d{1,2}:\d{2}$/.test(hhmm)) return null;
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+function orarioDaMinuti(min){
+  const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  return `${due(Math.floor(m / 60))}:${due(m % 60)}`;
+}
+// Inizio e fine in minuti dall'inizio del giorno; una fine "prima" dell'inizio vuol dire dopo mezzanotte.
+function intervalloOrari(inizio, fine, durataSenzaFine){
+  const a = minutiDaOrario(inizio);
+  if(a === null) return null;
+  let b = minutiDaOrario(fine);
+  if(b === null) b = a + (durataSenzaFine || 60);
+  else if(b <= a) b += 1440;
+  return { da: a, a: b };
+}
+function infoTurnoGiornata(t, iso){
+  const categoria = categoriaTurno(t.oraInizio, t.oraFine, iso);
+  const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+  const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
+  return {
+    nome: modello ? modello.nome : (INIZIALE_CATEGORIA[categoria] || 'Turno'),
+    colore: (modello && modello.colore) || coloreCategoria(categoriaColore),
+    icona: ICONA_CATEGORIA[categoria] || '🕒'
+  };
+}
+// I turni che occupano il giorno, in minuti (0 = mezzanotte, 1440 = mezzanotte dopo).
+function turniNellaGiornata(iso){
+  const out = [];
+  const valido = t => t && !t.riposo && !t.assenzaTipo && t.oraInizio && t.oraFine;
+  const t = AppState.turni[iso];
+  if(valido(t)){
+    const info = infoTurnoGiornata(t, iso);
+    const r = intervalloOrari(t.oraInizio, t.oraFine);
+    out.push({ ...r, ...info, orario: `${t.oraInizio} – ${t.oraFine}` });
+    if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine){
+      const r2 = intervalloOrari(t.secondoOraInizio, t.secondoOraFine);
+      if(r2) out.push({ ...r2, ...info, nome: 'Rientro', orario: `${t.secondoOraInizio} – ${t.secondoOraFine}` });
+    }
+  }
+  const d = dataDaIso(iso);
+  const ieri = dataISO(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
+  const ty = AppState.turni[ieri];
+  if(valido(ty)){
+    const r = intervalloOrari(ty.oraInizio, ty.oraFine);
+    if(r && r.a > 1440) out.push({ da: 0, a: r.a - 1440, ...infoTurnoGiornata(ty, ieri), orario: `${ty.oraInizio} – ${ty.oraFine}`, daIeri: true });
+  }
+  return out.sort((x, y) => x.da - y.da);
+}
+function intestaGiornataEvento(iso){
+  const d = dataDaIso(iso);
+  const lungo = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+  const breve = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+  el('giornataEventoTitolo').textContent = lungo.charAt(0).toUpperCase() + lungo.slice(1);
+  el('giornataEventoNumero').textContent = String(d.getDate());
+  el('dataEventoFoglio').textContent = breve.charAt(0).toUpperCase() + breve.slice(1);
+  const t = AppState.turni[iso];
+  let sotto;
+  if(t && t.riposo) sotto = 'Riposo';
+  else if(t && t.assenzaTipo){ const v = AppState.assenze.find(a => a.id === t.assenzaTipo); sotto = v ? v.nome : 'Assenza'; }
+  else {
+    const turno = turniNellaGiornata(iso).find(x => !x.daIeri);
+    sotto = turno ? `Turno ${turno.nome} ${turno.orario}` : 'Nessun turno';
+  }
+  const n = eventiDelGiorno(iso).length;
+  el('giornataEventoSotto').textContent = sotto + (n ? ` · ${n} ${n === 1 ? 'evento' : 'eventi'}` : '');
+}
+// Compatta: titolo, orario e Salva. Aperta: tutte le opzioni.
+function impostaFoglioEvento(espanso){
+  const o = el('overlayEvento');
+  o.classList.toggle('espanso', espanso);
+  o.classList.toggle('compatto', !espanso);
+  el('manigliaFoglioEvento').setAttribute('aria-label', espanso ? 'Riduci la scheda' : 'Altre opzioni');
+  aggiornaScorciatoieEvento();
+  if(!o.hidden) portaInVistaEvento();
+}
+function aggiornaScorciatoieEvento(){
+  const sel = el('campoEventoRipeti');
+  el('scorciatoiaRipetiEvento').textContent = sel.value ? sel.options[sel.selectedIndex].text : 'Non si ripete';
+  const n = el('listaPromemoriaEvento').children.length;
+  el('scorciatoiaPromemoriaEvento').textContent = n ? (n === 1 ? '1 promemoria' : `${n} promemoria`) : 'Promemoria';
+}
+function intervalloEventoNelForm(){
+  if(el('campoEventoTuttoIlGiorno').checked) return null;
+  return intervalloOrari(el('campoEventoOraInizio').value, el('campoEventoOraFine').value);
+}
+// Mette uno accanto all'altro i blocchi che si sovrappongono (come Google Calendar).
+function colonneBlocchiGiornata(blocchi){
+  const ordinati = blocchi.slice().sort((x, y) => x.da - y.da || y.a - x.a);
+  let gruppo = [], fineGruppo = -1;
+  const chiudi = () => { const n = Math.max(1, ...gruppo.map(b => b.col + 1)); gruppo.forEach(b => { b.n = n; }); gruppo = []; };
+  ordinati.forEach(b => {
+    if(gruppo.length && b.da >= fineGruppo){ chiudi(); fineGruppo = -1; }
+    const occupate = new Set(gruppo.filter(x => x.a > b.da).map(x => x.col));
+    let c = 0; while(occupate.has(c)) c++;
+    b.col = c; gruppo.push(b); fineGruppo = Math.max(fineGruppo, b.a);
+  });
+  if(gruppo.length) chiudi();
+  return ordinati;
+}
+function aggiornaGiornataEvento(){
+  const iso = giornoSelezionato;
+  const host = el('giornataEventoOre');
+  if(!iso || !host) return;
+  const H = ALTEZZA_ORA_GIORNATA;
+  const inModifica = eventoInModificaV2 ? eventoInModificaV2.id : null;
+  const blocchi = [];
+  const tutto = [];
+  turniNellaGiornata(iso).forEach(x => blocchi.push({ tipo: 'turno', da: x.da, a: Math.min(x.a, 1440), titolo: `${x.icona} ${x.daIeri ? x.nome + ' (da ieri)' : 'Turno ' + x.nome}`, sotto: x.orario, colore: x.colore }));
+  eventiDelGiorno(iso).forEach(({ ev }) => {
+    if(ev.id === inModifica) return;
+    if(ev.tuttoIlGiorno){ tutto.push({ titolo: ev.titolo, colore: coloreEvento(ev) }); return; }
+    const r = intervalloOrari(ev.oraInizio, ev.oraFine);
+    if(r) blocchi.push({ tipo: 'evento', da: r.da, a: Math.min(r.a, 1440), titolo: ev.titolo, sotto: ev.oraFine ? `${ev.oraInizio} – ${ev.oraFine}` : ev.oraInizio, colore: coloreEvento(ev) });
+  });
+  const titolo = el('campoEventoTitolo').value.trim() || (inModifica ? 'Evento' : '(Nuovo evento)');
+  const r = intervalloEventoNelForm();
+  if(el('campoEventoTuttoIlGiorno').checked) tutto.push({ titolo, colore: coloreEventoScelto, nuovo: true });
+  else if(r) blocchi.push({ tipo: 'nuovo', da: r.da, a: Math.min(r.a, 1440), titolo, sotto: `${el('campoEventoOraInizio').value} – ${el('campoEventoOraFine').value || '…'}`, colore: coloreEventoScelto });
+  const righe = [...Array(24)].map((_, h) => `<div class="giornata-ora" style="top:${h * H}px"><span>${due(h)}:00</span></div>`).join('');
+  const html = colonneBlocchiGiornata(blocchi).map(b => {
+    const alto = Math.max(22, (b.a - b.da) / 60 * H - 3);
+    const stile = `top:${b.da / 60 * H + 1}px;height:${alto}px;left:${b.col / b.n * 100}%;width:calc(${100 / b.n}% - 4px);--colore-blocco:${escapeHtml(b.colore || '#3A55B4')}`;
+    return `<div class="giornata-blocco giornata-${b.tipo}${alto < 40 ? ' basso' : ''}" style="${stile}"><b>${escapeHtml(b.titolo)}</b><small>${escapeHtml(b.sotto || '')}</small></div>`;
+  }).join('');
+  host.style.height = `${24 * H}px`;
+  host.innerHTML = `${righe}<div class="giornata-colonne">${html}</div>`;
+  const striscia = el('giornataEventoTutto');
+  striscia.hidden = !tutto.length;
+  striscia.innerHTML = tutto.map(x => `<span class="${x.nuovo ? 'nuovo' : ''}" style="--colore-blocco:${escapeHtml(x.colore)}">${escapeHtml(x.titolo)}</span>`).join('');
+  aggiornaAvvisoSovrapposizione();
+}
+function aggiornaAvvisoSovrapposizione(){
+  const box = el('avvisoSovrapposizioneEvento');
+  const r = intervalloEventoNelForm();
+  const turno = r ? turniNellaGiornata(giornoSelezionato).find(x => r.da < x.a && x.da < r.a) : null;
+  box.hidden = !turno;
+  if(turno) box.innerHTML = `⚠️ Si sovrappone al tuo <b>${turno.daIeri ? 'turno di ieri' : 'turno ' + escapeHtml(turno.nome)}</b> (${escapeHtml(turno.orario)}).`;
+}
+function portaInVistaEvento(){
+  const scorri = el('giornataEventoScorri');
+  const r = intervalloEventoNelForm();
+  const ora = r ? r.da / 60 : 8;
+  // Lo spazio libero è quello sopra la scheda (poco, con la scheda aperta): l'evento va lì.
+  const foglio = el('overlayEvento').querySelector('.foglio-evento');
+  const libero = foglio.getBoundingClientRect().top - scorri.getBoundingClientRect().top;
+  const margine = Math.min(1.5 * ALTEZZA_ORA_GIORNATA, Math.max(0, libero * 0.3));
+  scorri.scrollTop = Math.max(0, el('giornataEventoOre').offsetTop + ora * ALTEZZA_ORA_GIORNATA - margine);
+}
+// Tocco su un'ora della giornata: l'evento parte da lì (alla mezz'ora), con la stessa durata.
+function scegliOraDallaGiornata(e){
+  const host = el('giornataEventoOre');
+  const y = e.clientY - host.getBoundingClientRect().top;
+  if(!(y >= 0)) return;
+  const inizio = Math.min(23 * 60 + 30, Math.floor(y / ALTEZZA_ORA_GIORNATA * 2) * 30);
+  const r = intervalloOrari(el('campoEventoOraInizio').value, el('campoEventoOraFine').value);
+  const durata = r ? r.a - r.da : 60;
+  el('campoEventoTuttoIlGiorno').checked = false;
+  aggiornaVistaOrariEvento();
+  el('campoEventoOraInizio').value = orarioDaMinuti(inizio);
+  el('campoEventoOraFine').value = inizio + durata >= 1440 ? '23:59' : orarioDaMinuti(inizio + durata);
+  inizioEventoPrecedente = el('campoEventoOraInizio').value;
+  aggiornaGiornataEvento();
+}
+// Cambiando l'inizio, la fine si sposta con lui (la durata resta uguale).
+function cambiaInizioEvento(){
+  const vecchio = intervalloOrari(inizioEventoPrecedente, el('campoEventoOraFine').value);
+  const nuovo = minutiDaOrario(el('campoEventoOraInizio').value);
+  if(vecchio && nuovo !== null){
+    const fine = nuovo + (vecchio.a - vecchio.da);
+    el('campoEventoOraFine').value = fine >= 1440 ? '23:59' : orarioDaMinuti(fine);
+  }
+  inizioEventoPrecedente = el('campoEventoOraInizio').value;
+  aggiornaGiornataEvento();
+  portaInVistaEvento();
+}
+function apriOpzioneEvento(quale){
+  impostaFoglioEvento(true);
+  const dove = { colore: 'sceltaColoreEvento', ripeti: 'campoEventoRipeti', promemoria: 'campoEventoPromemoriaWrap' }[quale];
+  const nodo = dove && el(dove);
+  if(nodo) setTimeout(() => { nodo.scrollIntoView({ block: 'center', behavior: 'smooth' }); if(quale === 'ripeti') try{ nodo.focus(); }catch(e){} }, 60);
+}
+function inizializzaFoglioEvento(){
+  const o = el('overlayEvento');
+  if(!o) return;
+  on('btnAltreOpzioniEvento', 'click', () => impostaFoglioEvento(true));
+  on('manigliaFoglioEvento', 'click', () => impostaFoglioEvento(!o.classList.contains('espanso')));
+  o.querySelectorAll('[data-opzione-evento]').forEach(b => b.addEventListener('click', () => apriOpzioneEvento(b.dataset.opzioneEvento)));
+  on('giornataEventoOre', 'click', scegliOraDallaGiornata);
+  on('campoEventoOraInizio', 'change', cambiaInizioEvento);
+  on('campoEventoOraFine', 'change', aggiornaGiornataEvento);
+  on('campoEventoTitolo', 'input', aggiornaGiornataEvento);
+  on('campoEventoTitolo', 'keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); salvaEventoV2(); } });
+  on('sceltaColoreEvento', 'click', () => setTimeout(aggiornaGiornataEvento, 0));
+  o.addEventListener('change', aggiornaScorciatoieEvento);
+  o.addEventListener('click', () => setTimeout(aggiornaScorciatoieEvento, 0));
+  // Trascinando la maniglia (o il bordo della scheda) in su si apre, in giù si riduce.
+  const foglio = o.querySelector('.foglio-evento');
+  let y0 = null;
+  foglio.addEventListener('touchstart', e => {
+    const presa = e.target.closest('.foglio-evento-maniglia') || (o.classList.contains('compatto') && !e.target.closest('input,select,textarea,button'));
+    y0 = presa ? e.touches[0].clientY : null;
+  }, { passive: true });
+  foglio.addEventListener('touchend', e => {
+    if(y0 === null) return;
+    const dy = e.changedTouches[0].clientY - y0;
+    y0 = null;
+    if(dy < -30) impostaFoglioEvento(true);
+    else if(dy > 30 && o.classList.contains('espanso')) impostaFoglioEvento(false);
+  }, { passive: true });
 }
 
 function aggiornaVistaRipetiEvento(){
@@ -2307,24 +2533,169 @@ function aggiornaVistaRipetiEvento(){
 // Notifiche dell'app spente: lo diciamo subito nel modulo, con un tasto per riattivarle.
 // Lo stato si legge dal modulo nativo (lo stesso interruttore delle impostazioni di Android);
 // il permesso di Capacitor è solo il ripiego.
+// Categorie di notifica spente (es. su Xiaomi restano spente anche con le notifiche dell'app accese):
+// l'ultimo controllo, per dire quali sono e aprire direttamente quella giusta.
+let canaliNotificaSpenti = [];
+// L'ultima risposta del modulo Android (notifiche, categorie, batteria, allarmi, marca).
+let ultimoStatoNativo = null;
 async function notificheAttive(){
   const avviso = pluginAvvisoEvento();
-  if(avviso){ try{ const r = await avviso.statoNotifiche(); if(r && typeof r.attive === 'boolean') return r.attive; }catch(e){} }
+  if(avviso){
+    try{
+      const r = await avviso.statoNotifiche();
+      ultimoStatoNativo = r || null;
+      if(r && typeof r.attive === 'boolean'){
+        canaliNotificaSpenti = r.attive && Array.isArray(r.canaliSpenti) ? r.canaliSpenti : [];
+        return r.attive && !canaliNotificaSpenti.length;
+      }
+    }catch(e){}
+  }
+  canaliNotificaSpenti = [];
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return true;
   try{ const p = await plugin.checkPermissions(); return p.display === 'granted'; }catch(e){ return true; }
+}
+// Il testo dell'avviso: notifiche dell'app spente, oppure solo alcune categorie (es. Xiaomi).
+function testoNotificheSpente(cosa){
+  const n = canaliNotificaSpenti.map(c => `«${c.nome}»`);
+  if(!n.length) return `⚠️ Le notifiche dell'app sono disattivate: ${cosa} non arriveranno.`;
+  return `⚠️ Su questo telefono ${n.length === 1 ? 'la categoria di notifica ' + n[0] + ' è spenta' : 'alcune categorie di notifica sono spente (' + n.join(', ') + ')'}: ${cosa} non arriveranno.`;
 }
 let timerPermessiEvento = null;
 async function controllaPermessiPromemoria(){
   const box = el('avvisoPermessiEvento'); if(!box) return;
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   const aperto = el('overlayEvento') && !el('overlayEvento').hidden;
-  if(!plugin || !aperto || !el('listaPromemoriaEvento').children.length){ box.hidden = true; }
-  else box.hidden = await notificheAttive();
-  // Finché l'avviso è visibile si ricontrolla ogni 2 secondi: tornando dalle impostazioni di
+  const batteria = el('avvisoBatteriaEvento');
+  if(!plugin || !aperto || !el('listaPromemoriaEvento').children.length){ box.hidden = true; if(batteria) batteria.hidden = true; }
+  else {
+    box.hidden = await notificheAttive();
+    if(batteria) batteria.hidden = !(ultimoStatoNativo && ultimoStatoNativo.batteriaLimitata);
+  }
+  if(!box.hidden) box.querySelector('span').textContent = testoNotificheSpente('i promemoria');
+  // Finché un avviso è visibile si ricontrolla ogni 2 secondi: tornando dalle impostazioni di
   // Android sparisce da solo, anche sui telefoni che non segnalano il ritorno nell'app.
   clearTimeout(timerPermessiEvento);
-  if(!box.hidden) timerPermessiEvento = setTimeout(controllaPermessiPromemoria, 2000);
+  if(!box.hidden || (batteria && !batteria.hidden)) timerPermessiEvento = setTimeout(controllaPermessiPromemoria, 2000);
+}
+// In Altro: promemoria del turno acceso ma notifiche (o la sua categoria) spente, o app limitata
+// dal risparmio batteria; e la riga "Controllo promemoria" con quante cose ci sono da sistemare.
+async function controllaNotifichePromemoriaTurno(){
+  const box = el('avvisoNotificheTurno'); if(!box) return;
+  const nativo = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications);
+  const analisi = nativo ? await analizzaPromemoria() : null;
+  const riga = el('settingsControlloPromemoria');
+  riga.hidden = !analisi;
+  if(analisi){
+    const n = analisi.problemi;
+    el('riassuntoControlloPromemoria').textContent = n ? `${n} ${n === 1 ? 'cosa' : 'cose'} da sistemare` : 'Tutto a posto';
+    el('riassuntoControlloPromemoria').classList.toggle('da-sistemare', !!n);
+  }
+  const acceso = nativo && el('campoPromemoriaTurno').checked;
+  const ok = !analisi || analisi.notificheOk;
+  box.hidden = !acceso || ok;
+  if(!box.hidden) box.querySelector('span').textContent = testoNotificheSpente('i promemoria del turno');
+  el('avvisoBatteriaTurno').hidden = !(acceso && analisi && analisi.stato.batteriaLimitata);
+}
+
+// ===================== Controllo promemoria =====================
+// Tutto quello che può fermare un promemoria, in una pagina: notifiche, categorie, allarmi,
+// risparmio batteria e (solo Xiaomi) l'avvio automatico, che Android non lascia controllare.
+async function analizzaPromemoria(){
+  const avviso = pluginAvvisoEvento();
+  if(!avviso) return null;
+  let r;
+  try{ r = await avviso.statoNotifiche(); }catch(e){ return null; }
+  if(!r) return null;
+  ultimoStatoNativo = r;
+  const app = r.attive !== false;
+  const canali = app && Array.isArray(r.canaliSpenti) ? r.canaliSpenti : [];
+  canaliNotificaSpenti = canali;
+  const righe = [{ id: 'notifiche', ok: app, titolo: 'Notifiche dell\'app', testo: app ? 'Accese' : 'Spente: nessun promemoria può arrivare.', bottone: 'Attiva' }];
+  if(app) righe.push({ id: 'categorie', ok: !canali.length, titolo: 'Categorie di notifica',
+    testo: canali.length ? `Spente: ${canali.map(c => '«' + c.nome + '»').join(', ')}.` : 'Promemoria eventi, del turno e avvisi: accese', bottone: 'Attiva' });
+  righe.push({ id: 'allarmi', ok: true, titolo: 'Allarmi puntuali', testo: r.allarmiEsatti === false ? 'Si usa la sveglia di sistema: puntuale lo stesso' : 'Permesso concesso' });
+  righe.push({ id: 'batteria', ok: !r.batteriaLimitata, titolo: 'Risparmio batteria',
+    testo: r.batteriaLimitata ? 'L\'app è limitata quando è chiusa. Tocca Sistema e scegli «Senza restrizioni».' : 'Senza restrizioni', bottone: 'Sistema' });
+  if(r.xiaomi) righe.push({ id: 'avvio', info: true, titolo: 'Avvio automatico (Xiaomi)', testo: 'Android non permette di controllarlo: aprilo e accendilo per Turni & Accessorio PS.', bottone: 'Apri' });
+  return { stato: r, righe, problemi: righe.filter(x => !x.info && !x.ok).length, notificheOk: app && !canali.length };
+}
+async function renderControlloPromemoria(){
+  const esito = el('esitoControlloPromemoria');
+  const analisi = await analizzaPromemoria();
+  if(!analisi){
+    esito.className = 'controllo-esito attesa';
+    esito.innerHTML = '<b>Disponibile nell\'app per Android</b><small>Qui le notifiche le gestisce il browser.</small>';
+    el('listaControlloPromemoria').innerHTML = '';
+    return;
+  }
+  const n = analisi.problemi;
+  esito.className = 'controllo-esito' + (n ? '' : ' tutto-ok');
+  esito.innerHTML = n
+    ? `<b>${n} ${n === 1 ? 'cosa' : 'cose'} da sistemare</b><small>Senza, i promemoria possono arrivare in ritardo o non arrivare.</small>`
+    : '<b>✓ Tutto a posto</b><small>Le impostazioni per i promemoria sono giuste.</small>';
+  el('listaControlloPromemoria').innerHTML = analisi.righe.map(x => {
+    const stato = x.info ? 'info' : x.ok ? 'ok' : 'no';
+    const icona = x.info ? 'i' : x.ok ? '✓' : '!';
+    const bottone = x.bottone && (x.info || !x.ok) ? `<button type="button" data-controllo="${x.id}">${x.bottone}</button>` : '';
+    return `<div class="controllo-riga ${stato}" data-riga-controllo="${x.id}"><span aria-hidden="true">${icona}</span><i>${escapeHtml(x.titolo)}<small>${escapeHtml(x.testo)}</small></i>${bottone}</div>`;
+  }).join('');
+}
+async function apriControlloPromemoria(){
+  const esito = el('esitoControlloPromemoria');
+  esito.className = 'controllo-esito attesa';
+  esito.innerHTML = '<b>Controllo in corso…</b>';
+  el('overlayControlloPromemoria').hidden = false;
+  await renderControlloPromemoria();
+}
+async function apriImpostazioniBatteria(){
+  const avviso = pluginAvvisoEvento();
+  if(!avviso || !avviso.apriImpostazioniBatteria){ mostraAvviso('Impostazioni di Android → App → Turni & Accessorio PS → Batteria → «Senza restrizioni».', 'Risparmio batteria'); return; }
+  mostraToast('Tocca «Batteria» (o «Risparmio batteria») e scegli «Senza restrizioni», poi torna nell\'app.', 'info', 7000);
+  try{ await avviso.apriImpostazioniBatteria(); }catch(e){ mostraAvviso('Impostazioni di Android → App → Turni & Accessorio PS → Batteria → «Senza restrizioni».', 'Risparmio batteria'); }
+}
+async function apriAvvioAutomatico(){
+  const avviso = pluginAvvisoEvento();
+  try{
+    const r = avviso && avviso.apriAvvioAutomatico ? await avviso.apriAvvioAutomatico() : null;
+    if(r && r.pagina === 'avvio') mostraToast('Accendi Turni & Accessorio PS nell\'elenco, poi torna nell\'app.', 'info', 6000);
+    else if(r) mostraToast('Cerca «Avvio automatico» e accendilo, poi torna nell\'app.', 'info', 6000);
+    else throw new Error('non aperto');
+  }catch(e){ mostraAvviso('Impostazioni → App → Gestisci app → Turni & Accessorio PS → Avvio automatico.', 'Avvio automatico'); }
+}
+const ID_NOTIFICA_PROVA = 1999999999; // fuori dai numeri dei promemoria degli eventi
+async function mandaNotificaProva(){
+  const quando = Date.now() + 10000;
+  const avviso = pluginAvvisoEvento();
+  try{
+    if(avviso){
+      await avviso.programma({ id: ID_NOTIFICA_PROVA, titolo: 'Notifica di prova', testo: 'Se la vedi, i promemoria arrivano. ✓', quandoMs: quando, durataSec: 0, modo: 'suono_vibra' });
+    } else {
+      const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+      if(!plugin){ mostraToast('La notifica di prova funziona nell\'app per Android.', 'info'); return; }
+      await plugin.schedule({ notifications: [{ id: ID_NOTIFICA_PROVA, title: 'Notifica di prova', body: 'Se la vedi, i promemoria arrivano. ✓', channelId: 'promemoria_eventi_v2', schedule: { at: new Date(quando), allowWhileIdle: true } }] });
+    }
+    mostraToast('Notifica di prova tra 10 secondi: puoi anche chiudere l\'app.', 'successo', 5000);
+  }catch(e){ mostraToast('Notifica di prova non programmata.', 'avviso'); }
+}
+function inizializzaControlloPromemoria(){
+  on('settingsControlloPromemoria', 'click', apriControlloPromemoria);
+  on('btnChiudiControlloPromemoria', 'click', () => { el('overlayControlloPromemoria').hidden = true; controllaNotifichePromemoriaTurno(); });
+  on('btnNotificaProva', 'click', mandaNotificaProva);
+  on('listaControlloPromemoria', 'click', async e => {
+    const b = e.target.closest('[data-controllo]'); if(!b) return;
+    const quale = b.dataset.controllo;
+    if(quale === 'notifiche' || quale === 'categorie') await attivaNotifichePromemoria();
+    else if(quale === 'batteria') await apriImpostazioniBatteria();
+    else if(quale === 'avvio') await apriAvvioAutomatico();
+    setTimeout(renderControlloPromemoria, 800);
+  });
+  document.addEventListener('click', e => { if(e.target.closest('[data-sistema-batteria]')) apriImpostazioniBatteria(); });
+  // Tornando dalle impostazioni di Android si ricontrolla tutto.
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) return;
+    if(!el('overlayControlloPromemoria').hidden) renderControlloPromemoria();
+  });
 }
 async function attivaNotifichePromemoria(){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
@@ -2343,12 +2714,21 @@ async function attivaNotifichePromemoria(){
     }
   }catch(e){}
   if(await notificheAttive()){ el('avvisoPermessiEvento').hidden = true; mostraToast('Notifiche attivate', 'successo'); return; }
-  // 2) Altrimenti si aprono le impostazioni delle notifiche dell'app.
+  // 2) Altrimenti si aprono le impostazioni: la categoria spenta, se è una sola; se no le notifiche dell'app.
   const avviso = pluginAvvisoEvento();
   if(avviso){
     try{
-      mostraToast('Attiva «Mostra notifiche» e poi torna nell\'app.', 'info', 5000);
-      await avviso.apriImpostazioniNotifiche();
+      const spenti = canaliNotificaSpenti;
+      if(spenti.length === 1){
+        mostraToast(`Accendi «Visualizza le notifiche» per «${spenti[0].nome}», poi torna nell'app.`, 'info', 6000);
+        await avviso.apriImpostazioniNotifiche({ canale: spenti[0].id });
+      } else if(spenti.length > 1){
+        mostraToast('In «Categorie di notifica» accendi tutte le categorie, poi torna nell\'app.', 'info', 6000);
+        await avviso.apriImpostazioniNotifiche();
+      } else {
+        mostraToast('Attiva «Mostra notifiche» e poi torna nell\'app.', 'info', 5000);
+        await avviso.apriImpostazioniNotifiche();
+      }
       return;
     }catch(e){ console.warn('Impostazioni notifiche non aperte:', e); }
   }
@@ -2408,7 +2788,9 @@ function orariPredefinitiEvento(iso){
 function aggiornaVistaOrariEvento(){
   const tutt = el('campoEventoTuttoIlGiorno').checked;
   el('campiEventoOrario').hidden = tutt;
+  el('etichettaTuttoGiornoEvento').hidden = !tutt;
   el('campoEventoOraPromemoriaWrap').hidden = !tutt;
+  if(!el('overlayEvento').hidden) aggiornaGiornataEvento();
 }
 function aggiungiRigaPromemoria(p){
   const tutt = el('campoEventoTuttoIlGiorno').checked;
@@ -3270,7 +3652,11 @@ function inizializzaPromemoriaTurno(){
     }
     cambiaPromemoriaTurno({ attivo: acceso });
     if(acceso) mostraToast('Promemoria del turno acceso', 'successo');
+    controllaNotifichePromemoriaTurno();
   });
+  inizializzaControlloPromemoria();
+  on('btnAttivaNotificheTurno', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(controllaNotifichePromemoriaTurno, 800); });
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) controllaNotifichePromemoriaTurno(); });
   on('sceltaModoPromemoriaTurno', 'click', e => { const b = e.target.closest('[data-modo-promemoria]'); if(b) cambiaPromemoriaTurno({ modo: b.dataset.modoPromemoria }); });
   on('campoOraPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ ora: e.target.value || '20:00' }));
   on('campoMinutiPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ minuti: Number(e.target.value) || 60 }));

@@ -208,8 +208,12 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); });
   await p.click('#btnNuovoEventoGiornoV2');
+  await p.waitForTimeout(150);
   ok('modulo evento aperto, riquadro "notifiche disattivate" nascosto', await p.evaluate(() => !document.getElementById('overlayEvento').hidden && !document.getElementById('avvisoPermessiEvento').offsetParent));
+  ok('nuovo evento: scheda compatta, titolo pronto, opzioni nascoste', await p.evaluate(() => el('overlayEvento').classList.contains('compatto') && document.activeElement === el('campoEventoTitolo') && !el('sceltaColoreEvento').offsetParent && !!el('btnSalvaEvento').offsetParent));
   await p.fill('#campoEventoTitolo', 'Palestra');
+  await p.click('#btnAltreOpzioniEvento');
+  ok('"Altre opzioni" apre la scheda con tutte le opzioni', await p.evaluate(() => el('overlayEvento').classList.contains('espanso') && !!el('sceltaColoreEvento').offsetParent && !el('btnAltreOpzioniEvento').offsetParent));
   await p.click('#sceltaColoreEvento [data-colore-evento="#2E9E5B"]');
   await p.selectOption('#campoEventoRipeti', 'settimana');
   await p.click('#btnAggiungiPromemoria');
@@ -226,6 +230,130 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
   await p.locator('#listaEventiGiornoV2 [data-evento-id]').first().click();
   await p.click('#btnEliminaEvento');
   ok('"Tutta la serie" elimina tutto', await p.evaluate(() => !AppState.eventiGiorno['2026-10-20'] && eventiDelGiorno('2026-11-03').length === 0));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Notifiche: categorie spente (es. Xiaomi)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true });
+  await p.evaluate(() => { window.__spenti = [{ id: 'promemoria_turno', nome: 'Promemoria del turno' }];
+    Capacitor.Plugins.AvvisoEvento.statoNotifiche = () => Promise.resolve({ attive: true, canaliSpenti: window.__spenti }); });
+  await p.click('#tabAltro');
+  await p.click('#campoPromemoriaTurno');
+  await p.waitForFunction(() => !el('avvisoNotificheTurno').hidden);
+  ok('Promemoria del turno acceso con la categoria spenta: avviso con il nome della categoria', await p.evaluate(() => /categoria di notifica «Promemoria del turno» è spenta/.test(el('avvisoNotificheTurno').textContent)));
+  await p.click('#btnAttivaNotificheTurno');
+  ok('"Attiva notifiche" apre direttamente quella categoria', await p.evaluate(() => window.__log.some(x => x[0] === 'impostazioni' && x[1].canale === 'promemoria_turno')));
+  await p.evaluate(() => { window.__spenti = []; document.dispatchEvent(new Event('visibilitychange')); });
+  await p.waitForFunction(() => el('avvisoNotificheTurno').hidden);
+  ok('tornando con la categoria accesa l\'avviso sparisce', true);
+  await p.evaluate(() => { window.__spenti = [{ id: 'avviso_evento_semplice', nome: 'Promemoria eventi' }, { id: 'promemoria_turno', nome: 'Promemoria del turno' }]; window.__log = []; });
+  await p.click('#tabCalendario');
+  await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); apriModificaEventoV2(null); });
+  await p.waitForFunction(() => !el('avvisoPermessiEvento').hidden);
+  ok('nel nuovo evento: avviso con le categorie spente', await p.evaluate(() => /alcune categorie di notifica sono spente \(«Promemoria eventi», «Promemoria del turno»\)/.test(el('avvisoPermessiEvento').textContent)));
+  await p.evaluate(() => { el('btnAltreOpzioniEvento').click(); });
+  await p.click('#btnAttivaNotificheEvento');
+  ok('più categorie spente: si aprono le notifiche dell\'app', await p.evaluate(() => window.__log.some(x => x[0] === 'impostazioni' && !x[1].canale)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Controllo promemoria (batteria, Xiaomi, prova)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true });
+  await p.evaluate(() => {
+    window.__stato = { attive: true, canaliSpenti: [], batteriaLimitata: true, allarmiEsatti: false, xiaomi: true };
+    const f = (nome, risposta) => a => { window.__log.push([nome, JSON.parse(JSON.stringify(a || {}))]); return Promise.resolve(risposta || {}); };
+    Object.assign(Capacitor.Plugins.AvvisoEvento, { statoNotifiche: () => Promise.resolve(window.__stato), apriImpostazioniBatteria: f('batteria'), apriAvvioAutomatico: f('avvio', { pagina: 'avvio' }) });
+  });
+  await p.click('#tabAltro');
+  await p.waitForFunction(() => !el('settingsControlloPromemoria').hidden);
+  ok('Altro: riga "Controllo promemoria" con 1 cosa da sistemare', await p.evaluate(() => el('riassuntoControlloPromemoria').textContent === '1 cosa da sistemare'));
+  ok('promemoria del turno spento: nessun avviso batteria', await p.evaluate(() => el('avvisoBatteriaTurno').hidden));
+  await p.click('#campoPromemoriaTurno');
+  await p.waitForFunction(() => !el('avvisoBatteriaTurno').hidden);
+  ok('promemoria del turno acceso e batteria limitata: avviso "potrebbero arrivare in ritardo"', await p.evaluate(() => /potrebbero arrivare in ritardo/.test(el('avvisoBatteriaTurno').textContent) && el('avvisoNotificheTurno').hidden));
+  await p.click('#avvisoBatteriaTurno [data-sistema-batteria]');
+  ok('"Sistema adesso" apre le impostazioni della batteria', await p.evaluate(() => window.__log.some(x => x[0] === 'batteria')));
+  await p.click('#settingsControlloPromemoria');
+  await p.waitForFunction(() => document.querySelectorAll('#listaControlloPromemoria .controllo-riga').length);
+  const c = await p.evaluate(() => ({ esito: el('esitoControlloPromemoria').textContent,
+    righe: [...document.querySelectorAll('.controllo-riga')].map(r => r.dataset.rigaControllo + ':' + r.className.split(' ')[1]).join(),
+    allarmi: document.querySelector('[data-riga-controllo="allarmi"]').textContent }));
+  ok('controllo: notifiche ✓, categorie ✓, allarmi ✓ (sveglia di sistema), batteria !, avvio automatico (solo Xiaomi)', c.righe === 'notifiche:ok,categorie:ok,allarmi:ok,batteria:no,avvio:info' && /sveglia di sistema/.test(c.allarmi) && /1 cosa da sistemare/.test(c.esito), JSON.stringify(c));
+  await p.click('[data-controllo="avvio"]');
+  ok('"Apri" avvio automatico', await p.evaluate(() => window.__log.some(x => x[0] === 'avvio')));
+  await p.evaluate(() => { window.__stato = { attive: true, canaliSpenti: [], batteriaLimitata: false, allarmiEsatti: true, xiaomi: false }; document.dispatchEvent(new Event('visibilitychange')); });
+  await p.waitForFunction(() => /Tutto a posto/.test(el('esitoControlloPromemoria').textContent));
+  ok('tornando con la batteria "senza restrizioni": tutto a posto, niente riga Xiaomi sugli altri telefoni', await p.evaluate(() => !document.querySelector('[data-riga-controllo="avvio"]') && !document.querySelector('.controllo-riga.no')));
+  await p.click('#btnNotificaProva');
+  const prova = await p.evaluate(() => { const x = window.__log.find(y => y[0] === 'av.programma'); return x && { ...x[1], tra: x[1].quandoMs - Date.now() }; });
+  ok('notifica di prova tra 10 secondi, notifica semplice', prova && prova.titolo === 'Notifica di prova' && prova.durataSec === 0 && prova.tra > 7000 && prova.tra <= 10000, JSON.stringify(prova));
+  await p.click('#btnChiudiControlloPromemoria');
+  await p.waitForFunction(() => el('riassuntoControlloPromemoria').textContent === 'Tutto a posto' && el('avvisoBatteriaTurno').hidden);
+  ok('chiudendo: in Altro "Tutto a posto" e avviso batteria sparito', true);
+  await p.evaluate(() => { window.__stato = { attive: false, canaliSpenti: [], batteriaLimitata: true, xiaomi: false }; });
+  await p.click('#settingsControlloPromemoria');
+  await p.waitForFunction(() => /2 cose da sistemare/.test(el('esitoControlloPromemoria').textContent));
+  ok('notifiche spente: 2 cose (notifiche e batteria), le categorie non si contano', await p.evaluate(() => !document.querySelector('[data-riga-controllo="categorie"]')));
+  await p.click('#btnChiudiControlloPromemoria');
+  await p.evaluate(() => { window.__stato = { attive: true, canaliSpenti: [], batteriaLimitata: true, xiaomi: false }; });
+  await p.click('#tabCalendario');
+  await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); apriModificaEventoV2(null); });
+  await p.waitForFunction(() => !el('avvisoBatteriaEvento').hidden);
+  ok('nuovo evento con promemoria: avviso batteria anche lì', await p.evaluate(() => el('avvisoPermessiEvento').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Evento: giornata a ore e scheda dal basso');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno', eventi: { '2026-10-17': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', oraFine: '11:00', colore: '#2E9E5B' }] } });
+  // 17/10: Pomeriggio 13–19; il 16 c'è la Sera 19–01 che finisce dopo mezzanotte.
+  await p.evaluate(() => { giornoSelezionato = '2026-10-17'; renderCalendario(); });
+  await p.click('#btnNuovoEventoGiornoV2');
+  const g = await p.evaluate(() => ({
+    ore: document.querySelectorAll('#giornataEventoOre .giornata-ora').length,
+    turni: [...document.querySelectorAll('.giornata-turno b')].map(b => b.textContent).join(' | '),
+    eventi: [...document.querySelectorAll('.giornata-evento b')].map(b => b.textContent).join(),
+    nuovo: document.querySelectorAll('.giornata-nuovo').length,
+    testa: el('giornataEventoTitolo').textContent + ' / ' + el('giornataEventoSotto').textContent
+  }));
+  ok('la giornata ha 24 ore, il turno del giorno e quello di ieri che finisce stanotte', g.ore === 24 && /Turno Pomeriggio/.test(g.turni) && /Sera \(da ieri\)/.test(g.turni), JSON.stringify(g));
+  ok('si vedono gli altri eventi e il nuovo evento evidenziato', g.eventi === 'Visita medica' && g.nuovo === 1, JSON.stringify(g));
+  ok('in alto il giorno e il turno', /Sabato 17 ottobre/.test(g.testa) && /Turno Pomeriggio 13:00 – 19:00 · 1 evento/.test(g.testa), g.testa);
+  await p.locator('#giornataEventoScorri').evaluate(n => { n.scrollTop = 21 * ALTEZZA_ORA_GIORNATA - 100; });
+  const box2 = await p.locator('#giornataEventoOre').boundingBox();
+  await p.mouse.click(box2.x + box2.width - 30, box2.y + 21.2 * 48);
+  ok('tocco su un\'ora: l\'evento parte da lì e dura sempre 1 ora', await p.evaluate(() => el('campoEventoOraInizio').value === '21:00' && el('campoEventoOraFine').value === '22:00'), await p.evaluate(() => el('campoEventoOraInizio').value + '-' + el('campoEventoOraFine').value));
+  ok('nessun avviso se l\'evento è fuori dal turno', await p.evaluate(() => el('avvisoSovrapposizioneEvento').hidden));
+  await p.fill('#campoEventoOraInizio', '18:30'); await p.dispatchEvent('#campoEventoOraInizio', 'change');
+  const sov = await p.evaluate(() => ({ fine: el('campoEventoOraFine').value, avviso: el('avvisoSovrapposizioneEvento').hidden ? '' : el('avvisoSovrapposizioneEvento').textContent, affiancati: document.querySelector('.giornata-nuovo').style.width }));
+  ok('cambiando l\'inizio la fine si sposta con lui', sov.fine === '19:30', sov.fine);
+  ok('evento sopra al turno: avviso e blocchi affiancati', /Si sovrappone al tuo turno Pomeriggio \(13:00 – 19:00\)/.test(sov.avviso) && /50%/.test(sov.affiancati), JSON.stringify(sov));
+  await p.fill('#campoEventoOraInizio', '00:15'); await p.dispatchEvent('#campoEventoOraInizio', 'change');
+  ok('anche con il turno di ieri che finisce stanotte', await p.evaluate(() => /turno di ieri/.test(el('avvisoSovrapposizioneEvento').textContent) && !el('avvisoSovrapposizioneEvento').hidden));
+  await p.fill('#campoEventoTitolo', 'Dentista');
+  ok('il titolo scritto compare nella giornata', await p.evaluate(() => document.querySelector('.giornata-nuovo b').textContent === 'Dentista'));
+  await p.click('[data-opzione-evento="ripeti"]');
+  ok('scorciatoia "Non si ripete": apre la scheda', await p.evaluate(() => el('overlayEvento').classList.contains('espanso') && !!el('campoEventoRipeti').offsetParent));
+  await p.click('#manigliaFoglioEvento');
+  ok('la maniglia riduce di nuovo la scheda', await p.evaluate(() => el('overlayEvento').classList.contains('compatto')));
+  await p.press('#campoEventoTitolo', 'Enter');
+  const salvato = await p.evaluate(() => (AppState.eventiGiorno['2026-10-17'] || []).find(e => e.titolo === 'Dentista'));
+  ok('Invio sulla tastiera salva l\'evento con l\'orario scelto', salvato && salvato.oraInizio === '00:15' && salvato.oraFine === '01:15' && await p.evaluate(() => el('overlayEvento').hidden), JSON.stringify(salvato));
+  await p.evaluate(() => { giornoSelezionato = '2026-10-17'; renderListaEventiGiornoV2(); });
+  await p.locator('#listaEventiGiornoV2 [data-evento-id="evento_1"]').first().click();
+  ok('modifica di un evento: scheda già aperta, l\'evento non è doppio nella giornata', await p.evaluate(() => el('overlayEvento').classList.contains('espanso') && document.querySelectorAll('.giornata-evento').length === 1 && document.querySelector('.giornata-nuovo b').textContent === 'Visita medica'));
+  await p.click('#campoEventoTuttoIlGiorno');
+  ok('"Tutto il giorno": l\'evento va nella striscia in alto e gli orari spariscono', await p.evaluate(() => !el('giornataEventoTutto').hidden && /Visita medica/.test(el('giornataEventoTutto').textContent) && !document.querySelector('.giornata-nuovo') && el('campiEventoOrario').hidden && !el('etichettaTuttoGiornoEvento').hidden));
+  await p.click('#btnChiudiEvento');
+  ok('← chiude senza salvare', await p.evaluate(() => el('overlayEvento').hidden && !AppState.eventiGiorno['2026-10-17'].find(e => e.id === 'evento_1').tuttoIlGiorno));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -719,6 +847,7 @@ sezione('Colore dell\'app e Scrivi allo sviluppatore');
   await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
   ok('dopo la riapertura resta Verde, ed entra nel backup', await p.evaluate(() => document.documentElement.classList.contains('accento-verde') && JSON.stringify(costruisciDatiBackup()).includes('"accento":"verde"')));
   await p.click('#tabAltro');
+  ok('in Altro c\'è "Guida all\'app" che apre la pagina del sito', await p.evaluate(() => { const a = el('linkGuida'); return !!a && a.href === 'https://micmax-apps.netlify.app/guida-turni.html' && a.target === '_blank' && a.offsetParent !== null; }));
   await p.click('#settingsSegnala');
   ok('"Segnala un problema" apre la finestra con le informazioni dell\'app', await p.evaluate(() => !el('overlaySegnala').hidden && /Saldi di partenza: no/.test(el('infoSegnala').textContent) && /Colore Verde/.test(el('infoSegnala').textContent)));
   await p.click('[data-tipo-segnala="Idea"]');
