@@ -149,6 +149,28 @@ public class AvvisoEventoPlugin extends Plugin {
             r.put("canaliSpenti", spenti);
         } catch (Exception ignored) {
         }
+        // Risparmio batteria: se l'app non è "senza restrizioni", Android la limita quando è chiusa.
+        boolean batteriaLimitata = false;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            try {
+                android.os.PowerManager pm = (android.os.PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
+                batteriaLimitata = pm != null && !pm.isIgnoringBatteryOptimizations(getContext().getPackageName());
+            } catch (Exception ignored) {
+            }
+        }
+        r.put("batteriaLimitata", batteriaLimitata);
+        // Allarmi esatti (Android 12+): senza, l'app usa la sveglia di sistema, che è comunque puntuale.
+        boolean allarmiEsatti = true;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            try {
+                android.app.AlarmManager am = (android.app.AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+                allarmiEsatti = am != null && am.canScheduleExactAlarms();
+            } catch (Exception ignored) {
+            }
+        }
+        r.put("allarmiEsatti", allarmiEsatti);
+        String marca = (android.os.Build.MANUFACTURER + " " + android.os.Build.BRAND).toLowerCase(java.util.Locale.ROOT);
+        r.put("xiaomi", marca.contains("xiaomi") || marca.contains("redmi") || marca.contains("poco"));
         call.resolve(r);
     }
 
@@ -192,6 +214,62 @@ public class AvvisoEventoPlugin extends Plugin {
             call.resolve(new JSObject());
         } catch (Exception e) {
             call.reject("Impostazioni non aperte: " + e.getMessage());
+        }
+    }
+
+    private void apri(Intent i) {
+        android.content.Context ctx = getActivity() != null ? getActivity() : getContext();
+        if (getActivity() == null) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        ctx.startActivity(i);
+    }
+
+    private boolean apriInfoApp() {
+        try {
+            apri(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getContext().getPackageName(), null)));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Risparmio batteria: si apre la scheda dell'app (Informazioni app), dove c'è "Batteria"
+     * con "Senza restrizioni". Non si usa la richiesta diretta (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS):
+     * Google Play la permette solo ad alcuni tipi di app.
+     */
+    @PluginMethod
+    public void apriImpostazioniBatteria(PluginCall call) {
+        if (apriInfoApp()) {
+            call.resolve(new JSObject());
+            return;
+        }
+        try {
+            apri(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+            call.resolve(new JSObject());
+        } catch (Exception e) {
+            call.reject("Impostazioni batteria non aperte: " + e.getMessage());
+        }
+    }
+
+    /** Avvio automatico di Xiaomi (MIUI/HyperOS); se la pagina non c'è, la scheda dell'app. */
+    @PluginMethod
+    public void apriAvvioAutomatico(PluginCall call) {
+        JSObject r = new JSObject();
+        try {
+            Intent i = new Intent();
+            i.setComponent(new android.content.ComponentName("com.miui.securitycenter",
+                    "com.miui.permcenter.autostart.AutoStartManagementActivity"));
+            apri(i);
+            r.put("pagina", "avvio");
+            call.resolve(r);
+            return;
+        } catch (Exception ignored) {
+        }
+        if (apriInfoApp()) {
+            r.put("pagina", "app");
+            call.resolve(r);
+        } else {
+            call.reject("Pagina non aperta");
         }
     }
 

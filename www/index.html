@@ -233,6 +233,9 @@
               <span>⚠️ Le notifiche dell'app sono disattivate: i promemoria non arriveranno.</span>
               <button type="button" class="btn-secondario" id="btnAttivaNotificheEvento">Attiva notifiche</button>
             </div>
+            <div class="avviso-batteria" id="avvisoBatteriaEvento" hidden>
+              <span aria-hidden="true">🔋</span><i><b>I promemoria potrebbero arrivare in ritardo</b>Il risparmio batteria di Android limita l'app quando è chiusa.<button type="button" class="btn-secondario" data-sistema-batteria>Sistema adesso</button></i>
+            </div>
           </div>
           <div class="campo-modale" id="campoEventoAvvisoWrap" hidden>
             <strong>⏰ Avviso forte (facoltativo)</strong>
@@ -973,7 +976,11 @@
             <span>⚠️ Le notifiche dell'app sono disattivate: i promemoria del turno non arriveranno.</span>
             <button type="button" class="btn-secondario" id="btnAttivaNotificheTurno">Attiva notifiche</button>
           </div>
+          <div class="avviso-batteria" id="avvisoBatteriaTurno" hidden>
+            <span aria-hidden="true">🔋</span><i><b>I promemoria potrebbero arrivare in ritardo</b>Il risparmio batteria di Android limita l'app quando è chiusa.<button type="button" class="btn-secondario" data-sistema-batteria>Sistema adesso</button></i>
+          </div>
         </div>
+        <button type="button" class="riga-strumento-turni" id="settingsControlloPromemoria" hidden><span>🩺</span><i>Controllo promemoria<small id="riassuntoControlloPromemoria">Notifiche, batteria, prova</small></i><b>›</b></button>
         <div class="riga-strumento-turni riga-interruttore">
           <span>📱</span><i>Widget nella schermata Home<small id="descrizioneWidget">Spento</small></i>
           <input type="checkbox" class="interruttore" id="campoWidget" aria-label="Widget nella schermata Home">
@@ -1120,6 +1127,19 @@
   <div class="benvenuto-piede">
     <button type="button" class="btn-secondario" id="btnBenvenutoIndietro" hidden>Indietro</button>
     <button type="button" class="btn-primario" id="btnBenvenutoAvanti">Avanti</button>
+  </div>
+</div>
+
+<!-- Controllo promemoria: notifiche, categorie, allarmi, batteria, avvio automatico (Xiaomi), prova -->
+<div class="overlay" id="overlayControlloPromemoria" hidden>
+  <div class="modale">
+    <div class="modale-header"><h2>Controllo promemoria</h2><button class="btn-icona" id="btnChiudiControlloPromemoria" type="button" aria-label="Chiudi">✕</button></div>
+    <div class="modale-corpo">
+      <div class="controllo-esito" id="esitoControlloPromemoria"></div>
+      <div class="controllo-lista" id="listaControlloPromemoria"></div>
+      <button type="button" class="btn-secondario" id="btnNotificaProva">🔔 Manda una notifica di prova</button>
+      <p class="controllo-nota">La notifica di prova arriva tra 10 secondi: chiudi pure l'app per vedere se arriva anche così.</p>
+    </div>
   </div>
 </div>
 

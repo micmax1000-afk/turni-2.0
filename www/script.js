@@ -2536,11 +2536,14 @@ function aggiornaVistaRipetiEvento(){
 // Categorie di notifica spente (es. su Xiaomi restano spente anche con le notifiche dell'app accese):
 // l'ultimo controllo, per dire quali sono e aprire direttamente quella giusta.
 let canaliNotificaSpenti = [];
+// L'ultima risposta del modulo Android (notifiche, categorie, batteria, allarmi, marca).
+let ultimoStatoNativo = null;
 async function notificheAttive(){
   const avviso = pluginAvvisoEvento();
   if(avviso){
     try{
       const r = await avviso.statoNotifiche();
+      ultimoStatoNativo = r || null;
       if(r && typeof r.attive === 'boolean'){
         canaliNotificaSpenti = r.attive && Array.isArray(r.canaliSpenti) ? r.canaliSpenti : [];
         return r.attive && !canaliNotificaSpenti.length;
@@ -2563,22 +2566,136 @@ async function controllaPermessiPromemoria(){
   const box = el('avvisoPermessiEvento'); if(!box) return;
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   const aperto = el('overlayEvento') && !el('overlayEvento').hidden;
-  if(!plugin || !aperto || !el('listaPromemoriaEvento').children.length){ box.hidden = true; }
-  else box.hidden = await notificheAttive();
+  const batteria = el('avvisoBatteriaEvento');
+  if(!plugin || !aperto || !el('listaPromemoriaEvento').children.length){ box.hidden = true; if(batteria) batteria.hidden = true; }
+  else {
+    box.hidden = await notificheAttive();
+    if(batteria) batteria.hidden = !(ultimoStatoNativo && ultimoStatoNativo.batteriaLimitata);
+  }
   if(!box.hidden) box.querySelector('span').textContent = testoNotificheSpente('i promemoria');
-  // Finché l'avviso è visibile si ricontrolla ogni 2 secondi: tornando dalle impostazioni di
+  // Finché un avviso è visibile si ricontrolla ogni 2 secondi: tornando dalle impostazioni di
   // Android sparisce da solo, anche sui telefoni che non segnalano il ritorno nell'app.
   clearTimeout(timerPermessiEvento);
-  if(!box.hidden) timerPermessiEvento = setTimeout(controllaPermessiPromemoria, 2000);
+  if(!box.hidden || (batteria && !batteria.hidden)) timerPermessiEvento = setTimeout(controllaPermessiPromemoria, 2000);
 }
-// Promemoria del turno acceso ma notifiche (o la sua categoria) spente: lo diciamo in Altro.
+// In Altro: promemoria del turno acceso ma notifiche (o la sua categoria) spente, o app limitata
+// dal risparmio batteria; e la riga "Controllo promemoria" con quante cose ci sono da sistemare.
 async function controllaNotifichePromemoriaTurno(){
   const box = el('avvisoNotificheTurno'); if(!box) return;
   const nativo = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications);
-  if(!nativo || !el('campoPromemoriaTurno').checked){ box.hidden = true; return; }
-  const ok = await notificheAttive();
-  box.hidden = ok;
-  if(!ok) box.querySelector('span').textContent = testoNotificheSpente('i promemoria del turno');
+  const analisi = nativo ? await analizzaPromemoria() : null;
+  const riga = el('settingsControlloPromemoria');
+  riga.hidden = !analisi;
+  if(analisi){
+    const n = analisi.problemi;
+    el('riassuntoControlloPromemoria').textContent = n ? `${n} ${n === 1 ? 'cosa' : 'cose'} da sistemare` : 'Tutto a posto';
+    el('riassuntoControlloPromemoria').classList.toggle('da-sistemare', !!n);
+  }
+  const acceso = nativo && el('campoPromemoriaTurno').checked;
+  const ok = !analisi || analisi.notificheOk;
+  box.hidden = !acceso || ok;
+  if(!box.hidden) box.querySelector('span').textContent = testoNotificheSpente('i promemoria del turno');
+  el('avvisoBatteriaTurno').hidden = !(acceso && analisi && analisi.stato.batteriaLimitata);
+}
+
+// ===================== Controllo promemoria =====================
+// Tutto quello che può fermare un promemoria, in una pagina: notifiche, categorie, allarmi,
+// risparmio batteria e (solo Xiaomi) l'avvio automatico, che Android non lascia controllare.
+async function analizzaPromemoria(){
+  const avviso = pluginAvvisoEvento();
+  if(!avviso) return null;
+  let r;
+  try{ r = await avviso.statoNotifiche(); }catch(e){ return null; }
+  if(!r) return null;
+  ultimoStatoNativo = r;
+  const app = r.attive !== false;
+  const canali = app && Array.isArray(r.canaliSpenti) ? r.canaliSpenti : [];
+  canaliNotificaSpenti = canali;
+  const righe = [{ id: 'notifiche', ok: app, titolo: 'Notifiche dell\'app', testo: app ? 'Accese' : 'Spente: nessun promemoria può arrivare.', bottone: 'Attiva' }];
+  if(app) righe.push({ id: 'categorie', ok: !canali.length, titolo: 'Categorie di notifica',
+    testo: canali.length ? `Spente: ${canali.map(c => '«' + c.nome + '»').join(', ')}.` : 'Promemoria eventi, del turno e avvisi: accese', bottone: 'Attiva' });
+  righe.push({ id: 'allarmi', ok: true, titolo: 'Allarmi puntuali', testo: r.allarmiEsatti === false ? 'Si usa la sveglia di sistema: puntuale lo stesso' : 'Permesso concesso' });
+  righe.push({ id: 'batteria', ok: !r.batteriaLimitata, titolo: 'Risparmio batteria',
+    testo: r.batteriaLimitata ? 'L\'app è limitata quando è chiusa. Tocca Sistema e scegli «Senza restrizioni».' : 'Senza restrizioni', bottone: 'Sistema' });
+  if(r.xiaomi) righe.push({ id: 'avvio', info: true, titolo: 'Avvio automatico (Xiaomi)', testo: 'Android non permette di controllarlo: aprilo e accendilo per Turni & Accessorio PS.', bottone: 'Apri' });
+  return { stato: r, righe, problemi: righe.filter(x => !x.info && !x.ok).length, notificheOk: app && !canali.length };
+}
+async function renderControlloPromemoria(){
+  const esito = el('esitoControlloPromemoria');
+  const analisi = await analizzaPromemoria();
+  if(!analisi){
+    esito.className = 'controllo-esito attesa';
+    esito.innerHTML = '<b>Disponibile nell\'app per Android</b><small>Qui le notifiche le gestisce il browser.</small>';
+    el('listaControlloPromemoria').innerHTML = '';
+    return;
+  }
+  const n = analisi.problemi;
+  esito.className = 'controllo-esito' + (n ? '' : ' tutto-ok');
+  esito.innerHTML = n
+    ? `<b>${n} ${n === 1 ? 'cosa' : 'cose'} da sistemare</b><small>Senza, i promemoria possono arrivare in ritardo o non arrivare.</small>`
+    : '<b>✓ Tutto a posto</b><small>Le impostazioni per i promemoria sono giuste.</small>';
+  el('listaControlloPromemoria').innerHTML = analisi.righe.map(x => {
+    const stato = x.info ? 'info' : x.ok ? 'ok' : 'no';
+    const icona = x.info ? 'i' : x.ok ? '✓' : '!';
+    const bottone = x.bottone && (x.info || !x.ok) ? `<button type="button" data-controllo="${x.id}">${x.bottone}</button>` : '';
+    return `<div class="controllo-riga ${stato}" data-riga-controllo="${x.id}"><span aria-hidden="true">${icona}</span><i>${escapeHtml(x.titolo)}<small>${escapeHtml(x.testo)}</small></i>${bottone}</div>`;
+  }).join('');
+}
+async function apriControlloPromemoria(){
+  const esito = el('esitoControlloPromemoria');
+  esito.className = 'controllo-esito attesa';
+  esito.innerHTML = '<b>Controllo in corso…</b>';
+  el('overlayControlloPromemoria').hidden = false;
+  await renderControlloPromemoria();
+}
+async function apriImpostazioniBatteria(){
+  const avviso = pluginAvvisoEvento();
+  if(!avviso || !avviso.apriImpostazioniBatteria){ mostraAvviso('Impostazioni di Android → App → Turni & Accessorio PS → Batteria → «Senza restrizioni».', 'Risparmio batteria'); return; }
+  mostraToast('Tocca «Batteria» (o «Risparmio batteria») e scegli «Senza restrizioni», poi torna nell\'app.', 'info', 7000);
+  try{ await avviso.apriImpostazioniBatteria(); }catch(e){ mostraAvviso('Impostazioni di Android → App → Turni & Accessorio PS → Batteria → «Senza restrizioni».', 'Risparmio batteria'); }
+}
+async function apriAvvioAutomatico(){
+  const avviso = pluginAvvisoEvento();
+  try{
+    const r = avviso && avviso.apriAvvioAutomatico ? await avviso.apriAvvioAutomatico() : null;
+    if(r && r.pagina === 'avvio') mostraToast('Accendi Turni & Accessorio PS nell\'elenco, poi torna nell\'app.', 'info', 6000);
+    else if(r) mostraToast('Cerca «Avvio automatico» e accendilo, poi torna nell\'app.', 'info', 6000);
+    else throw new Error('non aperto');
+  }catch(e){ mostraAvviso('Impostazioni → App → Gestisci app → Turni & Accessorio PS → Avvio automatico.', 'Avvio automatico'); }
+}
+const ID_NOTIFICA_PROVA = 1999999999; // fuori dai numeri dei promemoria degli eventi
+async function mandaNotificaProva(){
+  const quando = Date.now() + 10000;
+  const avviso = pluginAvvisoEvento();
+  try{
+    if(avviso){
+      await avviso.programma({ id: ID_NOTIFICA_PROVA, titolo: 'Notifica di prova', testo: 'Se la vedi, i promemoria arrivano. ✓', quandoMs: quando, durataSec: 0, modo: 'suono_vibra' });
+    } else {
+      const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+      if(!plugin){ mostraToast('La notifica di prova funziona nell\'app per Android.', 'info'); return; }
+      await plugin.schedule({ notifications: [{ id: ID_NOTIFICA_PROVA, title: 'Notifica di prova', body: 'Se la vedi, i promemoria arrivano. ✓', channelId: 'promemoria_eventi_v2', schedule: { at: new Date(quando), allowWhileIdle: true } }] });
+    }
+    mostraToast('Notifica di prova tra 10 secondi: puoi anche chiudere l\'app.', 'successo', 5000);
+  }catch(e){ mostraToast('Notifica di prova non programmata.', 'avviso'); }
+}
+function inizializzaControlloPromemoria(){
+  on('settingsControlloPromemoria', 'click', apriControlloPromemoria);
+  on('btnChiudiControlloPromemoria', 'click', () => { el('overlayControlloPromemoria').hidden = true; controllaNotifichePromemoriaTurno(); });
+  on('btnNotificaProva', 'click', mandaNotificaProva);
+  on('listaControlloPromemoria', 'click', async e => {
+    const b = e.target.closest('[data-controllo]'); if(!b) return;
+    const quale = b.dataset.controllo;
+    if(quale === 'notifiche' || quale === 'categorie') await attivaNotifichePromemoria();
+    else if(quale === 'batteria') await apriImpostazioniBatteria();
+    else if(quale === 'avvio') await apriAvvioAutomatico();
+    setTimeout(renderControlloPromemoria, 800);
+  });
+  document.addEventListener('click', e => { if(e.target.closest('[data-sistema-batteria]')) apriImpostazioniBatteria(); });
+  // Tornando dalle impostazioni di Android si ricontrolla tutto.
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) return;
+    if(!el('overlayControlloPromemoria').hidden) renderControlloPromemoria();
+  });
 }
 async function attivaNotifichePromemoria(){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
@@ -3537,6 +3654,7 @@ function inizializzaPromemoriaTurno(){
     if(acceso) mostraToast('Promemoria del turno acceso', 'successo');
     controllaNotifichePromemoriaTurno();
   });
+  inizializzaControlloPromemoria();
   on('btnAttivaNotificheTurno', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(controllaNotifichePromemoriaTurno, 800); });
   document.addEventListener('visibilitychange', () => { if(!document.hidden) controllaNotifichePromemoriaTurno(); });
   on('sceltaModoPromemoriaTurno', 'click', e => { const b = e.target.closest('[data-modo-promemoria]'); if(b) cambiaPromemoriaTurno({ modo: b.dataset.modoPromemoria }); });

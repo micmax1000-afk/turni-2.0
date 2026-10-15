@@ -262,6 +262,55 @@ sezione('Notifiche: categorie spente (es. Xiaomi)');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Controllo promemoria (batteria, Xiaomi, prova)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true });
+  await p.evaluate(() => {
+    window.__stato = { attive: true, canaliSpenti: [], batteriaLimitata: true, allarmiEsatti: false, xiaomi: true };
+    const f = (nome, risposta) => a => { window.__log.push([nome, JSON.parse(JSON.stringify(a || {}))]); return Promise.resolve(risposta || {}); };
+    Object.assign(Capacitor.Plugins.AvvisoEvento, { statoNotifiche: () => Promise.resolve(window.__stato), apriImpostazioniBatteria: f('batteria'), apriAvvioAutomatico: f('avvio', { pagina: 'avvio' }) });
+  });
+  await p.click('#tabAltro');
+  await p.waitForFunction(() => !el('settingsControlloPromemoria').hidden);
+  ok('Altro: riga "Controllo promemoria" con 1 cosa da sistemare', await p.evaluate(() => el('riassuntoControlloPromemoria').textContent === '1 cosa da sistemare'));
+  ok('promemoria del turno spento: nessun avviso batteria', await p.evaluate(() => el('avvisoBatteriaTurno').hidden));
+  await p.click('#campoPromemoriaTurno');
+  await p.waitForFunction(() => !el('avvisoBatteriaTurno').hidden);
+  ok('promemoria del turno acceso e batteria limitata: avviso "potrebbero arrivare in ritardo"', await p.evaluate(() => /potrebbero arrivare in ritardo/.test(el('avvisoBatteriaTurno').textContent) && el('avvisoNotificheTurno').hidden));
+  await p.click('#avvisoBatteriaTurno [data-sistema-batteria]');
+  ok('"Sistema adesso" apre le impostazioni della batteria', await p.evaluate(() => window.__log.some(x => x[0] === 'batteria')));
+  await p.click('#settingsControlloPromemoria');
+  await p.waitForFunction(() => document.querySelectorAll('#listaControlloPromemoria .controllo-riga').length);
+  const c = await p.evaluate(() => ({ esito: el('esitoControlloPromemoria').textContent,
+    righe: [...document.querySelectorAll('.controllo-riga')].map(r => r.dataset.rigaControllo + ':' + r.className.split(' ')[1]).join(),
+    allarmi: document.querySelector('[data-riga-controllo="allarmi"]').textContent }));
+  ok('controllo: notifiche ✓, categorie ✓, allarmi ✓ (sveglia di sistema), batteria !, avvio automatico (solo Xiaomi)', c.righe === 'notifiche:ok,categorie:ok,allarmi:ok,batteria:no,avvio:info' && /sveglia di sistema/.test(c.allarmi) && /1 cosa da sistemare/.test(c.esito), JSON.stringify(c));
+  await p.click('[data-controllo="avvio"]');
+  ok('"Apri" avvio automatico', await p.evaluate(() => window.__log.some(x => x[0] === 'avvio')));
+  await p.evaluate(() => { window.__stato = { attive: true, canaliSpenti: [], batteriaLimitata: false, allarmiEsatti: true, xiaomi: false }; document.dispatchEvent(new Event('visibilitychange')); });
+  await p.waitForFunction(() => /Tutto a posto/.test(el('esitoControlloPromemoria').textContent));
+  ok('tornando con la batteria "senza restrizioni": tutto a posto, niente riga Xiaomi sugli altri telefoni', await p.evaluate(() => !document.querySelector('[data-riga-controllo="avvio"]') && !document.querySelector('.controllo-riga.no')));
+  await p.click('#btnNotificaProva');
+  const prova = await p.evaluate(() => { const x = window.__log.find(y => y[0] === 'av.programma'); return x && { ...x[1], tra: x[1].quandoMs - Date.now() }; });
+  ok('notifica di prova tra 10 secondi, notifica semplice', prova && prova.titolo === 'Notifica di prova' && prova.durataSec === 0 && prova.tra > 7000 && prova.tra <= 10000, JSON.stringify(prova));
+  await p.click('#btnChiudiControlloPromemoria');
+  await p.waitForFunction(() => el('riassuntoControlloPromemoria').textContent === 'Tutto a posto' && el('avvisoBatteriaTurno').hidden);
+  ok('chiudendo: in Altro "Tutto a posto" e avviso batteria sparito', true);
+  await p.evaluate(() => { window.__stato = { attive: false, canaliSpenti: [], batteriaLimitata: true, xiaomi: false }; });
+  await p.click('#settingsControlloPromemoria');
+  await p.waitForFunction(() => /2 cose da sistemare/.test(el('esitoControlloPromemoria').textContent));
+  ok('notifiche spente: 2 cose (notifiche e batteria), le categorie non si contano', await p.evaluate(() => !document.querySelector('[data-riga-controllo="categorie"]')));
+  await p.click('#btnChiudiControlloPromemoria');
+  await p.evaluate(() => { window.__stato = { attive: true, canaliSpenti: [], batteriaLimitata: true, xiaomi: false }; });
+  await p.click('#tabCalendario');
+  await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); apriModificaEventoV2(null); });
+  await p.waitForFunction(() => !el('avvisoBatteriaEvento').hidden);
+  ok('nuovo evento con promemoria: avviso batteria anche lì', await p.evaluate(() => el('avvisoPermessiEvento').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Evento: giornata a ore e scheda dal basso');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno', eventi: { '2026-10-17': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', oraFine: '11:00', colore: '#2E9E5B' }] } });
