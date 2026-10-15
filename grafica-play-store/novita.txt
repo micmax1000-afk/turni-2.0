@@ -1,8 +1,10 @@
 <it-IT>
-• Nuova scheda Assenze: saldi di partenza e quanto ti resta con anelli colorati
-• Calendario: i giorni del mese prima e dopo, sbiaditi
+• Nuova scheda Assenze con anelli colorati: quanto ti resta
+• Saldi di partenza: congedo diviso per anno, recuperi e riposo compensativo
+• Calendario: giorni del mese prima e dopo, sbiaditi
 • Report e Turni molto più veloci
-• Agenda sotto il calendario (da Altro): i prossimi 14 giorni
-• Indennità del mese con lordo e netto
-• Tabelle ufficiali aggiornate dal sito, senza perdere le tue modifiche
+• Agenda sotto il calendario (da Altro)
+• Indennità con lordo e netto
+• Tabelle ufficiali aggiornate dal sito
+• Colore dell'app a scelta e "Segnala un problema"
 </it-IT>
