@@ -2533,12 +2533,30 @@ function aggiornaVistaRipetiEvento(){
 // Notifiche dell'app spente: lo diciamo subito nel modulo, con un tasto per riattivarle.
 // Lo stato si legge dal modulo nativo (lo stesso interruttore delle impostazioni di Android);
 // il permesso di Capacitor è solo il ripiego.
+// Categorie di notifica spente (es. su Xiaomi restano spente anche con le notifiche dell'app accese):
+// l'ultimo controllo, per dire quali sono e aprire direttamente quella giusta.
+let canaliNotificaSpenti = [];
 async function notificheAttive(){
   const avviso = pluginAvvisoEvento();
-  if(avviso){ try{ const r = await avviso.statoNotifiche(); if(r && typeof r.attive === 'boolean') return r.attive; }catch(e){} }
+  if(avviso){
+    try{
+      const r = await avviso.statoNotifiche();
+      if(r && typeof r.attive === 'boolean'){
+        canaliNotificaSpenti = r.attive && Array.isArray(r.canaliSpenti) ? r.canaliSpenti : [];
+        return r.attive && !canaliNotificaSpenti.length;
+      }
+    }catch(e){}
+  }
+  canaliNotificaSpenti = [];
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   if(!plugin) return true;
   try{ const p = await plugin.checkPermissions(); return p.display === 'granted'; }catch(e){ return true; }
+}
+// Il testo dell'avviso: notifiche dell'app spente, oppure solo alcune categorie (es. Xiaomi).
+function testoNotificheSpente(cosa){
+  const n = canaliNotificaSpenti.map(c => `«${c.nome}»`);
+  if(!n.length) return `⚠️ Le notifiche dell'app sono disattivate: ${cosa} non arriveranno.`;
+  return `⚠️ Su questo telefono ${n.length === 1 ? 'la categoria di notifica ' + n[0] + ' è spenta' : 'alcune categorie di notifica sono spente (' + n.join(', ') + ')'}: ${cosa} non arriveranno.`;
 }
 let timerPermessiEvento = null;
 async function controllaPermessiPromemoria(){
@@ -2547,10 +2565,20 @@ async function controllaPermessiPromemoria(){
   const aperto = el('overlayEvento') && !el('overlayEvento').hidden;
   if(!plugin || !aperto || !el('listaPromemoriaEvento').children.length){ box.hidden = true; }
   else box.hidden = await notificheAttive();
+  if(!box.hidden) box.querySelector('span').textContent = testoNotificheSpente('i promemoria');
   // Finché l'avviso è visibile si ricontrolla ogni 2 secondi: tornando dalle impostazioni di
   // Android sparisce da solo, anche sui telefoni che non segnalano il ritorno nell'app.
   clearTimeout(timerPermessiEvento);
   if(!box.hidden) timerPermessiEvento = setTimeout(controllaPermessiPromemoria, 2000);
+}
+// Promemoria del turno acceso ma notifiche (o la sua categoria) spente: lo diciamo in Altro.
+async function controllaNotifichePromemoriaTurno(){
+  const box = el('avvisoNotificheTurno'); if(!box) return;
+  const nativo = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications);
+  if(!nativo || !el('campoPromemoriaTurno').checked){ box.hidden = true; return; }
+  const ok = await notificheAttive();
+  box.hidden = ok;
+  if(!ok) box.querySelector('span').textContent = testoNotificheSpente('i promemoria del turno');
 }
 async function attivaNotifichePromemoria(){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
@@ -2569,12 +2597,21 @@ async function attivaNotifichePromemoria(){
     }
   }catch(e){}
   if(await notificheAttive()){ el('avvisoPermessiEvento').hidden = true; mostraToast('Notifiche attivate', 'successo'); return; }
-  // 2) Altrimenti si aprono le impostazioni delle notifiche dell'app.
+  // 2) Altrimenti si aprono le impostazioni: la categoria spenta, se è una sola; se no le notifiche dell'app.
   const avviso = pluginAvvisoEvento();
   if(avviso){
     try{
-      mostraToast('Attiva «Mostra notifiche» e poi torna nell\'app.', 'info', 5000);
-      await avviso.apriImpostazioniNotifiche();
+      const spenti = canaliNotificaSpenti;
+      if(spenti.length === 1){
+        mostraToast(`Accendi «Visualizza le notifiche» per «${spenti[0].nome}», poi torna nell'app.`, 'info', 6000);
+        await avviso.apriImpostazioniNotifiche({ canale: spenti[0].id });
+      } else if(spenti.length > 1){
+        mostraToast('In «Categorie di notifica» accendi tutte le categorie, poi torna nell\'app.', 'info', 6000);
+        await avviso.apriImpostazioniNotifiche();
+      } else {
+        mostraToast('Attiva «Mostra notifiche» e poi torna nell\'app.', 'info', 5000);
+        await avviso.apriImpostazioniNotifiche();
+      }
       return;
     }catch(e){ console.warn('Impostazioni notifiche non aperte:', e); }
   }
@@ -3498,7 +3535,10 @@ function inizializzaPromemoriaTurno(){
     }
     cambiaPromemoriaTurno({ attivo: acceso });
     if(acceso) mostraToast('Promemoria del turno acceso', 'successo');
+    controllaNotifichePromemoriaTurno();
   });
+  on('btnAttivaNotificheTurno', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(controllaNotifichePromemoriaTurno, 800); });
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) controllaNotifichePromemoriaTurno(); });
   on('sceltaModoPromemoriaTurno', 'click', e => { const b = e.target.closest('[data-modo-promemoria]'); if(b) cambiaPromemoriaTurno({ modo: b.dataset.modoPromemoria }); });
   on('campoOraPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ ora: e.target.value || '20:00' }));
   on('campoMinutiPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ minuti: Number(e.target.value) || 60 }));

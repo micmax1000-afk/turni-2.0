@@ -66,19 +66,113 @@ public class AvvisoEventoPlugin extends Plugin {
         }
     }
 
-    /** Notifiche dell'app attive? (lo stesso interruttore che si vede nelle impostazioni di Android) */
+    /**
+     * I canali (le "categorie" nelle impostazioni di Android) che usa l'app. Si creano subito
+     * all'avvio: così compaiono nelle impostazioni e si possono controllare prima della prima notifica.
+     * Su alcuni telefoni (es. Xiaomi) una categoria può restare spenta anche con le notifiche
+     * dell'app accese: in quel caso le notifiche di quella categoria non arrivano.
+     */
+    static final String[][] CANALI = {
+            {"avviso_evento_semplice", "Promemoria eventi"},
+            {"promemoria_eventi_v2", "Promemoria eventi (riserva)"},
+            {"promemoria_turno", "Promemoria del turno"},
+            {"avviso_evento", "Avvisi evento"}
+    };
+
+    static void creaCanali(Context context) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) return;
+        android.app.NotificationManager nm = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) return;
+        try {
+            // Stesse impostazioni con cui li creano le notifiche: se il canale c'è già, Android tiene le sue.
+            android.app.NotificationChannel semplice = new android.app.NotificationChannel(
+                    "avviso_evento_semplice", "Promemoria eventi", android.app.NotificationManager.IMPORTANCE_HIGH);
+            semplice.enableVibration(true);
+            nm.createNotificationChannel(semplice);
+            android.app.NotificationChannel riserva = new android.app.NotificationChannel(
+                    "promemoria_eventi_v2", "Promemoria eventi", android.app.NotificationManager.IMPORTANCE_HIGH);
+            riserva.setDescription("Avvisi per gli eventi del calendario");
+            riserva.enableVibration(true);
+            riserva.enableLights(true);
+            riserva.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            nm.createNotificationChannel(riserva);
+            android.app.NotificationChannel turno = new android.app.NotificationChannel(
+                    "promemoria_turno", "Promemoria del turno", android.app.NotificationManager.IMPORTANCE_HIGH);
+            turno.setDescription("Il turno di domani o tra poco");
+            turno.enableVibration(true);
+            turno.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            nm.createNotificationChannel(turno);
+            android.app.NotificationChannel forte = new android.app.NotificationChannel(
+                    "avviso_evento", "Avvisi evento", android.app.NotificationManager.IMPORTANCE_HIGH);
+            forte.setDescription("Avviso forte di pochi secondi per gli eventi del calendario");
+            forte.setSound(null, null);
+            forte.enableVibration(false);
+            nm.createNotificationChannel(forte);
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
+    public void load() {
+        super.load();
+        creaCanali(getContext());
+    }
+
+    /**
+     * Notifiche dell'app attive? Oltre all'interruttore generale si guardano le singole categorie:
+     * "canaliSpenti" elenca quelle spente (id e nome), che vanno riaccese a mano.
+     */
     @PluginMethod
     public void statoNotifiche(PluginCall call) {
         JSObject r = new JSObject();
         r.put("attive", androidx.core.app.NotificationManagerCompat.from(getContext()).areNotificationsEnabled());
+        com.getcapacitor.JSArray spenti = new com.getcapacitor.JSArray();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            creaCanali(getContext());
+            android.app.NotificationManager nm = (android.app.NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                for (String[] c : CANALI) {
+                    try {
+                        android.app.NotificationChannel ch = nm.getNotificationChannel(c[0]);
+                        if (ch != null && ch.getImportance() == android.app.NotificationManager.IMPORTANCE_NONE) {
+                            JSObject x = new JSObject();
+                            x.put("id", c[0]);
+                            x.put("nome", ch.getName() != null ? ch.getName().toString() : c[1]);
+                            spenti.put(x);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+        try {
+            r.put("canaliSpenti", spenti);
+        } catch (Exception ignored) {
+        }
         call.resolve(r);
     }
 
-    /** Apre le impostazioni delle notifiche dell'app (dopo un "no", Android non le richiede più). */
+    /**
+     * Apre le impostazioni delle notifiche dell'app (dopo un "no", Android non le richiede più).
+     * Con "canale" apre direttamente quella categoria (dove c'è "Mostra/Visualizza le notifiche").
+     */
     @PluginMethod
     public void apriImpostazioniNotifiche(PluginCall call) {
         String pacchetto = getContext().getPackageName();
         android.content.Context ctx = getActivity() != null ? getActivity() : getContext();
+        String canale = call.getString("canale", null);
+        if (canale != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try {
+                Intent i = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+                i.putExtra(Settings.EXTRA_APP_PACKAGE, pacchetto);
+                i.putExtra(Settings.EXTRA_CHANNEL_ID, canale);
+                if (getActivity() == null) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                ctx.startActivity(i);
+                call.resolve(new JSObject());
+                return;
+            } catch (Exception ignored) {
+            }
+        }
         try {
             Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
             i.putExtra(Settings.EXTRA_APP_PACKAGE, pacchetto);

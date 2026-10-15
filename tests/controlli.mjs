@@ -235,6 +235,33 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Notifiche: categorie spente (es. Xiaomi)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true });
+  await p.evaluate(() => { window.__spenti = [{ id: 'promemoria_turno', nome: 'Promemoria del turno' }];
+    Capacitor.Plugins.AvvisoEvento.statoNotifiche = () => Promise.resolve({ attive: true, canaliSpenti: window.__spenti }); });
+  await p.click('#tabAltro');
+  await p.click('#campoPromemoriaTurno');
+  await p.waitForFunction(() => !el('avvisoNotificheTurno').hidden);
+  ok('Promemoria del turno acceso con la categoria spenta: avviso con il nome della categoria', await p.evaluate(() => /categoria di notifica «Promemoria del turno» è spenta/.test(el('avvisoNotificheTurno').textContent)));
+  await p.click('#btnAttivaNotificheTurno');
+  ok('"Attiva notifiche" apre direttamente quella categoria', await p.evaluate(() => window.__log.some(x => x[0] === 'impostazioni' && x[1].canale === 'promemoria_turno')));
+  await p.evaluate(() => { window.__spenti = []; document.dispatchEvent(new Event('visibilitychange')); });
+  await p.waitForFunction(() => el('avvisoNotificheTurno').hidden);
+  ok('tornando con la categoria accesa l\'avviso sparisce', true);
+  await p.evaluate(() => { window.__spenti = [{ id: 'avviso_evento_semplice', nome: 'Promemoria eventi' }, { id: 'promemoria_turno', nome: 'Promemoria del turno' }]; window.__log = []; });
+  await p.click('#tabCalendario');
+  await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); apriModificaEventoV2(null); });
+  await p.waitForFunction(() => !el('avvisoPermessiEvento').hidden);
+  ok('nel nuovo evento: avviso con le categorie spente', await p.evaluate(() => /alcune categorie di notifica sono spente \(«Promemoria eventi», «Promemoria del turno»\)/.test(el('avvisoPermessiEvento').textContent)));
+  await p.evaluate(() => { el('btnAltreOpzioniEvento').click(); });
+  await p.click('#btnAttivaNotificheEvento');
+  ok('più categorie spente: si aprono le notifiche dell\'app', await p.evaluate(() => window.__log.some(x => x[0] === 'impostazioni' && !x[1].canale)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Evento: giornata a ore e scheda dal basso');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno', eventi: { '2026-10-17': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', oraFine: '11:00', colore: '#2E9E5B' }] } });
