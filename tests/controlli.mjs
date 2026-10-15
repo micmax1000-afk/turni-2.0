@@ -719,6 +719,7 @@ sezione('Colore dell\'app e Scrivi allo sviluppatore');
   await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
   ok('dopo la riapertura resta Verde, ed entra nel backup', await p.evaluate(() => document.documentElement.classList.contains('accento-verde') && JSON.stringify(costruisciDatiBackup()).includes('"accento":"verde"')));
   await p.click('#tabAltro');
+  ok('in Altro c\'è "Guida all\'app" che apre la pagina del sito', await p.evaluate(() => { const a = el('linkGuida'); return !!a && a.href === 'https://micmax-apps.netlify.app/guida-turni.html' && a.target === '_blank' && a.offsetParent !== null; }));
   await p.click('#settingsSegnala');
   ok('"Segnala un problema" apre la finestra con le informazioni dell\'app', await p.evaluate(() => !el('overlaySegnala').hidden && /Saldi di partenza: no/.test(el('infoSegnala').textContent) && /Colore Verde/.test(el('infoSegnala').textContent)));
   await p.click('[data-tipo-segnala="Idea"]');

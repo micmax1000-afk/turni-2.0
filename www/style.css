@@ -2197,3 +2197,6 @@ html[data-tema=scuro] .partenza-totale b{color:#7FE0A6}
 .congedo-anni b{font-size:1.2rem;color:#1E7A46;font-variant-numeric:tabular-nums}
 .congedo-anni b.negativo{color:#C0392B}
 html[data-tema=scuro] .congedo-anni b{color:#7FE0A6}
+
+/* v2.84 – Guida all'app: riga link come le altre */
+a.riga-strumento-turni{text-decoration:none;color:inherit}
