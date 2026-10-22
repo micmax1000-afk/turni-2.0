@@ -81,7 +81,7 @@ function calcolaCompetenze(anno, mese){
   const totalePersonalizzate = round2(personalizzate.reduce((a, p) => a + p.importo, 0));
   const totaleAccessorie = round2(totaleAccessorieFisse + totalePersonalizzate);
 
-  return { qualifica, fisse, totaleFisse, accessorie, personalizzate, totaleAccessorie, totaleLordo: round2(totaleFisse + totaleAccessorie), tot };
+  return { qualifica, fisse, totaleFisse, accessorie, personalizzate, totalePersonalizzate, totaleAccessorie, totaleLordo: round2(totaleFisse + totaleAccessorie), tot };
 }
 
 function calcolaIRPEFAnnua(imponibileAnnuo){
@@ -136,59 +136,111 @@ function calcolaNettoAccessorie(anno, mese){
   return { lordo, netto };
 }
 
+const sommaVoci = o => round2(Object.values(o || {}).reduce((a, b) => a + (Number(b) || 0), 0));
+
+function aliquotaIRPEFMarginale(redditoAnnuo){
+  for(const s of AppState.tabelle.irpefScaglioni) if(redditoAnnuo <= s.fino) return s.aliquota;
+  return AppState.tabelle.irpefScaglioni[AppState.tabelle.irpefScaglioni.length - 1].aliquota;
+}
+
+// Detrazioni di legge (annue), in funzione del reddito complessivo annuo R.
+function detrazioneLavoroDipendenteAnnua(R){
+  let d = 0;
+  if(R <= 15000) d = 1955;
+  else if(R <= 28000) d = 1910 + 1190 * (28000 - R) / 13000;
+  else if(R <= 50000) d = 1910 * (50000 - R) / 22000;
+  if(R > 25000 && R <= 35000) d += 65;
+  return d;
+}
+function ulterioreDetrazioneAnnua(R){            // L. 207/2024: 1.000 € fino a 32.000, poi cala fino a 40.000
+  if(R <= 20000 || R > 40000) return 0;
+  return R <= 32000 ? 1000 : 1000 * (40000 - R) / 8000;
+}
+function detrazioneConiugeAnnua(R){              // da verificare sulle istruzioni del 730
+  if(R <= 15000) return 800 - 110 * R / 15000;
+  if(R > 80000) return 0;
+  let d = R <= 40000 ? 690 : 690 * (80000 - R) / 40000;
+  if(R > 29000 && R <= 29200) d += 10;
+  else if(R > 29200 && R <= 34700) d += 20;
+  else if(R > 34700 && R <= 35000) d += 30;
+  else if(R > 35000 && R <= 35100) d += 20;
+  else if(R > 35100 && R <= 35200) d += 10;
+  return d;
+}
+function detrazioneFiglioOver21Annua(R){
+  return R > 80000 ? 0 : AppState.tabelle.detrazionePerFiglioOver21Annua * (80000 - R) / 80000;
+}
+
+// Metodo ricavato dal cedolino reale:
+//  - la parte FISSA (stipendio, IIS, pensionabile, assegno, vacanza contrattuale) è annualizzata ×12 e tassata a scaglioni
+//  - la parte VARIABILE (straordinari, indennità, 13ª) è tassata all'aliquota marginale, senza ×12
+//  - contributi: 9,15% su tutto + Opera di previdenza e maggiorazione sulla sola parte fissa
+//  - niente 15% agevolato
+// Usa solo comp.fisse, comp.accessorie, comp.personalizzate (mai i totali, così funziona anche sui comp "forzati").
+function calcolaRitenute(comp){
+  const T = AppState.tabelle, A = AppState.anagrafica || {};
+  const pers = comp.personalizzate || [];
+  const somma = l => round2(l.reduce((s, p) => s + (Number(p.importo) || 0), 0));
+  const persMese = somma(pers.filter(p => p.unita !== 'turno'));
+  const persTurno = somma(pers.filter(p => p.unita === 'turno'));
+  const vacanza = somma(pers.filter(p => /vacanza contrattuale/i.test(p.nome || '')));
+  const tredicesima = comp.fisse.tredicesima || 0;
+
+  const fisso = round2(sommaVoci(comp.fisse) - tredicesima + persMese);
+  const variabile = round2(sommaVoci(comp.accessorie) + persTurno + tredicesima);
+  const lordo = round2(fisso + variabile);
+
+  // Contributi
+  const aliqPrev = T.aliquotaPrevidenziale / 100;
+  const baseOpera = (comp.fisse.stipendioTabellare || 0) + (comp.fisse.iis || 0) + (comp.fisse.assegnoFunzione || 0) + vacanza;
+  const contributiFisso = round2(fisso * aliqPrev + baseOpera * (T.operaPrevidenzaAliquota ?? 2) / 100 + (T.maggiorazionePrevidenzialeBase || 0) * aliqPrev);
+  const contributiVariabile = round2(variabile * aliqPrev);
+  const contributi = round2(contributiFisso + contributiVariabile);
+  const imponibileFisso = round2(fisso - contributiFisso);
+  const imponibileVariabile = round2(variabile - contributiVariabile);
+  const imponibile = round2(imponibileFisso + imponibileVariabile);
+
+  // Reddito annuo stimato: fisso e accessorie ×12, 13ª una volta sola
+  const tredicesimaStimata = ((comp.fisse.stipendioTabellare || 0) + (comp.fisse.iis || 0)) * (1 - aliqPrev);
+  const accessorieImp = imponibileVariabile - tredicesima * (1 - aliqPrev);
+  const R = round2((imponibileFisso + accessorieImp) * 12 + tredicesimaStimata);
+
+  // IRPEF
+  const irpefFisso = round2(calcolaIRPEFAnnua(imponibileFisso * 12) / 12);
+  const irpefVariabile = round2(imponibileVariabile * aliquotaIRPEFMarginale(R) / 100);
+  const irpefTotale = round2(irpefFisso + irpefVariabile);
+
+  // Detrazioni
+  const coniuge = A.coniugeACarico === 'si';
+  const figli = Number(A.figliOver21) || 0;
+  const detrazioniLavoro = round2((detrazioneLavoroDipendenteAnnua(R) + ulterioreDetrazioneAnnua(R)) / 12);
+  const detrazioniFamiliari = round2(((coniuge ? detrazioneConiugeAnnua(R) : 0) + figli * detrazioneFiglioOver21Annua(R)) / 12);
+  const detrazioni = Math.min(round2(detrazioniLavoro + detrazioniFamiliari), irpefTotale);
+
+  // Trattamento integrativo: solo con reddito fino a 15.000 €
+  const trattamentoIntegrativo = R <= 15000 ? T.trattamentoIntegrativoMensile : 0;
+
+  // Addizionali (nel cedolino reale arrivano come rate di conguaglio; qui stima mensile)
+  const aliqRegionale = A.regione ? calcolaAliquotaAddizionaleRegionale(A.regione, R) : 0;
+  const aliqComunale = Number(A.addComunale) || 0;
+  const addizionali = round2(imponibile * (aliqRegionale + aliqComunale) / 100);
+
+  // Altre ritenute: quota sindacale + Fondo assistenza
+  const quotaSindacale = (normalizzaSindacato(A.sindacato) === 'si') ? T.sindacatoMensile : 0;
+  const sindacato = round2(quotaSindacale + (T.fondoAssistenzaMensile || 0));
+
+  return { lordo, contributi, imponibile, redditoAnnuoStimato: R, irpefTotale, detrazioniLavoro, detrazioniFamiliari, detrazioni, trattamentoIntegrativo, addizionali, aliqRegionale, aliqComunale, sindacato };
+}
+
 function generaCedolino(anno, mese, compForzato){
   const comp = compForzato || calcolaCompetenze(anno, mese);
-
-  // 1. Imponibile previdenziale: solo voci fisse pensionabili
-  const imponibilePrevidenziale = comp.totaleFisse;
-  // 2. Contributi
-  const contributi = round2(imponibilePrevidenziale * AppState.tabelle.aliquotaPrevidenziale / 100);
-  // 3. Imponibile fiscale (parte fissa)
-  const imponibileFiscaleFisso = round2(imponibilePrevidenziale - contributi);
-
-  // Voci accessorie: detassazione al 15% entro la soglia mensile equivalente
-  const sogliaMensile = AppState.tabelle.sogliaDetassazioneAccessoriAnnua / 12;
-  const quotaAgevolata = Math.min(comp.totaleAccessorie, sogliaMensile);
-  const quotaOrdinaria = round2(comp.totaleAccessorie - quotaAgevolata);
-  const impostaAgevolata = round2(quotaAgevolata * AppState.tabelle.aliquotaDetassazioneAccessori / 100);
-
-  const imponibileFiscaleTotale = round2(imponibileFiscaleFisso + quotaOrdinaria);
-
-  // 4. IRPEF (mensilizzata dall'annuale)
-  const irpefAnnuaStimata = calcolaIRPEFAnnua(imponibileFiscaleTotale * 12);
-  const irpefOrdinaria = round2(irpefAnnuaStimata / 12);
-  const irpefTotale = round2(irpefOrdinaria + impostaAgevolata);
-
-  // 5. Detrazioni (semplificate, flat mensile)
-  const redditoAnnuoStimato = imponibileFiscaleTotale * 12;
-  const detrazioniLavoro = redditoAnnuoStimato > AppState.tabelle.noTaxAreaAnnua ? AppState.tabelle.detrazioneLavoroMensile : 0;
-  const coniugeACarico = AppState.anagrafica && AppState.anagrafica.coniugeACarico === 'si';
-  const figliOver21 = AppState.anagrafica ? (Number(AppState.anagrafica.figliOver21) || 0) : 0;
-  const detrazioniFamiliari = round2(
-    (coniugeACarico ? AppState.tabelle.detrazioneConiugeACaricoAnnua / 12 : 0) +
-    (figliOver21 * AppState.tabelle.detrazionePerFiglioOver21Annua / 12)
-  );
-  const detrazioni = round2(detrazioniLavoro + detrazioniFamiliari);
-
-  // 6. Trattamento integrativo
-  const trattamentoIntegrativo = redditoAnnuoStimato < AppState.tabelle.sogliaTrattamentoIntegrativoAnnua ? AppState.tabelle.trattamentoIntegrativoMensile : 0;
-
-  // 7. Addizionali regionale (automatica, a scaglioni in base alla regione) e comunale (manuale)
-  const aliqRegionale = AppState.anagrafica && AppState.anagrafica.regione
-    ? calcolaAliquotaAddizionaleRegionale(AppState.anagrafica.regione, redditoAnnuoStimato)
-    : 0;
-  const aliqComunale = AppState.anagrafica ? (Number(AppState.anagrafica.addComunale) || 0) : 0;
-  const addizionali = round2(imponibileFiscaleTotale * (aliqRegionale + aliqComunale) / 100);
-
-  // 8. Sindacato
-  const sindacato = (AppState.anagrafica && normalizzaSindacato(AppState.anagrafica.sindacato) === 'si') ? AppState.tabelle.sindacatoMensile : 0;
-
-  // 9. Conguagli (inseriti manualmente dall'utente per il mese corrente)
+  const r = calcolaRitenute(comp);
   const conguagli = round2(Number(AppState.conguagliPerMese[chiaveMese(anno, mese)]) || 0);
-
-  const netto = round2(comp.totaleLordo - contributi - irpefTotale + detrazioni + trattamentoIntegrativo - addizionali - sindacato + conguagli);
-
-  return { comp, imponibilePrevidenziale, contributi, imponibileFiscaleTotale, irpefTotale, detrazioniLavoro, detrazioniFamiliari, detrazioni, trattamentoIntegrativo, addizionali, aliqRegionale, aliqComunale, sindacato, conguagli, netto };
+  const netto = round2(r.lordo - r.contributi - r.irpefTotale + r.detrazioni + r.trattamentoIntegrativo - r.addizionali - r.sindacato + conguagli);
+  return { comp, imponibilePrevidenziale: r.lordo, contributi: r.contributi, imponibileFiscaleTotale: r.imponibile,
+           irpefTotale: r.irpefTotale, detrazioniLavoro: r.detrazioniLavoro, detrazioniFamiliari: r.detrazioniFamiliari, detrazioni: r.detrazioni,
+           trattamentoIntegrativo: r.trattamentoIntegrativo, addizionali: r.addizionali, aliqRegionale: r.aliqRegionale, aliqComunale: r.aliqComunale,
+           sindacato: r.sindacato, conguagli, netto };
 }
 
 function generaAccreditoConto(anno, mese){
@@ -199,54 +251,25 @@ function generaAccreditoConto(anno, mese){
 
   const compFisse = calcolaCompetenze(annoFisse, meseFisse);
   const compAccessorie = calcolaCompetenze(annoAccessorie, meseAccessorie);
-
-  const tredicesimaFonteEsclusa = compFisse.fisse.tredicesima || 0;
-  const fisseBase = round2(compFisse.totaleFisse - tredicesimaFonteEsclusa);
   const tredicesimaAccredito = mese === 11 ? round2(calcolaCompetenze(anno, 11).fisse.tredicesima || 0) : 0;
-  const accessorieLorde = round2(compAccessorie.totaleLordo - compAccessorie.totaleFisse);
 
-  const imponibilePrevidenziale = round2(fisseBase + tredicesimaAccredito);
-  const contributi = round2(imponibilePrevidenziale * AppState.tabelle.aliquotaPrevidenziale / 100);
-  const imponibileFiscaleFisso = round2(imponibilePrevidenziale - contributi);
-
-  const sogliaMensile = AppState.tabelle.sogliaDetassazioneAccessoriAnnua / 12;
-  const quotaAgevolata = Math.min(accessorieLorde, sogliaMensile);
-  const quotaOrdinaria = round2(accessorieLorde - quotaAgevolata);
-  const impostaAgevolata = round2(quotaAgevolata * AppState.tabelle.aliquotaDetassazioneAccessori / 100);
-
-  const imponibileFiscaleTotale = round2(imponibileFiscaleFisso + quotaOrdinaria);
-
-  const irpefAnnuaStimata = calcolaIRPEFAnnua(imponibileFiscaleTotale * 12);
-  const irpefOrdinaria = round2(irpefAnnuaStimata / 12);
-  const irpefTotale = round2(irpefOrdinaria + impostaAgevolata);
-
-  const redditoAnnuoStimato = imponibileFiscaleTotale * 12;
-  const detrazioniLavoro = redditoAnnuoStimato > AppState.tabelle.noTaxAreaAnnua ? AppState.tabelle.detrazioneLavoroMensile : 0;
-  const coniugeACarico = AppState.anagrafica && AppState.anagrafica.coniugeACarico === 'si';
-  const figliOver21 = AppState.anagrafica ? (Number(AppState.anagrafica.figliOver21) || 0) : 0;
-  const detrazioniFamiliari = round2(
-    (coniugeACarico ? AppState.tabelle.detrazioneConiugeACaricoAnnua / 12 : 0) +
-    (figliOver21 * AppState.tabelle.detrazionePerFiglioOver21Annua / 12)
-  );
-  const detrazioni = round2(detrazioniLavoro + detrazioniFamiliari);
-
-  const trattamentoIntegrativo = redditoAnnuoStimato < AppState.tabelle.sogliaTrattamentoIntegrativoAnnua ? AppState.tabelle.trattamentoIntegrativoMensile : 0;
-
-  const aliqRegionale = AppState.anagrafica && AppState.anagrafica.regione
-    ? calcolaAliquotaAddizionaleRegionale(AppState.anagrafica.regione, redditoAnnuoStimato)
-    : 0;
-  const aliqComunale = AppState.anagrafica ? (Number(AppState.anagrafica.addComunale) || 0) : 0;
-  const addizionali = round2(imponibileFiscaleTotale * (aliqRegionale + aliqComunale) / 100);
-
-  const sindacato = (AppState.anagrafica && normalizzaSindacato(AppState.anagrafica.sindacato) === 'si') ? AppState.tabelle.sindacatoMensile : 0;
-
-  const lordoTotale = round2(fisseBase + tredicesimaAccredito + accessorieLorde);
-  const netto = round2(lordoTotale - contributi - irpefTotale + detrazioni + trattamentoIntegrativo - addizionali - sindacato);
-
+  // Comp "misto": fisse del mese precedente, accessorie di due mesi prima
+  const compMisto = {
+    fisse: Object.assign({}, compFisse.fisse, { tredicesima: tredicesimaAccredito }),
+    accessorie: compAccessorie.accessorie,
+    personalizzate: [
+      ...(compFisse.personalizzate || []).filter(p => p.unita !== 'turno'),
+      ...(compAccessorie.personalizzate || []).filter(p => p.unita === 'turno')
+    ]
+  };
+  const r = calcolaRitenute(compMisto);
+  const netto = round2(r.lordo - r.contributi - r.irpefTotale + r.detrazioni + r.trattamentoIntegrativo - r.addizionali - r.sindacato);
+  const fisseBase = round2(sommaVoci(compFisse.fisse) - (compFisse.fisse.tredicesima || 0));
   return {
     meseFisse, annoFisse, meseAccessorie, annoAccessorie,
-    fisseBase, tredicesimaAccredito, accessorieLorde, lordoTotale,
-    contributi, irpefTotale, detrazioni, trattamentoIntegrativo, addizionali, sindacato, netto
+    fisseBase, tredicesimaAccredito, accessorieLorde: round2(r.lordo - fisseBase - tredicesimaAccredito), lordoTotale: r.lordo,
+    contributi: r.contributi, irpefTotale: r.irpefTotale, detrazioni: r.detrazioni, trattamentoIntegrativo: r.trattamentoIntegrativo,
+    addizionali: r.addizionali, sindacato: r.sindacato, netto
   };
 }
 
