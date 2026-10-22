@@ -1,4 +1,4 @@
-/* Turni & Accessorio PS — Service Worker V201 (calcolo netto da cedolino reale) */
+/* Turni & Accessorio PS — Service Worker V201 (v2.84.0 — calcolo netto da cedolino reale) */
 'use strict';
 const CACHE='turni-ps-v201';
 const APP_SHELL=[
