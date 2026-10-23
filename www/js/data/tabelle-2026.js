@@ -6,8 +6,8 @@
 
 window.TurniPSData = window.TurniPSData || {};
 // Versione delle tabelle dentro l'app: il file sul sito (turni/tabelle.json) le sostituisce solo se più nuovo.
-window.TurniPSData.VERSIONE_TABELLE = '2026.10.1';
-window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-21';
+window.TurniPSData.VERSIONE_TABELLE = '2026.10.2';
+window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-23';
 window.TurniPSData.TABELLE_PREDEFINITE = {
   // Stipendi tabellari annui lordi (12 mensilità) — fonte: D.P.R. 24 marzo 2025, n. 53 (decreto EFFETTIVAMENTE
   // in vigore, recepimento accordi 2022-2024), Art. 2 comma 3, valori dal 1° gennaio 2024. Questo è il decreto
@@ -152,6 +152,8 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   operaPrevidenzaAliquota: 2.0,
   // Base della riga "Magg. INPDAP / Magg. Fondo credito" (nel cedolino reale 299,88 €): origine da chiarire, 0 = disattivata.
   maggiorazionePrevidenzialeBase: 0,
+  // "Totale detrazioni" del cedolino (€/mese): nel cedolino è costante per tutto l'anno. 0 = stima con le formule di legge.
+  detrazioniMensiliCedolino: 0,
   // Fondo assistenza Polizia di Stato (trattenuta mensile).
   fondoAssistenzaMensile: 0.60,
   irpefScaglioni: [ { fino: 28000, aliquota: 23 }, { fino: 50000, aliquota: 33 }, { fino: Infinity, aliquota: 43 } ],
