@@ -32,9 +32,13 @@ const run = (codice, input) => { ctx.__in = input; return vm.runInContext(codice
 const pers = (...v) => v.map(([nome, unita, importo]) => ({ nome, unita, importo }));
 const VAC = ['Vacanza contrattuale', 'mese', 19.79], RISCHIO = n => ['Rischio gruppo IV (solo test)', 'turno', n];
 const calc = (comp, mese, extra = '') => run(`AppState.tabelle = clonaTabelleConSoglie(TABELLE_PREDEFINITE); AppState.anagrafica = { qualifica: 'Assistente Capo Coordinatore', regione: 'Piemonte', coniugeACarico: 'si', sindacato: 'si', anni: 24, addComunale: 0.8 };
-  AppState.tabelle.maggiorazionePrevidenzialeBase = 299.88; AppState.tabelle.sindacatoMensile = 9.77; AppState.tabelle.detrazioniMensiliCedolino = 0; ${extra}
+  AppState.tabelle.sindacatoMensile = 9.77; AppState.tabelle.detrazioniMensiliCedolino = 0; ${extra}
   calcolaRitenute(__in, ${mese})`, comp);
 const nettoMese = (r) => r.lordo - r.contributi - r.irpefTotale + r.detrazioni + r.trattamentoIntegrativo - r.addizionali - r.sindacato;
+
+console.log('\nMaggiorazione figurativa 15% (NoiPA 090/2013)');
+const mg = run(`AppState.tabelle = clonaTabelleConSoglie(TABELLE_PREDEFINITE); (1979.44 + 19.79) * AppState.tabelle.maggiorazioneFigurativaPct / 100`);
+ok('15% × (stipendio parametrato 1.979,44 + vacanza contrattuale 19,79) = 299,88', vicino(mg, 299.88, 0.01), mg);
 
 console.log('\nSettembre 2026 (accessorie di luglio)');
 const sett = { fisse: { stipendioTabellare: 1979.44, iis: 0, indennitaPensionabile: 758.49, assegnoFunzione: 147.53 },
