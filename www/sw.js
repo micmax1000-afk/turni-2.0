@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V205 (v2.87.1 — avvio telefono separato per Android 15) */
+/* Turni & Accessorio PS — Service Worker V207 (v2.89.0 — netto da cedolini reali) */
 'use strict';
-const CACHE='turni-ps-v205';
+const CACHE='turni-ps-v207';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
@@ -10,9 +10,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll(APP_SHELL))
-    // Niente più skipWaiting() automatico qui: il nuovo service worker resta "in attesa"
-    // finché l'utente non tocca "Aggiorna ora" (vedi script.js) — così un aggiornamento non
-    // interrompe mai a sorpresa chi sta scrivendo qualcosa, es. un turno non ancora salvato.
+    // Niente più skii a sorpresa chi sta scrivendo qualcosa, es. un turno non ancora salvato.
   );
 });
 self.addEventListener('message', event => {

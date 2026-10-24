@@ -6,8 +6,8 @@
 
 window.TurniPSData = window.TurniPSData || {};
 // Versione delle tabelle dentro l'app: il file sul sito (turni/tabelle.json) le sostituisce solo se più nuovo.
-window.TurniPSData.VERSIONE_TABELLE = '2026.10';
-window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-12';
+window.TurniPSData.VERSIONE_TABELLE = '2026.10.2';
+window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-23';
 window.TurniPSData.TABELLE_PREDEFINITE = {
   // Stipendi tabellari annui lordi (12 mensilità) — fonte: D.P.R. 24 marzo 2025, n. 53 (decreto EFFETTIVAMENTE
   // in vigore, recepimento accordi 2022-2024), Art. 2 comma 3, valori dal 1° gennaio 2024. Questo è il decreto
@@ -105,7 +105,7 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   // Assegno di funzione — differenziato per ruolo (prima era uguale per tutti)
   // fonte: screenshot condiviso dall'utente (calcolatore stipendi online); funzionari non confermati, valore precedente lasciato come indicativo
   assegnoFunzioneAnnuo: {
-    truppa: { soglia17: 1448.40, soglia27: 2949.83, soglia32: 3392.30 }, // Agenti e Assistenti
+    truppa: { soglia17: 1770.36, soglia27: 2949.83, soglia32: 3392.30 }, // Agenti e Assistenti (17 anni: 147,53 €/mese da cedolino 09/2026; 27 e 32 anni da verificare)
     sovr:   { soglia17: 1800.20, soglia27: 3018.20, soglia32: 3470.98 }, // Sovrintendenti
     isp:    { soglia17: 1829.40, soglia27: 3070.50, soglia32: 3531.03 }, // Ispettori
     funz:   { soglia17: 900,     soglia27: 1800,     soglia32: 3531 }   // Commissari/Funzionari — non confermato, da verificare
@@ -146,7 +146,16 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   indennitaTrasfertaOraria: 0.86,
   indennitaTrasfertaOrariaRidotta: 0.344,
   sindacatoMensile: 8.50,
-  aliquotaPrevidenziale: 9.19,
+  // Contributi dal cedolino reale (09/2026): INPDAP 8,80% + Fondo credito 0,35% su TUTTE le competenze.
+  aliquotaPrevidenziale: 9.15,
+  // Opera di previdenza: 2,5% su 80% di (stipendio + IIS + assegno funzionale + vacanza contrattuale) = 2%.
+  operaPrevidenzaAliquota: 2.0,
+  // Base della riga "Magg. INPDAP / Magg. Fondo credito" (nel cedolino reale 299,88 €): origine da chiarire, 0 = disattivata.
+  maggiorazionePrevidenzialeBase: 0,
+  // "Totale detrazioni" del cedolino (€/mese): nel cedolino è costante per tutto l'anno. 0 = stima con le formule di legge.
+  detrazioniMensiliCedolino: 0,
+  // Fondo assistenza Polizia di Stato (trattenuta mensile).
+  fondoAssistenzaMensile: 0.60,
   irpefScaglioni: [ { fino: 28000, aliquota: 23 }, { fino: 50000, aliquota: 33 }, { fino: Infinity, aliquota: 43 } ],
   noTaxAreaAnnua: 8500,
   detrazioneLavoroMensile: 95.00,
@@ -154,8 +163,6 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   detrazionePerFiglioOver21Annua: 950.00,
   trattamentoIntegrativoMensile: 100.00,
   sogliaTrattamentoIntegrativoAnnua: 28000,
-  sogliaDetassazioneAccessoriAnnua: 800,
-  aliquotaDetassazioneAccessori: 15,
   buonoPastoValore: 7.00,
   // Addizionale regionale IRPEF 2026 — aliquote per regione (fonte: delibere regionali).
   // Spostata qui da js/calendar.js per renderla modificabile da Impostazioni → Tabelle ufficiali.

@@ -4,7 +4,8 @@
   "description": "Turni & Accessorio PS - app per la gestione turni Polizia di Stato",
   "scripts": {
     "sync": "npx cap sync android",
-    "test": "node tests/controlli.mjs"
+    "test": "node tests/controlli.mjs",
+    "test:calcolo": "node tests/calcolo-netto.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
