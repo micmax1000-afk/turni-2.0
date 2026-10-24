@@ -1,4 +1,3 @@
-
 function inizializzaImpostazioni(){
   const host = el('impostazioniBackupContainer');
   if(!host) return;
@@ -1669,7 +1668,7 @@ function renderMeseV3(){
     <div class="mese-gruppo-v3"><h3>Indennità del mese</h3>
       ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span><span class="tag-importo tag-lordo">lordo</span></span><span><span class="tag-importo tag-netto">netto</span></span></div>` : ''}
       ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
-      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)} <span class="netto-v3">~${f(round2(totInd * quotaNetta))}</span></span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}. Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (tassazione agevolata compresa), la singola voce è in proporzione.</div>` : ''}
+      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)} <span class="netto-v3">~${f(round2(totInd * quotaNetta))}</span></span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}. Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</div>` : ''}
       ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi le voci a zero ▴' : 'Mostra anche le voci a zero ▾'}</button>` : ''}
     </div>
     ${r.buoniPasto ? `<div class="mese-gruppo-v3"><h3>Fuori busta paga</h3><div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">🍽️</span><span>Buoni pasto</span><em>${r.buoniPasto}</em><b>${f(round2(r.buoniPasto * (AppState.tabelle.buonoPastoValore || 0)))}</b></div></div>` : ''}`;
