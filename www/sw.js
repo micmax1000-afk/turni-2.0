@@ -10,9 +10,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll(APP_SHELL))
-    // Niente più skipWaiting() automatico qui: il nuovo service worker resta "in attesa"
-    // finché l'utente non tocca "Aggiorna ora" (vedi script.js) — così un aggiornamento non
-    // interrompe mai a sorpresa chi sta scrivendo qualcosa, es. un turno non ancora salvato.
+    // Niente più skii a sorpresa chi sta scrivendo qualcosa, es. un turno non ancora salvato.
   );
 });
 self.addEventListener('message', event => {

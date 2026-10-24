@@ -27,6 +27,11 @@
         <!-- Avviso evento: suono/vibrazione di pochi secondi, anche in silenzioso -->
         <receiver
             android:name=".AvvisoEventoReceiver"
+            android:exported="false" />
+
+        <!-- Accensione/aggiornamento: solo riprogramma gli allarmi (nessun servizio in primo piano) -->
+        <receiver
+            android:name=".AvvioTelefonoReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -89,7 +89,7 @@ function mostraScheda(nome){
   // Modelli, dallo straordinario rapido, da un avviso di conferma non chiuso correttamente...)
   // non deve mai poter bloccare la navigazione principale — lo chiudiamo sempre, ad ogni cambio
   // di scheda, anche se probabilmente era già chiuso (innocuo in quel caso).
-  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayAvviso','overlayScegliBackupDrive','popupRapidoGiorno','overlayEditorPatternV2','overlaySegnala','overlaySaldiPartenza'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
+  ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayModificaModello','overlayEvento','overlayAvviso','overlayScegliBackupDrive','popupRapidoGiorno','overlayEditorPatternV2','overlaySegnala','overlaySaldiPartenza','overlayControlloPromemoria'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
   // V60 — Ristrutturazione a 4 schede (Calendario/Report/Turni/Altro). Le vecchie viste interne
   // (vistaCedolino, vistaStatistiche, vistaAssenze, ecc.) restano fisicamente invariate — cambia
   // solo QUALI vengono mostrate insieme sotto ciascuna delle 4 nuove schede della barra in basso.
@@ -121,7 +121,7 @@ function mostraScheda(nome){
   if(nome === 'sequenza') renderSequenza();
   if(nome === 'turni' && typeof renderModelliTabTurni === 'function') renderModelliTabTurni();
   if(nome === 'statistiche' || nome === 'report'){ const a=el('campoAnnoStatistiche'); if(a && !a.value) a.value=new Date().getFullYear(); renderStatistiche(); if(typeof aggiornaRiepilogoMensile === 'function') aggiornaRiepilogoMensile(); if(typeof applicaVisibilitaReportBlocchi === 'function') applicaVisibilitaReportBlocchi(); }
-  if(nome === 'impostazioni' || nome === 'altro'){ inizializzaImpostazioni(); if(typeof aggiornaRiassuntoAssenzeAltro === 'function') aggiornaRiassuntoAssenzeAltro(); if(typeof aggiornaRiassuntoAnagraficaAltro === 'function') aggiornaRiassuntoAnagraficaAltro(); }
+  if(nome === 'impostazioni' || nome === 'altro'){ inizializzaImpostazioni(); if(typeof aggiornaRiassuntoAssenzeAltro === 'function') aggiornaRiassuntoAssenzeAltro(); if(typeof aggiornaRiassuntoAnagraficaAltro === 'function') aggiornaRiassuntoAnagraficaAltro(); if(typeof controllaNotifichePromemoriaTurno === 'function') controllaNotifichePromemoriaTurno(); }
   window.scrollTo({ top:0, behavior:'instant' });
 }
 
