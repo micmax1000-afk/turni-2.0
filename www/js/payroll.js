@@ -172,7 +172,9 @@ function calcolaRitenute(comp, meseIndice){
   // Contributi: 9,15% su tutto; Opera di previdenza e maggiorazione sulla parte fissa e, a dicembre, ancora sulla tredicesima
   const aliqPrev = T.aliquotaPrevidenziale / 100, aliqOpera = (T.operaPrevidenzaAliquota ?? 2) / 100;
   const baseOpera = (comp.fisse.stipendioTabellare || 0) + (comp.fisse.iis || 0) + (comp.fisse.assegnoFunzione || 0) + vacanza;
-  const extraPrev = round2(baseOpera * aliqOpera + (T.maggiorazionePrevidenzialeBase || 0) * aliqPrev);
+  // Maggiorazione figurativa: 15% dello stipendio parametrato (tabellare + IIS + vacanza contrattuale), poi 9,15% di contributi su quell'importo
+  const baseMaggiorazione = round2(((comp.fisse.stipendioTabellare || 0) + (comp.fisse.iis || 0) + vacanza) * (T.maggiorazioneFigurativaPct ?? 0) / 100);
+  const extraPrev = round2(baseOpera * aliqOpera + baseMaggiorazione * aliqPrev);
   const contributiFisso = round2(fisso * aliqPrev + extraPrev);
   const contributiVariabile = round2(variabile * aliqPrev + (tredicesima > 0 ? extraPrev : 0));
   const contributiUnaTantum = round2(unaTantum * aliqPrev);
