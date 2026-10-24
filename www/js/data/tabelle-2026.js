@@ -6,8 +6,8 @@
 
 window.TurniPSData = window.TurniPSData || {};
 // Versione delle tabelle dentro l'app: il file sul sito (turni/tabelle.json) le sostituisce solo se più nuovo.
-window.TurniPSData.VERSIONE_TABELLE = '2026.10.2';
-window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-23';
+window.TurniPSData.VERSIONE_TABELLE = '2026.10.3';
+window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-24';
 window.TurniPSData.TABELLE_PREDEFINITE = {
   // Stipendi tabellari annui lordi (12 mensilità) — fonte: D.P.R. 24 marzo 2025, n. 53 (decreto EFFETTIVAMENTE
   // in vigore, recepimento accordi 2022-2024), Art. 2 comma 3, valori dal 1° gennaio 2024. Questo è il decreto
@@ -150,8 +150,11 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   aliquotaPrevidenziale: 9.15,
   // Opera di previdenza: 2,5% su 80% di (stipendio + IIS + assegno funzionale + vacanza contrattuale) = 2%.
   operaPrevidenzaAliquota: 2.0,
-  // Base della riga "Magg. INPDAP / Magg. Fondo credito" (nel cedolino reale 299,88 €): origine da chiarire, 0 = disattivata.
-  maggiorazionePrevidenzialeBase: 0,
+  // Maggiorazione figurativa del 15% sulla base pensionabile (NoiPA, messaggio 090/2013, art. 24 D.L. 201/2011 e art. 4 D.Lgs. 165/1997):
+  // per il personale Forze di Polizia con regime contributivo "a" (ex sistema retributivo), il 15% si applica allo stipendio "parametrato"
+  // (stipendio tabellare + IIS + vacanza contrattuale) e su questo importo si pagano 8,80% + 0,35% (righe "Magg. INPDAP" e "Magg. FONDO CREDITO").
+  // Controllo sul cedolino reale: 15% × (1.979,44 + 19,79) = 299,88 €. Se nel cedolino non c'è la riga "Magg. INPDAP" mettere 0.
+  maggiorazioneFigurativaPct: 15,
   // "Totale detrazioni" del cedolino (€/mese): nel cedolino è costante per tutto l'anno. 0 = stima con le formule di legge.
   detrazioniMensiliCedolino: 0,
   // Fondo assistenza Polizia di Stato (trattenuta mensile).
