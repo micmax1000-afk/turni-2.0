@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V207 (v2.89.0 — netto da cedolini reali) */
+/* Turni & Accessorio PS — Service Worker V208 (v2.89.1 — maggiorazione 15% da NoiPA) */
 'use strict';
-const CACHE='turni-ps-v207';
+const CACHE='turni-ps-v208';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
