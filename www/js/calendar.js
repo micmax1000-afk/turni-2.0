@@ -893,8 +893,8 @@ const ELENCO_INDENNITA = [
   { chiave:'recuperoFestivoLavorato', nome:'Lavorato in festivo' },
   { chiave:'servizioSvolto', nome:'Nota servizio' }
 ];
-// Di solito si hanno quasi ogni giorno: all'inizio non si mostrano, per far risaltare il resto.
-const INDENNITA_NASCOSTE_PREDEFINITE = ['servizioEsterno', 'buonoPasto', 'controlloTerritorio'];
+// All'inizio tutti i simboli sono visibili: ognuno si può spegnere da Altro → Simboli del calendario.
+const INDENNITA_NASCOSTE_PREDEFINITE = [];
 // Colori che si possono dare a un evento (il primo è quello di partenza).
 const COLORI_EVENTO = ['#2E7DD7', '#2E9E5B', '#E08A00', '#D64545', '#8E44AD', '#00838F', '#6D4C41', '#546E7A'];
 function coloreEvento(ev){ return ev && COLORI_EVENTO.includes(ev.colore) ? ev.colore : COLORI_EVENTO[0]; }
