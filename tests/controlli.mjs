@@ -162,7 +162,7 @@ for(const stile of ['classico', 'moderno']){
       };
     });
     ok('moderno: nessun orario nelle etichette', !m.orari);
-    ok('moderno: icone di missione e reperibilità; servizio esterno e buono pasto nascosti all\'inizio', m.indennita === 'Missione,Reperibilità', m.indennita);
+    ok('moderno: all\'inizio tutti i simboli sono visibili (missione, servizio esterno, buono pasto, reperibilità)', ['Missione', 'Servizio esterno', 'Buono pasto', 'Reperibilità'].every(n => m.indennita.split(',').includes(n)), m.indennita);
     ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
   }
   ok(`${stile}: barra in basso con Calendario/Report/Assenze/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Assenze,Turni,Altro' && c.oggiIcona === '9', c.nomi);
@@ -183,10 +183,10 @@ for(const stile of ['classico', 'moderno']){
     await p.click('#indennitaGiornoSelezionatoV2 .indennita-giorno-badge');
     ok('toccando un simbolo del giorno si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));
     await p.click('#listaSimboli [data-simbolo="servizioEsterno"]');
-    ok('acceso "Servizio esterno": compare nella casella', await p.evaluate(() => [...document.querySelectorAll('.giorno-cella[data-data="2026-10-02"] .mod-indennita [aria-label]')].some(b => b.getAttribute('aria-label') === 'Servizio esterno')));
+    ok('spento "Servizio esterno": sparisce dalla casella', await p.evaluate(() => ![...document.querySelectorAll('.giorno-cella[data-data="2026-10-02"] .mod-indennita [aria-label]')].some(b => b.getAttribute('aria-label') === 'Servizio esterno')));
     await p.click('#btnChiudiSimboli');
     await p.click('#tabAltro'); await p.click('#settingsSimboli');
-    ok('la stessa legenda si apre da Altro, con la scelta salvata', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelector('#listaSimboli [data-simbolo="servizioEsterno"]').checked && !document.querySelector('#listaSimboli [data-simbolo="buonoPasto"]').checked));
+    ok('la stessa legenda si apre da Altro, con la scelta salvata', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && !document.querySelector('#listaSimboli [data-simbolo="servizioEsterno"]').checked && document.querySelector('#listaSimboli [data-simbolo="buonoPasto"]').checked));
     await p.click('#btnChiudiSimboli'); await p.click('#tabCalendario');
     await p.evaluate(() => { giornoPerPopupV2 = '2026-10-02'; apriSelettoreModelliV2('indennita'); });
     ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .riga-indennita-menu > span svg').length === 10 && document.querySelector('[data-indennita="missione"]').classList.contains('attiva') && document.querySelector('[data-indennita="missione"] i').textContent === '✓'));
