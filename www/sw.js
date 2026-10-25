@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V209 (v2.90.0 — maggiorazione 15% da NoiPA) */
+/* Turni & Accessorio PS — Service Worker V210 (v2.90.1 — simboli del calendario tutti attivi) */
 'use strict';
-const CACHE='turni-ps-v209';
+const CACHE='turni-ps-v210';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
