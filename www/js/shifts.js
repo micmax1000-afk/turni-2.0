@@ -64,6 +64,14 @@ function coloreCategoria(chiave){
   return (v && v !== 'transparent') ? v : ((c && c.predefinito) || '#E8ECF0');
 }
 
+// Colore dei giorni di riposo: se è stato scelto a mano sul modello "Riposo" (scheda Turni) vale quello,
+// altrimenti il colore della categoria Riposo. Prima il calendario usava solo il colore della categoria
+// e la scelta fatta sul modello non si vedeva.
+function coloreRiposo(){
+  const m = (typeof AppState !== 'undefined' && AppState.modelliTurno || []).find(x => x.riposo);
+  return (m && m.colore) || coloreCategoria('riposo');
+}
+
 function applicaColoriTurni(){
   if(typeof AppState === 'undefined' || !AppState.coloriTurni){
     AppState = window.AppState || AppState || {};
@@ -459,5 +467,3 @@ function apriModaleTurno(iso){
   el('pannelloTurno').hidden = false;
   el('pannelloTurno').scrollTop = 0;
 }
-
-
