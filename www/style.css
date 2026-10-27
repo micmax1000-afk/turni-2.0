@@ -2302,3 +2302,35 @@ html[data-tema="scuro"] .controllo-riga.no button{background:#3A55B4;border-colo
 }
 #riassuntoControlloPromemoria.da-sistemare{color:#9A5B00;font-weight:700}
 html[data-tema="scuro"] #riassuntoControlloPromemoria.da-sistemare{color:#F2D58A}
+
+/* ===== Scheda Turni: elenco a righe, azione "Genera turni", Altri modelli sempre aperti ===== */
+.testata-turni-v4{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.testata-turni-v4 h2{margin:0}
+.sotto-turni-v4{margin:2px 0 0;font-size:.8rem;color:var(--testo-tenue)}
+.btn-nuovo-turni-v4{height:44px;padding:0 18px;border:0;border-radius:22px;background:#1D4FD7;color:#fff;font:600 .95rem var(--font-corpo);cursor:pointer;flex-shrink:0}
+.azione-genera-v4{box-sizing:border-box;width:100%;display:flex;align-items:center;gap:14px;padding:12px 14px 12px 12px;background:#E8EEFD;border:1px solid #C3D2F7;border-radius:18px;font:inherit;color:#1B2238;text-align:left;cursor:pointer}
+.icona-genera-v4{flex:none;width:46px;height:46px;border-radius:14px;background:#1D4FD7;color:#fff;display:flex;align-items:center;justify-content:center}
+.azione-genera-v4 i{font-style:normal;font-weight:600;font-size:1rem;flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.azione-genera-v4 i small{font-size:.8rem;font-weight:500;color:#2B3248}
+.lista-modelli-v4{display:block}
+.elenco-turni-v4,.altri-v4{display:flex;flex-direction:column;gap:10px}
+.altri-v4{gap:8px}
+.turno-v4{box-sizing:border-box;width:100%;display:flex;align-items:center;gap:14px;padding:12px;background:var(--pannello);border:1px solid var(--bordo);border-radius:18px;font:inherit;color:var(--testo);text-align:left;cursor:pointer}
+.sigla-v4{flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font:800 .95rem var(--font-corpo)}
+.corpo-v4{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.riga-nome-v4{display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap}
+.riga-nome-v4 strong{font-size:1.05rem;font-weight:600}
+.riga-nome-v4 small{font-size:.8rem;color:var(--testo-tenue)}
+.barra24-v4{position:relative;display:block;height:6px;border-radius:3px;background:var(--bordo)}
+.barra24-v4 i{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--c)}
+.conta-v4{flex:none;text-align:right;line-height:1.15}
+.conta-v4 b{display:block;font-size:1.25rem;font-weight:700}
+.conta-v4 small{font-size:.68rem;color:var(--testo-tenue)}
+.chev-v4{flex:none;opacity:.5}
+.turno-compatto-v4{padding:10px 12px;gap:12px;border-radius:14px}
+.turno-compatto-v4 .sigla-v4{width:36px;height:36px;border-radius:11px;font-size:.8rem}
+.turno-compatto-v4 strong{flex:1;font-size:.95rem;font-weight:600}
+.turno-compatto-v4 small{font-size:.8rem;color:var(--testo-tenue)}
+html[data-tema="scuro"] .azione-genera-v4{background:#1E2A44;border-color:#3A5BA8;color:#E6ECFF}
+html[data-tema="scuro"] .azione-genera-v4 i small{color:#B7C6F2}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .azione-genera-v4{background:#1E2A44;border-color:#3A5BA8;color:#E6ECFF}html:not([data-tema="chiaro"]) .azione-genera-v4 i small{color:#B7C6F2}}
