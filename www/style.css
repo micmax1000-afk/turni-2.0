@@ -2334,3 +2334,9 @@ html[data-tema="scuro"] #riassuntoControlloPromemoria.da-sistemare{color:#F2D58A
 html[data-tema="scuro"] .azione-genera-v4{background:#1E2A44;border-color:#3A5BA8;color:#E6ECFF}
 html[data-tema="scuro"] .azione-genera-v4 i small{color:#B7C6F2}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .azione-genera-v4{background:#1E2A44;border-color:#3A5BA8;color:#E6ECFF}html:not([data-tema="chiaro"]) .azione-genera-v4 i small{color:#B7C6F2}}
+
+
+/* Strumenti scheda Turni: stesso aspetto delle card modello compatte */
+.lista-strumenti-card-v4{margin-top:0}
+.lista-strumenti-card-v4 .sigla-strumento-v4{font-size:1.1rem}
+html[data-tema="scuro"] .lista-strumenti-card-v4 .sigla-strumento-v4{filter:none}
