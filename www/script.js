@@ -500,6 +500,7 @@ function inizializza(){
 
   on('tabTurni', 'click', renderModelliTabTurni);
   on('tabAltro', 'click', aggiornaRiassuntoAnagraficaAltro);
+  on('btnNuovoTurnoTab', 'click', () => apriModificaModelloV2(null));
   const listaModelliTab = el('listaModelliTabTurni');
   if(listaModelliTab) listaModelliTab.addEventListener('click', e => {
     const b = e.target.closest('[data-modello-tab]');
@@ -830,13 +831,19 @@ function inizializza(){
   on('btnChiudiColoriTurni','click', chiudiPannelloColori);
   on('btnChiudiColoriTurni2','click', chiudiPannelloColori);
   el('btnRipristinaColoriTurni').addEventListener('click', () => {
-    mostraConferma('Questo riporta tutti i colori dei turni ai valori predefiniti. Continuare?', () => {
+    mostraConferma('Questo riporta tutti i colori dei turni ai valori predefiniti, anche quelli scelti sui singoli turni. Continuare?', () => {
       AppState.coloriTurni = {};
       CATEGORIE_COLORABILI.forEach(c => { AppState.coloriTurni[c.chiave] = c.predefinito; });
       salvaColoriTurniStorage();
+      // Anche il colore scelto a mano sui singoli turni (scheda Turni → modifica) ha la precedenza su quello
+      // della categoria: va tolto, altrimenti "Predefiniti" non cambiava nulla nel calendario.
+      (AppState.modelliTurno || []).forEach(m => { delete m.colore; });
+      salvaModelliTurnoStorage();
       applicaColoriTurni();
       renderColoriTurni();
       if(typeof renderCalendario === 'function') renderCalendario();
+      if(typeof renderListaModelliTurniV2 === 'function') renderListaModelliTurniV2();
+      if(typeof renderModelliTabTurni === 'function') renderModelliTabTurni();
     });
   });
 
@@ -1727,6 +1734,14 @@ function durataModelloTesto(m){
   const h = Math.floor(d / 60), r = d % 60;
   return r ? `${h} h ${r}` : `${h} h`;
 }
+// Segmenti della barra delle 24 ore di un turno, in percentuale (un turno che passa la mezzanotte dà due pezzi).
+function segmentiGiornataTurno(oraInizio, oraFine){
+  const min = o => { const [h, mm] = String(o || '').split(':').map(Number); return (h || 0) * 60 + (mm || 0); };
+  if(!oraInizio || !oraFine) return [];
+  const i = min(oraInizio), f = min(oraFine);
+  const pezzo = (a, b) => b > a ? [{ da: Math.round(a / 14.4 * 10) / 10, larg: Math.round((b - a) / 14.4 * 10) / 10 }] : [];
+  return f > i ? pezzo(i, f) : f === i ? pezzo(0, 1440) : pezzo(i, 1440).concat(pezzo(0, f));
+}
 function renderModelliTabTurni(){
   const host = el('listaModelliTabTurni');
   if(!host) return;
@@ -1740,32 +1755,39 @@ function renderModelliTabTurni(){
   // Senza turni recenti (app appena installata) in alto vanno tutti tranne quelli di solito rari.
   const inAlto = m => usatiDiRecente.size ? usatiDiRecente.has(m.id) : !MODELLI_DI_SOLITO_RARI.includes(m.id);
   const nomeMese = NOMI_MESI[meseCorrente].toLowerCase();
-  const tessera = m => {
+  const chev = '<svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+  const datiModello = m => {
     const colore = coloreModelloV2(m);
     const forte = typeof scurisciColore === 'function' ? scurisciColore(colore, 0.35) : colore;
     const sigla = m.sigla || (m.nome || '??').slice(0, 2).toUpperCase();
     const durata = durataModelloTesto(m);
     const orario = m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}${durata ? ' · ' + durata : ''}`;
     const volte = voci.filter(([iso, t]) => iso.startsWith(prefissoMese) && turnoUsaModello(t, m)).length;
-    const conteggio = volte ? `${volte} ${volte === 1 ? 'volta' : 'volte'} a ${nomeMese}` : `Mai a ${nomeMese}`;
-    return `<button type="button" class="tessera-modello" data-modello-tab="${escapeHtml(m.id)}">
-      <b style="background:${escapeHtml(forte)};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</b>
-      <span style="background:${escapeHtml(colore)};color:${testoSuColore(colore)}"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(orario)}</small><em>${escapeHtml(conteggio)}</em></span>
+    const barra = m.riposo ? '' : `<span class="barra24-v4" aria-hidden="true" style="--c:${escapeHtml(forte)}">${segmentiGiornataTurno(m.oraInizio, m.oraFine).map(g => `<i style="left:${g.da}%;width:${g.larg}%"></i>`).join('')}</span>`;
+    return { colore, sigla, orario, volte, barra };
+  };
+  // Riga grande: sigla colorata, nome, orario e durata, barra delle 24 ore, quante volte nel mese.
+  const riga4 = m => {
+    const d = datiModello(m);
+    return `<button type="button" class="turno-v4" data-modello-tab="${escapeHtml(m.id)}">
+      <span class="sigla-v4" style="background:${escapeHtml(d.colore)};color:${testoSuColore(d.colore)}">${escapeHtml(d.sigla)}</span>
+      <span class="corpo-v4"><span class="riga-nome-v4"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(d.orario)}</small></span>${d.barra}</span>
+      <span class="conta-v4"><b>${d.volte}×</b><small>a ${nomeMese}</small></span>${chev}
     </button>`;
   };
-  const riga = m => {
-    const colore = coloreModelloV2(m);
-    const forte = typeof scurisciColore === 'function' ? scurisciColore(colore, 0.35) : colore;
-    const sigla = m.sigla || (m.nome || '??').slice(0, 2).toUpperCase();
-    return `<button type="button" class="riga-strumento-turni riga-modello-tab" data-modello-tab="${escapeHtml(m.id)}">
-      <span class="sigla-modello-tab" style="background:${escapeHtml(forte)};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</span>
-      <i>${escapeHtml(m.nome)}<small>${escapeHtml(m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}`)}</small></i><b>›</b>
+  // Riga compatta per gli altri modelli (sempre visibili).
+  const rigaCompatta = m => {
+    const d = datiModello(m);
+    return `<button type="button" class="turno-v4 turno-compatto-v4" data-modello-tab="${escapeHtml(m.id)}">
+      <span class="sigla-v4" style="background:${escapeHtml(d.colore)};color:${testoSuColore(d.colore)}">${escapeHtml(d.sigla)}</span>
+      <strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}`)}</small>${chev}
     </button>`;
   };
   const sopra = modelli.filter(inAlto), sotto = modelli.filter(m => !inAlto(m));
-  const eraAperto = !!host.querySelector('.altri-modelli[open]');
-  host.innerHTML = `<div class="griglia-modelli-tab">${sopra.map(tessera).join('')}<button type="button" class="tessera-modello tessera-nuovo" data-modello-tab=""><span>＋</span>Nuovo</button></div>`
-    + (sotto.length ? `<details class="altri-modelli"${eraAperto ? ' open' : ''}><summary>Altri modelli (${sotto.length})<b aria-hidden="true">⌄</b></summary><div class="lista-strumenti-turni">${sotto.map(riga).join('')}</div></details>` : '');
+  const meseTitolo = el('meseTurniV4');
+  if(meseTitolo) meseTitolo.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
+  host.innerHTML = `<div class="elenco-turni-v4">${sopra.map(riga4).join('')}</div>`
+    + (sotto.length ? `<p class="strumenti-turni-titolo">Altri modelli</p><div class="altri-v4">${sotto.map(rigaCompatta).join('')}</div>` : '');
   aggiornaStatoStrumentiTurni();
 }
 // Sotto le voci degli strumenti: com'è adesso, invece di una descrizione fissa.
@@ -3251,7 +3273,7 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   const dataLunga = `${GIORNI[d.getDay()]} ${d.getDate()} ${NOMI_MESI[d.getMonth()].toLowerCase()}`;
   const t = AppState.turni[giornoSelezionato];
   let nome = 'Nessun turno', orario = '', colore = 'var(--bordo)', ore = '';
-  if(t && t.riposo){ nome = 'Riposo'; colore = coloreCategoria('riposo'); }
+  if(t && t.riposo){ nome = 'Riposo'; colore = coloreRiposo(); }
   else if(t && t.assenzaTipo){
     const voce = (AppState.assenze || []).find(a => a.id === t.assenzaTipo);
     nome = voce ? voce.nome : 'Assenza';
@@ -3691,7 +3713,7 @@ function datiWidget(adesso = new Date()){
       const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo);
       giorni[iso] = { nome: v ? v.nome : 'Assenza', orario: '', colore: coloreCategoria('assenza') };
     } else if(t.riposo){
-      giorni[iso] = { nome: 'Riposo', orario: '', colore: coloreCategoria('riposo') };
+      giorni[iso] = { nome: 'Riposo', orario: '', colore: coloreRiposo() };
     } else if(t.oraInizio && t.oraFine){
       const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
       giorni[iso] = { nome: m ? m.nome : 'Turno', orario: `${t.oraInizio} – ${t.oraFine}`, colore: m ? coloreModelloV2(m) : coloreCategoria(categoriaTurno(t.oraInizio, t.oraFine, iso)) };
