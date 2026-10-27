@@ -1766,16 +1766,8 @@ function renderModelliTabTurni(){
     const barra = m.riposo ? '' : `<span class="barra24-v4" aria-hidden="true" style="--c:${escapeHtml(forte)}">${segmentiGiornataTurno(m.oraInizio, m.oraFine).map(g => `<i style="left:${g.da}%;width:${g.larg}%"></i>`).join('')}</span>`;
     return { colore, sigla, orario, volte, barra };
   };
-  // Riga grande: sigla colorata, nome, orario e durata, barra delle 24 ore, quante volte nel mese.
-  const riga4 = m => {
-    const d = datiModello(m);
-    return `<button type="button" class="turno-v4" data-modello-tab="${escapeHtml(m.id)}">
-      <span class="sigla-v4" style="background:${escapeHtml(d.colore)};color:${testoSuColore(d.colore)}">${escapeHtml(d.sigla)}</span>
-      <span class="corpo-v4"><span class="riga-nome-v4"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(d.orario)}</small></span>${d.barra}</span>
-      <span class="conta-v4"><b>${d.volte}×</b><small>a ${nomeMese}</small></span>${chev}
-    </button>`;
-  };
-  // Riga compatta per gli altri modelli (sempre visibili).
+  // Tutte le righe stesso stile compatto (come Aggiornamento / Ufficio):
+  // sigla colorata, nome, orario — niente conteggi mensili né barre.
   const rigaCompatta = m => {
     const d = datiModello(m);
     return `<button type="button" class="turno-v4 turno-compatto-v4" data-modello-tab="${escapeHtml(m.id)}">
@@ -1786,7 +1778,7 @@ function renderModelliTabTurni(){
   const sopra = modelli.filter(inAlto), sotto = modelli.filter(m => !inAlto(m));
   const meseTitolo = el('meseTurniV4');
   if(meseTitolo) meseTitolo.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
-  host.innerHTML = `<div class="elenco-turni-v4">${sopra.map(riga4).join('')}</div>`
+  host.innerHTML = `<div class="elenco-turni-v4 altri-v4">${sopra.map(rigaCompatta).join('')}</div>`
     + (sotto.length ? `<p class="strumenti-turni-titolo">Altri modelli</p><div class="altri-v4">${sotto.map(rigaCompatta).join('')}</div>` : '');
   aggiornaStatoStrumentiTurni();
 }
