@@ -741,10 +741,12 @@ function renderCalendario(){
       // giorno, al massimo 3 più "+N". L'assenza non serve: è già scritta nell'etichetta.
       const indennita = badge.filter(b => !b.includes('badge-assenza'));
       const indennitaVisibili = indennita.slice(0, 3).join('') + (indennita.length > 3 ? `<span class="giorno-badge">+${indennita.length - 3}</span>` : '');
+      // v2.91.1: colore esatto scelto dall'utente (niente scurimento).
+      // Il testo (chiaro/scuro) è calcolato automaticamente da testoSuColore per restare leggibile.
       const sfondo = coloreTurno || '#E4E7EC';
-      const sfondoForte = coloreTurno ? scurisciColore(coloreTurno, 0.35) : '#C9CED6';
+      const sfondoBadge = coloreTurno || '#C9CED6';
       const etichettaTurno = t && categoria
-        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoForte)};color:${testoSuColore(sfondoForte)}">${escapeHtml(nomeEtichetta)}</b>${indennita.length ? `<span class="mod-indennita" style="background:${escapeHtml(sfondo)};color:${testoSuColore(sfondo)}">${indennitaVisibili}</span>` : ''}</span>`
+        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoBadge)};color:${testoSuColore(sfondoBadge)}">${escapeHtml(nomeEtichetta)}</b>${indennita.length ? `<span class="mod-indennita" style="background:${escapeHtml(sfondo)};color:${testoSuColore(sfondo)}">${indennitaVisibili}</span>` : ''}</span>`
         : '';
       const rigaEvento = eventiCella.length
         ? `<span class="mod-evento"${coloreEventoStile(eventiCella[0].ev)} title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}">${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}${eventiCella.length > 1 ? ` <b>+${eventiCella.length - 1}</b>` : ''}</span>`
