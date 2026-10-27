@@ -590,13 +590,13 @@ function renderCalendario(){
     const moderno = typeof calendarioModernoAttivo === 'function' && calendarioModernoAttivo();
     let coloreTurno = '';
     if(calendarioAColoriAttivo()){
-      const modelloColoreCustomM = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+      const modelloColoreCustomM = (t && t.riposo) ? (AppState.modelliTurno || []).find(m => m.riposo) : (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
       coloreTurno = modelloColoreCustomM && modelloColoreCustomM.colore ? modelloColoreCustomM.colore : (categoria ? coloreCategoria(categoria) : '');
     }
     if(moderno){
       cella.style.background = '';
     } else if(calendarioAColoriAttivo()){
-      const modelloColoreCustom = (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+      const modelloColoreCustom = (t && t.riposo) ? (AppState.modelliTurno || []).find(m => m.riposo) : (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
       if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
       else if(categoria) cella.style.background = coloreCategoria(categoria);
       else cella.style.background = '';
