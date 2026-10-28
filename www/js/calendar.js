@@ -32,6 +32,12 @@ function festivitaFisse(anno){
   ];
 }
 
+// Buoni pasto di un giorno: di solito 1, a volte 2 (si sceglie in "Modifica il giorno").
+// Solo il numero: l'app non calcola più un importo in euro.
+function numeroBuoniPasto(t){
+  return t && t.buonoPasto ? (Number(t.buoniPastoGiorno) === 2 ? 2 : 1) : 0;
+}
+
 function siglaAssenza(nome){
   if(SIGLE_ASSENZE[nome]) return SIGLE_ASSENZE[nome];
   return nome.split(/\s+/).map(p => p[0]).join('').substring(0, 4).toUpperCase() + '.';
@@ -341,7 +347,7 @@ function calcolaRiepilogoOreMese(anno, mese){
         indennitaOPTotale += importoOP;
       }
     }
-    if(t.buonoPasto) buoniPasto++;
+    buoniPasto += numeroBuoniPasto(t);
     if(t.compensazioneRiposo) turniCompensazioneRiposo++;
     if(t.cambioTurno) turniCambioTurno++;
     if(t.oraInizio && t.oraFine && !t.assenzaTipo) giorniPresenzaEffettiva++;
@@ -388,7 +394,7 @@ function aggiornaRiepilogoMensile(){
   el('rServizioEsterno').textContent = servizioEsterno;
   el('rOrdinePubblico').textContent = ordinePubblico;
   el('rControlloTerritorio').textContent = `Serale ${giorniControlloTerritorioSerali} · Notturno ${giorniControlloTerritorioNotturni}`;
-  el('rBuoniPasto').textContent = `${buoniPasto} (${euro(round2(buoniPasto * AppState.tabelle.buonoPastoValore))})`;
+  el('rBuoniPasto').textContent = buoniPasto;
   el('rOreCompensate').textContent = round2(oreCompensateTotale).toLocaleString('it-IT', {minimumFractionDigits:2});
 }
 
@@ -1116,7 +1122,7 @@ function corpoGiornoAgenda(iso, t, nascoste){
     compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
   };
   const chip = ELENCO_INDENNITA.filter(x => presenti[x.chiave] && !nascoste.includes(x.chiave))
-    .map(x => `<span>${iconaIndennita(x.chiave)}${escapeHtml(x.nome)}</span>`).join('');
+    .map(x => `<span>${iconaIndennita(x.chiave)}${escapeHtml(x.chiave === 'buonoPasto' && numeroBuoniPasto(t) === 2 ? '2 buoni pasto' : x.nome)}</span>`).join('');
   return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">${svgIconaMomento(categoria)}`
     + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>`
     + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}</span>`

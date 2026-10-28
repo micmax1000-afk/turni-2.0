@@ -319,6 +319,11 @@
 
           <p class="titolo-sezione-giorno">Indennità <em id="contaIndennitaGiorno"></em></p>
           <div class="griglia-indennita-giorno" id="grigliaIndennitaGiorno"></div>
+          <div class="scelta-buoni-pasto" id="sceltaBuoniPasto" hidden>
+            <span>🍽️ Buoni pasto in questo giorno</span>
+            <div class="scelta-prima-dopo scelta-n-buoni" data-per="campoBuoniPastoGiorno" role="group" aria-label="Quanti buoni pasto"><button type="button" data-buoni-pasto="1">1</button><button type="button" data-buoni-pasto="2">2</button></div>
+            <input type="hidden" id="campoBuoniPastoGiorno" value="1">
+          </div>
           <p class="nota-giorno" id="notaControlloTerritorio" hidden>📍 Controllo territorio: serve almeno 3 h continuative di sera/notte, e non va insieme all'Ordine pubblico (con entrambi non viene calcolato).</p>
           <div class="caselle-indennita-nascoste" hidden>
             <input type="checkbox" id="campoReperibilita"><input type="checkbox" id="campoMissione"><input type="checkbox" id="campoServizioEsterno">

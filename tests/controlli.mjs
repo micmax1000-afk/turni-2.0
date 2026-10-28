@@ -236,6 +236,31 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Buoni pasto: solo quanti, anche 2 in un giorno');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.evaluate(() => { giornoSelezionato = '2026-10-01'; renderCalendario(); });
+  await p.click('#btnModificaGiornoSelezionatoV2');
+  ok('buono pasto spento: la scelta 1/2 non si vede', await p.evaluate(() => el('sceltaBuoniPasto').hidden));
+  await p.click('[data-indennita-giorno="campoBuonoPasto"]');
+  ok('acceso: compare "Buoni pasto in questo giorno" con 1 già scelto', await p.evaluate(() => !el('sceltaBuoniPasto').hidden && document.querySelector('[data-buoni-pasto="1"]').classList.contains('attivo')));
+  await p.click('[data-buoni-pasto="2"]');
+  await p.click('#btnSalvaTurno');
+  const t1 = await p.evaluate(() => AppState.turni['2026-10-01']);
+  ok('salvato: 2 buoni pasto il 1° ottobre', t1.buonoPasto === true && t1.buoniPastoGiorno === 2, JSON.stringify({ bp: t1.buonoPasto, n: t1.buoniPastoGiorno }));
+  await p.evaluate(() => { AppState.turni['2026-10-02'].buonoPasto = true; salvaTurniStorage(); });
+  const r = await p.evaluate(() => ({ n: calcolaRiepilogoOreMese(2026, 9).buoniPasto }));
+  ok('nel mese contano 3 (2 + 1; i giorni salvati prima valgono 1)', r.n === 3, JSON.stringify(r));
+  await p.evaluate(() => { annoCorrente = 2026; meseCorrente = 9; mostraScheda('report'); renderMeseV3(); });
+  const rep = await p.evaluate(() => { const g = [...document.querySelectorAll('.mese-gruppo-v3')].find(x => /Buoni pasto/.test(x.textContent)); return g ? g.textContent.replace(/\s+/g, ' ') : ''; });
+  ok('Report: "Buoni pasto 3", senza euro', /Buoni pasto\s*3/.test(rep) && !/€/.test(rep), rep);
+  await p.evaluate(() => { giornoSelezionato = '2026-10-01'; apriModaleTurno('2026-10-01'); });
+  ok('riaprendo il giorno si vede 2', await p.evaluate(() => document.querySelector('[data-buoni-pasto="2"]').classList.contains('attivo')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Colori dei turni: ovunque il colore esatto');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva() });
@@ -524,8 +549,9 @@ sezione('Modifica il giorno, Tabelle, avvisi');
   ok('l\'avviso sta solo nel Calendario', await p.evaluate(() => !!document.querySelector('#vistaTurni #appAlerts')));
   await p.click('#tabAltro'); await p.click('#settingsTabelle');
   await p.click('#toggleTabelleAvanzate');
-  await p.evaluate(() => { const i = document.querySelector('input[data-t="buonoPastoValore"]'); i.value = '8'; i.dispatchEvent(new Event('change', { bubbles: true })); });
-  ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').modifiche.buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
+  ok('Tabelle: niente più valore in euro del buono pasto', await p.evaluate(() => !document.querySelector('input[data-t="buonoPastoValore"]')));
+  await p.evaluate(() => { const i = document.querySelector('input[data-t="reperibilitaGiornaliera"]'); i.value = '18'; i.dispatchEvent(new Event('change', { bubbles: true })); });
+  ok('Tabelle: si salvano da sole (reperibilità 18 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').modifiche.reperibilitaGiornaliera === 18 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V217 (v2.92.1 — colore esatto dei turni ovunque) */
+/* Turni & Accessorio PS — Service Worker V218 (v2.93.0 — buoni pasto: solo quanti, anche 2 al giorno) */
 'use strict';
-const CACHE='turni-ps-v217';
+const CACHE='turni-ps-v218';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
