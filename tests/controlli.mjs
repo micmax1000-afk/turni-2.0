@@ -156,15 +156,12 @@ for(const stile of ['classico', 'moderno']){
       const q = d => document.querySelector(`.giorno-cella[data-data="${d}"]`);
       return {
         orari: [...document.querySelectorAll('.mod-turno')].some(e => /\d{1,2}:\d{2}/.test(e.textContent)),
-        indennita: [...q('2026-10-02').querySelectorAll('.mod-indennita [aria-label]')].map(b => b.getAttribute('aria-label')).join(','),
-        piu: (q('2026-10-02').querySelector('.mod-indennita .giorno-badge:not([aria-label])') || {}).textContent || '',
-        senzaIndennita: !q('2026-10-03').querySelector('.mod-indennita'),
+        simboli: !!document.querySelector('.giorno-cella .mod-indennita, .giorno-cella .badge-icona'),
         badgeInAlto: !!document.querySelector('.giorno-cella .mod-badge')
       };
     });
     ok('moderno: nessun orario nelle etichette', !m.orari);
-    ok('moderno: all\'inizio nessun simbolo nascosto; al massimo 3 nella casella, gli altri come "+1"', ['Missione', 'Servizio esterno', 'Buono pasto'].every(n => m.indennita.split(',').includes(n)) && m.piu === '+1', m.indennita + ' ' + m.piu);
-    ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
+    ok('moderno: nessun simbolo delle indennità nelle caselle, niente simboli in alto', !m.simboli && !m.badgeInAlto);
   }
   ok(`${stile}: barra in basso con Calendario/Report/Assenze/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Assenze,Turni,Altro' && c.oggiIcona === '9', c.nomi);
   ok(`${stile}: matita tolta`, !c.matita);
@@ -181,14 +178,12 @@ for(const stile of ['classico', 'moderno']){
     ok('pulsante "🔄 Turno" nel riquadro: apre "Cosa vuoi aggiungere?"', await p.evaluate(() => !document.getElementById('overlaySelettoreModelli').hidden));
     await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; });
     await p.evaluate(() => { AppState.turni['2026-10-03'] = Object.assign({}, AppState.turni['2026-10-03'], { data: '2026-10-03', oraInizio: '07:00', oraFine: '13:00', ordinePubblico: true }); selezionaGiorno('2026-10-03'); });
-    await p.click('#indennitaGiornoSelezionatoV2 .indennita-giorno-badge');
-    ok('toccando un simbolo del giorno si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));
-    await p.click('#listaSimboli [data-simbolo="servizioEsterno"]');
-    ok('spento "Servizio esterno": sparisce dalla casella', await p.evaluate(() => ![...document.querySelectorAll('.giorno-cella[data-data="2026-10-02"] .mod-indennita [aria-label]')].some(b => b.getAttribute('aria-label') === 'Servizio esterno')));
-    await p.click('#btnChiudiSimboli');
-    await p.click('#tabAltro'); await p.click('#settingsSimboli');
-    ok('la stessa legenda si apre da Altro, con la scelta salvata', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && !document.querySelector('#listaSimboli [data-simbolo="servizioEsterno"]').checked && document.querySelector('#listaSimboli [data-simbolo="buonoPasto"]').checked));
-    await p.click('#btnChiudiSimboli'); await p.click('#tabCalendario');
+    ok('riquadro del giorno: le indennità scritte per esteso, senza legenda dei simboli', await p.evaluate(() => /Ordine pubblico/.test(document.getElementById('indennitaGiornoSelezionatoV2').textContent) && !document.getElementById('overlaySimboli')));
+    await p.click('#tabAltro');
+    ok('Altro: tolta la riga "Simboli delle indennità"', await p.evaluate(() => !document.getElementById('settingsSimboli')));
+    await p.evaluate(() => { AppState.turni['2026-10-03'].buonoPasto = true; AppState.turni['2026-10-03'].buoniPastoGiorno = 2; selezionaGiorno('2026-10-03'); });
+    ok('riquadro del giorno: "2 buoni pasto" quando sono due', await p.evaluate(() => /2 buoni pasto/.test(document.getElementById('indennitaGiornoSelezionatoV2').textContent)));
+    await p.click('#tabCalendario');
     await p.evaluate(() => { giornoPerPopupV2 = '2026-10-02'; apriSelettoreModelliV2('indennita'); });
     ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .riga-indennita-menu > span svg').length === 10 && document.querySelector('[data-indennita="missione"]').classList.contains('attiva') && document.querySelector('[data-indennita="missione"] i').textContent === '✓'));
     await p.evaluate(() => apriSelettoreModelliV2('turni'));

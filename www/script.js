@@ -1099,12 +1099,7 @@ function inizializza(){
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
   on('btnTurnoGiornoV3','click', () => { if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
-  on('settingsSimboli','click', apriSimboliCalendario);
   // Toccando i simboli nel riquadro del giorno si apre la legenda (prima c'era la "i" in alto).
-  on('indennitaGiornoSelezionatoV2','click', apriSimboliCalendario);
-  on('btnChiudiSimboli','click', () => { el('overlaySimboli').hidden = true; });
-  on('overlaySimboli','click', e => { if(e.target.id === 'overlaySimboli') el('overlaySimboli').hidden = true; });
-  on('listaSimboli','change', e => { if(e.target.dataset.simbolo) cambiaSimboloVisibile(e.target.dataset.simbolo, e.target.checked); });
   on('btnChiudiScegliBackupDrive','click', () => { el('overlayScegliBackupDrive').hidden = true; });
   on('btnSalvaEvento','click', salvaEventoV2);
   on('btnEliminaEvento','click', eliminaEventoV2);
@@ -3085,22 +3080,6 @@ function impostaColoreEventoForm(colore){
     b.classList.toggle('attivo', scelto);
     b.setAttribute('aria-checked', scelto ? 'true' : 'false');
   });
-}
-
-// Legenda dei simboli e scelta di quali mostrare nelle caselle (pulsante "i" e Altro).
-function apriSimboliCalendario(){
-  const nascoste = indennitaNascoste();
-  el('listaSimboli').innerHTML = ELENCO_INDENNITA.map(x => `<label class="riga-simbolo">
-    ${iconaIndennita(x.chiave)}<span>${escapeHtml(x.nome)}</span>
-    <input type="checkbox" class="interruttore" data-simbolo="${x.chiave}" ${nascoste.includes(x.chiave) ? '' : 'checked'} aria-label="Mostra ${escapeHtml(x.nome)} nel calendario">
-  </label>`).join('');
-  el('overlaySimboli').hidden = false;
-}
-function cambiaSimboloVisibile(chiave, visibile){
-  const nascoste = indennitaNascoste().filter(k => k !== chiave);
-  if(!visibile) nascoste.push(chiave);
-  TurniPSStorage.setItem(CHIAVE_INDENNITA_NASCOSTE, JSON.stringify(nascoste));
-  renderCalendario();
 }
 
 function salvaEventoV2(){

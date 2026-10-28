@@ -687,9 +687,6 @@ function renderCalendario(){
     const haServizioEsterno = !!(t && t.servizioEsterno);
     const haReperibilita = !!(t && t.reperibilita);
     const haOP = !!(t && t.ordinePubblico);
-    const haControllo = !!(t && t.controlloTerritorio);
-    const haBuono = !!(t && t.buonoPasto);
-    const haNota = !!(t && t.servizioSvolto);
 
     if(haStraordinario) classi += ' ha-straordinario';
     if(haMissione) classi += ' ha-missione';
@@ -698,22 +695,8 @@ function renderCalendario(){
     if(haReperibilita) classi += ' ha-reperibilita';
     if(haOP) classi += ' ha-op';
 
-    // Indennità del giorno come icone; quelle nascoste dall'utente non si mostrano (si contano lo stesso).
-    const presenti = { straordinario: haStraordinario, missione: haMissione, servizioEsterno: haServizioEsterno, ordinePubblico: haOP,
-      reperibilita: haReperibilita, controlloTerritorio: haControllo, buonoPasto: haBuono, cambioTurno: !!(t && t.cambioTurno),
-      compensazioneRiposo: !!(t && t.compensazioneRiposo), recuperoFestivoLavorato: !!(t && t.recuperoFestivoLavorato), servizioSvolto: haNota };
-    const nascoste = indennitaNascoste();
-    const badge = [];
-    if(haAssenza) badge.push('<span class="giorno-badge badge-assenza" title="Assenza" aria-label="Assenza">A</span>');
-    ELENCO_INDENNITA.forEach(x => {
-      if(presenti[x.chiave] && !nascoste.includes(x.chiave)) badge.push(`<span class="giorno-badge badge-icona" title="${x.nome}" aria-label="${x.nome}">${iconaIndennita(x.chiave)}</span>`);
-    });
-
-    // Su mobile mostriamo solo i primi 3 indicatori e un contatore +N.
-    const badgeVisibili = badge.slice(0, 3);
-    if(badge.length > 3){
-      badgeVisibili.push(`<span class="giorno-badge badge-more" title="Altri ${badge.length - 3} indicatori">+${badge.length - 3}</span>`);
-    }
+    // v2.96: niente simboli delle indennità nelle caselle (non ci stavano): si vedono toccando il giorno.
+    const badgeVisibili = haAssenza ? ['<span class="giorno-badge badge-assenza" title="Assenza" aria-label="Assenza">A</span>'] : [];
 
     const orario = t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo
       ? `<span class="giorno-orario">${escapeHtml(t.oraInizio)}–${escapeHtml(t.oraFine)}</span>`
@@ -743,16 +726,11 @@ function renderCalendario(){
         : NOME_BREVE_CATEGORIA[categoria] && (!modelloUsato || NOME_BREVE_CATEGORIA[modelloUsato.id]) ? NOME_BREVE_CATEGORIA[categoria]
         : nomeCategoria;
       if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
-      // Sotto il nome, al posto dell'orario (che si vede toccando il giorno): le indennità del
-      // giorno, al massimo 3 più "+N". L'assenza non serve: è già scritta nell'etichetta.
-      const indennita = badge.filter(b => !b.includes('badge-assenza'));
-      const indennitaVisibili = indennita.slice(0, 3).join('') + (indennita.length > 3 ? `<span class="giorno-badge">+${indennita.length - 3}</span>` : '');
       // v2.91.1: colore esatto scelto dall'utente (niente scurimento).
       // Il testo (chiaro/scuro) è calcolato automaticamente da testoSuColore per restare leggibile.
-      const sfondo = coloreTurno || '#E4E7EC';
       const sfondoBadge = coloreTurno || '#C9CED6';
       const etichettaTurno = t && categoria
-        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoBadge)};color:${testoSuColore(sfondoBadge)}">${escapeHtml(nomeEtichetta)}</b>${indennita.length ? `<span class="mod-indennita" style="background:${escapeHtml(sfondo)};color:${testoSuColore(sfondo)}">${indennitaVisibili}</span>` : ''}</span>`
+        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoBadge)};color:${testoSuColore(sfondoBadge)}">${escapeHtml(nomeEtichetta)}</b></span>`
         : '';
       const rigaEvento = eventiCella.length
         ? `<span class="mod-evento"${coloreEventoStile(eventiCella[0].ev)} title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}">${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}${eventiCella.length > 1 ? ` <b>+${eventiCella.length - 1}</b>` : ''}</span>`
@@ -873,8 +851,7 @@ const MODELLI_TURNO = {
 };
 
 // ── Simboli delle indennità (icone disegnate, uguali su tutti i telefoni) ──
-// Usati nelle caselle del calendario, nel menu "Cosa vuoi aggiungere?", nel riquadro del giorno
-// e nella legenda. Le indennità "nascoste" non compaiono nelle caselle ma si contano sempre.
+// Usati nel menu "Cosa vuoi aggiungere?", nel riquadro del giorno, nell'agenda e in Modifica il giorno.
 const DISEGNI_INDENNITA = {
   straordinario: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   missione: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
@@ -901,8 +878,6 @@ const ELENCO_INDENNITA = [
   { chiave:'recuperoFestivoLavorato', nome:'Lavorato in festivo' },
   { chiave:'servizioSvolto', nome:'Nota servizio' }
 ];
-// All'inizio tutti i simboli sono visibili: ognuno si può spegnere da Altro → Simboli del calendario.
-const INDENNITA_NASCOSTE_PREDEFINITE = [];
 // Colori che si possono dare a un evento (il primo è quello di partenza).
 const COLORI_EVENTO = ['#2E7DD7', '#2E9E5B', '#E08A00', '#D64545', '#8E44AD', '#00838F', '#6D4C41', '#546E7A'];
 function coloreEvento(ev){ return ev && COLORI_EVENTO.includes(ev.colore) ? ev.colore : COLORI_EVENTO[0]; }
@@ -910,13 +885,6 @@ function coloreEventoStile(ev){ return ` style="background:${coloreEvento(ev)}"`
 function iconaIndennita(chiave, classe){
   const d = DISEGNI_INDENNITA[chiave];
   return d ? `<svg class="icona-indennita${classe ? ' ' + classe : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>` : '';
-}
-function indennitaNascoste(){
-  try{
-    const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_INDENNITA_NASCOSTE) || 'null');
-    if(Array.isArray(v)) return v;
-  }catch(e){}
-  return INDENNITA_NASCOSTE_PREDEFINITE.slice();
 }
 
 const NOME_BREVE_CATEGORIA = { mattina:'Matt.', pomeriggio:'Pom.', sera:'Sera', notte:'Notte', riposo:'Riposo' };
@@ -1101,7 +1069,7 @@ function intestazioneSettimanaAgenda(lun, questa){
     : `${lun.getDate()} ${meseBreveAgenda(lun)} – ${dom.getDate()} ${meseBreveAgenda(dom)}`;
   return `<div class="agenda-settimana"><span>${periodo}</span>${ore > 0 ? `<b>${oreAgenda(ore)} ore di servizio</b>` : ''}</div>`;
 }
-function corpoGiornoAgenda(iso, t, nascoste){
+function corpoGiornoAgenda(iso, t){
   if(t && t.riposo) return '<span class="agenda-semplice">💤 Riposo</span>';
   if(t && t.assenzaTipo){
     const voce = AppState.assenze.find(a => a.id === t.assenzaTipo);
@@ -1121,7 +1089,7 @@ function corpoGiornoAgenda(iso, t, nascoste){
     controlloTerritorio: !!t.controlloTerritorio, buonoPasto: !!t.buonoPasto, cambioTurno: !!t.cambioTurno,
     compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
   };
-  const chip = ELENCO_INDENNITA.filter(x => presenti[x.chiave] && !nascoste.includes(x.chiave))
+  const chip = ELENCO_INDENNITA.filter(x => presenti[x.chiave])
     .map(x => `<span>${iconaIndennita(x.chiave)}${escapeHtml(x.chiave === 'buonoPasto' && numeroBuoniPasto(t) === 2 ? '2 buoni pasto' : x.nome)}</span>`).join('');
   return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">${svgIconaMomento(categoria)}`
     + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>`
@@ -1132,7 +1100,6 @@ function renderAgenda(){
   const host = el('agendaCalendario');
   if(!host) return;
   const oggi = new Date(); oggi.setHours(12, 0, 0, 0);
-  const nascoste = indennitaNascoste();
   let html = '', lunedi = null;
   for(let i = 0; i < giorniAgenda; i++){
     const d = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() + i, 12);
@@ -1150,7 +1117,7 @@ function renderAgenda(){
     const classi = 'agenda-giorno' + (i === 0 ? ' oggi' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
     html += `<div class="${classi}" data-agenda-giorno="${iso}">`
       + `<div class="agenda-data" aria-hidden="true"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b></div>`
-      + `<div class="agenda-righe">${quando}<button type="button" class="agenda-corpo" aria-label="${d.getDate()} ${NOMI_MESI[d.getMonth()]}: apri il giorno">${corpoGiornoAgenda(iso, t, nascoste)}</button>${righeEventi}</div></div>`;
+      + `<div class="agenda-righe">${quando}<button type="button" class="agenda-corpo" aria-label="${d.getDate()} ${NOMI_MESI[d.getMonth()]}: apri il giorno">${corpoGiornoAgenda(iso, t)}</button>${righeEventi}</div></div>`;
   }
   html += `<button type="button" class="btn-secondario agenda-altri" id="btnAgendaAltri">Mostra altri ${GIORNI_AGENDA_PASSO} giorni</button>`;
   host.innerHTML = html;
