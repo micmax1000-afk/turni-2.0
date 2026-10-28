@@ -2326,8 +2326,6 @@ function apriModificaEventoV2(id, isoOrigine){
   el('campoEventoLuogo').value = ev ? (ev.luogo || '') : '';
   impostaColoreEventoForm(ev ? coloreEvento(ev) : COLORI_EVENTO[0]);
   el('campoEventoNote').value = ev ? (ev.note || '') : '';
-  const dettagli = document.querySelector('#overlayEvento .dettagli-evento');
-  if(dettagli) dettagli.open = !!(ev && (ev.luogo || ev.note));
   el('campoEventoOraPromemoria').value = ev && ev.oraPromemoria ? ev.oraPromemoria : '08:00';
   el('campoEventoRipeti').value = ev && ev.ripeti ? ev.ripeti : '';
   el('campoEventoRipetiFino').value = ev && ev.ripetiFino ? ev.ripetiFino : '';
@@ -2414,6 +2412,7 @@ function intestaGiornataEvento(iso){
   el('giornataEventoTitolo').textContent = lungo.charAt(0).toUpperCase() + lungo.slice(1);
   el('giornataEventoNumero').textContent = String(d.getDate());
   el('dataEventoFoglio').textContent = breve.charAt(0).toUpperCase() + breve.slice(1);
+  el('dataEventoFoglioFine').textContent = el('dataEventoFoglio').textContent;
   const t = AppState.turni[iso];
   let sotto;
   if(t && t.riposo) sotto = 'Riposo';
@@ -2437,8 +2436,13 @@ function impostaFoglioEvento(espanso){
 function aggiornaScorciatoieEvento(){
   const sel = el('campoEventoRipeti');
   el('scorciatoiaRipetiEvento').textContent = sel.value ? sel.options[sel.selectedIndex].text : 'Non si ripete';
-  const n = el('listaPromemoriaEvento').children.length;
-  el('scorciatoiaPromemoriaEvento').textContent = n ? (n === 1 ? '1 promemoria' : `${n} promemoria`) : 'Promemoria';
+  // Un solo promemoria: si legge com'è ("10 minuti prima"); di più, solo quanti sono.
+  const righe = el('listaPromemoriaEvento').querySelectorAll('.riga-promemoria');
+  const primo = righe.length === 1 ? righe[0].querySelector('.pr-sel') : null;
+  el('scorciatoiaPromemoriaEvento').textContent = !righe.length ? 'Nessun promemoria'
+    : primo && primo.value !== 'x' ? primo.options[primo.selectedIndex].text : `${righe.length} promemoria`;
+  el('pallinoColoreEvento').style.background = coloreEventoScelto;
+  el('scorciatoiaColoreEvento').textContent = nomeColoreEvento(coloreEventoScelto);
 }
 function intervalloEventoNelForm(){
   if(el('campoEventoTuttoIlGiorno').checked) return null;
@@ -2495,7 +2499,7 @@ function aggiornaAvvisoSovrapposizione(){
   const r = intervalloEventoNelForm();
   const turno = r ? turniNellaGiornata(giornoSelezionato).find(x => r.da < x.a && x.da < r.a) : null;
   box.hidden = !turno;
-  if(turno) box.innerHTML = `⚠️ Si sovrappone al tuo <b>${turno.daIeri ? 'turno di ieri' : 'turno ' + escapeHtml(turno.nome)}</b> (${escapeHtml(turno.orario)}).`;
+  if(turno) box.innerHTML = `Durante il <b>${turno.daIeri ? 'turno di ieri' : 'turno ' + escapeHtml(turno.nome)}</b> (${escapeHtml(turno.orario)})`;
 }
 function portaInVistaEvento(){
   const scorri = el('giornataEventoScorri');
@@ -2544,6 +2548,12 @@ function inizializzaFoglioEvento(){
   const o = el('overlayEvento');
   if(!o) return;
   on('btnAltreOpzioniEvento', 'click', () => impostaFoglioEvento(true));
+  on('btnChiudiEventoFoglio', 'click', () => el('btnChiudiEvento').click());
+  on('campoEventoAvvisoForte', 'change', e => {
+    el('campoEventoAvvisoDurata').value = e.target.checked ? '10' : '0';
+    if(e.target.checked) el('campoEventoAvvisoModo').value = 'suono_vibra';
+    aggiornaCampiAvvisoEvento();
+  });
   on('manigliaFoglioEvento', 'click', () => impostaFoglioEvento(!o.classList.contains('espanso')));
   o.querySelectorAll('[data-opzione-evento]').forEach(b => b.addEventListener('click', () => apriOpzioneEvento(b.dataset.opzioneEvento)));
   on('giornataEventoOre', 'click', scegliOraDallaGiornata);
@@ -2949,6 +2959,7 @@ function aggiornaCampiAvvisoEvento(){
   const visibile = !!pluginAvvisoEvento() && el('listaPromemoriaEvento').children.length > 0;
   wrap.hidden = !visibile;
   el('campoEventoAvvisoModoWrap').hidden = el('campoEventoAvvisoDurata').value === '0';
+  el('campoEventoAvvisoForte').checked = el('campoEventoAvvisoDurata').value !== '0';
 }
 
 // Slot di notifica per evento: 0..9 (fino a 5 promemoria × le prossime 2 ripetizioni).
@@ -3099,12 +3110,14 @@ async function annullaPromemoriaEvento(idEvento){
 
 // Colore dell'evento: pallini nel modulo, uno solo scelto.
 let coloreEventoScelto = COLORI_EVENTO[0];
+const NOMI_COLORI_EVENTO = ['Blu', 'Verde', 'Arancione', 'Rosso', 'Viola', 'Ottanio', 'Marrone', 'Grigio'];
+function nomeColoreEvento(c){ const i = COLORI_EVENTO.indexOf(c); return i >= 0 ? NOMI_COLORI_EVENTO[i] : 'Colore'; }
 function impostaColoreEventoForm(colore){
   coloreEventoScelto = colore;
   const host = el('sceltaColoreEvento');
   if(!host) return;
   if(!host.children.length){
-    host.innerHTML = COLORI_EVENTO.map(c => `<button type="button" role="radio" data-colore-evento="${c}" style="background:${c}" aria-label="Colore"></button>`).join('');
+    host.innerHTML = COLORI_EVENTO.map(c => `<button type="button" role="radio" data-colore-evento="${c}" style="background:${c}" aria-label="${nomeColoreEvento(c)}"></button>`).join('');
     host.addEventListener('click', e => { const b = e.target.closest('[data-colore-evento]'); if(b) impostaColoreEventoForm(b.dataset.coloreEvento); });
   }
   host.querySelectorAll('[data-colore-evento]').forEach(b => {
