@@ -93,6 +93,8 @@ function renderTabelle(){
     mostraTabelleAvanzate = toggleAvanzate.checked;
     renderTabelle();
   });
+  // Controlla aggiornamenti funziona anche con "Modifica i valori a mano" spento.
+  on('btnControllaTabelle','click',()=>aggiornaTabelleDalSito({ forza: true, avvisaSeUguali: true }));
   const footerEsterno = el('footerTabelleEsterno');
   if(footerEsterno) footerEsterno.hidden = !mostraTabelleAvanzate;
   if(!mostraTabelleAvanzate) return; // il resto della funzione lavora solo sugli elementi delle sezioni avanzate, qui assenti
@@ -109,7 +111,6 @@ function renderTabelle(){
   el('corpoTabelle').querySelectorAll('[data-reset-table]').forEach(b=>b.addEventListener('click',()=>{const d=val(defs,b.dataset.resetTable);if(d!==undefined){const i=el('corpoTabelle').querySelector(`input[data-t="${CSS.escape(b.dataset.resetTable)}"]`);if(i){i.value=d;updateStatus();leggiTabelleDaModale();segnaTabelleSalvate();}}}));
   el('corpoTabelle').querySelector('#ricercaTabelle').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>r.classList.toggle('tabella-nascosta',q && !r.dataset.label.toLowerCase().includes(q)));});
   el('corpoTabelle').querySelectorAll('[data-table-filter]').forEach(b=>b.addEventListener('click',()=>{el('corpoTabelle').querySelectorAll('[data-table-filter]').forEach(x=>x.classList.remove('attivo'));b.classList.add('attivo');const f=b.dataset.tableFilter;el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>{const hide=f!=='tutte' && r.dataset.state!==(f==='modificati'?'modificato':'predefinito');r.classList.toggle('tabella-nascosta',hide);});}));
-  on('btnControllaTabelle','click',()=>aggiornaTabelleDalSito({ forza: true, avvisaSeUguali: true }));
   el('btnResetTabelleV17').addEventListener('click',()=>mostraConferma('Riportare tutte le tabelle ai valori predefiniti?',()=>{AppState.tabelle=clonaTabelleConSoglie(defs);salvaTabelleStorage();renderTabelle();segnaTabelleSalvate();}));
 
   // Indennità personalizzate: prima di aggiungere/rimuovere una voce, sincronizziamo dal DOM
