@@ -236,6 +236,30 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Colori dei turni: ovunque il colore esatto');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  const r = await p.evaluate(() => {
+    const rgb = hex => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+    AppState.modelliTurno.find(m => m.id === 'sera').colore = '#C2185B';
+    renderTavolozzaPatternSempliceV2();
+    const tav = [...document.querySelectorAll('#tavolozzaPatternV2 [data-modello-id-pattern]')].every(b => {
+      const m = AppState.modelliTurno.find(x => x.id === b.dataset.modelloIdPattern);
+      return b.style.background === rgb(coloreModelloV2(m));
+    });
+    const sera = document.querySelector('#tavolozzaPatternV2 [data-modello-id-pattern="sera"]').style.background;
+    return { tav, sera };
+  });
+  ok('tavolozza delle sequenze: ogni servizio col suo colore esatto (anche quello scelto a mano)', r.tav && r.sera === 'rgb(194, 24, 91)', JSON.stringify(r));
+  ok('nessun punto dell\'app scurisce più il colore del turno', await p.evaluate(async () => {
+    const testi = await Promise.all(['script.js', 'js/calendar.js', 'js/shifts.js'].map(f => fetch(f).then(r => r.text())));
+    return testi.every(t => !/[^n ]\s*scurisciColore\(|=\s*scurisciColore\(|\(scurisciColore\(|\?\s*scurisciColore\(/.test(t));
+  }));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Notifiche: categorie spente (es. Xiaomi)');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true });

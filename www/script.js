@@ -1353,7 +1353,7 @@ function aggiornaPassiDueTreV2(){
   el('sceltaFaseSequenza').innerHTML = p.giorni.map((g, i) => {
     const m = modelli.find(x => x.id === g.modelloId);
     const scelta = i === editorSeq.fase;
-    const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
+    const colore = m ? coloreModelloV2(m) : '#888';
     return `<button type="button" data-fase="${i}" class="${scelta ? 'attivo' : ''}" ${scelta ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
   el('sceltaDurataSequenza').querySelectorAll('[data-durata]').forEach(b => b.classList.toggle('attivo', b.dataset.durata === editorSeq.durata));
@@ -1438,7 +1438,7 @@ function renderCicloPatternSempliceV2(){
   host.innerHTML = p.giorni.map((g, i) => {
     const m = modelli.find(x => x.id === g.modelloId);
     const colore = m ? coloreModelloV2(m) : '#E8ECF0';
-    const forte = scurisciColore(colore, 0.35);
+    const forte = colore; // v2.92.1: colore esatto, come nel calendario
     const icone = (g.indennita || []).slice(0, 2).map(k => iconaIndennita(k)).join('') + (g.straordinario ? iconaIndennita('straordinario') : '');
     return `<button type="button" class="giorno-ciclo-v3${i === giornoPatternSelezionatoSemplcieV2 ? ' selezionato' : ''}" data-giorno-index="${i}">
       <small>${i + 1}°</small><b style="background:${forte};color:${testoSuColore(forte)}">${escapeHtml(nomeBreveModelloSeq(m))}</b><span style="background:${colore};color:${testoSuColore(colore)}">${icone || '&nbsp;'}</span>
@@ -1523,7 +1523,7 @@ function renderTavolozzaPatternSempliceV2(){
   if(!host) return;
   host.innerHTML = (AppState.modelliTurno || []).map(m => {
     const colore = coloreModelloV2(m);
-    const forte = scurisciColore(colore, 0.35);
+    const forte = colore; // v2.92.1: colore esatto, come nel calendario
     return `<button type="button" class="tavolozza-pattern-v3" data-modello-id-pattern="${escapeHtml(m.id)}" style="background:${forte};color:${testoSuColore(forte)}" title="${escapeHtml(m.nome)}">${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
 }
@@ -2003,7 +2003,7 @@ function aggiornaAnteprimaModelloV2(){
   const finto = { id: m ? m.id : 'nuovo', riposo: !!(m && m.riposo), nome: el('campoModModelloNome').value.trim() || 'Nuovo servizio',
     oraInizio: el('campoModModelloInizio').value, oraFine: el('campoModModelloFine').value };
   const colore = el('campoModModelloColore').value || '#E4E7EC';
-  const forte = scurisciColore(colore, 0.35);
+  const forte = colore; // v2.92.1: colore esatto, come nel calendario
   const sigla = (el('campoModModelloSigla').value || finto.nome.slice(0, 2)).toUpperCase();
   const durata = durataModelloTesto(finto);
   const orario = finto.riposo ? 'Giornata libera' : finto.oraInizio && finto.oraFine ? `${finto.oraInizio} – ${finto.oraFine}${durata ? ' · ' + durata : ''}` : 'Orario da scegliere';
@@ -3435,7 +3435,7 @@ function renderSequenzeBenvenuto(){
     el('benvenutoFase').innerHTML = p.giorni.map((g, i) => {
       const m = modelli.find(x => x.id === g.modelloId);
       const scelto = i === benvenuto.fase;
-      const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
+      const colore = m ? coloreModelloV2(m) : '#888';
       return `<button type="button" data-benvenuto-fase="${i}" class="${scelto ? 'attivo' : ''}" ${scelto ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
     }).join('');
     // Anteprima: i prossimi 7 giorni come verranno.
