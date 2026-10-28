@@ -470,6 +470,8 @@ function apriModaleTurno(iso){
   el('campoBuonoPasto').checked = !!t.buonoPasto;
   el('campoBuoniPastoGiorno').value = String(numeroBuoniPasto(t) || 1);
   aggiornaVisibilitaCampiOrario();
+  // v3.8: lo straordinario resta chiuso in una riga, a meno che il giorno ne abbia già uno.
+  mostraStraordinarioGiorno(!!(t.straordinarioPrimaInizio || t.straordinarioDopoInizio || t.compensaStraordinario));
   aggiornaAnteprima();
   // Il pannello "+ Aggiungi indennità o straordinario" resta sempre aperto (richiesto esplicitamente):
   // niente più logica condizionale che lo apriva solo se c'erano già dati dentro.
@@ -482,4 +484,12 @@ function apriModaleTurno(iso){
   aggiornaEditorGiornoV3();
   el('pannelloTurno').hidden = false;
   el('pannelloTurno').scrollTop = 0;
+}
+
+function mostraStraordinarioGiorno(aperto){
+  const btn = el('btnApriStraordinario'), tit = el('titoloStraordinarioGiorno'), box = el('riquadroStraordinarioGiorno');
+  if(!btn || !box) return;
+  btn.hidden = aperto;
+  if(tit) tit.hidden = !aperto;
+  box.hidden = !aperto;
 }

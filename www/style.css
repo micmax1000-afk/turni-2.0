@@ -2599,3 +2599,22 @@ html[data-tema="scuro"] .riga-assenza-v4 .saldo-resta,html[data-tema="scuro"] .r
   html:not([data-tema="chiaro"]) #paginaBackupV4 #statoBackup.avviso-backup{background:#3A2A12!important;color:#FFD9A0!important}
   html:not([data-tema="chiaro"]) .riga-assenza-v4 .saldo-resta,html:not([data-tema="chiaro"]) .riga-assenza-v4 .saldo-anello svg{filter:brightness(1.55) saturate(.9)}
 }
+
+/* v3.8 Report: spiegazione sotto le cifre */
+.report-hero-spiega{font-size:.72rem;color:#5A627A;margin-top:5px;line-height:1.35}
+html[data-tema="scuro"] .report-hero-spiega{color:#AEB8D6}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .report-hero-spiega{color:#AEB8D6}}
+
+/* v3.8 Modifica il giorno: straordinario e "Altro" chiusi in una riga; scelte attive blu */
+.riga-chiusa-v6{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid var(--bordo);border-radius:16px;background:var(--pannello);font:inherit;text-align:left;color:var(--testo);margin:6px 0 10px;cursor:pointer}
+.riga-chiusa-v6[hidden],#titoloStraordinarioGiorno[hidden],#riquadroStraordinarioGiorno[hidden]{display:none!important}
+.riga-chiusa-v6 .ic,.altro-giorno summary .ic{width:34px;height:34px;border-radius:10px;background:#E8EEFD;display:grid;place-items:center;flex:none;font-size:1rem}
+.riga-chiusa-v6 i,.altro-giorno summary i{font-style:normal;flex:1;min-width:0;display:flex;flex-direction:column}
+.riga-chiusa-v6 strong,.altro-giorno summary strong{font-size:.95rem}
+.riga-chiusa-v6 small,.altro-giorno summary small{font-size:.76rem;color:var(--testo-tenue);font-weight:400}
+.riga-chiusa-v6 b{color:var(--acc,#1D4FD7);font-size:.9rem;white-space:nowrap}
+.altro-giorno summary{display:flex!important;align-items:center;gap:12px}
+html[data-tema="scuro"] .riga-chiusa-v6 .ic,html[data-tema="scuro"] .altro-giorno summary .ic{background:#22305A}
+html[data-tema="scuro"] .riga-chiusa-v6 b{color:#8FB0FF}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .riga-chiusa-v6 .ic,html:not([data-tema="chiaro"]) .altro-giorno summary .ic{background:#22305A}html:not([data-tema="chiaro"]) .riga-chiusa-v6 b{color:#8FB0FF}}
+.scelta-prima-dopo button.attivo,.scelta-n-buoni button.attivo{background:var(--acc,#1D4FD7)!important;border-color:var(--acc,#1D4FD7)!important;color:#fff!important}

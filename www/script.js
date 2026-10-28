@@ -858,6 +858,7 @@ function inizializza(){
   on('overlayStraordinarioRapido','input', () => aggiornaStrRapidoV2());
   // Finestra "Modifica il giorno": pulsanti che comandano i campi di sempre.
   on('btnSalvaTurnoTesta','click', () => el('btnSalvaTurno').click());
+  on('btnApriStraordinario','click', () => { mostraStraordinarioGiorno(true); el('campoStrOre1')?.focus(); });
   on('pannelloTurno','click', e => {
     const tipo = e.target.closest('[data-tipo-giorno]');
     if(tipo){
@@ -1169,11 +1170,10 @@ let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifi
 let ultimoGiornoToccatoV2 = null;
 function gestisciTocchGiornoV2(iso){
   ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayRientroRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
-  const secondoTocco = ultimoGiornoToccatoV2 === iso && giornoSelezionato === iso;
+  // v3.8: un tocco mostra il giorno nel riquadro sotto il calendario; per cambiarlo ci sono i pulsanti Turno e Modifica.
   ultimoGiornoToccatoV2 = iso;
   selezionaGiorno(iso);
   giornoPerPopupV2 = iso;
-  if(secondoTocco){ apriSelettoreModelliV2('turni'); return; }
   const box = document.querySelector('.riepilogo-giorno-selezionato-box-v2');
   if(box){
     const r = box.getBoundingClientRect();
@@ -1615,7 +1615,8 @@ function renderReportHero(){
         ${acc.tredicesimaAccredito > 0 ? `<div><span>Tredicesima</span><b>${f(acc.tredicesimaAccredito)}</b></div>` : ''}
         <div title="Indennità e straordinari di ${dueMesiPrima}"><span>Indennità</span><b>${f(acc.accessorieLorde)}</b></div>
         <div class="meno"><span>Tasse</span><b>−${f(trattenute)}</b></div>
-      </div>`;
+      </div>
+      <div class="report-hero-spiega">Stipendio di ${precedente} + indennità di ${dueMesiPrima}</div>`;
     box.hidden = false;
   }catch(e){
     console.warn('Riquadro Report non calcolato:', e);
@@ -1720,9 +1721,10 @@ function renderCedolinoRiassuntoV3(){
   if(Math.abs(altro) >= 0.01) voci.push([altro > 0 ? 'Altre trattenute e conguagli' : 'Conguagli e rimborsi', altro]);
   host.innerHTML = `
     <div class="report-hero ced-hero-v4">
-      <div class="report-hero-et">💰 Netto del cedolino <span class="report-hero-stima">stima</span></div>
+      <div class="report-hero-et">🧾 Netto del mese lavorato (${mese}) <span class="report-hero-stima">stima</span></div>
       <div class="report-hero-cifra">${f(g.netto)}</div>
       <div class="report-hero-righe"><div><span>Lordo</span><b>${f(lordo)}</b></div><div class="meno"><span>Tasse e contributi</span><b>−${f(tratt)}</b></div></div>
+      <div class="report-hero-spiega">Non è quello che arriva a ${mese}: lo stipendio arriva a ${NOMI_MESI[(meseCorrente + 1) % 12].toLowerCase()}, le indennità a ${pag}</div>
     </div>
     <div class="ced-sintesi-v4">
       <div class="ced-lista-v4"><h3>Lordo <b>${f(lordo)}</b></h3>
