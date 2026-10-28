@@ -613,6 +613,8 @@ sezione('Netto come il cedolino NoiPA (febbraio e luglio 2026)');
   ok('contributi sulle voci fisse come il cedolino di luglio (2.905,25 € → 336,21 €)', Math.abs(c.contributi - 336.21) < 0.02, String(c.contributi));
   ok('detrazioni sul reddito dell\'anno scorso: lavoratore 116 €, coniuge 58 € (come da febbraio)', c.lav === 116 && c.fam === 58, `${c.lav} + ${c.fam}`);
   ok('addizionale regionale dalla CU: 782 € in 9 rate (≈ 86,90 €), niente a gennaio', Math.abs(c.reg - 86.89) < 0.02 && c.gen === 0, String(c.reg));
+  ok('senza la cifra della CU: Piemonte con le aliquote 2025 sul reddito 2025 = 782 € (come la CU)', await p.evaluate(() => Math.abs(addizionaleRegionaleAnnua('Piemonte', 37533, 2025) - 782.06) < 0.02 && addizionaleRegionaleAnnua('Piemonte', 37533, 2026) > 900));
+  ok('regole regionali: Valle d\'Aosta esente fino a 15.000 €, Lazio 1,73% su tutto fino a 28.000 €, FVG 1,23% su tutto oltre 15.000 €', await p.evaluate(() => addizionaleRegionaleAnnua('Valle d\'Aosta', 14000, 2026) === 0 && addizionaleRegionaleAnnua('Lazio', 20000, 2026) === 346 && addizionaleRegionaleAnnua('Friuli Venezia Giulia', 20000, 2026) === 246));
   ok('addizionale comunale 0,8% di 37.533 € in 9 rate (≈ 33 €)', Math.abs(c.com - 33.36) < 0.02, String(c.com));
   ok('sindacato 9,77 € (niente fondo assistenza)', c.sind === 9.77);
   ok('niente indennità di rischio', await p.evaluate(() => { AppState.turni['2026-10-05'] = { data: '2026-10-05', oraInizio: '07:00', oraFine: '13:00', servizioEsterno: true }; return !('indRischio' in calcolaCompetenze(2026, 9).accessorie); }));

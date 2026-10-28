@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V225 (v3.0.0 — detrazioni e addizionali come NoiPA) */
+/* Turni & Accessorio PS — Service Worker V226 (v3.1.0 — addizionali regionali 2025 e 2026 dal MEF) */
 'use strict';
-const CACHE='turni-ps-v225';
+const CACHE='turni-ps-v226';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

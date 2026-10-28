@@ -93,7 +93,7 @@ function calcolaCompetenze(anno, mese){
   const totalePersonalizzate = round2(personalizzate.reduce((a, p) => a + p.importo, 0));
   const totaleAccessorie = round2(totaleAccessorieFisse + totalePersonalizzate);
 
-  return { qualifica, fisse, totaleFisse, accessorie, personalizzate, totalePersonalizzate, totaleAccessorie, totaleLordo: round2(totaleFisse + totaleAccessorie), tot };
+  return { anno, qualifica, fisse, totaleFisse, accessorie, personalizzate, totalePersonalizzate, totaleAccessorie, totaleLordo: round2(totaleFisse + totaleAccessorie), tot };
 }
 
 function calcolaIRPEFAnnua(imponibileAnnuo){
@@ -156,8 +156,10 @@ function detrazioneFigliOver21Annua(R, n){
   return R >= base ? 0 : n * AppState.tabelle.detrazionePerFiglioOver21Annua * (base - R) / base;
 }
 // Addizionale regionale annua a scaglioni (progressiva come l'IRPEF).
-function addizionaleRegionaleAnnua(regione, R){
-  const tab = (AppState.tabelle && AppState.tabelle.regioniAddizionale) || {};
+// annoReddito: le aliquote sono quelle dell'anno del reddito (nel 2026 si trattiene quella sui redditi 2025).
+function addizionaleRegionaleAnnua(regione, R, annoReddito){
+  const T = AppState.tabelle || {};
+  const tab = (annoReddito === 2025 && T.regioniAddizionale2025) || T.regioniAddizionale || {};
   const d = tab[regione];
   if(!d || !(R > 0)) return 0;
   if(d.esenteFino && R <= d.esenteFino) return 0;
@@ -244,7 +246,7 @@ function calcolaRitenute(comp, meseIndice){
   // Addizionali dell'anno scorso, in 9 rate da marzo a novembre: regionale a scaglioni (o quella della CU),
   // comunale = aliquota × reddito (nel cedolino: saldo + acconto del 30%).
   const regionaleCU = Number(A.addRegionaleAnnoPrecedente) || 0;
-  const regionaleAnnua = regionaleCU > 0 ? regionaleCU : (A.regione ? addizionaleRegionaleAnnua(A.regione, Rrif) : 0);
+  const regionaleAnnua = regionaleCU > 0 ? regionaleCU : (A.regione ? addizionaleRegionaleAnnua(A.regione, Rrif, (comp.anno || new Date().getFullYear()) - 1) : 0);
   const aliqRegionale = Rrif > 0 ? round2(regionaleAnnua / Rrif * 100) : 0;
   const aliqComunale = Number(A.addComunale) || 0;
   const inPeriodoRate = meseIndice === undefined || (meseIndice >= 2 && meseIndice <= 10);
