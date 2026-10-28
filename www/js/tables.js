@@ -27,7 +27,7 @@ function renderTabelle(){
     const def = val(defs,path);
     const changed = def !== undefined && Number(current) !== Number(def);
     const e = etichetta(label);
-    return `<div class="tabella-riga-v17 riga-valore-v5${changed?' mod':''}" data-table-row data-label="${esc(label)}" data-state="${changed?'modificato':'predefinito'}"><span class="tabella-label">${esc(e.testo)}${e.unita?`<small>${esc(e.unita)}</small>`:''}${extra?`<small class="nota-valore-v5">${esc(extra)}</small>`:''}</span><input data-t="${esc(path)}" type="number" step="${step}" value="${esc(current)}" inputmode="decimal" aria-label="${esc(label)}"><button type="button" class="tabella-reset-one" data-reset-table="${esc(path)}" title="Torna al valore ufficiale" aria-label="Torna al valore ufficiale" ${def===undefined?'disabled':''}>↺</button></div>`;
+    return `<div class="tabella-riga-v17 riga-valore-v5${changed?' mod':''}" data-table-row data-label="${esc(label)}" data-state="${changed?'modificato':'predefinito'}"><span class="tabella-label">${esc(e.testo)}${e.unita?`<small>${esc(e.unita)}</small>`:''}${extra?`<small class="nota-valore-v5">${esc(extra)}</small>`:''}</span><input data-t="${esc(path)}" type="text" inputmode="decimal" autocomplete="off" value="${esc(numeroTabella(current, step))}" data-raw="${esc(current)}" data-mostrato="${esc(numeroTabella(current, step))}" aria-label="${esc(label)}"><button type="button" class="tabella-reset-one" data-reset-table="${esc(path)}" title="Torna al valore ufficiale" aria-label="Torna al valore ufficiale" ${def===undefined?'disabled':''}>↺</button></div>`;
   };
   const section=(id,title,icon,subtitle,body,cls='')=>`<section class="tabella-gruppo-v17 gruppo-tabelle-v5 ${cls}" data-table-section="${id}"><button class="tabella-head-v17" type="button" aria-expanded="false"><span class="tabella-icon-v17">${icon}</span><span class="testo-gruppo-v5"><strong>${title}</strong><small>${String(subtitle).split(' — ')[0]}</small></span><em class="conta-mod-v5" hidden></em><b>⌄</b></button><div class="tabella-body-v17" hidden>${body}</div></section>`;
   const bodyFisse = row('Stipendio annuo — in vigore (€)',`stipendiAnnuiAttuale.${qualifica}`)+row('Stipendio annuo — proiettato 2027 (€)',`stipendiAnnui2027.${qualifica}`)+row('Indennità pensionabile annua — in vigore (€)',`indennitaPensionabileAnnuaAttuale.${qualifica}`)+row('Indennità pensionabile annua — proiettata 2027 (€)',`indennitaPensionabileAnnua2027.${qualifica}`)+row('Vacanza contrattuale — fino al rinnovo (%)',`vacanzaContrattualePct`,'0.1','Dello stipendio tabellare; non serve se l\'hai già tra le indennità personalizzate');
@@ -112,7 +112,7 @@ function renderTabelle(){
   const updateStatus=()=>{
     let changed=0;
     el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>{
-      const input=r.querySelector('input[data-t]'); const def=val(defs,input.dataset.t); const is=def!==undefined && Number(input.value)!==Number(def);
+      const input=r.querySelector('input[data-t]'); const def=val(defs,input.dataset.t); const is=def!==undefined && valoreInputTabella(input)!==Number(def);
       r.classList.toggle('mod',is); r.dataset.state=is?'modificato':'predefinito'; if(is) changed++;
     });
     el('corpoTabelle').querySelectorAll('.gruppo-tabelle-v5').forEach(g=>{
@@ -124,7 +124,7 @@ function renderTabelle(){
   };
   el('corpoTabelle').querySelectorAll('.tabella-head-v17').forEach(b=>b.addEventListener('click',()=>{const open=b.getAttribute('aria-expanded')==='true';b.setAttribute('aria-expanded',String(!open));b.nextElementSibling.hidden=open;b.querySelector('b').textContent=open?'⌄':'⌃';}));
   el('corpoTabelle').querySelectorAll('input[data-t]').forEach(i=>i.addEventListener('input',updateStatus));
-  el('corpoTabelle').querySelectorAll('[data-reset-table]').forEach(b=>b.addEventListener('click',()=>{const d=val(defs,b.dataset.resetTable);if(d!==undefined){const i=el('corpoTabelle').querySelector(`input[data-t="${CSS.escape(b.dataset.resetTable)}"]`);if(i){i.value=d;updateStatus();leggiTabelleDaModale();segnaTabelleSalvate();}}}));
+  el('corpoTabelle').querySelectorAll('[data-reset-table]').forEach(b=>b.addEventListener('click',()=>{const d=val(defs,b.dataset.resetTable);if(d!==undefined){const i=el('corpoTabelle').querySelector(`input[data-t="${CSS.escape(b.dataset.resetTable)}"]`);if(i){const m=numeroTabella(d, '0.001');i.value=m;i.dataset.raw=d;i.dataset.mostrato=m;updateStatus();leggiTabelleDaModale();segnaTabelleSalvate();}}}));
   el('corpoTabelle').querySelector('#ricercaTabelle').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>r.classList.toggle('tabella-nascosta',q && !r.dataset.label.toLowerCase().includes(q)));});
   // "Solo modificate": mostra solo i valori cambiati, con i loro gruppi aperti.
   on('filtroModificateTabelle','click',()=>{
@@ -181,12 +181,32 @@ function leggiIndennitaPersonalizzateDalDom(){
   });
 }
 
+// v3.5: i valori si vedono in formato italiano (9.101,88), arrotondati per la lettura; se non li tocchi
+// resta salvato il valore esatto (data-raw), così non risultano "modificati".
+function numeroTabella(v, step){
+  const n = Number(v);
+  if(!isFinite(n)) return '';
+  const dec = String(step || '0.01').includes('.') ? Math.min(3, String(step).split('.')[1].length) : 0;
+  return n.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: Math.max(dec, Number.isInteger(n) ? 0 : 2) });
+}
+function leggiNumeroItaliano(s){
+  let t = String(s || '').trim().replace(/\s|€|%/g, '');
+  if(!t) return 0;
+  if(t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if(/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  const n = Number(t);
+  return isFinite(n) ? n : 0;
+}
+function valoreInputTabella(input){
+  if(input.dataset.mostrato !== undefined && input.value === input.dataset.mostrato && input.dataset.raw !== undefined) return Number(input.dataset.raw);
+  return leggiNumeroItaliano(input.value);
+}
 function leggiTabelleDaModale(){
   el('corpoTabelle').querySelectorAll('input[data-t]').forEach(input => {
     const percorso = input.dataset.t.split('.');
     let ref = AppState.tabelle;
     for(let i = 0; i < percorso.length - 1; i++) ref = ref[percorso[i]];
-    ref[percorso[percorso.length - 1]] = Number(input.value) || 0;
+    ref[percorso[percorso.length - 1]] = valoreInputTabella(input);
   });
   salvaTabelleStorage();
   leggiIndennitaPersonalizzateDalDom();
