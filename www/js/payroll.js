@@ -67,12 +67,16 @@ function calcolaCompetenze(anno, mese){
 
   // Tredicesima: erogata a dicembre (mese indice 11), pari a una mensilità di tutte le voci fisse:
   // stipendio, IIS, indennità pensionabile, assegno funzionale e vacanza contrattuale (cedolino dic. 2025: 2.904,25 €).
-  const vacanzaContrattuale = round2((AppState.indennitaPersonalizzate || []).filter(ip => ip.unita !== 'turno' && /vacanza contrattuale/i.test(ip.nome || '')).reduce((s, ip) => s + (Number(ip.valore) || 0), 0));
+  const vacanzaPersonalizzata = round2((AppState.indennitaPersonalizzate || []).filter(ip => ip.unita !== 'turno' && /vacanza contrattuale/i.test(ip.nome || '')).reduce((s, ip) => s + (Number(ip.valore) || 0), 0));
+  // v3.0: vacanza contrattuale automatica (1% di stipendio tabellare + IIS, cedolini 2026: 19,79 €) fino al
+  // rinnovo del contratto; se l'hai già aggiunta tra le indennità personalizzate vale quella.
+  const vacanzaAutomatica = (!vacanzaPersonalizzata && anno < 2027) ? round2((stipendioTabellare + iis) * (AppState.tabelle.vacanzaContrattualePct ?? 1) / 100) : 0;
+  const vacanzaContrattuale = round2(vacanzaPersonalizzata + vacanzaAutomatica);
   const tredicesima = mese === 11 ? round2(stipendioTabellare + iis + indennitaPensionabile + assegnoFunzione + vacanzaContrattuale) : 0;
 
-  const fisse = tredicesima > 0
-    ? { stipendioTabellare, iis, indennitaPensionabile, assegnoFunzione, tredicesima }
-    : { stipendioTabellare, iis, indennitaPensionabile, assegnoFunzione };
+  const fisse = { stipendioTabellare, iis, indennitaPensionabile, assegnoFunzione };
+  if(vacanzaAutomatica) fisse.vacanzaContrattuale = vacanzaAutomatica;
+  if(tredicesima > 0) fisse.tredicesima = tredicesima;
   const totaleFisse = round2(Object.values(fisse).reduce((a,b) => a+b, 0));
 
   const accessorie = { strDiurno, strNotturno, strFestivo, strNotturnoFestivo, indTurnoNotturno, indFestiva, indFestivitaParticolare, indOP, indServizioEsterno, indControlloTerritorio, indReperibilita, indMissioni, indCompensazioneRiposo, indCambioTurno, indProduttivitaCollettiva };
@@ -145,8 +149,25 @@ function detrazioneConiugeAnnua(R){
   else if(R > 35100 && R <= 35200) d += 10;
   return d;
 }
-function detrazioneFiglioOver21Annua(R){
-  return R > 80000 ? 0 : AppState.tabelle.detrazionePerFiglioOver21Annua * (80000 - R) / 80000;
+// Figli a carico (over 21): 950 € ciascuno × (95.000 − R) / 95.000; con più figli 95.000 sale di 15.000 per ogni figlio dopo il primo.
+function detrazioneFigliOver21Annua(R, n){
+  if(!n) return 0;
+  const base = 95000 + 15000 * (n - 1);
+  return R >= base ? 0 : n * AppState.tabelle.detrazionePerFiglioOver21Annua * (base - R) / base;
+}
+// Addizionale regionale annua a scaglioni (progressiva come l'IRPEF).
+function addizionaleRegionaleAnnua(regione, R){
+  const tab = (AppState.tabelle && AppState.tabelle.regioniAddizionale) || {};
+  const d = tab[regione];
+  if(!d || !(R > 0)) return 0;
+  if(d.tipo === 'unica') return R * d.valore / 100;
+  let imposta = 0, prec = 0;
+  for(const s of d.scaglioni){
+    const fino = s.fino === null || s.fino === undefined ? Infinity : s.fino;
+    if(R > prec) imposta += (Math.min(R, fino) - prec) * s.aliquota / 100;
+    prec = fino;
+  }
+  return round2(imposta);
 }
 
 // Netto "in busta" di una voce variabile: lordo − contributi, poi l'aliquota indicata (nessuna detrazione né addizionale nel mese).
@@ -161,7 +182,7 @@ function calcolaRitenute(comp, meseIndice){
   const somma = l => round2(l.reduce((s, p) => s + (Number(p.importo) || 0), 0));
   const persMese = somma(pers.filter(p => p.unita !== 'turno'));
   const persTurno = somma(pers.filter(p => p.unita === 'turno'));
-  const vacanza = somma(pers.filter(p => /vacanza contrattuale/i.test(p.nome || '')));
+  const vacanza = round2(somma(pers.filter(p => /vacanza contrattuale/i.test(p.nome || ''))) + (comp.fisse.vacanzaContrattuale || 0));
   const tredicesima = comp.fisse.tredicesima || 0;
   const unaTantum = round2((comp.accessorie.indProduttivitaCollettiva || 0) + (comp.accessorie.indCambioTurno || 0));
 
@@ -197,10 +218,13 @@ function calcolaRitenute(comp, meseIndice){
   const irpefTotale = round2(irpefFisso + irpefVariabile + irpefUnaTantum);
 
   // Detrazioni: se nelle Tabelle c'è il "Totale detrazioni" del cedolino si usa quello (nel cedolino è fisso per tutto l'anno), altrimenti una stima di legge
+  // v3.0: come NoiPA, detrazioni e addizionali si calcolano sul reddito dell'anno scorso (CU), non sul mese;
+  // ogni detrazione al mese è arrotondata all'euro (cedolini 2026: lavoratore 116, coniuge 58 con reddito 37.533 €).
+  const Rrif = Number(A.redditoAnnoPrecedente) > 0 ? Number(A.redditoAnnoPrecedente) : R;
   const coniuge = A.coniugeACarico === 'si';
   const figli = Number(A.figliOver21) || 0;
-  const detrazioniLavoroStima = round2((detrazioneLavoroDipendenteAnnua(R) + ulterioreDetrazioneAnnua(R)) / 12);
-  const detrazioniFamiliariStima = round2(((coniuge ? detrazioneConiugeAnnua(R) : 0) + figli * detrazioneFiglioOver21Annua(R)) / 12);
+  const detrazioniLavoroStima = Math.round((detrazioneLavoroDipendenteAnnua(Rrif) + ulterioreDetrazioneAnnua(Rrif)) / 12);
+  const detrazioniFamiliariStima = Math.round(coniuge ? detrazioneConiugeAnnua(Rrif) / 12 : 0) + Math.round(detrazioneFigliOver21Annua(Rrif, figli) / 12);
   const detrazioniInserite = Number(T.detrazioniMensiliCedolino) || 0;
   const detrazioniTotali = detrazioniInserite > 0 ? detrazioniInserite : round2(detrazioniLavoroStima + detrazioniFamiliariStima);
   const detrazioni = Math.min(detrazioniTotali, irpefTotale);
@@ -211,16 +235,22 @@ function calcolaRitenute(comp, meseIndice){
   const trattamentoIntegrativo = R <= 15000 ? T.trattamentoIntegrativoMensile : 0;
 
   // Addizionali: nel cedolino sono rate fisse da marzo a novembre; stima sul reddito ordinario del mese (senza tredicesima né una tantum)
-  const aliqRegionale = A.regione ? calcolaAliquotaAddizionaleRegionale(A.regione, R) : 0;
+  // Addizionali dell'anno scorso, in 9 rate da marzo a novembre: regionale a scaglioni (o quella della CU),
+  // comunale = aliquota × reddito (nel cedolino: saldo + acconto del 30%).
+  const regionaleCU = Number(A.addRegionaleAnnoPrecedente) || 0;
+  const regionaleAnnua = regionaleCU > 0 ? regionaleCU : (A.regione ? addizionaleRegionaleAnnua(A.regione, Rrif) : 0);
+  const aliqRegionale = Rrif > 0 ? round2(regionaleAnnua / Rrif * 100) : 0;
   const aliqComunale = Number(A.addComunale) || 0;
   const inPeriodoRate = meseIndice === undefined || (meseIndice >= 2 && meseIndice <= 10);
-  const addizionali = inPeriodoRate ? round2((imponibileFisso + accessorieImp) * (aliqRegionale + aliqComunale) / 100) : 0;
+  const addRegionale = inPeriodoRate ? round2(regionaleAnnua / 9) : 0;
+  const addComunale = inPeriodoRate ? round2(Rrif * aliqComunale / 100 / 9) : 0;
+  const addizionali = round2(addRegionale + addComunale);
 
   // Altre ritenute: quota sindacale (anche sulla tredicesima) + Fondo assistenza
   const quotaSindacale = (normalizzaSindacato(A.sindacato) === 'si') ? quotaSindacaleMensile(A) * (tredicesima > 0 ? 2 : 1) : 0;
-  const sindacato = round2(quotaSindacale + (T.fondoAssistenzaMensile || 0));
+  const sindacato = round2(quotaSindacale);
 
-  return { lordo, contributi, imponibile, redditoAnnuoStimato: R, aliquotaMarginale, aliquotaMedia, irpefTotale, detrazioniLavoro, detrazioniFamiliari, detrazioni,
+  return { lordo, contributi, imponibile, redditoAnnuoStimato: R, redditoRiferimento: Rrif, redditoDaCU: Rrif !== R, addRegionale, addComunale, aliquotaMarginale, aliquotaMedia, irpefTotale, detrazioniLavoro, detrazioniFamiliari, detrazioni,
            trattamentoIntegrativo, addizionali, aliqRegionale, aliqComunale, sindacato };
 }
 
@@ -255,6 +285,7 @@ function generaCedolino(anno, mese, compForzato){
   return { comp, imponibilePrevidenziale: r.lordo, contributi: r.contributi, imponibileFiscaleTotale: r.imponibile,
            irpefTotale: r.irpefTotale, detrazioniLavoro: r.detrazioniLavoro, detrazioniFamiliari: r.detrazioniFamiliari, detrazioni: r.detrazioni,
            trattamentoIntegrativo: r.trattamentoIntegrativo, addizionali: r.addizionali, aliqRegionale: r.aliqRegionale, aliqComunale: r.aliqComunale,
+           addRegionale: r.addRegionale, addComunale: r.addComunale, redditoRiferimento: r.redditoRiferimento, redditoDaCU: r.redditoDaCU,
            sindacato: r.sindacato, conguagli, netto };
 }
 
@@ -308,6 +339,7 @@ function renderCedolino(){
       + riga('IIS', f.iis)
       + riga('Indennità pensionabile', f.indennitaPensionabile)
       + riga('Assegno funzionale', f.assegnoFunzione)
+      + riga('Vacanza contrattuale', f.vacanzaContrattuale)
       + riga('Tredicesima', f.tredicesima))
     + lista('Indennità e straordinario', euro(c.comp.totaleAccessorie),
       riga('Straordinario diurno', a.strDiurno, ore(t.strDiurno))
@@ -332,7 +364,8 @@ function renderCedolino(){
       + piu('Detrazioni lavoro dipendente', c.detrazioniLavoro)
       + piu('Detrazioni familiari', c.detrazioniFamiliari)
       + piu('Trattamento integrativo', c.trattamentoIntegrativo)
-      + meno('Addizionali', c.addizionali, `Regionale ${c.aliqRegionale.toFixed(2).replace('.', ',')}% · comunale ${c.aliqComunale.toFixed(2).replace('.', ',')}%`)
+      + meno('Addizionale regionale', c.addRegionale, `Rata di 1/9 · su ${euro(c.redditoRiferimento)}${c.redditoDaCU ? ' (anno scorso)' : ' (stima)'}`)
+      + meno('Addizionale comunale', c.addComunale, `${c.aliqComunale.toFixed(2).replace('.', ',')}% · rata di 1/9`)
       + meno('Sindacato', c.sindacato)
       + (c.conguagli > 0 ? piu('Conguaglio', c.conguagli) : c.conguagli < 0 ? meno('Conguaglio', -c.conguagli) : ''), 'meno')
     + `<div class="ced-solo-stampa-v4">${rigaCedolinoV4('<b>Netto stimato</b>', euro(c.netto))}</div>`;

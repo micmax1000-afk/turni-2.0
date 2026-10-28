@@ -2578,3 +2578,5 @@ html[data-tema="scuro"] .manca-dati-v5{background:#3A2A12;border-color:#7A5420;c
 #paginaBackupV4 .spiegazione-backup summary{font-size:.86rem;color:var(--testo-tenue);font-weight:600}
 html[data-tema="scuro"] #paginaBackupV4 #statoBackup.avviso-backup{background:#3A2A12;border-color:#7A5420!important;color:#FFD9A0}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #paginaBackupV4 #statoBackup.avviso-backup{background:#3A2A12;border-color:#7A5420!important;color:#FFD9A0}}
+
+.euro-v5 input{width:96px}

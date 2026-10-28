@@ -582,19 +582,42 @@ sezione('Anagrafica completa e quota sindacale');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva() });
   await p.click('#tabReport');
-  ok('Report: "Completa i tuoi dati" con anni di servizio e addizionale comunale', await p.evaluate(() => !el('avvisoReportMancanti').hidden && /anni di servizio e addizionale comunale/.test(el('avvisoReportMancanti').textContent)));
+  ok('Report: "Completa i tuoi dati" con anni di servizio, addizionale comunale e reddito', await p.evaluate(() => !el('avvisoReportMancanti').hidden && /anni di servizio, addizionale comunale e reddito dell’anno scorso/.test(el('avvisoReportMancanti').textContent)));
   await p.click('[data-completa-anagrafica]');
-  ok('"Completa" apre l\'Anagrafica con "Mancano 2 dati" e le righe "da inserire"', await p.evaluate(() => !!el('sezioneAnagrafica').offsetParent && /Mancano 2 dati/.test(el('avvisoAnagraficaMancanti').textContent) && document.querySelectorAll('#sezioneAnagrafica .da-inserire-v5').length === 2));
+  ok('"Completa" apre l\'Anagrafica con "Mancano 3 dati" e le righe "da inserire"', await p.evaluate(() => !!el('sezioneAnagrafica').offsetParent && /Mancano 3 dati/.test(el('avvisoAnagraficaMancanti').textContent) && document.querySelectorAll('#sezioneAnagrafica .da-inserire-v5').length === 3));
   const nettoPrima = await p.evaluate(() => generaCedolino(2026, 9).sindacato);
   await p.fill('#campoAnni', '18'); await p.dispatchEvent('#campoAnni', 'change');
   await p.fill('#campoAddComunale', '0.5'); await p.dispatchEvent('#campoAddComunale', 'change');
-  ok('inseriti anni e addizionale: l\'avviso sparisce e l\'addizionale comunale entra nel calcolo', await p.evaluate(() => el('avvisoAnagraficaMancanti').hidden && AppState.anagrafica.addComunale === 0.5 && AppState.anagrafica.addComunaleConfermata && generaCedolino(2026, 9).aliqComunale === 0.5));
+  await p.fill('#campoRedditoAnnoPrec', '37533'); await p.dispatchEvent('#campoRedditoAnnoPrec', 'change');
+  ok('inseriti anni, addizionale e reddito: l\'avviso sparisce e l\'addizionale comunale entra nel calcolo', await p.evaluate(() => el('avvisoAnagraficaMancanti').hidden && AppState.anagrafica.addComunale === 0.5 && AppState.anagrafica.addComunaleConfermata && generaCedolino(2026, 9).aliqComunale === 0.5));
   ok('sindacato Sì: compare la quota mensile, già con il valore delle tabelle', await p.evaluate(() => !el('rigaQuotaSindacale').hidden && Number(el('campoQuotaSindacale').value) === AppState.tabelle.sindacatoMensile));
   await p.fill('#campoQuotaSindacale', '12'); await p.dispatchEvent('#campoQuotaSindacale', 'change');
   ok('quota sindacale 12 €: entra nel cedolino al posto di quella delle tabelle', await p.evaluate(([prima]) => AppState.anagrafica.quotaSindacale === 12 && Math.abs(generaCedolino(2026, 9).sindacato - (prima - AppState.tabelle.sindacatoMensile + 12)) < 0.01, [nettoPrima]));
   await p.selectOption('#campoSindacato', 'no');
-  ok('sindacato No: la quota sparisce e non si paga', await p.evaluate(() => el('rigaQuotaSindacale').hidden && generaCedolino(2026, 9).sindacato === Math.round((AppState.tabelle.fondoAssistenzaMensile || 0) * 100) / 100));
+  ok('sindacato No: la quota sparisce e non si paga', await p.evaluate(() => el('rigaQuotaSindacale').hidden && generaCedolino(2026, 9).sindacato === 0));
   ok('Tabelle: niente più quota sindacale (sta in Anagrafica)', await p.evaluate(() => { mostraScheda('tabelle'); return true; }) && await p.evaluate(() => { const t = el('toggleTabelleAvanzate'); t.checked = true; t.dispatchEvent(new Event('change')); return !document.querySelector('input[data-t="sindacatoMensile"]'); }));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Netto come il cedolino NoiPA (febbraio e luglio 2026)');
+{
+  const { p, ctx, errori } = await apri({ turni: {} });
+  const c = await p.evaluate(() => {
+    AppState.anagrafica = { qualifica: 'Assistente Capo Coordinatore', regione: 'Piemonte', anni: '22', coniugeACarico: 'si', figliOver21: 0, sindacato: 'si', quotaSindacale: 9.77, addComunale: 0.8, addComunaleConfermata: true, redditoAnnoPrecedente: 37533, addRegionaleAnnoPrecedente: 782 };
+    const g = generaCedolino(2026, 6), f = g.comp.fisse;
+    return { vacanza: f.vacanzaContrattuale, fisse: g.comp.totaleFisse, contributi: g.contributi, lav: g.detrazioniLavoro, fam: g.detrazioniFamiliari, reg: g.addRegionale, com: g.addComunale, sind: g.sindacato, gen: generaCedolino(2026, 0).addizionali };
+  });
+  ok('vacanza contrattuale automatica 19,79 € (1% di 1.979,44)', c.vacanza === 19.79, JSON.stringify(c));
+  ok('contributi sulle voci fisse come il cedolino di luglio (2.905,25 € → 336,21 €)', Math.abs(c.contributi - 336.21) < 0.02, String(c.contributi));
+  ok('detrazioni sul reddito dell\'anno scorso: lavoratore 116 €, coniuge 58 € (come da febbraio)', c.lav === 116 && c.fam === 58, `${c.lav} + ${c.fam}`);
+  ok('addizionale regionale dalla CU: 782 € in 9 rate (≈ 86,90 €), niente a gennaio', Math.abs(c.reg - 86.89) < 0.02 && c.gen === 0, String(c.reg));
+  ok('addizionale comunale 0,8% di 37.533 € in 9 rate (≈ 33 €)', Math.abs(c.com - 33.36) < 0.02, String(c.com));
+  ok('sindacato 9,77 € (niente fondo assistenza)', c.sind === 9.77);
+  ok('niente indennità di rischio', await p.evaluate(() => { AppState.turni['2026-10-05'] = { data: '2026-10-05', oraInizio: '07:00', oraFine: '13:00', servizioEsterno: true }; return !('indRischio' in calcolaCompetenze(2026, 9).accessorie); }));
+  ok('reddito di due anni fa: da giugno chiede la nuova CU', await p.evaluate(() => { AppState.anagrafica.redditoAnnoPrecedenteAnno = 2024; const m = datiAnagraficaMancanti(); AppState.anagrafica.redditoAnnoPrecedenteAnno = 2025; return m.some(x => /reddito 2025 \(nuova CU\)/.test(x)) && !datiAnagraficaMancanti().length; }));
+  ok('figli over 21: 950 € × (95.000 − reddito) / 95.000', await p.evaluate(() => Math.abs(detrazioneFigliOver21Annua(37533, 1) - 950 * (95000 - 37533) / 95000) < 0.01 && Math.abs(detrazioneFigliOver21Annua(37533, 2) - 2 * 950 * (110000 - 37533) / 110000) < 0.01));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

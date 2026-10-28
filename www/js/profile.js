@@ -58,6 +58,8 @@ function popolaFormAnagrafica(){
     el('campoSindacato').value = normalizzaSindacato(AppState.anagrafica.sindacato);
     el('campoAddComunale').value = AppState.anagrafica.addComunaleConfermata ? (AppState.anagrafica.addComunale ?? '') : '';
     el('campoQuotaSindacale').value = quotaSindacaleMensile(AppState.anagrafica);
+    el('campoRedditoAnnoPrec').value = AppState.anagrafica.redditoAnnoPrecedente || '';
+    el('campoAddRegionaleAnnoPrec').value = AppState.anagrafica.addRegionaleAnnoPrecedente || '';
   }
   el('rigaQuotaSindacale').hidden = el('campoSindacato').value !== 'si';
   aggiornaAvvisiDatiMancanti();
@@ -113,6 +115,8 @@ function cancellaAnagrafica(){
   el('campoFigliOver21').value = 0;
   el('campoSindacato').value = 'no';
   el('campoAddComunale').value = '';
+  el('campoRedditoAnnoPrec').value = '';
+  el('campoAddRegionaleAnnoPrec').value = '';
   el('campoQuotaSindacale').value = '';
   el('rigaQuotaSindacale').hidden = true;
   aggiornaVisualizzazioneParametro();
@@ -132,7 +136,12 @@ function salvaAnagraficaDaModale(){
     coniugeACarico: el('campoConiugeACarico').value,
     figliOver21: Number(el('campoFigliOver21').value) || 0,
     sindacato: el('campoSindacato').value,
-    quotaSindacale: el('campoQuotaSindacale').value === '' ? quotaSindacaleMensile(AppState.anagrafica) : Math.max(0, Number(el('campoQuotaSindacale').value) || 0)
+    quotaSindacale: el('campoQuotaSindacale').value === '' ? quotaSindacaleMensile(AppState.anagrafica) : Math.max(0, Number(el('campoQuotaSindacale').value) || 0),
+    redditoAnnoPrecedente: Math.max(0, Number(el('campoRedditoAnnoPrec').value) || 0),
+    // A quale anno si riferisce il reddito: se lo cambi è quello dell'anno scorso, altrimenti resta com'era.
+    redditoAnnoPrecedenteAnno: (Number(el('campoRedditoAnnoPrec').value) || 0) !== (Number(AppState.anagrafica?.redditoAnnoPrecedente) || 0)
+      ? new Date().getFullYear() - 1 : (AppState.anagrafica?.redditoAnnoPrecedenteAnno || new Date().getFullYear() - 1),
+    addRegionaleAnnoPrecedente: Math.max(0, Number(el('campoAddRegionaleAnnoPrec').value) || 0)
   };
   el('rigaQuotaSindacale').hidden = el('campoSindacato').value !== 'si';
   if(el('campoSindacato').value === 'si' && el('campoQuotaSindacale').value === '') el('campoQuotaSindacale').value = AppState.anagrafica.quotaSindacale;
@@ -167,7 +176,15 @@ function datiAnagraficaMancanti(){
   const m = [];
   if(!(Number(a.anni) > 0)) m.push('anni di servizio');
   if(!a.addComunaleConfermata) m.push('addizionale comunale');
+  if(!(Number(a.redditoAnnoPrecedente) > 0)) m.push('reddito dell\u2019anno scorso');
+  else if(redditoDaAggiornare(a)) m.push(`reddito ${new Date().getFullYear() - 1} (nuova CU)`);
   return m;
+}
+// La CU con i redditi dell'anno scorso arriva in primavera: da giugno, se il reddito è ancora di due anni fa, va aggiornato.
+function redditoDaAggiornare(a){
+  const oggi = new Date();
+  const anno = Number(a && a.redditoAnnoPrecedenteAnno) || 0;
+  return !!anno && anno < oggi.getFullYear() - 1 && oggi.getMonth() >= 5;
 }
 function testoDatiMancanti(m){
   return m.length === 1 ? m[0] : m.slice(0, -1).join(', ') + ' e ' + m[m.length - 1];
@@ -196,6 +213,12 @@ function aggiornaAvvisiDatiMancanti(){
   };
   segna('campoAnni', m.includes('anni di servizio'));
   segna('campoAddComunale', m.includes('addizionale comunale'));
+  segna('campoRedditoAnnoPrec', m.some(x => x.startsWith('reddito')));
+  const notaReddito = el('notaRedditoAnnoPrec');
+  if(notaReddito){
+    const a = AppState.anagrafica || {}, anno = Number(a.redditoAnnoPrecedenteAnno) || (new Date().getFullYear() - 1);
+    notaReddito.textContent = Number(a.redditoAnnoPrecedente) > 0 ? `Redditi ${anno}, dalla CU ${anno + 1}: serve per detrazioni e addizionali` : '"Reddito" della CU: serve per detrazioni e addizionali';
+  }
   const c = el('testataCompleta');
   if(c){ c.textContent = m.length ? (m.length === 1 ? 'Manca 1 dato' : `Mancano ${m.length} dati`) : 'Completa'; c.classList.toggle('da-completare', !!m.length); }
 }

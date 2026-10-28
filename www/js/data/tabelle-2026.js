@@ -6,7 +6,7 @@
 
 window.TurniPSData = window.TurniPSData || {};
 // Versione delle tabelle dentro l'app: il file sul sito (turni/tabelle.json) le sostituisce solo se più nuovo.
-window.TurniPSData.VERSIONE_TABELLE = '2026.10.3';
+window.TurniPSData.VERSIONE_TABELLE = '2026.10.4';
 window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-24';
 window.TurniPSData.TABELLE_PREDEFINITE = {
   // Stipendi tabellari annui lordi (12 mensilità) — fonte: D.P.R. 24 marzo 2025, n. 53 (decreto EFFETTIVAMENTE
@@ -133,6 +133,8 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   // Indennità servizi esterni — fonte: SIULP (https://siulp.it/i-tuoi-diritti/trattamento-economico-accessorio/4/#cinque)
   // spetta per turno di durata non inferiore a 3 ore continuative
   indennitaServizioEsternoTurno: 6.00,
+  // Indennità di vacanza contrattuale: % di stipendio tabellare + IIS, fino al rinnovo (cedolini 2026: 1% = 19,79 €).
+  vacanzaContrattualePct: 1,
   // Ordine pubblico — fonte: SIULP (https://siulp.it/i-tuoi-diritti/trattamento-economico-accessorio/5/#sei)
   // spetta per turno di almeno 4 ore; fuori sede senza pernottamento ridotta del 30%
   indennitaOPInSede: 13.00,
@@ -157,8 +159,6 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   maggiorazioneFigurativaPct: 15,
   // "Totale detrazioni" del cedolino (€/mese): nel cedolino è costante per tutto l'anno. 0 = stima con le formule di legge.
   detrazioniMensiliCedolino: 0,
-  // Fondo assistenza Polizia di Stato (trattenuta mensile).
-  fondoAssistenzaMensile: 0.60,
   irpefScaglioni: [ { fino: 28000, aliquota: 23 }, { fino: 50000, aliquota: 33 }, { fino: Infinity, aliquota: 43 } ],
   noTaxAreaAnnua: 8500,
   detrazioneLavoroMensile: 95.00,
