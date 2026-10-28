@@ -160,14 +160,20 @@ function addizionaleRegionaleAnnua(regione, R){
   const tab = (AppState.tabelle && AppState.tabelle.regioniAddizionale) || {};
   const d = tab[regione];
   if(!d || !(R > 0)) return 0;
-  if(d.tipo === 'unica') return R * d.valore / 100;
-  let imposta = 0, prec = 0;
-  for(const s of d.scaglioni){
-    const fino = s.fino === null || s.fino === undefined ? Infinity : s.fino;
-    if(R > prec) imposta += (Math.min(R, fino) - prec) * s.aliquota / 100;
-    prec = fino;
+  if(d.esenteFino && R <= d.esenteFino) return 0;
+  let imposta = 0;
+  if(d.sottoSoglia && R <= d.sottoSoglia.fino) imposta = R * d.sottoSoglia.aliquota / 100;
+  else if(d.tipo === 'unica') imposta = R * d.valore / 100;
+  else {
+    let prec = 0;
+    for(const s of d.scaglioni){
+      const fino = s.fino === null || s.fino === undefined ? Infinity : s.fino;
+      if(R > prec) imposta += (Math.min(R, fino) - prec) * s.aliquota / 100;
+      prec = fino;
+    }
   }
-  return round2(imposta);
+  (d.detrazioni || []).forEach(x => { if(R > x.da && R <= x.a) imposta -= x.importo; });
+  return round2(Math.max(0, imposta));
 }
 
 // Netto "in busta" di una voce variabile: lordo − contributi, poi l'aliquota indicata (nessuna detrazione né addizionale nel mese).
