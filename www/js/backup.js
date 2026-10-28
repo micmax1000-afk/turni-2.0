@@ -709,7 +709,6 @@ function importaBackup(file, datiGiaLetti){
       renderStorico();
       if(typeof aggiornaVistaPromemoriaTurno === 'function'){ aggiornaVistaPromemoriaTurno(); riprogrammaPromemoriaTurni(); }
       if(typeof aggiornaVistaWidget === 'function'){ aggiornaVistaWidget(); aggiornaWidget(); }
-      el('contenitoreCedolino').hidden = true;
       mostraAvviso('Backup importato correttamente.');
       if(typeof mostraToast === 'function') mostraToast('Dati ripristinati correttamente.', 'successo');
       const preview=el('backupAnteprima'); if(preview) preview.hidden=true;

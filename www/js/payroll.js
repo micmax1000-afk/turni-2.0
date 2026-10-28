@@ -67,12 +67,16 @@ function calcolaCompetenze(anno, mese){
 
   // Tredicesima: erogata a dicembre (mese indice 11), pari a una mensilità di tutte le voci fisse:
   // stipendio, IIS, indennità pensionabile, assegno funzionale e vacanza contrattuale (cedolino dic. 2025: 2.904,25 €).
-  const vacanzaContrattuale = round2((AppState.indennitaPersonalizzate || []).filter(ip => ip.unita !== 'turno' && /vacanza contrattuale/i.test(ip.nome || '')).reduce((s, ip) => s + (Number(ip.valore) || 0), 0));
+  const vacanzaPersonalizzata = round2((AppState.indennitaPersonalizzate || []).filter(ip => ip.unita !== 'turno' && /vacanza contrattuale/i.test(ip.nome || '')).reduce((s, ip) => s + (Number(ip.valore) || 0), 0));
+  // v3.0: vacanza contrattuale automatica (1% di stipendio tabellare + IIS, cedolini 2026: 19,79 €) fino al
+  // rinnovo del contratto; se l'hai già aggiunta tra le indennità personalizzate vale quella.
+  const vacanzaAutomatica = (!vacanzaPersonalizzata && anno < 2027) ? round2((stipendioTabellare + iis) * (AppState.tabelle.vacanzaContrattualePct ?? 1) / 100) : 0;
+  const vacanzaContrattuale = round2(vacanzaPersonalizzata + vacanzaAutomatica);
   const tredicesima = mese === 11 ? round2(stipendioTabellare + iis + indennitaPensionabile + assegnoFunzione + vacanzaContrattuale) : 0;
 
-  const fisse = tredicesima > 0
-    ? { stipendioTabellare, iis, indennitaPensionabile, assegnoFunzione, tredicesima }
-    : { stipendioTabellare, iis, indennitaPensionabile, assegnoFunzione };
+  const fisse = { stipendioTabellare, iis, indennitaPensionabile, assegnoFunzione };
+  if(vacanzaAutomatica) fisse.vacanzaContrattuale = vacanzaAutomatica;
+  if(tredicesima > 0) fisse.tredicesima = tredicesima;
   const totaleFisse = round2(Object.values(fisse).reduce((a,b) => a+b, 0));
 
   const accessorie = { strDiurno, strNotturno, strFestivo, strNotturnoFestivo, indTurnoNotturno, indFestiva, indFestivitaParticolare, indOP, indServizioEsterno, indControlloTerritorio, indReperibilita, indMissioni, indCompensazioneRiposo, indCambioTurno, indProduttivitaCollettiva };
@@ -89,7 +93,7 @@ function calcolaCompetenze(anno, mese){
   const totalePersonalizzate = round2(personalizzate.reduce((a, p) => a + p.importo, 0));
   const totaleAccessorie = round2(totaleAccessorieFisse + totalePersonalizzate);
 
-  return { qualifica, fisse, totaleFisse, accessorie, personalizzate, totalePersonalizzate, totaleAccessorie, totaleLordo: round2(totaleFisse + totaleAccessorie), tot };
+  return { anno, qualifica, fisse, totaleFisse, accessorie, personalizzate, totalePersonalizzate, totaleAccessorie, totaleLordo: round2(totaleFisse + totaleAccessorie), tot };
 }
 
 function calcolaIRPEFAnnua(imponibileAnnuo){
@@ -145,8 +149,33 @@ function detrazioneConiugeAnnua(R){
   else if(R > 35100 && R <= 35200) d += 10;
   return d;
 }
-function detrazioneFiglioOver21Annua(R){
-  return R > 80000 ? 0 : AppState.tabelle.detrazionePerFiglioOver21Annua * (80000 - R) / 80000;
+// Figli a carico (over 21): 950 € ciascuno × (95.000 − R) / 95.000; con più figli 95.000 sale di 15.000 per ogni figlio dopo il primo.
+function detrazioneFigliOver21Annua(R, n){
+  if(!n) return 0;
+  const base = 95000 + 15000 * (n - 1);
+  return R >= base ? 0 : n * AppState.tabelle.detrazionePerFiglioOver21Annua * (base - R) / base;
+}
+// Addizionale regionale annua a scaglioni (progressiva come l'IRPEF).
+// annoReddito: le aliquote sono quelle dell'anno del reddito (nel 2026 si trattiene quella sui redditi 2025).
+function addizionaleRegionaleAnnua(regione, R, annoReddito){
+  const T = AppState.tabelle || {};
+  const tab = (T.regioniAddizionaleAnni && T.regioniAddizionaleAnni[annoReddito]) || T.regioniAddizionale || {};
+  const d = tab[regione];
+  if(!d || !(R > 0)) return 0;
+  if(d.esenteFino && R <= d.esenteFino) return 0;
+  let imposta = 0;
+  if(d.sottoSoglia && R <= d.sottoSoglia.fino) imposta = R * d.sottoSoglia.aliquota / 100;
+  else if(d.tipo === 'unica') imposta = R * d.valore / 100;
+  else {
+    let prec = 0;
+    for(const s of d.scaglioni){
+      const fino = s.fino === null || s.fino === undefined ? Infinity : s.fino;
+      if(R > prec) imposta += (Math.min(R, fino) - prec) * s.aliquota / 100;
+      prec = fino;
+    }
+  }
+  (d.detrazioni || []).forEach(x => { if(R > x.da && R <= x.a) imposta -= x.importo; });
+  return round2(Math.max(0, imposta));
 }
 
 // Netto "in busta" di una voce variabile: lordo − contributi, poi l'aliquota indicata (nessuna detrazione né addizionale nel mese).
@@ -161,7 +190,7 @@ function calcolaRitenute(comp, meseIndice){
   const somma = l => round2(l.reduce((s, p) => s + (Number(p.importo) || 0), 0));
   const persMese = somma(pers.filter(p => p.unita !== 'turno'));
   const persTurno = somma(pers.filter(p => p.unita === 'turno'));
-  const vacanza = somma(pers.filter(p => /vacanza contrattuale/i.test(p.nome || '')));
+  const vacanza = round2(somma(pers.filter(p => /vacanza contrattuale/i.test(p.nome || ''))) + (comp.fisse.vacanzaContrattuale || 0));
   const tredicesima = comp.fisse.tredicesima || 0;
   const unaTantum = round2((comp.accessorie.indProduttivitaCollettiva || 0) + (comp.accessorie.indCambioTurno || 0));
 
@@ -197,10 +226,13 @@ function calcolaRitenute(comp, meseIndice){
   const irpefTotale = round2(irpefFisso + irpefVariabile + irpefUnaTantum);
 
   // Detrazioni: se nelle Tabelle c'è il "Totale detrazioni" del cedolino si usa quello (nel cedolino è fisso per tutto l'anno), altrimenti una stima di legge
+  // v3.0: come NoiPA, detrazioni e addizionali si calcolano sul reddito dell'anno scorso (CU), non sul mese;
+  // ogni detrazione al mese è arrotondata all'euro (cedolini 2026: lavoratore 116, coniuge 58 con reddito 37.533 €).
+  const Rrif = Number(A.redditoAnnoPrecedente) > 0 ? Number(A.redditoAnnoPrecedente) : R;
   const coniuge = A.coniugeACarico === 'si';
   const figli = Number(A.figliOver21) || 0;
-  const detrazioniLavoroStima = round2((detrazioneLavoroDipendenteAnnua(R) + ulterioreDetrazioneAnnua(R)) / 12);
-  const detrazioniFamiliariStima = round2(((coniuge ? detrazioneConiugeAnnua(R) : 0) + figli * detrazioneFiglioOver21Annua(R)) / 12);
+  const detrazioniLavoroStima = Math.round((detrazioneLavoroDipendenteAnnua(Rrif) + ulterioreDetrazioneAnnua(Rrif)) / 12);
+  const detrazioniFamiliariStima = Math.round(coniuge ? detrazioneConiugeAnnua(Rrif) / 12 : 0) + Math.round(detrazioneFigliOver21Annua(Rrif, figli) / 12);
   const detrazioniInserite = Number(T.detrazioniMensiliCedolino) || 0;
   const detrazioniTotali = detrazioniInserite > 0 ? detrazioniInserite : round2(detrazioniLavoroStima + detrazioniFamiliariStima);
   const detrazioni = Math.min(detrazioniTotali, irpefTotale);
@@ -211,16 +243,22 @@ function calcolaRitenute(comp, meseIndice){
   const trattamentoIntegrativo = R <= 15000 ? T.trattamentoIntegrativoMensile : 0;
 
   // Addizionali: nel cedolino sono rate fisse da marzo a novembre; stima sul reddito ordinario del mese (senza tredicesima né una tantum)
-  const aliqRegionale = A.regione ? calcolaAliquotaAddizionaleRegionale(A.regione, R) : 0;
+  // Addizionali dell'anno scorso, in 9 rate da marzo a novembre: regionale a scaglioni (o quella della CU),
+  // comunale = aliquota × reddito (nel cedolino: saldo + acconto del 30%).
+  const regionaleCU = Number(A.addRegionaleAnnoPrecedente) || 0;
+  const regionaleAnnua = regionaleCU > 0 ? regionaleCU : (A.regione ? addizionaleRegionaleAnnua(A.regione, Rrif, (comp.anno || new Date().getFullYear()) - 1) : 0);
+  const aliqRegionale = Rrif > 0 ? round2(regionaleAnnua / Rrif * 100) : 0;
   const aliqComunale = Number(A.addComunale) || 0;
   const inPeriodoRate = meseIndice === undefined || (meseIndice >= 2 && meseIndice <= 10);
-  const addizionali = inPeriodoRate ? round2((imponibileFisso + accessorieImp) * (aliqRegionale + aliqComunale) / 100) : 0;
+  const addRegionale = inPeriodoRate ? round2(regionaleAnnua / 9) : 0;
+  const addComunale = inPeriodoRate ? round2(Rrif * aliqComunale / 100 / 9) : 0;
+  const addizionali = round2(addRegionale + addComunale);
 
   // Altre ritenute: quota sindacale (anche sulla tredicesima) + Fondo assistenza
-  const quotaSindacale = (normalizzaSindacato(A.sindacato) === 'si') ? T.sindacatoMensile * (tredicesima > 0 ? 2 : 1) : 0;
-  const sindacato = round2(quotaSindacale + (T.fondoAssistenzaMensile || 0));
+  const quotaSindacale = (normalizzaSindacato(A.sindacato) === 'si') ? quotaSindacaleMensile(A) * (tredicesima > 0 ? 2 : 1) : 0;
+  const sindacato = round2(quotaSindacale);
 
-  return { lordo, contributi, imponibile, redditoAnnuoStimato: R, aliquotaMarginale, aliquotaMedia, irpefTotale, detrazioniLavoro, detrazioniFamiliari, detrazioni,
+  return { lordo, contributi, imponibile, redditoAnnuoStimato: R, redditoRiferimento: Rrif, redditoDaCU: Rrif !== R, addRegionale, addComunale, aliquotaMarginale, aliquotaMedia, irpefTotale, detrazioniLavoro, detrazioniFamiliari, detrazioni,
            trattamentoIntegrativo, addizionali, aliqRegionale, aliqComunale, sindacato };
 }
 
@@ -255,6 +293,7 @@ function generaCedolino(anno, mese, compForzato){
   return { comp, imponibilePrevidenziale: r.lordo, contributi: r.contributi, imponibileFiscaleTotale: r.imponibile,
            irpefTotale: r.irpefTotale, detrazioniLavoro: r.detrazioniLavoro, detrazioniFamiliari: r.detrazioniFamiliari, detrazioni: r.detrazioni,
            trattamentoIntegrativo: r.trattamentoIntegrativo, addizionali: r.addizionali, aliqRegionale: r.aliqRegionale, aliqComunale: r.aliqComunale,
+           addRegionale: r.addRegionale, addComunale: r.addComunale, redditoRiferimento: r.redditoRiferimento, redditoDaCU: r.redditoDaCU,
            sindacato: r.sindacato, conguagli, netto };
 }
 
@@ -288,107 +327,57 @@ function generaAccreditoConto(anno, mese){
   };
 }
 
+// v2.97: tutte le voci in tre elenchi (Stipendio, Indennità e straordinario, Tasse e contributi);
+// le voci a zero non si mostrano. Netto e totali sono gli stessi del riassunto sopra.
 function renderCedolino(){
   const c = generaCedolino(annoCorrente, meseCorrente);
   const box = el('contenitoreCedolino');
-  const riga = (nome, val, sottr=false, meta='') => `<div class="cedolino-riga${sottr?' sottrazione':''}"><span>${nome}${meta ? `<small>${meta}</small>` : ''}</span><span>${sottr?'− ':''}${euro(val)}</span></div>`;
-  const totaleAccessorie = c.comp.totaleAccessorie;
-  const totaleFisse = c.comp.totaleFisse;
+  const riga = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, euro(val), '', sotto) : '';
+  const meno = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, `−${euro(val)}`, 'meno', sotto) : '';
+  const piu = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, `+${euro(val)}`, 'piu', sotto) : '';
+  const ore = h => h ? `${String(h).replace('.', ',')} h` : '';
+  const f = c.comp.fisse, a = c.comp.accessorie, t = c.comp.tot;
   const lordo = c.comp.totaleLordo;
-  const ritenute = round2(c.contributi + c.irpefTotale + c.addizionali + c.sindacato);
-  const trattenuteNetto = round2(ritenute - c.detrazioni - c.trattamentoIntegrativo - c.conguagli);
-  const percent = (v) => lordo > 0 ? Math.max(0, Math.min(100, (v / lordo) * 100)) : 0;
-  const pill = (label, value, cls='') => `<div class="cedolino-pill ${cls}"><span>${label}</span><strong>${euro(value)}</strong></div>`;
+  const trattenuteNetto = round2(c.contributi + c.irpefTotale + c.addizionali + c.sindacato - c.detrazioni - c.trattamentoIntegrativo - c.conguagli);
+  const lista = (titolo, totale, righe, classe = '') => `<div class="ced-lista-v4"><h3>${titolo} <b class="${classe}">${totale}</b></h3>${righe || rigaCedolinoV4('Nessuna voce', '—')}</div>`;
 
-  box.innerHTML = `
-    <div class="cedolino-v12-head">
-      <div>
-        <span class="cedolino-v12-kicker">CEDOLINO SIMULATO · ${NOMI_MESI[meseCorrente]} ${annoCorrente}</span>
-        <h3>${c.comp.qualifica}</h3>
-        <small>Stima non ufficiale basata sui dati inseriti</small>
-      </div>
-      <span class="cedolino-v12-badge">NON UFFICIALE</span>
-    </div>
-
-    <div class="cedolino-v12-netto">
-      <div><span>NETTO STIMATO</span><small>Importo indicativo</small></div>
-      <strong>${euro(c.netto)}</strong>
-    </div>
-
-    <div class="cedolino-v12-pills">
-      ${pill('Lordo', lordo, 'lordo')}
-      ${pill('Competenze fisse', totaleFisse)}
-      ${pill('Accessorie', totaleAccessorie)}
-      ${pill('Ritenute', ritenute, 'negativo')}
-    </div>
-    <div class="cedolino-v39-riepilogo" aria-label="Riepilogo cedolino">
-      <div><span>Lordo</span><strong>${euro(lordo)}</strong></div>
-      <div><span>Trattenute nette</span><strong>${euro(trattenuteNetto)}</strong></div>
-      <div class="evidenza"><span>Netto stimato</span><strong>${euro(c.netto)}</strong></div>
-    </div>
-
-    <div class="cedolino-v12-composizione">
-      <div class="cedolino-v12-section-title"><strong>Composizione del lordo</strong><span>${euro(lordo)}</span></div>
-      <div class="cedolino-v12-barra"><span class="fisse" style="width:${percent(totaleFisse)}%"></span><span class="accessorie" style="width:${percent(totaleAccessorie)}%"></span></div>
-      <div class="cedolino-v12-legenda"><span><i class="fisse"></i> Fisse ${percent(totaleFisse).toFixed(0)}%</span><span><i class="accessorie"></i> Accessorie ${percent(totaleAccessorie).toFixed(0)}%</span></div>
-    </div>
-
-    <details class="cedolino-v12-details" open>
-      <summary><span>💼 Competenze fisse</span><strong>${euro(totaleFisse)}</strong></summary>
-      <div class="cedolino-v12-body">
-        ${riga('Stipendio Tabellare (incl. IIS conglobata)', c.comp.fisse.stipendioTabellare)}
-        ${c.comp.fisse.iis > 0 ? riga('IIS', c.comp.fisse.iis) : ''}
-        ${riga('Indennità Pensionabile', c.comp.fisse.indennitaPensionabile)}
-        ${riga('Assegno Funzionale', c.comp.fisse.assegnoFunzione)}
-        ${c.comp.fisse.tredicesima ? riga('Tredicesima Mensilità', c.comp.fisse.tredicesima) : ''}
-      </div>
-    </details>
-
-    <details class="cedolino-v12-details">
-      <summary><span>🚓 Competenze accessorie</span><strong>${euro(totaleAccessorie)}</strong></summary>
-      <div class="cedolino-v12-body">
-        ${riga(`Straordinario Diurno`, c.comp.accessorie.strDiurno, false, `${c.comp.tot.strDiurno} h`)}
-        ${riga(`Straordinario Notturno`, c.comp.accessorie.strNotturno, false, `${c.comp.tot.strNotturno} h`)}
-        ${riga(`Straordinario Festivo`, c.comp.accessorie.strFestivo, false, `${c.comp.tot.strFestivo} h`)}
-        ${riga(`Straordinario Notturno Festivo`, c.comp.accessorie.strNotturnoFestivo, false, `${c.comp.tot.strNotturnoFestivo} h`)}
-        ${riga('Ind. Turno Notturno', c.comp.accessorie.indTurnoNotturno, false, `${c.comp.tot.notturne} h`)}
-        ${riga('Ind. Festiva/Domenicale', c.comp.accessorie.indFestiva)}
-        ${c.comp.accessorie.indFestivitaParticolare ? riga('Ind. Festività Particolari', c.comp.accessorie.indFestivitaParticolare) : ''}
-        ${riga('Ind. Ordine Pubblico', c.comp.accessorie.indOP)}
-        ${riga('Ind. Servizi Esterni', c.comp.accessorie.indServizioEsterno)}
-        ${riga('Ind. Controllo Territorio', c.comp.accessorie.indControlloTerritorio)}
-        ${riga('Reperibilità', c.comp.accessorie.indReperibilita)}
-        ${riga('Missioni', c.comp.accessorie.indMissioni)}
-        ${riga('Compensazione Riposo Lavorato', c.comp.accessorie.indCompensazioneRiposo)}
-        ${riga('Cambio Turno', c.comp.accessorie.indCambioTurno)}
-        ${c.comp.accessorie.indProduttivitaCollettiva > 0 ? riga('Produttività Collettiva', c.comp.accessorie.indProduttivitaCollettiva, false, `anno ${annoCorrente - 1}`) : ''}
-        ${c.comp.personalizzate.map(p => riga(p.nome, p.importo, false, p.unita === 'turno' ? 'per turno lavorato' : 'fisso al mese')).join('')}
-      </div>
-    </details>
-
-    <details class="cedolino-v12-details">
-      <summary><span>🧾 Ritenute e fiscalità</span><strong>− ${euro(ritenute)}</strong></summary>
-      <div class="cedolino-v12-body">
-        ${riga('Imponibile Previdenziale', c.imponibilePrevidenziale)}
-        ${riga('Contributi', c.contributi, true)}
-        ${riga('Imponibile Fiscale', c.imponibileFiscaleTotale)}
-        ${riga('IRPEF', c.irpefTotale, true)}
-        ${riga('Detrazioni Lavoro Dipendente', c.detrazioniLavoro)}
-        ${c.detrazioniFamiliari ? riga('Detrazioni Familiari', c.detrazioniFamiliari) : ''}
-        ${riga('Trattamento Integrativo', c.trattamentoIntegrativo)}
-        ${riga(`Addizionali Regionale/Comunale`, c.addizionali, true, `${c.aliqRegionale.toFixed(2)}% / ${c.aliqComunale.toFixed(2)}%`)}
-        ${riga('Quota Sindacale', c.sindacato, true)}
-        ${riga('Conguagli', c.conguagli)}
-      </div>
-    </details>
-
-    <div class="cedolino-v12-footer">
-      <span>Netto stimato</span><strong>${euro(c.netto)}</strong>
-      <small>Le cifre sono indicative: verifica sempre il cedolino NoiPA reale.</small>
-    </div>`;
+  box.innerHTML =
+    lista('Stipendio', euro(c.comp.totaleFisse),
+      riga('Stipendio tabellare', f.stipendioTabellare, 'IIS conglobata')
+      + riga('IIS', f.iis)
+      + riga('Indennità pensionabile', f.indennitaPensionabile)
+      + riga('Assegno funzionale', f.assegnoFunzione)
+      + riga('Vacanza contrattuale', f.vacanzaContrattuale)
+      + riga('Tredicesima', f.tredicesima))
+    + lista('Indennità e straordinario', euro(c.comp.totaleAccessorie),
+      riga('Straordinario diurno', a.strDiurno, ore(t.strDiurno))
+      + riga('Straordinario notturno', a.strNotturno, ore(t.strNotturno))
+      + riga('Straordinario festivo', a.strFestivo, ore(t.strFestivo))
+      + riga('Straordinario notturno festivo', a.strNotturnoFestivo, ore(t.strNotturnoFestivo))
+      + riga('Turni notturni', a.indTurnoNotturno, ore(t.notturne))
+      + riga('Festivi e domeniche', a.indFestiva)
+      + riga('Festività particolari', a.indFestivitaParticolare)
+      + riga('Ordine pubblico', a.indOP)
+      + riga('Servizio esterno', a.indServizioEsterno)
+      + riga('Controllo territorio', a.indControlloTerritorio)
+      + riga('Reperibilità', a.indReperibilita)
+      + riga('Missioni', a.indMissioni)
+      + riga('Lavorato sul riposo', a.indCompensazioneRiposo)
+      + riga('Cambio turno', a.indCambioTurno)
+      + riga('Produttività collettiva', a.indProduttivitaCollettiva, `anno ${annoCorrente - 1}`)
+      + c.comp.personalizzate.map(x => riga(x.nome, x.importo, x.unita === 'turno' ? 'per turno lavorato' : 'fisso al mese')).join(''))
+    + lista('Tasse e contributi', `−${euro(trattenuteNetto)}`,
+      meno('Contributi previdenziali', c.contributi, `Su ${euro(c.imponibilePrevidenziale)}`)
+      + meno('IRPEF lorda', c.irpefTotale, `Su ${euro(c.imponibileFiscaleTotale)}`)
+      + piu('Detrazioni lavoro dipendente', c.detrazioniLavoro)
+      + piu('Detrazioni familiari', c.detrazioniFamiliari)
+      + piu('Trattamento integrativo', c.trattamentoIntegrativo)
+      + meno('Addizionale regionale', c.addRegionale, `Rata di 1/9 · su ${euro(c.redditoRiferimento)}${c.redditoDaCU ? ' (anno scorso)' : ' (stima)'}`)
+      + meno('Addizionale comunale', c.addComunale, `${c.aliqComunale.toFixed(2).replace('.', ',')}% · rata di 1/9`)
+      + meno('Sindacato', c.sindacato)
+      + (c.conguagli > 0 ? piu('Conguaglio', c.conguagli) : c.conguagli < 0 ? meno('Conguaglio', -c.conguagli) : ''), 'meno')
+    + `<div class="ced-solo-stampa-v4">${rigaCedolinoV4('<b>Netto stimato</b>', euro(c.netto))}</div>`;
   box.hidden = false;
-  el('btnStampaCedolino').hidden = false;
-  el('btnNascondiCedolino').hidden = false;
 
   AppState.storico[chiaveMese(annoCorrente, meseCorrente)] = { totaleLordo: c.comp.totaleLordo, netto: c.netto };
   salvaStoricoStorage();
@@ -426,6 +415,7 @@ function renderAccreditoConto(){
 
 function renderStorico(){
   const tbody = document.querySelector('#tabellaStorico tbody');
+  if(!tbody){ renderStatisticheStorico(); return; }
   const chiavi = Object.keys(AppState.storico).sort();
   if(chiavi.length === 0){
     tbody.innerHTML = '<tr><td colspan="3" class="sotto-titolo">Nessun cedolino generato finora.</td></tr>';

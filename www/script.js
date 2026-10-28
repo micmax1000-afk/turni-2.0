@@ -549,12 +549,10 @@ function inizializza(){
   el('btnMesePrec').addEventListener('click', () => {
     meseCorrente--; if(meseCorrente < 0){ meseCorrente = 11; annoCorrente--; }
     renderCalendario();
-    el('contenitoreCedolino').hidden = true;
   });
   el('btnMeseSucc').addEventListener('click', () => {
     meseCorrente++; if(meseCorrente > 11){ meseCorrente = 0; annoCorrente++; }
     renderCalendario();
-    el('contenitoreCedolino').hidden = true;
   });
 
   el('etichettaMese').addEventListener('click', () => {
@@ -570,7 +568,6 @@ function inizializza(){
     if(!annoScelto) return;
     meseCorrente = meseScelto; annoCorrente = annoScelto;
     renderCalendario();
-    el('contenitoreCedolino').hidden = true;
     el('overlayVaiAMese').hidden = true;
   });
   el('btnVaiOggi').addEventListener('click', () => {
@@ -578,7 +575,6 @@ function inizializza(){
     meseCorrente = adesso.getMonth(); annoCorrente = adesso.getFullYear();
     giornoSelezionato = dataISO(adesso);
     renderCalendario();
-    el('contenitoreCedolino').hidden = true;
     el('overlayVaiAMese').hidden = true;
   });
 
@@ -590,7 +586,6 @@ function inizializza(){
       annoCorrente = adesso.getFullYear();
       giornoSelezionato = dataISO(adesso);
       renderCalendario();
-      el('contenitoreCedolino').hidden = true;
     });
   }
   const btnColoriHeader = el('btnApriColoriHeader');
@@ -628,6 +623,7 @@ function inizializza(){
     salvaAnagraficaDaModale();
   });
   on('btnChiudiAnagrafica','click', () => mostraScheda('altro'));
+  on('avvisoReportMancanti','click', e => { if(e.target.closest('[data-completa-anagrafica]')) mostraScheda('anagrafica'); });
   el('btnCancellaAnagrafica').addEventListener('click', () => {
     mostraConferma(
       'Questo cancellerà i dati anagrafici salvati (qualifica, anni di servizio, sede, regione, ecc.) e riporterà il form ai valori predefiniti. Turni, assenze, tabelle e cedolini generati non vengono toccati. Continuare?',
@@ -656,6 +652,7 @@ function inizializza(){
     });
   });
 
+  on('btnNuovaAssenzaTesta','click', () => el('btnAggiungiAssenzaPersonalizzata').click());
   on('btnAggiungiAssenzaPersonalizzata','click', () => {
     AppState.assenze.push({ id: nuovoId(), nome:'Nuova voce', valore:0, unita:'gg', personalizzata:true });
     salvaAssenzeStorage();
@@ -722,7 +719,6 @@ function inizializza(){
   on('campoPatternRientroFine','change', aggiornaStraordinarioRientroPatternSempliceV2);
 
   el('btnCancellaTurniMese').addEventListener('click', cancellaTurniMese);
-  el('btnCancellaStorico').addEventListener('click', cancellaStorico);
 
   el('btnEsportaBackup').addEventListener('click', esportaBackup);
   el('btnImportaBackup').addEventListener('click', () => el('campoImportaBackup').click());
@@ -752,18 +748,23 @@ function inizializza(){
     e.target.value = '';
   });
 
+  // v2.97: "Tutte le voci" apre il dettaglio; la scelta resta ricordata per le volte dopo.
   el('btnGeneraCedolino').addEventListener('click', () => {
-    if(el('contenitoreCedolino').hidden){ renderCedolino(); el('btnGeneraCedolino').textContent = 'Nascondi le voci ▴'; }
-    else { el('btnNascondiCedolino').click(); }
+    TurniPSStorage.setItem(CHIAVE_CEDOLINO_TUTTE_VOCI, cedolinoTutteVoci() ? '0' : '1');
+    sincronizzaTutteVociCedolino();
   });
   el('btnGeneraAccreditoConto').addEventListener('click', renderAccreditoConto);
-  el('btnStampaCedolino').addEventListener('click', () => stampaSezione('contenitoreCedolino'));
-  el('btnNascondiCedolino').addEventListener('click', () => {
-    el('contenitoreCedolino').hidden = true;
-    el('contenitoreCedolino').innerHTML = '';
-    el('btnStampaCedolino').hidden = true;
-    el('btnNascondiCedolino').hidden = true;
-    el('btnGeneraCedolino').textContent = 'Vedi tutte le voci ▾';
+  el('btnStampaCedolino').addEventListener('click', () => {
+    if(el('contenitoreCedolino').hidden) mostraTutteVociCedolino(true);
+    stampaSezione('contenitoreCedolino');
+  });
+  on('btnChiudiCedolinoV4','click', () => apriChiudiReport('cedolino'));
+  on('btnConguaglioV4','click', () => {
+    const box = el('boxConguaglioV4');
+    box.hidden = !box.hidden;
+    el('btnConguaglioV4').setAttribute('aria-expanded', String(!box.hidden));
+    el('btnConguaglioV4').classList.toggle('attivo', !box.hidden);
+    if(!box.hidden) el('campoConguagliMese').focus();
   });
   el('btnCancellaAccreditoConto').addEventListener('click', () => {
     el('contenitoreAccreditoConto').hidden = true;
@@ -879,6 +880,8 @@ function inizializza(){
       if(m){ el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; modelloGiornoScelto = m.id; aggiornaAnteprima(); aggiornaEditorGiornoV3(); }
       return;
     }
+    const bp = e.target.closest('[data-buoni-pasto]');
+    if(bp){ el('campoBuoniPastoGiorno').value = bp.dataset.buoniPasto; aggiornaEditorGiornoV3(); return; }
     const ind = e.target.closest('[data-indennita-giorno]');
     if(ind){
       const casella = el(ind.dataset.indennitaGiorno);
@@ -986,7 +989,7 @@ function inizializza(){
   });
 
   el('btnSalvaTurno').addEventListener('click', () => {
-    const nuovoTurno = leggiTurnoDalModale();
+    const nuovoTurno = segnaQuandoNuovo(leggiTurnoDalModale(), AppState.turni[giornoSelezionato]);
     const salva = () => {
       AppState.turni[giornoSelezionato] = nuovoTurno;
       salvaTurniStorage();
@@ -1006,6 +1009,7 @@ function inizializza(){
   on('tabAltro','click', () => mostraScheda('altro'));
 
   on('btnPersonalizzaReport','click', apriPersonalizzaReport);
+  on('reportFondoV4','click', e => { const r = e.target.closest('[data-apri-report]'); if(r) apriChiudiReport(r.dataset.apriReport); });
   on('btnChiudiPersonalizzaReport','click', () => { el('overlayPersonalizzaReport').hidden = true; });
   on('btnFattoPersonalizzaReport','click', () => {
     AppState.reportBlocchi = {
@@ -1095,12 +1099,7 @@ function inizializza(){
   on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
   on('btnTurnoGiornoV3','click', () => { if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
-  on('settingsSimboli','click', apriSimboliCalendario);
   // Toccando i simboli nel riquadro del giorno si apre la legenda (prima c'era la "i" in alto).
-  on('indennitaGiornoSelezionatoV2','click', apriSimboliCalendario);
-  on('btnChiudiSimboli','click', () => { el('overlaySimboli').hidden = true; });
-  on('overlaySimboli','click', e => { if(e.target.id === 'overlaySimboli') el('overlaySimboli').hidden = true; });
-  on('listaSimboli','change', e => { if(e.target.dataset.simbolo) cambiaSimboloVisibile(e.target.dataset.simbolo, e.target.checked); });
   on('btnChiudiScegliBackupDrive','click', () => { el('overlayScegliBackupDrive').hidden = true; });
   on('btnSalvaEvento','click', salvaEventoV2);
   on('btnEliminaEvento','click', eliminaEventoV2);
@@ -1353,7 +1352,7 @@ function aggiornaPassiDueTreV2(){
   el('sceltaFaseSequenza').innerHTML = p.giorni.map((g, i) => {
     const m = modelli.find(x => x.id === g.modelloId);
     const scelta = i === editorSeq.fase;
-    const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
+    const colore = m ? coloreModelloV2(m) : '#888';
     return `<button type="button" data-fase="${i}" class="${scelta ? 'attivo' : ''}" ${scelta ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
   el('sceltaDurataSequenza').querySelectorAll('[data-durata]').forEach(b => b.classList.toggle('attivo', b.dataset.durata === editorSeq.durata));
@@ -1438,7 +1437,7 @@ function renderCicloPatternSempliceV2(){
   host.innerHTML = p.giorni.map((g, i) => {
     const m = modelli.find(x => x.id === g.modelloId);
     const colore = m ? coloreModelloV2(m) : '#E8ECF0';
-    const forte = scurisciColore(colore, 0.35);
+    const forte = colore; // v2.92.1: colore esatto, come nel calendario
     const icone = (g.indennita || []).slice(0, 2).map(k => iconaIndennita(k)).join('') + (g.straordinario ? iconaIndennita('straordinario') : '');
     return `<button type="button" class="giorno-ciclo-v3${i === giornoPatternSelezionatoSemplcieV2 ? ' selezionato' : ''}" data-giorno-index="${i}">
       <small>${i + 1}°</small><b style="background:${forte};color:${testoSuColore(forte)}">${escapeHtml(nomeBreveModelloSeq(m))}</b><span style="background:${colore};color:${testoSuColore(colore)}">${icone || '&nbsp;'}</span>
@@ -1523,7 +1522,7 @@ function renderTavolozzaPatternSempliceV2(){
   if(!host) return;
   host.innerHTML = (AppState.modelliTurno || []).map(m => {
     const colore = coloreModelloV2(m);
-    const forte = scurisciColore(colore, 0.35);
+    const forte = colore; // v2.92.1: colore esatto, come nel calendario
     return `<button type="button" class="tavolozza-pattern-v3" data-modello-id-pattern="${escapeHtml(m.id)}" style="background:${forte};color:${testoSuColore(forte)}" title="${escapeHtml(m.nome)}">${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
 }
@@ -1596,6 +1595,7 @@ function eliminaPatternSempliceV2(){
 // Report: in cima quanto arriva sul conto il mese dopo quello visualizzato, più ore e netto
 // dello straordinario. Stessi calcoli di "Cosa arriva sul conto" e del riepilogo ore.
 function renderReportHero(){
+  if(typeof aggiornaAvvisiDatiMancanti === 'function') aggiornaAvvisiDatiMancanti();
   const box = el('reportHero');
   if(!box) return;
   el('reportMeseEtichetta').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
@@ -1608,15 +1608,14 @@ function renderReportHero(){
     const lordo = round2((acc.fisseBase || 0) + (acc.tredicesimaAccredito || 0) + (acc.accessorieLorde || 0));
     const trattenute = round2(lordo - acc.netto);
     box.innerHTML = `
-      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()} <span class="tag-importo tag-netto">netto</span></div>
+      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()} <span class="tag-importo tag-netto">netto</span> <span class="report-hero-stima">stima</span></div>
       <div class="report-hero-cifra">${f(acc.netto)}</div>
       <div class="report-hero-righe">
-        <div><span>Stipendio di ${precedente}</span><b>${f(acc.fisseBase)}</b></div>
+        <div title="Stipendio di ${precedente}"><span>Stipendio</span><b>${f(acc.fisseBase)}</b></div>
         ${acc.tredicesimaAccredito > 0 ? `<div><span>Tredicesima</span><b>${f(acc.tredicesimaAccredito)}</b></div>` : ''}
-        <div><span>Indennità e straordinari di ${dueMesiPrima}</span><b>${f(acc.accessorieLorde)}</b></div>
-        <div class="meno"><span>Tasse e contributi</span><b>−${f(trattenute)}</b></div>
-      </div>
-      <div class="report-hero-det">Stima · le voci sopra sono lorde</div>`;
+        <div title="Indennità e straordinari di ${dueMesiPrima}"><span>Indennità</span><b>${f(acc.accessorieLorde)}</b></div>
+        <div class="meno"><span>Tasse</span><b>−${f(trattenute)}</b></div>
+      </div>`;
     box.hidden = false;
   }catch(e){
     console.warn('Riquadro Report non calcolato:', e);
@@ -1658,34 +1657,51 @@ function renderMeseV3(){
     [iconaIndennita('ordinePubblico'), 'Ordine pubblico', `${r.ordinePubblico}`, a.indOP],
     [iconaIndennita('reperibilita'), 'Reperibilità', `${r.reperibilita}`, a.indReperibilita],
     [iconaIndennita('missione'), 'Missioni', `${r.missioni}`, a.indMissioni],
-    [iconaIndennita('cambioTurno'), 'Cambio turno', `${r.turniCambioTurno}`, a.indCambioTurno],
+    [iconaIndennita('cambioTurno'), 'Cambio turno', `tutto il ${annoCorrente - 1}`, a.indCambioTurno],
     [iconaIndennita('compensazioneRiposo'), 'Lavorato sul riposo', `${r.turniCompensazioneRiposo}`, a.indCompensazioneRiposo],
     [iconaIndennita('straordinario'), 'Straordinario', h(str), strLordo]
   ].filter(x => meseMostraZeriV3 || x[3] > 0);
   const totInd = round2(ind.reduce((s, x) => s + (x[3] || 0), 0));
+  // v3.3: il cambio turno si paga a luglio dell'anno dopo: qui quanti nel mese e nell'anno, e quanto varranno.
+  let cambiAnno = 0;
+  for(let m = 0; m < 12; m++) cambiAnno += calcolaRiepilogoOreMese(annoCorrente, m).turniCambioTurno || 0;
   // Netto: totale dal cedolino rifatto senza accessorie; per voce, in proporzione al lordo.
   const na = calcolaNettoAccessorie(annoCorrente, meseCorrente);
   const quotaNetta = na.lordo > 0 ? na.netto / na.lordo : 0;
   const nettoVoce = v => Math.round((v || 0) * quotaNetta);
   const ciSonoZeri = !meseMostraZeriV3 && ([t.ordinarie, t.notturne, t.festive + t.domenicali + t.notturneFestive, str].some(v => !v) || [a.indOP, a.indReperibilita, a.indMissioni, a.indCambioTurno].some(v => !v));
+  // v2.94: tutto compatto. Ore in una barra unica con la legenda; indennità una riga ciascuna;
+  // la spiegazione del netto si apre con la "i"; buoni pasto, cedolino e statistiche in fondo.
+  const fasce = [['Diurne', t.ordinarie, 'diurne'], ['Serali/notturne', t.notturne, 'notturne'],
+    ['Festive', t.festive + t.domenicali + t.notturneFestive, 'festive', t.notturneFestive ? ` (${h(t.notturneFestive)} nott.)` : ''], ['Straord.', str, 'straordinario']]
+    .filter(x => meseMostraZeriV3 || x[1] > 0);
   host.innerHTML = `
-    ${str > 0 ? `<p class="mese-str-v3">Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} <span class="tag-importo tag-lordo">lordi</span> → <b>+${f(ns.netto)}</b> <span class="tag-importo tag-netto">netti</span>, arrivano a ${pag}.</p>` : ''}
-    <div class="mese-gruppo-v3"><h3>Ore lavorate · ${h(ore)}</h3>
-      ${righeOre.length ? righeOre.map(([n, v, cls, sub]) => `<div class="mese-riga-v3"><span>${n}</span><b>${h(v)}</b><div class="mese-barra-v3"><i class="${cls}" style="width:${ore ? Math.round(v / ore * 100) : 0}%"></i></div>${sub ? `<small>${sub}</small>` : ''}</div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna ora in questo mese.</p>'}
+    <div class="mese-ore-v4">
+      <div class="mese-ore-testa-v4"><span>Ore lavorate</span><b>${h(ore)}</b></div>
+      ${ore > 0 ? `<div class="mese-barra-v4">${fasce.filter(x => x[1] > 0).map(([, v, cls]) => `<i class="${cls}" style="width:${(v / ore * 100).toFixed(1)}%"></i>`).join('')}</div>
+      <div class="mese-legenda-v4">${fasce.map(([n, v, cls, extra]) => `<span><i class="${cls}"></i>${n} <b>${h(v)}</b>${extra || ''}</span>`).join('')}</div>` : '<p class="sotto-titolo" style="margin:0">Nessuna ora in questo mese.</p>'}
     </div>
-    <div class="mese-gruppo-v3"><h3>Indennità del mese</h3>
-      ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span><span class="tag-importo tag-lordo">lordo</span></span><span><span class="tag-importo tag-netto">netto</span></span></div>` : ''}
+    <div class="mese-gruppo-v3 mese-ind-box-v4"><h3>Indennità del mese</h3>
+      ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span>lordo</span><span>netto</span></div>` : ''}
       ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
-      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)} <span class="netto-v3">~${f(round2(totInd * quotaNetta))}</span></span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}. Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</div>` : ''}
-      ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi le voci a zero ▴' : 'Mostra anche le voci a zero ▾'}</button>` : ''}
-    </div>
-    ${r.buoniPasto ? `<div class="mese-gruppo-v3"><h3>Fuori busta paga</h3><div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">🍽️</span><span>Buoni pasto</span><em>${r.buoniPasto}</em><b>${f(round2(r.buoniPasto * (AppState.tabelle.buonoPastoValore || 0)))}</b></div></div>` : ''}`;
+      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><b>${f(totInd)}</b><b class="netto-v3">~${f(round2(totInd * quotaNetta))}</b></div>` : ''}
+      ${cambiAnno ? `<p class="mese-cambio-v5">${iconaIndennita('cambioTurno')}<span>Cambio turno: ${r.turniCambioTurno ? `${r.turniCambioTurno} a ${mese} · ` : ''}nel ${annoCorrente} ${cambiAnno} ${cambiAnno === 1 ? 'cambio' : 'cambi'} = <b>${f(round2(cambiAnno * AppState.tabelle.indennitaCambioTurno))}</b>, in busta a luglio ${annoCorrente + 1}</span></p>` : ''}
+      <div class="mese-piede-v4">
+        ${ind.length ? `<details class="mese-info-v4"><summary>In busta a ${pag} · netto stimato <span aria-hidden="true">ⓘ</span></summary><p>${str > 0 ? `Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} lordi → +${f(ns.netto)} netti. ` : ''}Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</p></details>` : '<span></span>'}
+        ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi zeri ▴' : 'Voci a zero ▾'}</button>` : ''}
+      </div>
+    </div>`;
+  const bp = el('reportBuoniPasto');
+  if(bp){ bp.hidden = !r.buoniPasto; el('reportBuoniPastoNumero').textContent = r.buoniPasto; }
   const btn = el('btnMeseZeriV3');
   if(btn) btn.onclick = () => { meseMostraZeriV3 = !meseMostraZeriV3; renderMeseV3(); };
 }
 
-// Cedolino sempre in vista: Lordo (stipendio + accessorie), Trattenute (voce per voce), Netto.
-// "Vedi tutte le voci" apre il cedolino completo di prima.
+// v2.97: Cedolino nello stile del Report: netto in alto, poi Lordo e Tasse e contributi voce per voce.
+// "Tutte le voci" mostra il dettaglio al posto dei due elenchi (scelta ricordata).
+function rigaCedolinoV4(nome, valore, classe, sotto){
+  return `<div class="ced-riga-v4${classe ? ' ' + classe : ''}"><span>${nome}${sotto ? `<small>${sotto}</small>` : ''}</span><b>${valore}</b></div>`;
+}
 function renderCedolinoRiassuntoV3(){
   const host = el('cedolinoRiassuntoV3');
   if(!host) return;
@@ -1693,26 +1709,46 @@ function renderCedolinoRiassuntoV3(){
   const g = generaCedolino(annoCorrente, meseCorrente);
   const c = calcolaCompetenze(annoCorrente, meseCorrente), a = c.accessorie;
   const mese = NOMI_MESI[meseCorrente].toLowerCase(), pag = NOMI_MESI[(meseCorrente + 2) % 12].toLowerCase();
-  el('titoloCedolinoV3').textContent = `🧾 Cedolino di ${mese}`;
-  el('sottotitoloCedolinoV3').textContent = `Stima dal tuo profilo, dai turni e dalle tabelle. Accessorie di ${mese}: in busta a ${pag}.${meseCorrente === 11 ? ' A dicembre c\'è anche la tredicesima.' : ''}`;
+  el('titoloCedolinoV3').textContent = `Cedolino di ${mese}`;
+  el('sottotitoloCedolinoV3').textContent = `Stima · le indennità di ${mese} arrivano a ${pag}${meseCorrente === 11 ? ' · c\'è anche la tredicesima' : ''}`;
   const lordo = round2(g.comp.totaleLordo), fisse = round2(g.comp.totaleFisse), accT = round2(lordo - fisse);
   const strL = round2(a.strDiurno + a.strNotturno + a.strFestivo + a.strNotturnoFestivo), indL = round2(accT - strL);
   const irpef = round2(Math.max(0, (g.irpefTotale || 0) - (g.detrazioni || 0) - (g.trattamentoIntegrativo || 0)));
-  const voci = [['Contributi previdenziali', g.contributi], ['IRPEF (già tolte le detrazioni)', irpef], ['Addizionali regionale e comunale', g.addizionali], ['Sindacato', g.sindacato]].filter(x => x[1] > 0);
+  const voci = [['Contributi previdenziali', g.contributi], ['IRPEF', irpef, 'Già tolte le detrazioni'], ['Addizionali', g.addizionali, 'Regionale e comunale'], ['Sindacato', g.sindacato]].filter(x => x[1] > 0);
   const tratt = round2(lordo - g.netto);
   const altro = round2(tratt - voci.reduce((s, x) => s + x[1], 0));
   if(Math.abs(altro) >= 0.01) voci.push([altro > 0 ? 'Altre trattenute e conguagli' : 'Conguagli e rimborsi', altro]);
   host.innerHTML = `
-    <div class="ced-blocco-v3 ced-lordo-v3"><span class="tag-importo tag-lordo">Lordo</span><small>prima delle tasse</small>
-      <div class="ced-riga-v3"><span>Stipendio (voci fisse)</span><b>${f(fisse)}</b></div>
-      <div class="ced-riga-v3"><span>Accessorie<small>indennità ${f(indL)} · straordinario ${f(strL)}</small></span><b>${f(accT)}</b></div>
-      <div class="ced-riga-v3 ced-tot-v3"><span>Totale lordo</span><b>${f(lordo)}</b></div>
+    <div class="report-hero ced-hero-v4">
+      <div class="report-hero-et">💰 Netto del cedolino <span class="report-hero-stima">stima</span></div>
+      <div class="report-hero-cifra">${f(g.netto)}</div>
+      <div class="report-hero-righe"><div><span>Lordo</span><b>${f(lordo)}</b></div><div class="meno"><span>Tasse e contributi</span><b>−${f(tratt)}</b></div></div>
     </div>
-    <div class="ced-blocco-v3 ced-tratt-v3"><span class="tag-importo tag-trattenute">Trattenute</span>
-      ${voci.map(([n, v]) => `<div class="ced-riga-v3"><span>${n}</span><b>${v < 0 ? '+' : '−'}${f(Math.abs(v))}</b></div>`).join('')}
-      <div class="ced-riga-v3 ced-tot-v3"><span>Totale trattenute</span><b>−${f(tratt)}</b></div>
-    </div>
-    <div class="ced-blocco-v3 ced-netto-v3"><div><span class="tag-importo tag-netto">Netto</span><small>quello che arriva sul conto</small></div><span class="ced-cifra-v3">${f(g.netto)}</span></div>`;
+    <div class="ced-sintesi-v4">
+      <div class="ced-lista-v4"><h3>Lordo <b>${f(lordo)}</b></h3>
+        ${rigaCedolinoV4(fisse === lordo || !g.comp.fisse.tredicesima ? 'Stipendio' : 'Stipendio e tredicesima', f(fisse), '', 'Voci fisse')}
+        ${rigaCedolinoV4('Indennità', f(indL), '', `Del mese di ${mese}`)}
+        ${strL > 0 ? rigaCedolinoV4('Straordinario', f(strL)) : ''}
+      </div>
+      <div class="ced-lista-v4"><h3>Tasse e contributi <b class="meno">−${f(tratt)}</b></h3>
+        ${voci.map(([n, v, sotto]) => rigaCedolinoV4(n, `${v < 0 ? '+' : '−'}${f(Math.abs(v))}`, v < 0 ? 'piu' : 'meno', sotto)).join('')}
+      </div>
+    </div>`;
+  sincronizzaTutteVociCedolino();
+}
+function cedolinoTutteVoci(){ return TurniPSStorage.getItem(CHIAVE_CEDOLINO_TUTTE_VOCI) === '1'; }
+function mostraTutteVociCedolino(aperto){
+  const box = el('contenitoreCedolino');
+  if(aperto) renderCedolino();
+  else { box.hidden = true; box.innerHTML = ''; }
+  el('sezioneCedolino').classList.toggle('ced-tutte-v4', aperto);
+  const btn = el('btnGeneraCedolino');
+  btn.textContent = aperto ? 'Meno voci ▴' : 'Tutte le voci ▾';
+  btn.classList.toggle('attivo', aperto);
+  btn.setAttribute('aria-expanded', String(aperto));
+}
+function sincronizzaTutteVociCedolino(){
+  try{ mostraTutteVociCedolino(cedolinoTutteVoci()); }catch(e){ console.warn('Dettaglio cedolino non calcolato:', e); }
 }
 
 // Scheda Turni: i modelli di turno con il loro colore e orario, toccandone uno si modifica.
@@ -1910,7 +1946,7 @@ function applicaModelloV2(idModello){
 function applicaAssenzaV2(idAssenza){
   if(!giornoPerPopupV2) return;
   const iso = giornoPerPopupV2;
-  AppState.turni[iso] = { data: iso, assenzaTipo: idAssenza };
+  AppState.turni[iso] = segnaQuandoNuovo({ data: iso, assenzaTipo: idAssenza }, AppState.turni[iso]);
   salvaTurniStorage();
   salvaUltimoModelloUsato('assenza', idAssenza);
   el('overlaySelettoreModelli').hidden = true;
@@ -1931,7 +1967,10 @@ function applicaIndennitaRapidaV2(chiave){
     mostraToast('Assegna prima un turno di lavoro a questo giorno: le indennità si aggiungono a un turno.', 'avviso');
     return;
   }
+  const prima = { ...t };
   t[chiave] = !t[chiave];
+  if(chiave === 'buonoPasto' && !t[chiave]) delete t.buoniPastoGiorno;
+  segnaQuandoNuovo(t, prima);
   salvaTurniStorage();
   renderCalendario();
   const nome = (INDENNITA_RAPIDE_V2.find(x => x.chiave === chiave) || {}).nome || chiave;
@@ -2003,7 +2042,7 @@ function aggiornaAnteprimaModelloV2(){
   const finto = { id: m ? m.id : 'nuovo', riposo: !!(m && m.riposo), nome: el('campoModModelloNome').value.trim() || 'Nuovo servizio',
     oraInizio: el('campoModModelloInizio').value, oraFine: el('campoModModelloFine').value };
   const colore = el('campoModModelloColore').value || '#E4E7EC';
-  const forte = scurisciColore(colore, 0.35);
+  const forte = colore; // v2.92.1: colore esatto, come nel calendario
   const sigla = (el('campoModModelloSigla').value || finto.nome.slice(0, 2)).toUpperCase();
   const durata = durataModelloTesto(finto);
   const orario = finto.riposo ? 'Giornata libera' : finto.oraInizio && finto.oraFine ? `${finto.oraInizio} – ${finto.oraFine}${durata ? ' · ' + durata : ''}` : 'Orario da scegliere';
@@ -2683,6 +2722,37 @@ async function mandaNotificaProva(){
     mostraToast('Notifica di prova tra 10 secondi: puoi anche chiudere l\'app.', 'successo', 5000);
   }catch(e){ mostraToast('Notifica di prova non programmata.', 'avviso'); }
 }
+// ===================== Altro (v2.95): Tema e colore a comparsa, pagina Backup =====================
+function apriPaginaBackupV4(apri){
+  const sez = el('sezioneAltro');
+  if(!sez) return;
+  sez.classList.toggle('mostra-backup', apri);
+  el('paginaBackupV4').hidden = !apri;
+  window.scrollTo(0, 0);
+}
+function aggiornaRiassuntiAltroV4(){
+  const t = el('descrizioneTema'), a = el('descrizioneAccento'), r = el('riassuntoTemaColore');
+  if(r && t && a) r.textContent = `${t.textContent} · ${a.textContent}`;
+  const st = el('statoBackup'), rb = el('riassuntoBackupV4');
+  if(st && rb){
+    const m = /Ultimo backup:\s*([^.]*)/.exec(st.textContent || '');
+    rb.textContent = m ? `Ultimo: ${m[1].trim()}` : 'Sul telefono e su Google Drive';
+  }
+}
+function inizializzaAltroV4(){
+  on('rigaTemaColore', 'click', () => {
+    const o = el('opzioniTemaColore'), apri = o.hidden;
+    o.hidden = !apri;
+    el('rigaTemaColore').setAttribute('aria-expanded', String(apri));
+    el('rigaTemaColore').classList.toggle('aperta', apri);
+  });
+  on('settingsBackupV4', 'click', () => apriPaginaBackupV4(true));
+  on('btnChiudiBackupV4', 'click', () => apriPaginaBackupV4(false));
+  // I riassunti seguono da soli i testi che l'app già aggiorna (tema, colore, ultimo backup).
+  const osserva = id => { const n = el(id); if(n && window.MutationObserver) new MutationObserver(aggiornaRiassuntiAltroV4).observe(n, { childList: true, characterData: true, subtree: true }); };
+  ['descrizioneTema', 'descrizioneAccento', 'statoBackup'].forEach(osserva);
+  aggiornaRiassuntiAltroV4();
+}
 function inizializzaControlloPromemoria(){
   on('settingsControlloPromemoria', 'click', apriControlloPromemoria);
   on('btnChiudiControlloPromemoria', 'click', () => { el('overlayControlloPromemoria').hidden = true; controllaNotifichePromemoriaTurno(); });
@@ -3042,22 +3112,6 @@ function impostaColoreEventoForm(colore){
   });
 }
 
-// Legenda dei simboli e scelta di quali mostrare nelle caselle (pulsante "i" e Altro).
-function apriSimboliCalendario(){
-  const nascoste = indennitaNascoste();
-  el('listaSimboli').innerHTML = ELENCO_INDENNITA.map(x => `<label class="riga-simbolo">
-    ${iconaIndennita(x.chiave)}<span>${escapeHtml(x.nome)}</span>
-    <input type="checkbox" class="interruttore" data-simbolo="${x.chiave}" ${nascoste.includes(x.chiave) ? '' : 'checked'} aria-label="Mostra ${escapeHtml(x.nome)} nel calendario">
-  </label>`).join('');
-  el('overlaySimboli').hidden = false;
-}
-function cambiaSimboloVisibile(chiave, visibile){
-  const nascoste = indennitaNascoste().filter(k => k !== chiave);
-  if(!visibile) nascoste.push(chiave);
-  TurniPSStorage.setItem(CHIAVE_INDENNITA_NASCOSTE, JSON.stringify(nascoste));
-  renderCalendario();
-}
-
 function salvaEventoV2(){
   if(!giornoSelezionato) return;
   const titolo = el('campoEventoTitolo').value.trim();
@@ -3285,7 +3339,7 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   if(!boxIndennita) return;
   if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
   const pezzi = [];
-  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge">${iconaIndennita(x.chiave)}${escapeHtml(x.nome)}</span>`); });
+  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge">${iconaIndennita(x.chiave)}${escapeHtml(x.chiave === 'buonoPasto' && numeroBuoniPasto(t) === 2 ? '2 buoni pasto' : x.nome)}</span>`); });
   if(typeof classificaTurno === 'function' && typeof totaleStraordinario === 'function'){
     const c = classificaTurno(t);
     const oreStr = totaleStraordinario(c);
@@ -3296,8 +3350,22 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   boxIndennita.innerHTML = pezzi.join('');
 }
 
+// v2.94: Cedolino e Statistiche dell'anno restano chiusi finché non si tocca la loro riga in fondo al Report.
+const reportAperto = { cedolino: false, statistiche: false };
+function apriChiudiReport(quale){
+  reportAperto[quale] = !reportAperto[quale];
+  applicaVisibilitaReportBlocchi();
+  if(reportAperto[quale]){
+    const dove = el(quale === 'cedolino' ? 'sezioneCedolino' : 'sezioneStatisticheGrafici');
+    if(dove) setTimeout(() => dove.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30);
+  }
+}
 function applicaVisibilitaReportBlocchi(){
   const b = AppState.reportBlocchi || {};
+  ['cedolino', 'statistiche'].forEach(k => {
+    const riga = document.querySelector(`[data-apri-report="${k}"]`);
+    if(riga){ riga.hidden = b[k] === false; riga.classList.toggle('aperto', !!reportAperto[k]); }
+  });
   const mappa = {
     prossimoTurno: 'prossimoTurnoWidget',
     riepilogoMese: 'riepilogoTurniV45',
@@ -3307,13 +3375,15 @@ function applicaVisibilitaReportBlocchi(){
   };
   Object.keys(mappa).forEach(chiave => {
     const el1 = el(mappa[chiave]);
-    if(el1) el1.hidden = (b[chiave] === false);
+    const chiuso = (chiave === 'cedolino' || chiave === 'statistiche') && !reportAperto[chiave];
+    if(el1) el1.hidden = (b[chiave] === false) || chiuso;
   });
   // Il Cedolino comprende più sezioni oltre a quella principale: le nascondiamo tutte insieme.
-  ['sezioneAccreditoConto','sezioneStorico','sezioneRiepilogoAnnuale'].forEach(id => {
+  ['sezioneAccreditoConto','sezioneRiepilogoAnnuale'].forEach(id => {
     const n = el(id);
-    if(n) n.hidden = (b.cedolino === false);
+    if(n) n.hidden = (b.cedolino === false) || !reportAperto.cedolino;
   });
+  document.querySelectorAll('#vistaCedolino > details.cedolino-sezione-secondaria').forEach(d => { d.hidden = (b.cedolino === false) || !reportAperto.cedolino; });
 }
 
 function apriPersonalizzaReport(){
@@ -3334,7 +3404,14 @@ document.addEventListener('DOMContentLoaded', inizializza);
 /* ---------------------------------------------------------
    PWA — registrazione service worker (offline + installabile)
    --------------------------------------------------------- */
-if('serviceWorker' in navigator){
+// v2.99: nell'app Android il service worker non serve (i file sono dentro l'app) e faceva
+// comparire "Nuova versione disponibile" a ogni installazione: lo togliamo se c'era.
+const APP_ANDROID_SW = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  || (location.hostname === 'localhost' && !location.port);
+if(APP_ANDROID_SW && 'serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(() => {});
+  if(window.caches) caches.keys().then(k => k.forEach(c => caches.delete(c))).catch(() => {});
+} else if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(registrazione => {
       // Controlla subito se c'è un aggiornamento in attesa (senza aspettare il controllo
@@ -3435,7 +3512,7 @@ function renderSequenzeBenvenuto(){
     el('benvenutoFase').innerHTML = p.giorni.map((g, i) => {
       const m = modelli.find(x => x.id === g.modelloId);
       const scelto = i === benvenuto.fase;
-      const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
+      const colore = m ? coloreModelloV2(m) : '#888';
       return `<button type="button" data-benvenuto-fase="${i}" class="${scelto ? 'attivo' : ''}" ${scelto ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
     }).join('');
     // Anteprima: i prossimi 7 giorni come verranno.
@@ -3495,9 +3572,16 @@ function chiudiBenvenuto(){
 }
 function avantiBenvenuto(){
   if(benvenuto.passo === 1){
+    const segScelto = k => (document.querySelector(`[data-seg-benvenuto="${k}"] .attivo`) || {}).dataset?.valore || 'no';
+    const quota = el('benvenutoQuotaSindacale').value;
     AppState.anagrafica = Object.assign({ addComunale: 0.8, coniugeACarico: 'no', figliOver21: 0, sindacato: 'no' }, AppState.anagrafica || {}, {
-      qualifica: el('benvenutoQualifica').value, anni: el('benvenutoAnni').value, regione: el('benvenutoRegione').value
+      qualifica: el('benvenutoQualifica').value, anni: el('benvenutoAnni').value, regione: el('benvenutoRegione').value,
+      addComunale: Math.max(0, Number(el('benvenutoAddComunale').value) || 0),
+      coniugeACarico: segScelto('coniuge'), figliOver21: Math.max(0, Number(el('benvenutoFigli').value) || 0), sindacato: segScelto('sindacato')
     });
+    if(quota !== '') AppState.anagrafica.quotaSindacale = Math.max(0, Number(quota) || 0);
+    const reddito = Number(el('benvenutoReddito').value) || 0;
+    if(reddito > 0){ AppState.anagrafica.redditoAnnoPrecedente = reddito; AppState.anagrafica.redditoAnnoPrecedenteAnno = new Date().getFullYear() - 1; }
     salvaAnagraficaStorage();
     aggiornaRiassuntoAnagrafica();
     aggiornaRiassuntoAnagraficaAltro();
@@ -3559,6 +3643,17 @@ function inizializzaBenvenuto(){
   on('overlayBenvenuto', 'click', e => {
     const anni = e.target.closest('[data-passo-benvenuto-anni]');
     if(anni){ const c = el('benvenutoAnni'); c.value = Math.max(0, (Number(c.value) || 0) + Number(anni.dataset.passoBenvenutoAnni)); return; }
+    const figli = e.target.closest('[data-passo-benvenuto-figli]');
+    if(figli){ const c = el('benvenutoFigli'); c.value = Math.max(0, (Number(c.value) || 0) + Number(figli.dataset.passoBenvenutoFigli)); return; }
+    const seg = e.target.closest('[data-seg-benvenuto] [data-valore]');
+    if(seg){
+      seg.parentElement.querySelectorAll('[data-valore]').forEach(b => b.classList.toggle('attivo', b === seg));
+      if(seg.parentElement.dataset.segBenvenuto === 'sindacato'){
+        el('benvenutoRigaQuota').hidden = seg.dataset.valore !== 'si';
+        if(seg.dataset.valore === 'si' && el('benvenutoQuotaSindacale').value === '') el('benvenutoQuotaSindacale').value = quotaSindacaleMensile(null);
+      }
+      return;
+    }
     const seq = e.target.closest('[data-benvenuto-pattern]');
     if(seq){ benvenuto.pattern = seq.dataset.benvenutoPattern; benvenuto.fase = 0; renderSequenzeBenvenuto(); return; }
     const fase = e.target.closest('[data-benvenuto-fase]');
@@ -3660,6 +3755,7 @@ function inizializzaPromemoriaTurno(){
     controllaNotifichePromemoriaTurno();
   });
   inizializzaControlloPromemoria();
+  inizializzaAltroV4();
   on('btnAttivaNotificheTurno', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(controllaNotifichePromemoriaTurno, 800); });
   document.addEventListener('visibilitychange', () => { if(!document.hidden) controllaNotifichePromemoriaTurno(); });
   on('sceltaModoPromemoriaTurno', 'click', e => { const b = e.target.closest('[data-modo-promemoria]'); if(b) cambiaPromemoriaTurno({ modo: b.dataset.modoPromemoria }); });

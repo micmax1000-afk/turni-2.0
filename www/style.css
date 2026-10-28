@@ -2342,3 +2342,245 @@ html[data-tema="scuro"] .azione-genera-v4 i small{color:#B7C6F2}
 .lista-strumenti-card-v4{margin-top:0}
 .lista-strumenti-card-v4 .sigla-strumento-v4{font-size:1.1rem}
 html[data-tema="scuro"] .lista-strumenti-card-v4 .sigla-strumento-v4{filter:none}
+
+/* v2.93 – Buoni pasto: quanti in un giorno (1 o 2), senza importo */
+.scelta-buoni-pasto{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bordo);border-radius:14px;padding:8px 10px 8px 12px;margin:8px 0 0;font-size:.88rem;color:var(--testo)}
+.scelta-buoni-pasto[hidden]{display:none}
+.scelta-buoni-pasto .scelta-prima-dopo{flex:none;margin:0}
+.scelta-buoni-pasto .scelta-prima-dopo button{min-width:46px}
+
+/* v2.94 – Report compatto (stile della scheda Turni) */
+.testa-v4{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.testa-v4 h2{margin:0}
+.sotto-v4{margin:2px 0 0;font-size:.8rem;color:var(--testo-tenue)}
+.tondo-v4{width:40px;height:40px;border-radius:50%!important;border:1px solid var(--bordo)!important;background:var(--pannello)!important;flex:none;display:grid;place-items:center}
+#vistaStatistiche .scheda,#vistaCedolino .scheda{padding:14px 14px;margin-bottom:10px}
+#vistaStatistiche .report-mese-nav{margin:0 0 10px}
+.report-hero{background:#E8EEFD!important;color:#1B2238!important;border:1px solid #C3D2F7;border-radius:16px!important;padding:12px 14px!important;margin-bottom:0!important;box-shadow:none!important}
+.report-hero .report-hero-et{font-size:.78rem;font-weight:600;opacity:1;color:#2B3248}
+.report-hero .tag-netto{background:#DDF3E4!important;color:#1E7A46!important}
+.report-hero-stima{font-size:.7rem;color:#5A627A;font-weight:600}
+.report-hero .report-hero-cifra{font-size:1.7rem;margin:2px 0 4px;color:#1B2238}
+.report-hero-righe{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:.76rem;color:#2B3248}
+.report-hero-righe div{display:flex;gap:4px;align-items:baseline}
+.report-hero-righe span{opacity:.85}
+.report-hero-righe b{font-weight:700}
+html[data-tema="scuro"] .report-hero{background:#1E2A44!important;border-color:#3A5BA8;color:#E6ECFF!important}
+html[data-tema="scuro"] .report-hero .report-hero-cifra,html[data-tema="scuro"] .report-hero-righe,html[data-tema="scuro"] .report-hero .report-hero-et{color:#E6ECFF}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .report-hero{background:#1E2A44!important;border-color:#3A5BA8;color:#E6ECFF!important}html:not([data-tema="chiaro"]) .report-hero .report-hero-cifra,html:not([data-tema="chiaro"]) .report-hero-righe,html:not([data-tema="chiaro"]) .report-hero .report-hero-et{color:#E6ECFF}}
+#sezioneRiepilogo .mese-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:0 0 8px;border:0}
+#sezioneRiepilogo .mese-tiles > div{background:none!important;border:0!important;border-right:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;border-radius:0!important;padding:2px 0!important;text-align:center;box-shadow:none!important}
+#sezioneRiepilogo .mese-tiles > div:last-child{border-right:0!important}
+#sezioneRiepilogo .mese-tiles b{font-size:1.1rem!important}
+#sezioneRiepilogo .mese-tiles span{font-size:.7rem!important}
+.mese-ore-v4{border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);padding-top:8px;margin-bottom:10px}
+.mese-ore-testa-v4{display:flex;justify-content:space-between;font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--testo-tenue);margin-bottom:5px}
+.mese-ore-testa-v4 b{color:var(--testo);font-size:.85rem;letter-spacing:0}
+.mese-barra-v4{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;background:var(--carta)}
+.mese-barra-v4 i,.mese-legenda-v4 i{display:block;background:#9AA4B6}
+.mese-barra-v4 i.notturne,.mese-legenda-v4 i.notturne{background:#7B57E0}
+.mese-barra-v4 i.festive,.mese-legenda-v4 i.festive{background:#D64545}
+.mese-barra-v4 i.straordinario,.mese-legenda-v4 i.straordinario{background:#E08A00}
+.mese-legenda-v4{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:.76rem;margin-top:6px;color:var(--testo)}
+.mese-legenda-v4 span{display:flex;align-items:center;gap:4px}
+.mese-legenda-v4 i{width:8px;height:8px;border-radius:50%}
+.mese-legenda-v4 b{font-weight:700}
+.mese-ind-box-v4{margin:0!important;padding:8px 10px!important;border-radius:14px!important}
+.mese-ind-box-v4 h3{margin:0 0 4px!important;font-size:.72rem!important}
+.mese-ind-box-v4 .mese-ind-testa-v3 span{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--testo-tenue);text-align:right}
+.mese-ind-box-v4 .mese-ind-v3{padding:4px 0!important;font-size:.82rem!important;min-height:0}
+.mese-ind-box-v4 .mese-ind-v3 small{display:block;font-size:.68rem}
+.mese-ind-box-v4 .mese-ind-icona svg{width:16px;height:16px}
+.mese-ind-box-v4 .mese-tot-v3{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border-top:1px solid var(--bordo);padding-top:5px;margin-top:3px;font-size:.86rem;font-weight:800}
+.mese-ind-box-v4 .mese-tot-v3 .netto-v3{min-width:56px;text-align:right}
+.mese-piede-v4{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-top:5px}
+.mese-info-v4{font-size:.72rem;color:var(--testo-tenue);flex:1}
+.mese-info-v4 summary{cursor:pointer;list-style:none}
+.mese-info-v4 summary::-webkit-details-marker{display:none}
+.mese-info-v4 summary span{color:#1D4FD7;font-weight:700}
+.mese-info-v4 p{margin:4px 0 0;line-height:1.4}
+.mese-piede-v4 .mese-mostra-v3{margin:0!important;padding:0!important;font-size:.72rem!important;white-space:nowrap;background:none;border:0}
+.report-fondo-v4{padding:4px 14px!important}
+.report-riga-v4{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 0;border:0;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);background:none;font:inherit;font-size:.92rem;color:var(--testo);text-align:left;cursor:pointer}
+.report-riga-v4:last-child{border-bottom:0}
+.report-riga-v4[hidden]{display:none}
+.report-riga-v4 small{color:var(--testo-tenue);font-size:.74rem}
+.report-riga-v4 b{font-weight:700;transition:transform .15s}
+.report-riga-v4.aperto b{transform:rotate(90deg)}
+
+/* v2.94 – Assenze compatte: giorni di partenza in cima, una riga per voce */
+#sezioneAssenze{padding:14px}
+.partenza-v4{border:1px dashed var(--bordo)!important;background:var(--pannello)!important;border-radius:14px!important;padding:8px 10px!important;margin:0 0 10px!important;gap:8px!important}
+.partenza-v4 i{font-size:.86rem!important;font-weight:600}
+.partenza-v4 i small{font-size:.72rem!important;font-weight:500}
+.partenza-v4 button{color:#1D4FD7!important}
+.lista-assenze-v4{display:block!important;border:1px solid var(--bordo);border-radius:14px;background:var(--pannello);padding:2px 10px;margin:0 0 10px}
+.lista-assenze-v4[hidden]{display:none!important}
+.lista-assenze-v4 .card-assenza{border:0!important;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;border-radius:0!important;background:none!important;box-shadow:none!important;padding:0!important;margin:0!important}
+.lista-assenze-v4 .card-assenza:last-child{border-bottom:0!important}
+.lista-assenze-v4 .card-assenza-chiusa > :not(.card-assenza-compact){display:none!important}
+.riga-assenza-v4{display:flex!important;align-items:center;gap:10px;padding:7px 0!important;min-height:0!important;cursor:pointer;background:none!important;border:0!important}
+.riga-assenza-v4 .saldo-anello,.riga-assenza-v4 .saldo-anello svg{width:28px!important;height:28px!important;flex:none}
+.riga-assenza-v4 .saldo-anello span{font-size:.72rem!important}
+.riga-assenza-v4 .card-assenza-compact-nome{flex:1;min-width:0;margin:0!important}
+.riga-assenza-v4 .card-assenza-compact-nome strong{font-size:.88rem;font-weight:600}
+.riga-assenza-v4 .saldo-resta{flex:none;font-weight:800;font-size:.95rem;white-space:nowrap}
+.riga-assenza-v4 .saldo-resta small{font-weight:600;font-size:.72rem;color:var(--testo-tenue)}
+.anni-congedo-v4{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.anni-congedo-v4 em{font-style:normal;font-size:.68rem;font-weight:700;background:var(--carta);border-radius:8px;padding:1px 6px;color:var(--testo)}
+.lista-assenze-v4 .card-assenza-aperta{padding-bottom:8px!important}
+#gruppoAssenzeNonUsate{margin:0 0 10px}
+.riga-assenza-v4 .saldo-usati{display:none!important}
+.report-hero .report-hero-righe{display:flex!important;flex-wrap:wrap;gap:2px 12px!important;grid-template-columns:none!important}
+.report-hero .report-hero-righe div{display:flex!important;gap:4px;border:0!important;padding:0!important;margin:0!important;justify-content:flex-start!important}
+.assenze-filtri-seg[hidden],#btnAggiungiAssenzaPersonalizzata[hidden],#titoloAssenzePersonalizzate[hidden]{display:none!important}
+.riga-assenza-v4 .saldo-resta strong{font-size:1rem!important;font-weight:800}
+.mese-ind-box-v4{background:none!important;border:0!important;padding:8px 0 0!important;border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;border-radius:0!important}
+.report-hero .report-hero-righe{font-size:.74rem!important;margin:2px 0 0!important}
+
+/* v2.95 – Altro compatto, pagina Backup, Tabelle nel nuovo stile */
+#sezioneAltro{padding:14px}
+#sezioneAltro .stato-connessione-v23{background:none!important;border:0!important;padding:0!important;margin:2px 0 0!important;font-size:.8rem!important}
+#sezioneAltro .lista-strumenti-turni{border-radius:14px;margin-bottom:10px}
+#sezioneAltro .riga-strumento-turni{padding:8px 12px;min-height:0}
+#sezioneAltro .riga-strumento-turni i{font-size:.9rem}
+#sezioneAltro .riga-strumento-turni i small{font-size:.72rem;margin-top:1px}
+#sezioneAltro .strumenti-turni-titolo{margin:4px 2px 6px}
+#rigaTemaColore b{transition:transform .15s}
+#rigaTemaColore.aperta b{transform:rotate(90deg)}
+#opzioniTemaColore .riga-tema{border:0!important;padding:4px 0!important}
+#sezioneAltro.mostra-backup > :not(#paginaBackupV4){display:none!important}
+#paginaBackupV4 #sezioneBackup,#paginaBackupV4 #sezioneBackupDrive{border:1px solid var(--bordo);border-radius:14px;box-shadow:none;padding:12px;margin:0 0 10px}
+#paginaBackupV4 #sezioneBackup h2,#paginaBackupV4 #sezioneBackupDrive h3,#paginaBackupV4 #sezioneBackupDrive h2{font-size:.74rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--testo-tenue);margin:0 0 6px}
+#paginaBackupV4 #statoBackup{background:#E8EEFD;border:1px solid #C3D2F7;border-radius:12px;padding:8px 10px;font-weight:700;color:#1B2238;margin:0 0 10px}
+html[data-tema="scuro"] #paginaBackupV4 #statoBackup{background:#1E2A44;border-color:#3A5BA8;color:#E6ECFF}
+#paginaBackupV4 .barra-backup{gap:8px}
+.tabelle-hero-v4{display:flex;align-items:center;gap:12px;background:#E8EEFD;border:1px solid #C3D2F7;border-radius:14px;padding:10px 12px;margin:0 0 10px;color:#1B2238}
+.tabelle-hero-ico{font-size:1.3rem;flex:none}
+.tabelle-hero-testo{flex:1;min-width:0}
+.tabelle-hero-testo b{display:block;font-size:.98rem}
+.tabelle-hero-testo small{display:block;font-size:.74rem;color:#2B3248;margin-top:1px}
+.tabelle-hero-v4 .tabella-hero-badge{flex:none;text-align:center;background:none!important;padding:0!important;min-width:0!important;color:#1B2238}
+.tabelle-hero-v4 .tabella-hero-badge strong{display:block;font-size:1.2rem}
+.tabelle-hero-v4 .tabella-hero-badge small{font-size:.68rem;color:#2B3248}
+html[data-tema="scuro"] .tabelle-hero-v4,html[data-tema="scuro"] .tabelle-hero-v4 *{color:#E6ECFF}
+html[data-tema="scuro"] .tabelle-hero-v4{background:#1E2A44;border-color:#3A5BA8}
+.lista-tabelle-v4{border:1px solid var(--bordo);border-radius:14px;background:var(--pannello);margin:0 0 10px;overflow:hidden}
+.riga-tabelle-v4{display:flex!important;align-items:center;gap:10px;width:100%;padding:9px 12px!important;border:0!important;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;background:none!important;font:inherit;color:var(--testo);text-decoration:none;text-align:left;margin:0!important;border-radius:0!important;box-shadow:none!important;cursor:pointer}
+.riga-tabelle-v4:last-child{border-bottom:0!important}
+.riga-tabelle-v4 > span{width:24px;text-align:center;flex:none}
+.riga-tabelle-v4 i{flex:1;font-style:normal;font-size:.9rem}
+.riga-tabelle-v4 i small{display:block;font-size:.72rem;color:var(--testo-tenue)}
+.riga-tabelle-v4 b{color:var(--testo-tenue);font-weight:600}
+.nota-tabelle-v4{font-size:.74rem;color:var(--testo-tenue);margin:8px 2px 0;line-height:1.4}
+#sezioneTabelle{padding:14px}
+
+/* ===== v2.97 Cedolino nello stile del Report ===== */
+#sezioneCedolino .testa-v4 h2{font-size:1.25rem}
+.ced-hero-v4{margin-bottom:10px!important}
+.ced-lista-v4{border:1px solid var(--bordo);border-radius:16px;background:var(--pannello);margin:0 0 10px;overflow:hidden}
+.ced-lista-v4 h3{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0;padding:8px 14px;font-size:.74rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--testo-tenue);background:color-mix(in srgb,var(--bordo) 30%,transparent)}
+.ced-lista-v4 h3 b{font-size:.92rem;letter-spacing:0;text-transform:none;color:var(--testo);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ced-riga-v4{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 14px;border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);font-size:.9rem}
+.ced-lista-v4 h3+.ced-riga-v4{border-top:0}
+.ced-riga-v4 span small{display:block;font-size:.72rem;color:var(--testo-tenue)}
+.ced-riga-v4>b{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+.ced-lista-v4 h3 b.meno,.ced-riga-v4.meno>b{color:#B42318}
+.ced-riga-v4.piu>b{color:#1E7A46}
+html[data-tema="scuro"] .ced-lista-v4 h3 b.meno,html[data-tema="scuro"] .ced-riga-v4.meno>b{color:#FF9B8F}
+html[data-tema="scuro"] .ced-riga-v4.piu>b{color:#7FE0A6}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .ced-lista-v4 h3 b.meno,html:not([data-tema="chiaro"]) .ced-riga-v4.meno>b{color:#FF9B8F}html:not([data-tema="chiaro"]) .ced-riga-v4.piu>b{color:#7FE0A6}}
+#sezioneCedolino.ced-tutte-v4 .ced-sintesi-v4{display:none}
+#contenitoreCedolino{margin:0;padding:0;background:none;border:0;box-shadow:none}
+.ced-solo-stampa-v4{display:none}
+@media print{.ced-solo-stampa-v4{display:block;border:1px solid #ccc;border-radius:12px}}
+.ced-azioni-v4{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 8px}
+.ced-azioni-v4 button{border:1px solid var(--bordo);background:var(--pannello);border-radius:12px;padding:9px 4px;min-height:42px;font:inherit;font-size:.8rem;font-weight:700;color:var(--testo);margin:0}
+.ced-azioni-v4 button.attivo{background:#E8EEFD;border-color:#C3D2F7;color:#1D4FD7}
+html[data-tema="scuro"] .ced-azioni-v4 button.attivo{background:#22305A;border-color:#33509E;color:#C9D7FF}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .ced-azioni-v4 button.attivo{background:#22305A;border-color:#33509E;color:#C9D7FF}}
+.ced-conguaglio-v4{display:block;margin:0 0 8px;font-size:.82rem}
+.ced-conguaglio-v4[hidden]{display:none!important}
+.ced-nota-v4{font-size:.72rem;color:var(--testo-tenue);text-align:center;margin:4px 0 0}
+
+/* ===== v2.98 Pulsanti uguali ovunque: arrotondati come "Nuovo servizio" ===== */
+.btn-primario,.btn-secondario{border-radius:999px!important}
+html:not([class*="accento-"]):not([data-tema="scuro"]) .btn-primario{background:#1D4FD7;border-color:#1D4FD7;color:#fff}
+@media (prefers-color-scheme: light){html:not([class*="accento-"]):not([data-tema="scuro"]) .btn-primario:hover{background:#1A45BD}}
+html[class*="accento-"] .btn-primario{background:var(--acc);border-color:var(--acc);color:#fff}
+html[class*="accento-"] .btn-nuovo-turni-v4{background:var(--acc)}
+#btnPersonalizzaReport,#btnNuovaAssenzaTesta{padding:0 16px}
+#btnAggiungiAssenzaPersonalizzata{margin:12px 0 4px}
+
+/* ===== v2.98 Tabelle: gruppi in un unico elenco, righe semplici ===== */
+.cerca-tabelle-v5{display:flex!important;gap:8px;align-items:center;margin:2px 0 0}
+.cerca-tabelle-v5 .tabella-search-v17{flex:1;min-width:0;border-radius:999px;background:var(--pannello);padding:0 14px;margin:0}
+.filtro-mod-v5{flex:none;border:1px solid var(--bordo);background:var(--pannello);border-radius:999px;padding:10px 12px;font:700 .8rem var(--font-corpo);color:var(--testo);white-space:nowrap;cursor:pointer}
+.filtro-mod-v5.attivo{background:#E8EEFD;border-color:#C3D2F7;color:#1D4FD7}
+.lista-gruppi-v5{border:1px solid var(--bordo);border-radius:16px;background:var(--pannello);overflow:hidden}
+.lista-gruppi-v5 .tabella-gruppo-v17{border:0;border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);border-radius:0;background:none}
+.lista-gruppi-v5 .tabella-gruppo-v17:first-child{border-top:0}
+.lista-gruppi-v5 .tabella-gruppo-v17[hidden]{display:none}
+.lista-gruppi-v5 .tabella-head-v17{padding:11px 14px;gap:12px;background:none!important}
+.lista-gruppi-v5 .tabella-icon-v17{width:34px;height:34px;border-radius:10px;background:#E8EEFD;font-size:1.05rem;flex:none}
+.lista-gruppi-v5 .tabella-head-v17 strong{font-size:.95rem}
+.lista-gruppi-v5 .tabella-head-v17 small{font-size:.76rem;margin-top:1px}
+.conta-mod-v5{font-style:normal;font-size:.72rem;font-weight:800;color:#1D4FD7;background:#E8EEFD;border-radius:999px;padding:3px 8px;white-space:nowrap}
+.conta-mod-v5[hidden]{display:none}
+.lista-gruppi-v5 .tabella-body-v17{border-top:0;padding:0 14px 8px}
+.riga-valore-v5.tabella-riga-v17{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0;border-top:1px dashed color-mix(in srgb,var(--bordo) 80%,transparent)}
+.riga-valore-v5 .tabella-label{flex:1;min-width:0;font-size:.86rem;line-height:1.25}
+.riga-valore-v5 .tabella-label small{display:block;grid-column:auto;font-size:.7rem;color:var(--testo-tenue)}
+.riga-valore-v5 .tabella-label .nota-valore-v5{font-size:.68rem;margin-top:1px}
+.riga-valore-v5 input{width:108px!important;max-width:108px;-moz-appearance:textfield;min-width:0;flex:none;box-sizing:border-box;text-align:right;border:1px solid var(--bordo)!important;border-radius:10px!important;padding:7px 8px!important;margin:0!important;font:600 .88rem var(--font-corpo)!important;background:var(--pannello)!important;color:var(--testo);box-shadow:none!important;height:auto!important;text-overflow:ellipsis}
+.riga-valore-v5 input::-webkit-inner-spin-button,.riga-valore-v5 input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.riga-valore-v5.mod input{border-color:#1D4FD7!important;background:#F1F5FF!important}
+.riga-valore-v5 .tabella-reset-one{width:28px;height:28px;flex:none;border-radius:50%;border:0;background:#E8EEFD;color:#1D4FD7;font-weight:800;visibility:hidden;padding:0}
+.riga-valore-v5.mod .tabella-reset-one{visibility:visible}
+.riga-valore-v5 .vuoto-v5{width:28px;flex:none}
+.riga-valore-v5.tabella-nascosta{display:none}
+.piede-tabelle-v5{display:block!important;text-align:center;padding:2px 0 0}
+.piede-tabelle-v5 button{border:0;background:none;color:#B42318;font:700 .9rem var(--font-corpo);padding:8px;cursor:pointer}
+.piede-tabelle-v5 p{margin:2px 0 0;font-size:.74rem;color:var(--testo-tenue)}
+.nota-tabelle-v4[hidden]{display:none}
+html[data-tema="scuro"] .lista-gruppi-v5 .tabella-icon-v17,html[data-tema="scuro"] .conta-mod-v5,html[data-tema="scuro"] .riga-valore-v5 .tabella-reset-one,html[data-tema="scuro"] .filtro-mod-v5.attivo{background:#22305A;color:#C9D7FF;border-color:#33509E}
+html[data-tema="scuro"] .riga-valore-v5 input::-webkit-inner-spin-button,.riga-valore-v5 input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.riga-valore-v5.mod input{background:#1E2A44!important;border-color:#5B7BD6!important}
+html[data-tema="scuro"] .piede-tabelle-v5 button{color:#FF9B8F}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .lista-gruppi-v5 .tabella-icon-v17,html:not([data-tema="chiaro"]) .conta-mod-v5,html:not([data-tema="chiaro"]) .riga-valore-v5 .tabella-reset-one,html:not([data-tema="chiaro"]) .filtro-mod-v5.attivo{background:#22305A;color:#C9D7FF;border-color:#33509E}html:not([data-tema="chiaro"]) .riga-valore-v5 input::-webkit-inner-spin-button,.riga-valore-v5 input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.riga-valore-v5.mod input{background:#1E2A44!important;border-color:#5B7BD6!important}html:not([data-tema="chiaro"]) .piede-tabelle-v5 button{color:#FF9B8F}}
+
+/* ===== v2.99 Anagrafica completa, avvisi "dati mancanti", Backup ===== */
+.perc-v5{display:flex;align-items:center;gap:6px;flex:none}
+.perc-v5 input{width:84px;text-align:right;border:1px solid var(--bordo);border-radius:10px;padding:8px;font:600 .95rem var(--font-corpo);background:var(--pannello);color:var(--testo);box-sizing:border-box;margin:0}
+.perc-v5 b{font-weight:700;color:var(--testo-tenue)}
+.seg-v5{display:flex;gap:6px;flex:none}
+.seg-v5 button{min-width:52px;padding:8px 12px;border-radius:999px;border:1px solid var(--bordo);background:var(--pannello);font:700 .85rem var(--font-corpo);color:var(--testo);cursor:pointer}
+.seg-v5 button.attivo{background:var(--acc,#1D4FD7);border-color:var(--acc,#1D4FD7);color:#fff}
+.nota-riga-v5{display:block;font-size:.72rem;color:var(--testo-tenue);font-weight:400}
+.da-inserire-v5{display:block;color:#B26A00;font-weight:700;font-size:.78rem}
+#rigaQuotaSindacale[hidden],#benvenutoRigaQuota[hidden],.manca-dati-v5[hidden]{display:none!important}
+.manca-dati-v5{display:flex;gap:12px;align-items:center;background:#FFF4E5;border:1px solid #F3C98B;border-radius:16px;padding:12px 14px;margin:0 0 12px;color:#5A3A00}
+.manca-dati-v5>span{font-size:1.3rem;flex:none}
+.manca-dati-v5 i{font-style:normal;flex:1;min-width:0}
+.manca-dati-v5 b{display:block;font-size:.92rem}
+.manca-dati-v5 small{display:block;font-size:.78rem;margin-top:2px;line-height:1.35}
+.manca-dati-v5 .btn-nuovo-turni-v4{height:38px;padding:0 14px;font-size:.85rem}
+html[data-tema="scuro"] .manca-dati-v5{background:#3A2A12;border-color:#7A5420;color:#FFD9A0}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .manca-dati-v5{background:#3A2A12;border-color:#7A5420;color:#FFD9A0}}
+/* Backup */
+#paginaBackupV4 #sezioneBackup h2,#paginaBackupV4 #sezioneBackupDrive h3{font-size:1.02rem;text-transform:none;letter-spacing:0;color:var(--testo);margin:0 0 6px}
+#paginaBackupV4 #statoBackup.avviso-backup{background:#FFF4E5;border:1px solid #F3C98B!important;border-radius:12px;padding:9px 12px;color:#7A4A00;font-size:.84rem;font-weight:600;outline:0;box-shadow:none}
+#paginaBackupV4 .barra-backup{display:grid!important;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+#paginaBackupV4 .barra-backup #btnEsportaBackup{grid-column:1/-1}
+#paginaBackupV4 .barra-backup button{min-height:44px!important;padding:10px 12px!important;font-size:.9rem!important;margin:0!important;white-space:nowrap}
+#paginaBackupV4 #sezioneBackupDrive .btn-primario{width:100%;min-height:44px;margin-top:6px}
+#paginaBackupV4 .spiegazione-backup summary{font-size:.86rem;color:var(--testo-tenue);font-weight:600}
+html[data-tema="scuro"] #paginaBackupV4 #statoBackup.avviso-backup{background:#3A2A12;border-color:#7A5420!important;color:#FFD9A0}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #paginaBackupV4 #statoBackup.avviso-backup{background:#3A2A12;border-color:#7A5420!important;color:#FFD9A0}}
+
+.euro-v5 input{width:96px}
+
+/* v3.3 cambio turno nel Report */
+.mese-cambio-v5{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--bordo) 30%,transparent);font-size:.8rem;color:var(--testo)}
+.mese-cambio-v5 .icona-indennita{flex:none;font-size:1rem;margin-top:1px}

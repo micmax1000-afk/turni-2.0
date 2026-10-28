@@ -156,15 +156,12 @@ for(const stile of ['classico', 'moderno']){
       const q = d => document.querySelector(`.giorno-cella[data-data="${d}"]`);
       return {
         orari: [...document.querySelectorAll('.mod-turno')].some(e => /\d{1,2}:\d{2}/.test(e.textContent)),
-        indennita: [...q('2026-10-02').querySelectorAll('.mod-indennita [aria-label]')].map(b => b.getAttribute('aria-label')).join(','),
-        piu: (q('2026-10-02').querySelector('.mod-indennita .giorno-badge:not([aria-label])') || {}).textContent || '',
-        senzaIndennita: !q('2026-10-03').querySelector('.mod-indennita'),
+        simboli: !!document.querySelector('.giorno-cella .mod-indennita, .giorno-cella .badge-icona'),
         badgeInAlto: !!document.querySelector('.giorno-cella .mod-badge')
       };
     });
     ok('moderno: nessun orario nelle etichette', !m.orari);
-    ok('moderno: all\'inizio nessun simbolo nascosto; al massimo 3 nella casella, gli altri come "+1"', ['Missione', 'Servizio esterno', 'Buono pasto'].every(n => m.indennita.split(',').includes(n)) && m.piu === '+1', m.indennita + ' ' + m.piu);
-    ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
+    ok('moderno: nessun simbolo delle indennità nelle caselle, niente simboli in alto', !m.simboli && !m.badgeInAlto);
   }
   ok(`${stile}: barra in basso con Calendario/Report/Assenze/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Assenze,Turni,Altro' && c.oggiIcona === '9', c.nomi);
   ok(`${stile}: matita tolta`, !c.matita);
@@ -181,14 +178,12 @@ for(const stile of ['classico', 'moderno']){
     ok('pulsante "🔄 Turno" nel riquadro: apre "Cosa vuoi aggiungere?"', await p.evaluate(() => !document.getElementById('overlaySelettoreModelli').hidden));
     await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; });
     await p.evaluate(() => { AppState.turni['2026-10-03'] = Object.assign({}, AppState.turni['2026-10-03'], { data: '2026-10-03', oraInizio: '07:00', oraFine: '13:00', ordinePubblico: true }); selezionaGiorno('2026-10-03'); });
-    await p.click('#indennitaGiornoSelezionatoV2 .indennita-giorno-badge');
-    ok('toccando un simbolo del giorno si apre la legenda con 11 simboli', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && document.querySelectorAll('#listaSimboli .riga-simbolo svg').length === 11));
-    await p.click('#listaSimboli [data-simbolo="servizioEsterno"]');
-    ok('spento "Servizio esterno": sparisce dalla casella', await p.evaluate(() => ![...document.querySelectorAll('.giorno-cella[data-data="2026-10-02"] .mod-indennita [aria-label]')].some(b => b.getAttribute('aria-label') === 'Servizio esterno')));
-    await p.click('#btnChiudiSimboli');
-    await p.click('#tabAltro'); await p.click('#settingsSimboli');
-    ok('la stessa legenda si apre da Altro, con la scelta salvata', await p.evaluate(() => !document.getElementById('overlaySimboli').hidden && !document.querySelector('#listaSimboli [data-simbolo="servizioEsterno"]').checked && document.querySelector('#listaSimboli [data-simbolo="buonoPasto"]').checked));
-    await p.click('#btnChiudiSimboli'); await p.click('#tabCalendario');
+    ok('riquadro del giorno: le indennità scritte per esteso, senza legenda dei simboli', await p.evaluate(() => /Ordine pubblico/.test(document.getElementById('indennitaGiornoSelezionatoV2').textContent) && !document.getElementById('overlaySimboli')));
+    await p.click('#tabAltro');
+    ok('Altro: tolta la riga "Simboli delle indennità"', await p.evaluate(() => !document.getElementById('settingsSimboli')));
+    await p.evaluate(() => { AppState.turni['2026-10-03'].buonoPasto = true; AppState.turni['2026-10-03'].buoniPastoGiorno = 2; selezionaGiorno('2026-10-03'); });
+    ok('riquadro del giorno: "2 buoni pasto" quando sono due', await p.evaluate(() => /2 buoni pasto/.test(document.getElementById('indennitaGiornoSelezionatoV2').textContent)));
+    await p.click('#tabCalendario');
     await p.evaluate(() => { giornoPerPopupV2 = '2026-10-02'; apriSelettoreModelliV2('indennita'); });
     ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .riga-indennita-menu > span svg').length === 10 && document.querySelector('[data-indennita="missione"]').classList.contains('attiva') && document.querySelector('[data-indennita="missione"] i').textContent === '✓'));
     await p.evaluate(() => apriSelettoreModelliV2('turni'));
@@ -231,6 +226,73 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
   await p.locator('#listaEventiGiornoV2 [data-evento-id]').first().click();
   await p.click('#btnEliminaEvento');
   ok('"Tutta la serie" elimina tutto', await p.evaluate(() => !AppState.eventiGiorno['2026-10-20'] && eventiDelGiorno('2026-11-03').length === 0));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Buoni pasto: solo quanti, anche 2 in un giorno');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.evaluate(() => { giornoSelezionato = '2026-10-01'; renderCalendario(); });
+  await p.click('#btnModificaGiornoSelezionatoV2');
+  ok('buono pasto spento: la scelta 1/2 non si vede', await p.evaluate(() => el('sceltaBuoniPasto').hidden));
+  await p.click('[data-indennita-giorno="campoBuonoPasto"]');
+  ok('acceso: compare "Buoni pasto in questo giorno" con 1 già scelto', await p.evaluate(() => !el('sceltaBuoniPasto').hidden && document.querySelector('[data-buoni-pasto="1"]').classList.contains('attivo')));
+  await p.click('[data-buoni-pasto="2"]');
+  await p.click('#btnSalvaTurno');
+  const t1 = await p.evaluate(() => AppState.turni['2026-10-01']);
+  ok('salvato: 2 buoni pasto il 1° ottobre', t1.buonoPasto === true && t1.buoniPastoGiorno === 2, JSON.stringify({ bp: t1.buonoPasto, n: t1.buoniPastoGiorno }));
+  await p.evaluate(() => { AppState.turni['2026-10-02'].buonoPasto = true; salvaTurniStorage(); });
+  const r = await p.evaluate(() => ({ n: calcolaRiepilogoOreMese(2026, 9).buoniPasto }));
+  ok('nel mese contano 3 (2 + 1; i giorni salvati prima valgono 1)', r.n === 3, JSON.stringify(r));
+  await p.evaluate(() => { annoCorrente = 2026; meseCorrente = 9; mostraScheda('report'); renderMeseV3(); });
+  const rep = await p.evaluate(() => { const g = el('reportBuoniPasto'); return g && !g.hidden ? g.textContent.replace(/\s+/g, ' ') : ''; });
+  ok('Report: "Buoni pasto 3", senza euro', /Buoni pasto.*3\s*$/.test(rep) && !/€/.test(rep), rep);
+  await p.evaluate(() => { giornoSelezionato = '2026-10-01'; apriModaleTurno('2026-10-01'); });
+  ok('riaprendo il giorno si vede 2', await p.evaluate(() => document.querySelector('[data-buoni-pasto="2"]').classList.contains('attivo')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Altro: due gruppi, pagina Backup, Tabelle');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.click('#tabAltro');
+  const a = await p.evaluate(() => ({ titoli: [...document.querySelectorAll('#sezioneAltro .strumenti-turni-titolo')].map(x => x.textContent).join(','), backupVisibile: !!el('impostazioniBackupContainer').offsetParent, promemoria: el('campoPromemoriaTurno').checked }));
+  ok('Altro: gruppi Impostazioni e Dati e aiuto, backup non più in fondo alla pagina, promemoria spento', a.titoli === 'Impostazioni,Dati e aiuto' && !a.backupVisibile && !a.promemoria, JSON.stringify(a));
+  await p.click('#settingsBackupV4');
+  ok('"Backup" apre la sua pagina con telefono e Google Drive, il resto di Altro sparisce', await p.evaluate(() => !!el('btnEsportaBackup').offsetParent && !!el('sezioneBackupDrive').offsetParent && !el('settingsTabelle').offsetParent));
+  await p.click('#btnChiudiBackupV4');
+  ok('✕ torna ad Altro', await p.evaluate(() => !!el('settingsTabelle').offsetParent && el('paginaBackupV4').hidden));
+  await p.click('#settingsTabelle');
+  const t = await p.evaluate(() => ({ hero: document.querySelector('.tabelle-hero-v4')?.textContent.replace(/\s+/g, ' ') || '', righe: document.querySelectorAll('#corpoTabelle .riga-tabelle-v4').length, vecchio: !!document.querySelector('.tabelle-hero-v17') }));
+  ok('Tabelle: riquadro azzurro con qualifica e modificati, righe al posto del "Centro parametri"', /Assistente Capo · Lazio/.test(t.hero) && /modificati/.test(t.hero) && t.righe >= 1 && !t.vecchio, JSON.stringify(t));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Colori dei turni: ovunque il colore esatto');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  const r = await p.evaluate(() => {
+    const rgb = hex => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+    AppState.modelliTurno.find(m => m.id === 'sera').colore = '#C2185B';
+    renderTavolozzaPatternSempliceV2();
+    const tav = [...document.querySelectorAll('#tavolozzaPatternV2 [data-modello-id-pattern]')].every(b => {
+      const m = AppState.modelliTurno.find(x => x.id === b.dataset.modelloIdPattern);
+      return b.style.background === rgb(coloreModelloV2(m));
+    });
+    const sera = document.querySelector('#tavolozzaPatternV2 [data-modello-id-pattern="sera"]').style.background;
+    return { tav, sera };
+  });
+  ok('tavolozza delle sequenze: ogni servizio col suo colore esatto (anche quello scelto a mano)', r.tav && r.sera === 'rgb(194, 24, 91)', JSON.stringify(r));
+  ok('nessun punto dell\'app scurisce più il colore del turno', await p.evaluate(async () => {
+    const testi = await Promise.all(['script.js', 'js/calendar.js', 'js/shifts.js'].map(f => fetch(f).then(r => r.text())));
+    return testi.every(t => !/[^n ]\s*scurisciColore\(|=\s*scurisciColore\(|\(scurisciColore\(|\?\s*scurisciColore\(/.test(t));
+  }));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -405,11 +467,11 @@ sezione('Assenze nella barra e sequenza automatica');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   await p.click('#tabAssenze');
   ok('Assenze nella barra apre la pagina delle assenze', await p.evaluate(() => !!document.getElementById('sezioneAssenze').offsetParent && document.getElementById('tabAssenze').classList.contains('attiva') && !document.getElementById('btnApriAssenzeV64')));
-  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, hero: document.getElementById('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), anelli: document.querySelectorAll('#corpoAssenze .saldo-anello').length, colonne: getComputedStyle(document.getElementById('corpoAssenze')).gridTemplateColumns.split(' ').length, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nonUsate: document.getElementById('titoloAssenzeNonUsate').textContent, festivoInNonUsate: [...document.querySelectorAll('#corpoAssenzeNonUsate .card-assenza-compact-nome')].some(n => n.textContent.includes('Riposo festivo')) }));
-  ok('senza saldi di partenza: nessun numero inventato, "congedo ordinario da inserire"', ass.titolo === 'Assenze e permessi' && /Ti restano nel 2026 — giorni/.test(ass.hero) && /da inserire/.test(ass.hero) && /permesso breve/.test(ass.hero), ass.hero);
+  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, hero: document.getElementById('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), anelli: document.querySelectorAll('#corpoAssenze .saldo-anello').length, colonne: getComputedStyle(document.getElementById('corpoAssenze')).display === 'grid' ? getComputedStyle(document.getElementById('corpoAssenze')).gridTemplateColumns.split(' ').length : 1, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nomi: [...document.querySelectorAll('#corpoAssenze .card-assenza-compact-nome')].map(n => n.textContent), nuova: document.getElementById('btnNuovaAssenzaTesta').textContent, aggiungi: !!document.getElementById('btnAggiungiAssenzaPersonalizzata').offsetParent }));
+  ok('senza saldi di partenza: nessun numero inventato, "congedo ordinario da inserire"', ass.titolo === 'Assenze' && /Ti restano nel 2026\s*— giorni/.test(ass.hero) && /da inserire/.test(ass.hero) && /permesso breve/.test(ass.hero), ass.hero);
   ok('…riquadro "Da dove partiamo?" e scheda del congedo che chiede i giorni', await p.evaluate(() => /Da dove partiamo/.test(el('saldiPartenzaBox').textContent) && /Quanti giorni ti restano oggi/.test(document.querySelector('#corpoAssenze .card-da-inserire')?.textContent || '')));
-  ok('ogni voce in una scheda con l\'anello, due per riga', ass.anelli > 3 && ass.colonne === 2, JSON.stringify(ass));
-  ok('ogni voce: quanto rimane e quanto è stato usato (Congedo straordinario: rimangono 45, usati 0 su 45)', /Congedo straordinario/.test(ass.congedo) && /Rimangono 45 gg/i.test(ass.congedo) && /Usati 0 su 45/.test(ass.congedo), ass.congedo);
+  ok('ogni voce su una riga con l\'anello piccolo, una sotto l\'altra', ass.anelli > 3 && ass.colonne === 1, JSON.stringify(ass));
+  ok('ogni voce: quanto rimane su quanto spetta (Congedo straordinario: 45 / 45 gg)', /Congedo straordinario/.test(ass.congedo) && /45 \/ 45 gg/.test(ass.congedo), ass.congedo);
   // Saldi di partenza: un recupero guadagnato prima della data non conta, uno dopo sì.
   await p.evaluate(() => { AppState.turni['2026-10-01'].compensazioneRiposo = true; AppState.turni['2026-10-15'].compensazioneRiposo = true; salvaTurniStorage(); });
   await p.click('#saldiPartenzaBox [data-apri-saldi]');
@@ -420,11 +482,11 @@ sezione('Assenze nella barra e sequenza automatica');
   await p.click('#btnSalvaSaldiPartenza');
   const sp = await p.evaluate(() => { const v = n => saldoAssenza(AppState.assenze.find(a => a.nome === n), rifAssenze()); return { salvati: JSON.parse(localStorage.getItem('simCedolino_saldiPartenza_v1')), hero: el('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), riass: el('saldiPartenzaBox').innerText.replace(/\s+/g, ' '), co: v('Congedo ordinario').rimangono, rr: v('Recupero riposo').rimangono, rf: v('Recupero festivo').rimangono, rc: v('Riposo compensativo').rimangono }; });
   ok('saldi salvati con la data di oggi (+1 col pulsante per il recupero festivo)', sp.salvati.data === '2026-10-09' && sp.salvati.congedo === 41 && sp.salvati.congedoVecchi === 11 && sp.salvati.congedoAnni['2024'] === 3 && sp.salvati.recuperoFestivo === 1, JSON.stringify(sp.salvati));
-  ok('dopo: 41 giorni di congedo in alto e riassunto "Saldi di partenza" con Correggi', /41 giorni/.test(sp.hero) && /Saldi di partenza al 9 ottobre 2026/.test(sp.riass) && /Correggi/.test(sp.riass), sp.hero + ' | ' + sp.riass);
+  ok('dopo: "Giorni di partenza al 9 ottobre 2026" in cima con Modifica', /41 giorni/.test(sp.hero) && /Giorni di partenza al 9 ottobre 2026/.test(sp.riass) && /Modifica/.test(sp.riass), sp.hero + ' | ' + sp.riass);
   ok('recupero riposo: 2 di partenza + quello del 15 (quello del 1° non conta più) = 3; festivo 1; riposo compensativo 6 h', sp.rr === 3 && sp.rf === 1 && sp.rc === 6, JSON.stringify(sp));
   await p.evaluate(() => { window.__originali = { a: AppState.turni['2026-10-05'], b: AppState.turni['2026-10-21'] }; const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario').id; AppState.turni['2026-10-05'] = { data: '2026-10-05', assenzaTipo: co }; AppState.turni['2026-10-21'] = { data: '2026-10-21', assenzaTipo: co }; salvaTurniStorage(); renderAssenze(); });
-  const co2 = await p.evaluate(() => { const v = saldoAssenza(AppState.assenze.find(a => a.nome === 'Congedo ordinario'), rifAssenze()); const c = [...document.querySelectorAll('#corpoAssenze .card-assenza')].find(x => /Congedo ordinario/.test(x.textContent)); return { r: v.rimangono, u: v.usate, card: c.querySelector('.card-assenza-compact').innerText.replace(/\s+/g, ' ') }; });
-  ok('congedo: si scalano solo i giorni dopo i saldi (il 21 sì, il 5 no): 40, "Usati 1 su 41"', co2.r === 40 && co2.u === 1 && /Rimangono 40 gg/i.test(co2.card) && /Usati 1 su 41/.test(co2.card), JSON.stringify(co2));
+  const co2 = await p.evaluate(() => { const v = saldoAssenza(AppState.assenze.find(a => a.nome === 'Congedo ordinario'), rifAssenze()); const c = [...document.querySelectorAll('#corpoAssenze .card-assenza')].find(x => /Congedo ordinario/.test(x.textContent)); return { r: v.rimangono, u: v.usate, card: c.querySelector('.card-assenza-compact').innerText.replace(/\s+/g, ' '), usati: c.querySelector('.saldo-usati').textContent.replace(/\s+/g, ' ') }; });
+  ok('congedo: si scalano solo i giorni dopo i saldi (il 21 sì, il 5 no): 40 / 41, con i giorni per anno sotto il nome', co2.r === 40 && co2.u === 1 && /40 \/ 41 gg/.test(co2.card) && /Usati 1 su 41/.test(co2.usati) && /2026: 30/.test(co2.card) && /2024: 2/.test(co2.card), JSON.stringify(co2));
   const anni = await p.evaluate(() => { const s = calcolaSaldoCongedoOrdinario(2027); return s; });
   ok('a gennaio 2027: i 40 avanzati + i 30 spettanti = 70', anni.valoreEffettivo === 70 && anni.riporto === 40, JSON.stringify(anni));
   ok('per anno: il giorno usato si toglie dal 2024 (il più vecchio); nel 2027 restano 2024: 2, 2025: 8, 2026: 30, 2027: 30', JSON.stringify(anni.perAnno) === JSON.stringify({ 2024: 2, 2025: 8, 2026: 30, 2027: 30 }), JSON.stringify(anni.perAnno));
@@ -437,9 +499,9 @@ sezione('Assenze nella barra e sequenza automatica');
   ok('saldi salvati col formato di prima (totale 45, di cui 8 dell\'anno scorso): diventano 2026: 37 e 2025: 8', await p.evaluate(() => { const prima = localStorage.getItem('simCedolino_saldiPartenza_v1'); localStorage.setItem('simCedolino_saldiPartenza_v1', JSON.stringify({ data: '2026-10-09', congedo: 45, congedoVecchi: 8, recuperoRiposo: 0, recuperoFestivo: 0, riposoCompensativoOre: 0 })); const a = saldiPartenza().congedoAnni; localStorage.setItem('simCedolino_saldiPartenza_v1', prima); return a[2026] === 37 && a[2025] === 8; }));
   await p.evaluate(() => { AppState.turni['2026-10-05'] = window.__originali.a; AppState.turni['2026-10-21'] = window.__originali.b; salvaTurniStorage(); });
   ok('i saldi di partenza finiscono nel backup', await p.evaluate(() => JSON.stringify(costruisciDatiBackup()).includes('saldiPartenza')));
-  ok('voci a zero in "Non usate"', /^Non usate \(\d+\)$/.test(ass.nonUsate) && ass.festivoInNonUsate, ass.nonUsate);
+  ok('tutte le assenze in un elenco, quelle a zero in fondo; "Nuova assenza" in alto e "＋" in fondo', ass.nomi.some(n => n.includes('Riposo festivo')) && ass.nomi.findIndex(n => n.includes('Riposo festivo')) > ass.nomi.findIndex(n => n.includes('Congedo straordinario')) && ass.nuova === 'Nuova assenza' && ass.aggiungi, JSON.stringify(ass.nomi));
   await p.click('.card-assenza[data-id] .card-assenza-compact');
-  ok('tocco su una scheda: si apre il dettaglio a tutta larghezza', await p.evaluate(() => { const c = document.querySelector('#corpoAssenze .card-assenza-aperta'); return !!c && c.getBoundingClientRect().width > document.getElementById('corpoAssenze').getBoundingClientRect().width - 2; }));
+  ok('tocco su una scheda: si apre il dettaglio a tutta larghezza', await p.evaluate(() => { const c = document.querySelector('#corpoAssenze .card-assenza-aperta'); return !!c && c.getBoundingClientRect().width > document.getElementById('corpoAssenze').getBoundingClientRect().width - 24 && !!c.querySelector('.card-assenza-edit').offsetParent; }));
   await p.click('#tabAltro');
   await p.click('#settingsAnagrafica');
   await p.click('[data-passo="campoAnni"][data-delta="1"]');
@@ -500,8 +562,84 @@ sezione('Modifica il giorno, Tabelle, avvisi');
   ok('l\'avviso sta solo nel Calendario', await p.evaluate(() => !!document.querySelector('#vistaTurni #appAlerts')));
   await p.click('#tabAltro'); await p.click('#settingsTabelle');
   await p.click('#toggleTabelleAvanzate');
-  await p.evaluate(() => { const i = document.querySelector('input[data-t="buonoPastoValore"]'); i.value = '8'; i.dispatchEvent(new Event('change', { bubbles: true })); });
-  ok('Tabelle: si salvano da sole (buono pasto 8 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').modifiche.buonoPastoValore === 8 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
+  ok('Tabelle: niente più valore in euro del buono pasto', await p.evaluate(() => !document.querySelector('input[data-t="buonoPastoValore"]')));
+  await p.evaluate(() => { const i = document.querySelector('input[data-t="reperibilitaGiornaliera"]'); i.value = '18'; i.dispatchEvent(new Event('change', { bubbles: true })); });
+  ok('Tabelle: si salvano da sole (reperibilità 18 €)', await p.evaluate(() => JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').modifiche.reperibilitaGiornaliera === 18 && /Salvato/.test(document.getElementById('statoSalvataggioTabelle').textContent)));
+  ok('Tabelle: il valore cambiato si vede (blu, ↺) e il gruppo dice "1 modificata"', await p.evaluate(() => { const r = document.querySelector('input[data-t="reperibilitaGiornaliera"]'); r.dispatchEvent(new Event('input', { bubbles: true })); const riga = r.closest('[data-table-row]'); return riga.classList.contains('mod') && riga.closest('.gruppo-tabelle-v5').querySelector('.conta-mod-v5').textContent === '1 modificata' && !document.querySelector('.tabella-notice-v17') && el('contaFiltroModificate').textContent === '1'; }));
+  await p.click('#filtroModificateTabelle');
+  ok('"Solo modificate" mostra solo la reperibilità, col suo gruppo aperto', await p.evaluate(() => [...document.querySelectorAll('[data-table-row]')].filter(r => r.offsetParent).map(r => r.querySelector('input').dataset.t).join() === 'reperibilitaGiornaliera'));
+  await p.click('[data-reset-table="reperibilitaGiornaliera"]');
+  ok('↺ riporta il valore ufficiale', await p.evaluate(() => !document.querySelector('[data-table-row].mod') && JSON.parse(localStorage.getItem('simCedolino_tabelle_v1') || '{}').modifiche?.reperibilitaGiornaliera === undefined));
+  await p.click('#toggleTabelleAvanzate');
+  await p.click('#btnControllaTabelle');
+  ok('"Controlla aggiornamenti" risponde anche con "Modifica i valori a mano" spento', await p.waitForFunction(() => document.querySelector('#toastContainer .toast-v20'), null, { timeout: 9000 }).then(() => true, () => false));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Anagrafica completa e quota sindacale');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.click('#tabReport');
+  ok('Report: "Completa i tuoi dati" solo con gli anni di servizio (reddito facoltativo, comunale 0,8%)', await p.evaluate(() => !el('avvisoReportMancanti').hidden && /Da inserire: anni di servizio\./.test(el('avvisoReportMancanti').textContent)), await p.evaluate(() => el('avvisoReportMancanti').textContent));
+  await p.click('[data-completa-anagrafica]');
+  ok('"Completa" apre l\'Anagrafica con "Manca 1 dato", la riga "da inserire" e 0,8% già scritto', await p.evaluate(() => !!el('sezioneAnagrafica').offsetParent && /Manca 1 dato/.test(el('avvisoAnagraficaMancanti').textContent) && document.querySelectorAll('#sezioneAnagrafica .da-inserire-v5').length === 1 && Number(el('campoAddComunale').value) === 0.8));
+  const nettoPrima = await p.evaluate(() => generaCedolino(2026, 9).sindacato);
+  await p.fill('#campoAnni', '18'); await p.dispatchEvent('#campoAnni', 'change');
+  await p.fill('#campoAddComunale', '0.5'); await p.dispatchEvent('#campoAddComunale', 'change');
+  await p.fill('#campoRedditoAnnoPrec', '37533'); await p.dispatchEvent('#campoRedditoAnnoPrec', 'change');
+  ok('inseriti anni, addizionale e reddito: l\'avviso sparisce e l\'addizionale comunale entra nel calcolo', await p.evaluate(() => el('avvisoAnagraficaMancanti').hidden && AppState.anagrafica.addComunale === 0.5 && generaCedolino(2026, 9).aliqComunale === 0.5));
+  ok('sindacato Sì: compare la quota mensile, già con il valore delle tabelle', await p.evaluate(() => !el('rigaQuotaSindacale').hidden && Number(el('campoQuotaSindacale').value) === AppState.tabelle.sindacatoMensile));
+  await p.fill('#campoQuotaSindacale', '12'); await p.dispatchEvent('#campoQuotaSindacale', 'change');
+  ok('quota sindacale 12 €: entra nel cedolino al posto di quella delle tabelle', await p.evaluate(([prima]) => AppState.anagrafica.quotaSindacale === 12 && Math.abs(generaCedolino(2026, 9).sindacato - (prima - AppState.tabelle.sindacatoMensile + 12)) < 0.01, [nettoPrima]));
+  await p.selectOption('#campoSindacato', 'no');
+  ok('sindacato No: la quota sparisce e non si paga', await p.evaluate(() => el('rigaQuotaSindacale').hidden && generaCedolino(2026, 9).sindacato === 0));
+  ok('Tabelle: niente più quota sindacale (sta in Anagrafica)', await p.evaluate(() => { mostraScheda('tabelle'); return true; }) && await p.evaluate(() => { const t = el('toggleTabelleAvanzate'); t.checked = true; t.dispatchEvent(new Event('change')); return !document.querySelector('input[data-t="sindacatoMensile"]'); }));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Netto come il cedolino NoiPA (febbraio e luglio 2026)');
+{
+  const { p, ctx, errori } = await apri({ turni: {} });
+  const c = await p.evaluate(() => {
+    AppState.anagrafica = { qualifica: 'Assistente Capo Coordinatore', regione: 'Piemonte', anni: '22', coniugeACarico: 'si', figliOver21: 0, sindacato: 'si', quotaSindacale: 9.77, addComunale: 0.8, addComunaleConfermata: true, redditoAnnoPrecedente: 37533, addRegionaleAnnoPrecedente: 782 };
+    const g = generaCedolino(2026, 6), f = g.comp.fisse;
+    return { vacanza: f.vacanzaContrattuale, fisse: g.comp.totaleFisse, contributi: g.contributi, lav: g.detrazioniLavoro, fam: g.detrazioniFamiliari, reg: g.addRegionale, com: g.addComunale, sind: g.sindacato, gen: generaCedolino(2026, 0).addizionali };
+  });
+  ok('vacanza contrattuale automatica 19,79 € (1% di 1.979,44)', c.vacanza === 19.79, JSON.stringify(c));
+  ok('contributi sulle voci fisse come il cedolino di luglio (2.905,25 € → 336,21 €)', Math.abs(c.contributi - 336.21) < 0.02, String(c.contributi));
+  ok('detrazioni sul reddito dell\'anno scorso: lavoratore 116 €, coniuge 58 € (come da febbraio)', c.lav === 116 && c.fam === 58, `${c.lav} + ${c.fam}`);
+  ok('addizionale regionale dalla CU: 782 € in 9 rate (≈ 86,90 €), niente a gennaio', Math.abs(c.reg - 86.89) < 0.02 && c.gen === 0, String(c.reg));
+  ok('senza la cifra della CU: Piemonte con le aliquote 2025 sul reddito 2025 = 782 € (come la CU)', await p.evaluate(() => Math.abs(addizionaleRegionaleAnnua('Piemonte', 37533, 2025) - 782.06) < 0.02 && addizionaleRegionaleAnnua('Piemonte', 37533, 2026) > 900));
+  ok('regole regionali: Valle d\'Aosta esente fino a 15.000 €, Lazio 1,73% su tutto fino a 28.000 €, FVG 1,23% su tutto oltre 15.000 €', await p.evaluate(() => addizionaleRegionaleAnnua('Valle d\'Aosta', 14000, 2026) === 0 && addizionaleRegionaleAnnua('Lazio', 20000, 2026) === 346 && addizionaleRegionaleAnnua('Friuli Venezia Giulia', 20000, 2026) === 246));
+  ok('addizionale comunale 0,8% di 37.533 € in 9 rate (≈ 33 €)', Math.abs(c.com - 33.36) < 0.02, String(c.com));
+  ok('sindacato 9,77 € (niente fondo assistenza)', c.sind === 9.77);
+  ok('niente indennità di rischio', await p.evaluate(() => { AppState.turni['2026-10-05'] = { data: '2026-10-05', oraInizio: '07:00', oraFine: '13:00', servizioEsterno: true }; return !('indRischio' in calcolaCompetenze(2026, 9).accessorie); }));
+  ok('reddito di due anni fa: da giugno chiede la nuova CU', await p.evaluate(() => { AppState.anagrafica.redditoAnnoPrecedenteAnno = 2024; const m = datiAnagraficaMancanti(); AppState.anagrafica.redditoAnnoPrecedenteAnno = 2025; return m.some(x => /reddito 2025 \(nuova CU\)/.test(x)) && !datiAnagraficaMancanti().length; }));
+  ok('figli over 21: 950 € × (95.000 − reddito) / 95.000', await p.evaluate(() => Math.abs(detrazioneFigliOver21Annua(37533, 1) - 950 * (95000 - 37533) / 95000) < 0.01 && Math.abs(detrazioneFigliOver21Annua(37533, 2) - 2 * 950 * (110000 - 37533) / 110000) < 0.01));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
+sezione('Riposo compensativo, colori delle assenze, cambio turno');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  const rc = () => p.evaluate(() => saldoAssenza(AppState.assenze.find(x => x.nome === 'Riposo compensativo')).spettanti);
+  await p.evaluate(() => salvaSaldiPartenza({ congedoAnni: { 2026: 20 }, recuperoRiposo: 0, recuperoFestivo: 0, riposoCompensativoOre: 6 }));
+  const prima = await rc();
+  await p.clock.runFor(2000);
+  await p.evaluate(() => { const iso = '2026-10-05'; const t = { data: iso, oraInizio: '07:00', oraFine: '13:00', straordinarioDopoInizio: '13:00', straordinarioDopoFine: '15:00', compensaStraordinario: true }; AppState.turni[iso] = segnaQuandoNuovo(t, AppState.turni[iso]); salvaTurniStorage(); });
+  ok('straordinario a riposo compensativo segnato dopo i saldi su un giorno passato: le ore si aggiungono', (await rc()) === prima + 2, `${prima} → ${await rc()}`);
+  ok('assenze: ogni voce ha un colore suo (nessun colore ripetuto)', await p.evaluate(() => { const c = AppState.assenze.filter(a => !a.personalizzata).map(coloreAnelloAssenza); return new Set(c).size === c.length; }));
+  await p.click('#tabAssenze');
+  ok('assenze a 0 / 0: anello grigio pieno', await p.evaluate(() => { const r = [...document.querySelectorAll('#corpoAssenze .card-assenza-compact')].find(x => /Riposo festivo/.test(x.textContent)); const c = r && r.querySelector('.saldo-anello-pieno'); return !!c && c.getAttribute('stroke') === COLORE_ASSENZA_VUOTA && c.getAttribute('stroke-opacity') !== '0'; }));
+  await p.evaluate(() => { AppState.turni['2026-10-20'] = { data: '2026-10-20', oraInizio: '07:00', oraFine: '13:00', cambioTurno: true }; salvaTurniStorage(); renderCalendario(); });
+  await p.click('#tabReport');
+  ok('Report: cambio turno del mese e dell\'anno con quanto varrà a luglio', await p.evaluate(() => /Cambio turno: 1 a ottobre · nel 2026 1 cambio = 10,00 €, in busta a luglio 2027/.test(document.querySelector('.mese-cambio-v5')?.textContent || '')), await p.evaluate(() => document.querySelector('.mese-cambio-v5')?.textContent));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -517,7 +655,14 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
   await p.goto(URL_APP); await p.waitForFunction(() => typeof renderCalendario === 'function' && document.querySelector('.giorno-cella'));
   ok('installazione nuova: si apre il primo avvio guidato', await p.evaluate(() => !document.getElementById('overlayBenvenuto').hidden));
   await p.selectOption('#benvenutoQualifica', 'Sovrintendente');
+  await p.fill('#benvenutoAddComunale', '0.6');
+  await p.click('[data-seg-benvenuto="sindacato"] [data-valore="si"]');
+  ok('primo avvio: sindacato Sì mostra la quota mensile già compilata', await p.evaluate(() => !el('benvenutoRigaQuota').hidden && Number(el('benvenutoQuotaSindacale').value) > 0));
+  await p.fill('#benvenutoQuotaSindacale', '10');
+  await p.fill('#benvenutoReddito', '36000');
+  await p.click('[data-passo-benvenuto-figli="1"]');
   await p.click('#btnBenvenutoAvanti');
+  ok('primo avvio: salvati addizionale comunale, figli, sindacato e quota', await p.evaluate(() => { const a = AppState.anagrafica; return a.addComunale === 0.6 && a.redditoAnnoPrecedente === 36000 && a.figliOver21 === 1 && a.sindacato === 'si' && a.quotaSindacale === 10 && a.coniugeACarico === 'no'; }), await p.evaluate(() => JSON.stringify(AppState.anagrafica)));
   await p.click('[data-benvenuto-pattern="pattern_quinta5"]');
   await p.click('[data-benvenuto-fase="1"]');
   ok('guida: anteprima della settimana che parte da Pom. oggi', await p.evaluate(() => { const s = [...document.querySelectorAll('#benvenutoSettimana span')].map(x => x.textContent); return s.length === 7 && s[0] === 'P' && s[1] === 'M' && document.getElementById('btnBenvenutoAvanti').textContent === 'Crea i turni'; }));
@@ -565,6 +710,11 @@ sezione('Report');
   ok('netto di ogni mese con turni calcolato da solo (senza Genera cedolino)', netti.storico === 0 && netti.righe[8] === netti.set && netti.righe[9] === netti.ott && netti.righe[7] === '—', netti.righe.join(' '));
   ok('statistiche: niente riquadri a zero', !r.cards.includes('Missioni') && r.cards.includes('Ore lavorate'));
   ok('prossimo turno e riepilogo mese tolti', await p.evaluate(() => !document.getElementById('prossimoTurnoWidget').offsetParent && !document.getElementById('riepilogoTurniV45').offsetParent));
+  ok('Report: cedolino e statistiche chiusi, si aprono dalla loro riga', await p.evaluate(() => el('sezioneCedolino').hidden && el('sezioneStatisticheGrafici').hidden));
+  await p.click('[data-apri-report="cedolino"]');
+  ok('toccando "Cedolino stimato" il cedolino si apre', await p.evaluate(() => !el('sezioneCedolino').hidden && el('sezioneStatisticheGrafici').hidden));
+  await p.click('[data-apri-report="statistiche"]');
+  ok('toccando "Statistiche dell\'anno" si aprono le statistiche', await p.evaluate(() => !el('sezioneStatisticheGrafici').hidden));
   await p.click('#btnGeneraCedolino');
   ok('Genera cedolino funziona', await p.evaluate(() => !document.getElementById('contenitoreCedolino').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
@@ -590,6 +740,8 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   const sfondo = () => p.evaluate(() => getComputedStyle(document.body).backgroundColor);
   await p.click('#tabAltro');
+  ok('"Tema e colore" chiuso all\'inizio, con il riassunto "Come il telefono · Blu"', await p.evaluate(() => el('opzioniTemaColore').hidden && el('riassuntoTemaColore').textContent === 'Come il telefono · Blu'));
+  await p.click('#rigaTemaColore');
   ok('pulsanti del tema visibili, "Auto" attivo', await p.evaluate(() => document.querySelector('.scelta-tema [data-tema="auto"]').classList.contains('attivo') && !!document.querySelector('.scelta-tema [data-tema="nero"]').offsetParent));
   await p.click('.scelta-tema [data-tema="grigio"]');
   ok('"Grigio" con il telefono in chiaro: sfondo grigio scuro', await sfondo() === 'rgb(41, 45, 53)');
@@ -598,6 +750,7 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   ok('"Grigio" resta dopo la riapertura', await sfondo() === 'rgb(41, 45, 53)' && await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
   await p.emulateMedia({ colorScheme: 'dark' });
   await p.click('#tabAltro');
+  await p.click('#rigaTemaColore');
   await p.click('.scelta-tema [data-tema="chiaro"]');
   ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(41, 45, 53)');
   await p.click('.scelta-tema [data-tema="auto"]');
@@ -633,7 +786,7 @@ sezione('Stampa / Esporta PDF nell\'app Android');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true, scuro: true });
   await p.click('#tabReport');
-  await p.click('#btnGeneraCedolino');
+  await p.click('[data-apri-report="cedolino"]');
   await p.click('#btnStampaCedolino');
   await p.waitForFunction(() => window.__log.some(x => x[0] === 'stampa'), null, { timeout: 3000 }).catch(() => {});
   const s = await p.evaluate(() => window.__log.find(x => x[0] === 'stampa'));
@@ -726,23 +879,35 @@ sezione('Report: lordo, trattenute e netto');
   await p.evaluate(() => { AppState.turni['2026-10-02'].straordinarioDopoInizio = AppState.turni['2026-10-02'].oraFine; AppState.turni['2026-10-02'].straordinarioDopoFine = '23:00'; salvaTurniStorage(); });
   await p.click('#tabReport');
   const num = t => Number(String(t).replace(/[^0-9,−-]/g, '').replace('−', '-').replace(/\./g, '').replace(',', '.'));
-  const hero = await p.evaluate(() => ({ cifra: document.querySelector('.report-hero-cifra').textContent, righe: [...document.querySelectorAll('.report-hero-righe b')].map(b => b.textContent), tag: !!document.querySelector('.report-hero .tag-netto') }));
+  const hero = await p.evaluate(() => ({ cifra: document.querySelector('.report-hero-cifra').textContent, righe: [...document.querySelectorAll('.report-hero:not(.ced-hero-v4) .report-hero-righe b')].map(b => b.textContent), tag: !!document.querySelector('.report-hero .tag-netto') }));
   const sommaHero = hero.righe.reduce((s, x) => s + num(x), 0);
   ok('riquadro in alto: stipendio + accessorie − tasse = netto, con etichetta "netto"', hero.tag && Math.abs(sommaHero - num(hero.cifra)) < 0.02, JSON.stringify(hero));
-  const ced = await p.evaluate(() => ({ lordo: [...document.querySelectorAll('.ced-lordo-v3 .ced-riga-v3 b')].map(b => b.textContent), tratt: [...document.querySelectorAll('.ced-tratt-v3 .ced-riga-v3 b')].map(b => b.textContent), netto: document.querySelector('.ced-cifra-v3').textContent, tag: document.querySelectorAll('#cedolinoRiassuntoV3 .tag-importo').length }));
-  const totL = num(ced.lordo[ced.lordo.length - 1]), totT = num(ced.tratt[ced.tratt.length - 1]);
-  ok('cedolino sempre in vista: stipendio + accessorie = lordo', ced.tag === 3 && Math.abs(num(ced.lordo[0]) + num(ced.lordo[1]) - totL) < 0.02, JSON.stringify(ced));
-  ok('cedolino: le trattenute sommano al totale e lordo − trattenute = netto', Math.abs(ced.tratt.slice(0, -1).reduce((s, x) => s + num(x), 0) - totT) < 0.02 && Math.abs(totL + totT - num(ced.netto)) < 0.02 && totT < 0);
-  ok('cedolino: il netto è quello del calcolo', await p.evaluate(() => document.querySelector('.ced-cifra-v3').textContent === euro(generaCedolino(annoCorrente, meseCorrente).netto)));
-  const mese = await p.evaluate(() => ({ righe: [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].map(b => b.textContent), str: document.querySelector('.mese-str-v3')?.textContent || '', zeri: !!document.getElementById('btnMeseZeriV3'), ore: document.getElementById('meseTileOre').textContent }));
-  ok('Il mese: straordinario lordo → netto con il mese in cui arriva', /lordi.*netti, arrivano a dicembre/.test(mese.str), mese.str);
+  const ced = await p.evaluate(() => { const l = [...document.querySelectorAll('#cedolinoRiassuntoV3 .ced-sintesi-v4 .ced-lista-v4')]; return { n: l.length, lordo: [...l[0].querySelectorAll('.ced-riga-v4 > b')].map(b => b.textContent), totL: l[0].querySelector('h3 b').textContent, tratt: [...l[1].querySelectorAll('.ced-riga-v4 > b')].map(b => b.textContent), totT: l[1].querySelector('h3 b').textContent, netto: document.querySelector('#cedolinoRiassuntoV3 .report-hero-cifra').textContent }; });
+  const totL = num(ced.totL), totT = num(ced.totT);
+  ok('cedolino: stipendio + indennità + straordinario = lordo', ced.n === 2 && Math.abs(ced.lordo.reduce((s, x) => s + num(x), 0) - totL) < 0.02, JSON.stringify(ced));
+  ok('cedolino: le tasse sommano al totale e lordo − tasse = netto', Math.abs(ced.tratt.reduce((s, x) => s + num(x), 0) - totT) < 0.02 && Math.abs(totL + totT - num(ced.netto)) < 0.02 && totT < 0);
+  ok('cedolino: il netto è quello del calcolo', await p.evaluate(() => document.querySelector('#cedolinoRiassuntoV3 .report-hero-cifra').textContent === euro(generaCedolino(annoCorrente, meseCorrente).netto)));
+  const mese = await p.evaluate(() => ({ righe: [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].map(b => b.textContent), str: document.querySelector('.mese-info-v4')?.textContent || '', zeri: !!document.getElementById('btnMeseZeriV3'), ore: document.getElementById('meseTileOre').textContent }));
+  ok('Il mese: "In busta a dicembre" e, nella ⓘ, lo straordinario lordo → netto', /In busta a dicembre/.test(mese.str) && /Straordinario di ottobre: .* lordi → \+.* netti/.test(mese.str), mese.str);
   ok('Il mese: nessuna indennità a zero in vista', mese.righe.filter(x => !x.startsWith('~')).every(x => num(x) > 0) && mese.zeri, JSON.stringify(mese));
   const nett = await p.evaluate(() => { const na = calcolaNettoAccessorie(annoCorrente, meseCorrente); const righe = [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 .netto-v3')].map(x => x.textContent); return { na, righe }; });
   ok('indennità: ogni voce ha anche il netto, e il netto totale è tra 0 e il lordo', nett.righe.length > 0 && nett.righe.every(t => /^~\d+ €$/.test(t)) && nett.na.netto > 0 && nett.na.netto < nett.na.lordo, JSON.stringify(nett));
   await p.click('#btnMeseZeriV3');
   ok('"Mostra anche le voci a zero" le fa comparire', await p.evaluate(() => [...document.querySelectorAll('#meseDettaglioV3 .mese-ind-v3 b')].some(b => b.textContent.startsWith('0,00'))));
+  await p.click('[data-apri-report="cedolino"]');
+  ok('cedolino: storico mensile tolto, chiuso all\'inizio', await p.evaluate(() => !document.getElementById('sezioneStorico') && document.getElementById('contenitoreCedolino').hidden));
   await p.click('#btnGeneraCedolino');
-  ok('"Vedi tutte le voci" apre il cedolino completo', await p.evaluate(() => !document.getElementById('contenitoreCedolino').hidden && /Nascondi/.test(document.getElementById('btnGeneraCedolino').textContent)));
+  const tutte = await p.evaluate(() => { const l = [...document.querySelectorAll('#contenitoreCedolino .ced-lista-v4 h3 b')].map(b => b.textContent); return { l, vis: !document.getElementById('contenitoreCedolino').hidden, testo: document.getElementById('btnGeneraCedolino').textContent, sintesi: !!document.querySelector('.ced-sintesi-v4').offsetParent, salvato: TurniPSStorage.getItem(CHIAVE_CEDOLINO_TUTTE_VOCI), netto: euro(generaCedolino(annoCorrente, meseCorrente).netto) }; });
+  ok('"Tutte le voci": stipendio, indennità e tasse al posto dei due elenchi; il conto torna col netto', tutte.vis && /Meno voci/.test(tutte.testo) && !tutte.sintesi && tutte.l.length === 3 && Math.abs(num(tutte.l[0]) + num(tutte.l[1]) + num(tutte.l[2]) - num(tutte.netto)) < 0.02, JSON.stringify(tutte));
+  await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
+  await p.click('#tabReport'); await p.click('[data-apri-report="cedolino"]');
+  ok('la scelta "Tutte le voci" resta ricordata', await p.evaluate(() => !document.getElementById('contenitoreCedolino').hidden && /Meno voci/.test(document.getElementById('btnGeneraCedolino').textContent)));
+  await p.click('#btnGeneraCedolino');
+  ok('"Meno voci" torna ai due elenchi e lo ricorda', await p.evaluate(() => document.getElementById('contenitoreCedolino').hidden && !!document.querySelector('.ced-sintesi-v4').offsetParent && TurniPSStorage.getItem(CHIAVE_CEDOLINO_TUTTE_VOCI) === '0'));
+  await p.click('#btnConguaglioV4');
+  ok('"± Conguaglio" mostra il campo', await p.evaluate(() => !document.getElementById('boxConguaglioV4').hidden));
+  await p.click('#btnChiudiCedolinoV4');
+  ok('la ✕ chiude il cedolino', await p.evaluate(() => el('sezioneCedolino').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -842,7 +1007,9 @@ sezione('Colore dell\'app e Scrivi allo sviluppatore');
   const { p, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   ok('all\'inizio il colore è Blu (nessun cambio)', await p.evaluate(() => accentoScelto() === 'blu' && ![...document.documentElement.classList].some(c => c.startsWith('accento-'))));
   await p.click('#tabAltro');
+  await p.click('#rigaTemaColore');
   await p.click('[data-accento="verde"]');
+  ok('il riassunto di "Tema e colore" segue la scelta', await p.evaluate(() => /Verde/.test(el('riassuntoTemaColore').textContent)));
   const v = await p.evaluate(() => ({ cls: document.documentElement.classList.contains('accento-verde'), desc: el('descrizioneAccento').textContent, ink: getComputedStyle(document.documentElement).getPropertyValue('--inchiostro').trim(), salvato: localStorage.getItem('simCedolino_accento_v1') }));
   ok('Verde: si applica subito e si salva', v.cls && v.desc === 'Verde' && v.ink.toUpperCase() === '#174A3E' && v.salvato === 'verde', JSON.stringify(v));
   await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));

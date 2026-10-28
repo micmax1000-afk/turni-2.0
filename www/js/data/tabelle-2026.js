@@ -6,8 +6,8 @@
 
 window.TurniPSData = window.TurniPSData || {};
 // Versione delle tabelle dentro l'app: il file sul sito (turni/tabelle.json) le sostituisce solo se più nuovo.
-window.TurniPSData.VERSIONE_TABELLE = '2026.10.3';
-window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-24';
+window.TurniPSData.VERSIONE_TABELLE = '2026.10.28';
+window.TurniPSData.AGGIORNAMENTO_TABELLE = '2026-10-28';
 window.TurniPSData.TABELLE_PREDEFINITE = {
   // Stipendi tabellari annui lordi (12 mensilità) — fonte: D.P.R. 24 marzo 2025, n. 53 (decreto EFFETTIVAMENTE
   // in vigore, recepimento accordi 2022-2024), Art. 2 comma 3, valori dal 1° gennaio 2024. Questo è il decreto
@@ -133,6 +133,8 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   // Indennità servizi esterni — fonte: SIULP (https://siulp.it/i-tuoi-diritti/trattamento-economico-accessorio/4/#cinque)
   // spetta per turno di durata non inferiore a 3 ore continuative
   indennitaServizioEsternoTurno: 6.00,
+  // Indennità di vacanza contrattuale: % di stipendio tabellare + IIS, fino al rinnovo (cedolini 2026: 1% = 19,79 €).
+  vacanzaContrattualePct: 1,
   // Ordine pubblico — fonte: SIULP (https://siulp.it/i-tuoi-diritti/trattamento-economico-accessorio/5/#sei)
   // spetta per turno di almeno 4 ore; fuori sede senza pernottamento ridotta del 30%
   indennitaOPInSede: 13.00,
@@ -157,8 +159,6 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   maggiorazioneFigurativaPct: 15,
   // "Totale detrazioni" del cedolino (€/mese): nel cedolino è costante per tutto l'anno. 0 = stima con le formule di legge.
   detrazioniMensiliCedolino: 0,
-  // Fondo assistenza Polizia di Stato (trattenuta mensile).
-  fondoAssistenzaMensile: 0.60,
   irpefScaglioni: [ { fino: 28000, aliquota: 23 }, { fino: 50000, aliquota: 33 }, { fino: Infinity, aliquota: 43 } ],
   noTaxAreaAnnua: 8500,
   detrazioneLavoroMensile: 95.00,
@@ -167,29 +167,79 @@ window.TurniPSData.TABELLE_PREDEFINITE = {
   trattamentoIntegrativoMensile: 100.00,
   sogliaTrattamentoIntegrativoAnnua: 28000,
   buonoPastoValore: 7.00,
-  // Addizionale regionale IRPEF 2026 — aliquote per regione (fonte: delibere regionali).
-  // Spostata qui da js/calendar.js per renderla modificabile da Impostazioni → Tabelle ufficiali.
+  // Addizionale regionale IRPEF — fonte: Ministero dell'economia e delle finanze (file addreg2025/2026.csv).
+  // Si aggiornano da sole ogni mese dal sito (turni/tabelle.json). regioniAddizionale = anno in corso (si può
+  // modificare in Tabelle); regioniAddizionaleAnni = per anno del reddito (nel 2026 si trattiene quella sui redditi 2025).
+  // sottoSoglia: fino a quel reddito un'aliquota sola su tutto; esenteFino: niente addizionale; detrazioni: importi da togliere.
   regioniAddizionale: {
-    "Abruzzo": { tipo:'scaglioni', scaglioni:[{fino:28000.0, aliquota:1.67}, {fino:50000.0, aliquota:2.87}, {fino:Infinity, aliquota:3.33}] },
-    "Basilicata": { tipo:'unica', valore:1.23 },
-    "Calabria": { tipo:'unica', valore:1.73 },
-    "Campania": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.73}, {fino:28000.0, aliquota:2.96}, {fino:50000.0, aliquota:3.2}, {fino:Infinity, aliquota:3.33}] },
-    "Emilia-Romagna": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.33}, {fino:28000.0, aliquota:1.93}, {fino:50000.0, aliquota:2.78}, {fino:Infinity, aliquota:3.33}] },
-    "Friuli Venezia Giulia": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:0.7}, {fino:28000.0, aliquota:1.23}, {fino:50000.0, aliquota:1.23}, {fino:Infinity, aliquota:1.23}] },
-    "Lazio": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.73}, {fino:28000.0, aliquota:3.33}, {fino:50000.0, aliquota:3.33}, {fino:Infinity, aliquota:3.33}] },
-    "Liguria": { tipo:'scaglioni', scaglioni:[{fino:28000.0, aliquota:1.23}, {fino:50000.0, aliquota:3.18}, {fino:Infinity, aliquota:3.23}] },
-    "Lombardia": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.23}, {fino:28000.0, aliquota:1.58}, {fino:50000.0, aliquota:1.72}, {fino:Infinity, aliquota:1.73}] },
-    "Marche": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.23}, {fino:28000.0, aliquota:1.53}, {fino:50000.0, aliquota:1.7}, {fino:Infinity, aliquota:1.73}] },
-    "Molise": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.73}, {fino:28000.0, aliquota:1.93}, {fino:50000.0, aliquota:3.33}, {fino:Infinity, aliquota:3.33}] },
-    "Piemonte": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.62}, {fino:28000.0, aliquota:2.68}, {fino:50000.0, aliquota:3.31}, {fino:Infinity, aliquota:3.33}] },
-    "Provincia di Bolzano": { tipo:'scaglioni', scaglioni:[{fino:28000.0, aliquota:1.23}, {fino:50000.0, aliquota:1.23}, {fino:Infinity, aliquota:1.73}] },
-    "Provincia di Trento": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.23}, {fino:28000.0, aliquota:1.23}, {fino:50000.0, aliquota:1.23}, {fino:Infinity, aliquota:1.73}] },
-    "Puglia": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.33}, {fino:28000.0, aliquota:1.43}, {fino:50000.0, aliquota:1.63}, {fino:Infinity, aliquota:1.85}] },
-    "Sardegna": { tipo:'unica', valore:1.23 },
-    "Sicilia": { tipo:'unica', valore:1.23 },
-    "Toscana": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.42}, {fino:28000.0, aliquota:1.43}, {fino:50000.0, aliquota:3.32}, {fino:Infinity, aliquota:3.33}] },
-    "Umbria": { tipo:'scaglioni', scaglioni:[{fino:15000.0, aliquota:1.73}, {fino:28000.0, aliquota:3.02}, {fino:50000.0, aliquota:3.12}, {fino:Infinity, aliquota:3.33}] },
-    "Valle d'Aosta": { tipo:'unica', valore:1.23 },
-    "Veneto": { tipo:'unica', valore:1.23 }
+    "Abruzzo": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.67}, {"fino":50000, "aliquota":2.87}, {"fino":Infinity, "aliquota":3.33}]},
+    "Basilicata": {"tipo":"unica", "valore":1.23},
+    "Calabria": {"tipo":"unica", "valore":1.73},
+    "Campania": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":2.96}, {"fino":50000, "aliquota":3.2}, {"fino":Infinity, "aliquota":3.33}]},
+    "Emilia-Romagna": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.33}, {"fino":28000, "aliquota":1.93}, {"fino":50000, "aliquota":2.78}, {"fino":Infinity, "aliquota":3.33}]},
+    "Friuli Venezia Giulia": {"tipo":"unica", "scaglioni":[{"fino":15000, "aliquota":0.7}, {"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.23}], "valore":1.23, "sottoSoglia":{"fino":15000, "aliquota":0.7}},
+    "Lazio": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":3.33}, {"fino":50000, "aliquota":3.33}, {"fino":Infinity, "aliquota":3.33}], "sottoSoglia":{"fino":28000, "aliquota":1.73}, "detrazioni":[{"da":28000, "a":30000, "importo":60}]},
+    "Liguria": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":3.18}, {"fino":Infinity, "aliquota":3.23}]},
+    "Lombardia": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.58}, {"fino":50000, "aliquota":1.72}, {"fino":Infinity, "aliquota":1.73}]},
+    "Marche": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.53}, {"fino":50000, "aliquota":1.7}, {"fino":Infinity, "aliquota":1.73}]},
+    "Molise": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":2.03}, {"fino":28000, "aliquota":2.23}, {"fino":50000, "aliquota":3.63}, {"fino":Infinity, "aliquota":3.63}]},
+    "Piemonte": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.62}, {"fino":28000, "aliquota":2.68}, {"fino":50000, "aliquota":3.31}, {"fino":Infinity, "aliquota":3.33}]},
+    "Provincia di Bolzano": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.73}], "detrazioni":[{"da":0, "a":90000, "importo":430.5}]},
+    "Provincia di Trento": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.73}], "esenteFino":30000},
+    "Puglia": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.33}, {"fino":28000, "aliquota":2.13}, {"fino":50000, "aliquota":3.23}, {"fino":Infinity, "aliquota":3.33}]},
+    "Sardegna": {"tipo":"unica", "valore":1.23},
+    "Sicilia": {"tipo":"unica", "valore":1.23},
+    "Toscana": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.42}, {"fino":28000, "aliquota":1.43}, {"fino":50000, "aliquota":3.32}, {"fino":Infinity, "aliquota":3.33}]},
+    "Umbria": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":3.02}, {"fino":50000, "aliquota":3.12}, {"fino":Infinity, "aliquota":3.33}], "sottoSoglia":{"fino":28000, "aliquota":1.23}, "detrazioni":[{"da":28000, "a":50000, "importo":150}]},
+    "Valle d'Aosta": {"tipo":"unica", "valore":1.23, "esenteFino":15000},
+    "Veneto": {"tipo":"unica", "valore":1.23}
+  },
+  regioniAddizionaleAnni: {
+    "2025": {
+      "Abruzzo": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.67}, {"fino":50000, "aliquota":2.87}, {"fino":Infinity, "aliquota":3.33}]},
+      "Basilicata": {"tipo":"unica", "valore":1.23},
+      "Calabria": {"tipo":"unica", "valore":1.73},
+      "Campania": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":2.96}, {"fino":50000, "aliquota":3.2}, {"fino":Infinity, "aliquota":3.33}]},
+      "Emilia-Romagna": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.33}, {"fino":28000, "aliquota":1.93}, {"fino":50000, "aliquota":2.93}, {"fino":Infinity, "aliquota":3.33}]},
+      "Friuli Venezia Giulia": {"tipo":"unica", "scaglioni":[{"fino":15000, "aliquota":0.7}, {"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.23}], "valore":1.23, "sottoSoglia":{"fino":15000, "aliquota":0.7}},
+      "Lazio": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":3.33}, {"fino":50000, "aliquota":3.33}, {"fino":Infinity, "aliquota":3.33}], "sottoSoglia":{"fino":28000, "aliquota":1.73}, "detrazioni":[{"da":28000, "a":35000, "importo":60}]},
+      "Liguria": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":3.18}, {"fino":Infinity, "aliquota":3.23}]},
+      "Lombardia": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.58}, {"fino":50000, "aliquota":1.72}, {"fino":Infinity, "aliquota":1.73}]},
+      "Marche": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.53}, {"fino":50000, "aliquota":1.7}, {"fino":Infinity, "aliquota":1.73}]},
+      "Molise": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":2.03}, {"fino":28000, "aliquota":2.23}, {"fino":50000, "aliquota":3.63}, {"fino":Infinity, "aliquota":3.63}]},
+      "Piemonte": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.62}, {"fino":28000, "aliquota":2.13}, {"fino":50000, "aliquota":2.75}, {"fino":Infinity, "aliquota":3.33}]},
+      "Provincia di Bolzano": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.73}], "detrazioni":[{"da":0, "a":90000, "importo":430.5}]},
+      "Provincia di Trento": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.73}], "esenteFino":30000},
+      "Puglia": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.33}, {"fino":28000, "aliquota":1.43}, {"fino":50000, "aliquota":1.63}, {"fino":Infinity, "aliquota":1.85}]},
+      "Sardegna": {"tipo":"unica", "valore":1.23},
+      "Sicilia": {"tipo":"unica", "valore":1.23},
+      "Toscana": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.42}, {"fino":28000, "aliquota":1.43}, {"fino":50000, "aliquota":3.32}, {"fino":Infinity, "aliquota":3.33}]},
+      "Umbria": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":3.02}, {"fino":50000, "aliquota":3.12}, {"fino":Infinity, "aliquota":3.33}], "sottoSoglia":{"fino":28000, "aliquota":1.23}, "detrazioni":[{"da":28000, "a":50000, "importo":150}]},
+      "Valle d'Aosta": {"tipo":"unica", "valore":1.23, "esenteFino":15000},
+      "Veneto": {"tipo":"unica", "valore":1.23}
+    },
+    "2026": {
+      "Abruzzo": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.67}, {"fino":50000, "aliquota":2.87}, {"fino":Infinity, "aliquota":3.33}]},
+      "Basilicata": {"tipo":"unica", "valore":1.23},
+      "Calabria": {"tipo":"unica", "valore":1.73},
+      "Campania": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":2.96}, {"fino":50000, "aliquota":3.2}, {"fino":Infinity, "aliquota":3.33}]},
+      "Emilia-Romagna": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.33}, {"fino":28000, "aliquota":1.93}, {"fino":50000, "aliquota":2.78}, {"fino":Infinity, "aliquota":3.33}]},
+      "Friuli Venezia Giulia": {"tipo":"unica", "scaglioni":[{"fino":15000, "aliquota":0.7}, {"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.23}], "valore":1.23, "sottoSoglia":{"fino":15000, "aliquota":0.7}},
+      "Lazio": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":3.33}, {"fino":50000, "aliquota":3.33}, {"fino":Infinity, "aliquota":3.33}], "sottoSoglia":{"fino":28000, "aliquota":1.73}, "detrazioni":[{"da":28000, "a":30000, "importo":60}]},
+      "Liguria": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":3.18}, {"fino":Infinity, "aliquota":3.23}]},
+      "Lombardia": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.58}, {"fino":50000, "aliquota":1.72}, {"fino":Infinity, "aliquota":1.73}]},
+      "Marche": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.53}, {"fino":50000, "aliquota":1.7}, {"fino":Infinity, "aliquota":1.73}]},
+      "Molise": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":2.03}, {"fino":28000, "aliquota":2.23}, {"fino":50000, "aliquota":3.63}, {"fino":Infinity, "aliquota":3.63}]},
+      "Piemonte": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.62}, {"fino":28000, "aliquota":2.68}, {"fino":50000, "aliquota":3.31}, {"fino":Infinity, "aliquota":3.33}]},
+      "Provincia di Bolzano": {"tipo":"scaglioni", "scaglioni":[{"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.73}], "detrazioni":[{"da":0, "a":90000, "importo":430.5}]},
+      "Provincia di Trento": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.23}, {"fino":28000, "aliquota":1.23}, {"fino":50000, "aliquota":1.23}, {"fino":Infinity, "aliquota":1.73}], "esenteFino":30000},
+      "Puglia": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.33}, {"fino":28000, "aliquota":2.13}, {"fino":50000, "aliquota":3.23}, {"fino":Infinity, "aliquota":3.33}]},
+      "Sardegna": {"tipo":"unica", "valore":1.23},
+      "Sicilia": {"tipo":"unica", "valore":1.23},
+      "Toscana": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.42}, {"fino":28000, "aliquota":1.43}, {"fino":50000, "aliquota":3.32}, {"fino":Infinity, "aliquota":3.33}]},
+      "Umbria": {"tipo":"scaglioni", "scaglioni":[{"fino":15000, "aliquota":1.73}, {"fino":28000, "aliquota":3.02}, {"fino":50000, "aliquota":3.12}, {"fino":Infinity, "aliquota":3.33}], "sottoSoglia":{"fino":28000, "aliquota":1.23}, "detrazioni":[{"da":28000, "a":50000, "importo":150}]},
+      "Valle d'Aosta": {"tipo":"unica", "valore":1.23, "esenteFino":15000},
+      "Veneto": {"tipo":"unica", "valore":1.23}
+    }
   }
 };

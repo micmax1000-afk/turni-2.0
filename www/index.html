@@ -319,6 +319,11 @@
 
           <p class="titolo-sezione-giorno">Indennità <em id="contaIndennitaGiorno"></em></p>
           <div class="griglia-indennita-giorno" id="grigliaIndennitaGiorno"></div>
+          <div class="scelta-buoni-pasto" id="sceltaBuoniPasto" hidden>
+            <span>🍽️ Buoni pasto in questo giorno</span>
+            <div class="scelta-prima-dopo scelta-n-buoni" data-per="campoBuoniPastoGiorno" role="group" aria-label="Quanti buoni pasto"><button type="button" data-buoni-pasto="1">1</button><button type="button" data-buoni-pasto="2">2</button></div>
+            <input type="hidden" id="campoBuoniPastoGiorno" value="1">
+          </div>
           <p class="nota-giorno" id="notaControlloTerritorio" hidden>📍 Controllo territorio: serve almeno 3 h continuative di sera/notte, e non va insieme all'Ordine pubblico (con entrambi non viene calcolato).</p>
           <div class="caselle-indennita-nascoste" hidden>
             <input type="checkbox" id="campoReperibilita"><input type="checkbox" id="campoMissione"><input type="checkbox" id="campoServizioEsterno">
@@ -329,7 +334,7 @@
             <label class="campo-modale">Durata missione (ore)
               <input type="number" id="campoDurataMissione" min="0" step="0.5" value="0">
             </label>
-            <p class="sotto-titolo" style="margin:2px 0 0;">Indennità oraria di trasferta: 0€ fino a 4h, tariffa piena 4-8h, ridotta al 40% oltre le 8h (fonte SIULP). Il rimborso pasti su ricevuta non è calcolato automaticamente.</p>
+            <p class="sotto-titolo" style="margin:2px 0 0;">Indennità oraria di trasferta: 0€ fino a 4h, tariffa piena 4-8h, ridotta al 40% oltre le 8h. Il rimborso pasti su ricevuta non è calcolato automaticamente.</p>
           </div>
           <div id="campoOrdinePubblicoBox" style="display:none; margin-top:6px;">
             <label class="campo-modale">Sede del servizio di ordine pubblico
@@ -338,7 +343,7 @@
             <label class="campo-modale campo-riga" id="campoOPPernottamentoBox" style="margin-top:4px; display:none;">
               <input type="checkbox" id="campoOPPernottamento" checked> Con pernottamento fuori sede
             </label>
-            <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore (fonte SIULP); sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
+            <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore; sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
           </div>
 
           <p class="titolo-sezione-giorno">Straordinario</p>
@@ -423,10 +428,11 @@
 
   <div id="vistaStatistiche" hidden>
     <section class="scheda" id="sezioneReportTop">
-      <div class="intestazione-scheda">
-        <h2>Report</h2>
-        <button type="button" class="btn-icona" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
+      <div class="intestazione-scheda testa-v4">
+        <div><h2>Report</h2><p class="sotto-v4">Quanto arriva sul conto</p></div>
+        <button type="button" class="btn-nuovo-turni-v4" id="btnPersonalizzaReport" title="Scegli cosa vedere">Personalizza</button>
       </div>
+      <div class="manca-dati-v5" id="avvisoReportMancanti" hidden></div>
       <div class="report-mese-nav">
         <button type="button" class="btn-freccia" id="btnReportMesePrec" aria-label="Mese precedente">‹</button>
         <b id="reportMeseEtichetta">—</b>
@@ -469,7 +475,7 @@
     </section>
 
     <section class="scheda" id="sezioneRiepilogo">
-      <h2>Il mese</h2>
+      <h2 class="solo-lettori">Il mese</h2>
       <div class="mese-tiles mese-tiles-4" id="meseTilesReport">
         <div><b id="meseTileTurni">0</b><span>turni</span></div>
         <div><b id="meseTileRiposi">0</b><span>riposi</span></div>
@@ -522,6 +528,13 @@
       </div>
     </section>
 
+    <!-- v2.94: in fondo al Report, buoni pasto e le parti da aprire (cedolino, statistiche) -->
+    <section class="scheda report-fondo-v4" id="reportFondoV4">
+      <div class="report-riga-v4" id="reportBuoniPasto" hidden><span>🍽️ Buoni pasto <small>· fuori busta</small></span><b id="reportBuoniPastoNumero">0</b></div>
+      <button type="button" class="report-riga-v4" data-apri-report="cedolino"><span>🧾 Cedolino stimato</span><b aria-hidden="true">›</b></button>
+      <button type="button" class="report-riga-v4" data-apri-report="statistiche"><span>📈 Statistiche dell'anno</span><b aria-hidden="true">›</b></button>
+    </section>
+
     <section class="scheda" id="sezioneStatisticheGrafici">
       <div class="intestazione-scheda">
         <h2>Statistiche dell'anno</h2>
@@ -539,21 +552,18 @@
 
   <div id="vistaCedolino" hidden>
   <section class="scheda" id="sezioneCedolino">
-    <h2 id="titoloCedolinoV3">🧾 Cedolino</h2>
-    <p class="sotto-titolo" id="sottotitoloCedolinoV3">Stima dal tuo profilo, dai turni e dalle tabelle.</p>
+    <div class="intestazione-scheda testa-v4"><div><h2 id="titoloCedolinoV3">Cedolino</h2><p class="sotto-v4" id="sottotitoloCedolinoV3">Stima dal tuo profilo, dai turni e dalle tabelle</p></div><button type="button" class="btn-icona tondo-v4" id="btnChiudiCedolinoV4" aria-label="Chiudi il cedolino">✕</button></div>
     <div id="cedolinoRiassuntoV3"></div>
-    <button class="btn-secondario cedolino-tutte-voci" id="btnGeneraCedolino" type="button">Vedi tutte le voci ▾</button>
     <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
-    <details class="conguagli-v3">
-      <summary>Conguagli manuali del mese</summary>
-      <label class="campo-modale" style="max-width:260px; margin:8px 0 4px;">Importo da aggiungere o togliere al netto (€)
-        <input type="number" id="campoConguagliMese" step="0.01" value="0">
-      </label>
-    </details>
-    <div class="azioni-cedolino">
-      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / PDF</button>
-      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>Chiudi cedolino</button>
+    <div class="ced-azioni-v4">
+      <button type="button" id="btnGeneraCedolino" aria-expanded="false">Tutte le voci ▾</button>
+      <button type="button" id="btnConguaglioV4" aria-expanded="false">± Conguaglio</button>
+      <button type="button" id="btnStampaCedolino">🖨️ PDF</button>
     </div>
+    <label class="campo-modale ced-conguaglio-v4" id="boxConguaglioV4" hidden>Importo da aggiungere o togliere al netto (€)
+      <input type="number" id="campoConguagliMese" step="0.01" value="0">
+    </label>
+    <p class="ced-nota-v4">Cifre indicative: verifica sempre il cedolino NoiPA.</p>
   </section>
 
   <details class="cedolino-sezione-secondaria nascosta-report">
@@ -564,20 +574,6 @@
     <button class="btn-primario" id="btnGeneraAccreditoConto" type="button">Genera Stima Accredito</button>
     <div id="contenitoreAccreditoConto" class="contenitore-cedolino" hidden></div>
     <button class="btn-secondario" id="btnCancellaAccreditoConto" type="button" hidden style="margin-top:12px;">🗑️ Cancella Stima Accredito</button>
-    </section>
-  </details>
-
-  <details class="cedolino-sezione-secondaria">
-    <summary>📊 Storico Mensile ▾</summary>
-    <section class="scheda" id="sezioneStorico">
-    <div style="display:flex; justify-content:flex-end;">
-      <button class="btn-mini-icona" id="btnCancellaStorico" title="Cancella storico" aria-label="Cancella storico">🗑️</button>
-    </div>
-    <p class="sotto-titolo">Ogni cedolino generato viene archiviato qui per il confronto tra mesi diversi.</p>
-    <table class="tabella-voci" id="tabellaStorico">
-      <thead><tr><th>Mese</th><th>Totale Lordo</th><th>Netto</th></tr></thead>
-      <tbody><tr><td colspan="3" class="sotto-titolo">Nessun cedolino generato finora.</td></tr></tbody>
-    </table>
     </section>
   </details>
 
@@ -694,26 +690,21 @@
   <!-- Assenze e permessi: pagina a sé, si apre da Altro -->
   <div id="vistaGestioneAssenze" hidden>
   <section class="scheda" id="sezioneAssenze">
-    <div class="intestazione-scheda">
-      <h2>Assenze e permessi</h2>
+    <div class="intestazione-scheda testa-v4">
+      <div><h2>Assenze</h2><p class="sotto-v4" id="sottotitoloAssenze">Quanto ti resta</p></div>
+      <button type="button" class="btn-nuovo-turni-v4" id="btnNuovaAssenzaTesta">Nuova assenza</button>
     </div>
-    <p class="sotto-titolo" id="sottotitoloAssenze">Quanto ti resta. Solo informativo: non cambia il cedolino.</p>
-    <div id="assenzeSummaryGrid" class="saldi-hero" aria-live="polite"></div>
+    <div id="assenzeSummaryGrid" class="saldi-hero" aria-live="polite" hidden></div>
     <div id="saldiPartenzaBox"></div>
-    <div class="assenze-filtri-seg" role="group" aria-label="Filtra assenze">
+    <div class="assenze-filtri-seg" role="group" aria-label="Filtra assenze" hidden>
       <button type="button" class="filtro-assenze attivo" data-filtro-assenze="tutte">Tutte</button>
       <button type="button" class="filtro-assenze" data-filtro-assenze="gg">Giorni</button>
       <button type="button" class="filtro-assenze" data-filtro-assenze="h">Ore</button>
     </div>
-    <p class="strumenti-turni-titolo">Le tue assenze</p>
-    <div id="corpoAssenze" class="griglia-saldi"></div>
-    <details class="gruppo-assenze altri-modelli" id="gruppoAssenzeNonUsate" hidden>
-      <summary><span id="titoloAssenzeNonUsate">Non usate</span><b aria-hidden="true">⌄</b></summary>
-      <div id="corpoAssenzeNonUsate" class="griglia-saldi"></div>
-    </details>
-    <p class="strumenti-turni-titolo">Tue personalizzate</p>
-    <div id="corpoAssenzePersonalizzate" class="griglia-saldi"></div>
-    <button type="button" class="btn-aggiungi-tratteggiato" id="btnAggiungiAssenzaPersonalizzata">＋ Aggiungi assenza personalizzata</button>
+    <div id="corpoAssenze" class="griglia-saldi lista-assenze-v4"></div>
+    <p class="strumenti-turni-titolo" id="titoloAssenzePersonalizzate">Tue personalizzate</p>
+    <div id="corpoAssenzePersonalizzate" class="griglia-saldi lista-assenze-v4"></div>
+    <button type="button" class="btn-aggiungi-tratteggiato" id="btnAggiungiAssenzaPersonalizzata">＋ Aggiungi un'assenza tua</button>
     <details class="info-richiudibile-assenze">
       <summary>ℹ️ Come funzionano queste voci</summary>
       <div class="info-richiudibile-assenze-corpo">
@@ -758,6 +749,7 @@
       <em id="testataCompleta">Da completare</em>
     </div>
 
+    <div class="manca-dati-v5" id="avvisoAnagraficaMancanti" hidden></div>
     <p class="strumenti-turni-titolo">I tuoi dati</p>
     <div class="gruppo-anagrafica">
       <label class="riga-anagrafica"><span>Qualifica</span><select id="campoQualifica">
@@ -778,9 +770,13 @@
           <option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option>
           <option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
         </select></label>
+      <div class="riga-anagrafica"><span>Addizionale comunale<small class="nota-riga-v5">Del tuo Comune: di solito 0,8%. La trovi sul cedolino</small></span><div class="perc-v5"><input type="number" id="campoAddComunale" min="0" max="2" step="0.01" value="0.8" inputmode="decimal" aria-label="Addizionale comunale in percentuale"><b>%</b></div></div>
+      <div class="riga-anagrafica"><span>Reddito dell'anno scorso<small class="nota-riga-v5" id="notaRedditoAnnoPrec">Facoltativo, dalla CU: detrazioni e addizionali più precise. Resta solo sul telefono</small></span><div class="perc-v5 euro-v5"><input type="number" id="campoRedditoAnnoPrec" min="0" step="1" inputmode="numeric" placeholder="—" aria-label="Reddito dell'anno scorso in euro"><b>€</b></div></div>
+      <div class="riga-anagrafica"><span>Addizionale regionale dell'anno scorso<small class="nota-riga-v5">Facoltativa: dalla CU. Se manca la calcola l'app</small></span><div class="perc-v5 euro-v5"><input type="number" id="campoAddRegionaleAnnoPrec" min="0" step="0.01" inputmode="decimal" placeholder="—" aria-label="Addizionale regionale dell'anno scorso in euro"><b>€</b></div></div>
       <label class="riga-anagrafica"><span>Coniuge a carico</span><select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select></label>
       <div class="riga-anagrafica"><span>Figli over 21 a carico</span><div class="contatore-anagrafica"><button type="button" data-passo="campoFigliOver21" data-delta="-1" aria-label="Meno">−</button><input type="number" id="campoFigliOver21" min="0" step="1" value="0" inputmode="numeric" aria-label="Figli over 21 a carico"><button type="button" data-passo="campoFigliOver21" data-delta="1" aria-label="Più">+</button></div></div>
       <label class="riga-anagrafica"><span>Iscritto al sindacato</span><select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select></label>
+      <div class="riga-anagrafica" id="rigaQuotaSindacale" hidden><span>Quota sindacale al mese<small class="nota-riga-v5">La trovi sul cedolino</small></span><div class="perc-v5"><input type="number" id="campoQuotaSindacale" min="0" step="0.01" inputmode="decimal" aria-label="Quota sindacale al mese in euro"><b>€</b></div></div>
     </div>
 
     <div class="info-richiudibile">
@@ -798,13 +794,12 @@
 
 <div id="vistaTabelle" hidden>
   <section class="scheda" id="sezioneTabelle">
-    <div class="intestazione-scheda">
-      <h2>Tabelle ufficiali</h2>
-      <button class="btn-mini-icona" id="btnChiudiTabelle" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
+    <div class="intestazione-scheda testa-v4">
+      <div><h2>Tabelle ufficiali</h2><p class="sotto-v4" id="statoSalvataggioTabelle">Stipendi, indennità e aliquote usati nei calcoli</p></div>
+      <button class="btn-icona tondo-v4" id="btnChiudiTabelle" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
     </div>
-    <p class="sotto-titolo" id="statoSalvataggioTabelle">Le modifiche si salvano da sole.</p>
-    <p class="nota-tabelle">⚠ Valori indicativi da fonti pubbliche (CCNL 2022-2024, Legge di Bilancio 2026): confrontali con il tuo cedolino NoiPA prima di usarli per decisioni economiche.</p>
     <div id="corpoTabelle"></div>
+    <p class="nota-tabelle-v4">⚠️ Valori indicativi da fonti pubbliche (CCNL 2022-2024, Legge di Bilancio 2026): confrontali con il cedolino NoiPA.</p>
     <div id="footerTabelleEsterno">
       <button class="link-cancella-anagrafica" id="btnResetTabelle" type="button">Ripristina i valori predefiniti</button>
       <button class="btn-primario" id="btnSalvaTabelle" type="button" hidden>Salva</button>
@@ -966,18 +961,14 @@
 
     <!-- Sezioni Fase 2: impostazioni / statistiche (stub funzionali) -->
   <div id="vistaImpostazioni" hidden>
-    <section class="scheda">
-      <h2>Altro</h2>
-      <div id="statoConnessioneV23" class="stato-connessione-v23" role="status" aria-live="polite"></div>
-      <p class="strumenti-turni-titolo">Impostazioni</p>
+    <section class="scheda" id="sezioneAltro">
+      <div class="intestazione-scheda testa-v4"><div><h2>Altro</h2><div id="statoConnessioneV23" class="stato-connessione-v23" role="status" aria-live="polite"></div></div></div>
+      <div class="parte-altro-v4">
       <div class="lista-strumenti-turni">
         <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span class="grado-altro" id="gradoAltro" aria-hidden="true">🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
-        <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
-        <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Indennità nel calendario<small>Simboli e quali mostrare</small></i><b>›</b></button>
-        <div class="riga-strumento-turni riga-interruttore">
-          <span>📋</span><i>Agenda sotto il calendario<small>Prossimi 14 giorni con turni, ore ed eventi</small></i>
-          <input type="checkbox" class="interruttore" id="campoAgendaSotto" aria-label="Agenda sotto il calendario">
-        </div>
+      </div>
+      <p class="strumenti-turni-titolo">Impostazioni</p>
+      <div class="lista-strumenti-turni">
         <div class="riga-strumento-turni riga-interruttore">
           <span>⏰</span><i>Promemoria del turno<small id="descrizionePromemoriaTurno">Spento</small></i>
           <input type="checkbox" class="interruttore" id="campoPromemoriaTurno" aria-label="Promemoria del turno">
@@ -1004,6 +995,12 @@
           <button type="button" class="btn-secondario" id="btnAggiungiWidget" style="width:100%;">＋ Aggiungi alla schermata Home</button>
           <p class="sotto-titolo" id="aiutoWidget" style="margin:8px 0 0;font-size:.78rem;" hidden>Se non compare: tieni premuto su uno spazio vuoto della schermata Home → Widget → Turni &amp; Accessorio PS.</p>
         </div>
+        <div class="riga-strumento-turni riga-interruttore">
+          <span>📋</span><i>Agenda sotto il calendario<small>Prossimi 14 giorni con turni, ore ed eventi</small></i>
+          <input type="checkbox" class="interruttore" id="campoAgendaSotto" aria-label="Agenda sotto il calendario">
+        </div>
+        <button type="button" class="riga-strumento-turni" id="rigaTemaColore" aria-expanded="false"><span>🎨</span><i>Tema e colore<small id="riassuntoTemaColore">Come il telefono · Blu</small></i><b>›</b></button>
+        <div class="opzioni-riga-altro" id="opzioniTemaColore" hidden>
         <div class="riga-strumento-turni riga-tema">
           <span>🌓</span><i>Tema<small id="descrizioneTema">Come il telefono</small></i>
           <div class="scelta-tema" role="group" aria-label="Tema">
@@ -1025,16 +1022,24 @@
             <button type="button" data-accento="arancio"><span class="pallino-accento" style="background:#C76A1A" aria-hidden="true"></span>Arancio</button>
           </div>
         </div>
+        </div>
+      </div>
+      <p class="strumenti-turni-titolo">Dati e aiuto</p>
+      <div class="lista-strumenti-turni">
+        <button type="button" class="riga-strumento-turni" id="settingsBackupV4"><span>💾</span><i>Backup<small id="riassuntoBackupV4">Sul telefono e su Google Drive</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
         <a class="riga-strumento-turni" id="linkGuida" href="https://micmax-apps.netlify.app/guida-turni.html" target="_blank" rel="noopener"><span>📖</span><i>Guida all'app<small>Come si usa, passo per passo</small></i><b>↗</b></a>
         <button type="button" class="riga-strumento-turni" id="settingsSegnala"><span>💬</span><i>Segnala un problema o un'idea<small>Scrivi allo sviluppatore</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="btnInstallaAppV23" hidden><span>📲</span><i>Installa l'app<small>Aggiungila alla schermata Home</small></i><b>›</b></button>
       </div>
-      <!-- I backup sono sempre visibili qui sotto: questi due tasti restano solo per compatibilità -->
+      </div>
+      <!-- I backup stanno nella loro pagina (riga "Backup"): questi due tasti restano solo per compatibilità -->
       <button type="button" id="settingsBackup" hidden>Backup locale</button>
       <button type="button" id="settingsDrive" hidden>Backup Drive</button>
-      <p class="strumenti-turni-titolo">Backup</p>
-
-      <div id="impostazioniBackupContainer"></div>
+      <div id="paginaBackupV4" hidden>
+        <div class="intestazione-scheda testa-v4"><div><h2>Backup</h2><p class="sotto-v4">I dati stanno solo sul telefono: salvali ogni tanto</p></div><button type="button" class="btn-icona tondo-v4" id="btnChiudiBackupV4" aria-label="Torna ad Altro">✕</button></div>
+        <div id="impostazioniBackupContainer"></div>
+      </div>
       <div id="impostazioniBackupPanel" hidden>
         <p class="sotto-titolo">Sezioni backup spostate qui sotto.</p>
         <button type="button" class="btn-secondario" id="btnChiudiSettingsBackup">Chiudi</button>
@@ -1047,16 +1052,6 @@
   <div id="backupAnteprima" hidden></div>
 
 <!-- Cambio orario di un modello: aggiornare anche i giorni già nel calendario? -->
-<div class="overlay" id="overlaySimboli" hidden>
-  <div class="modale">
-    <div class="modale-header"><h2>Simboli del calendario</h2><button class="btn-icona" id="btnChiudiSimboli" type="button" aria-label="Chiudi">✕</button></div>
-    <div class="modale-corpo">
-      <small class="sotto-titolo">Con l'interruttore spento il simbolo non compare nelle caselle, ma l'indennità viene sempre contata nei calcoli.</small>
-      <div class="lista-simboli" id="listaSimboli"></div>
-    </div>
-  </div>
-</div>
-
 <div class="overlay" id="overlayAggiornaTurni" hidden>
   <div class="modale">
     <div class="modale-header"><h2>Aggiornare il calendario?</h2></div>
@@ -1090,8 +1085,14 @@
       <label class="riga-anagrafica"><span>Qualifica</span><span class="grado-benvenuto" id="benvenutoGrado" aria-hidden="true"></span><select id="benvenutoQualifica"></select></label>
       <div class="riga-anagrafica"><span>Anni di servizio</span><div class="contatore-anagrafica"><button type="button" data-passo-benvenuto-anni="-1" aria-label="Meno">−</button><input type="number" id="benvenutoAnni" min="0" value="0" inputmode="numeric" aria-label="Anni di servizio"><button type="button" data-passo-benvenuto-anni="1" aria-label="Più">+</button></div></div>
       <label class="riga-anagrafica"><span>Regione</span><select id="benvenutoRegione"></select></label>
+      <div class="riga-anagrafica"><span>Addizionale comunale<small class="nota-riga-v5">La trovi sul cedolino o sul sito del Comune</small></span><div class="perc-v5"><input type="number" id="benvenutoAddComunale" min="0" max="2" step="0.01" value="0.8" inputmode="decimal" aria-label="Addizionale comunale in percentuale"><b>%</b></div></div>
+      <div class="riga-anagrafica"><span>Coniuge a carico</span><div class="seg-v5" data-seg-benvenuto="coniuge"><button type="button" data-valore="no" class="attivo">No</button><button type="button" data-valore="si">Sì</button></div></div>
+      <div class="riga-anagrafica"><span>Figli over 21 a carico</span><div class="contatore-anagrafica"><button type="button" data-passo-benvenuto-figli="-1" aria-label="Meno">−</button><input type="number" id="benvenutoFigli" min="0" value="0" inputmode="numeric" aria-label="Figli over 21 a carico"><button type="button" data-passo-benvenuto-figli="1" aria-label="Più">+</button></div></div>
+      <div class="riga-anagrafica"><span>Iscritto al sindacato</span><div class="seg-v5" data-seg-benvenuto="sindacato"><button type="button" data-valore="no" class="attivo">No</button><button type="button" data-valore="si">Sì</button></div></div>
+      <div class="riga-anagrafica"><span>Reddito dell'anno scorso<small class="nota-riga-v5">Facoltativo, dalla CU. Resta solo sul telefono: serve per detrazioni e addizionali più precise</small></span><div class="perc-v5 euro-v5"><input type="number" id="benvenutoReddito" min="0" step="1" inputmode="numeric" placeholder="—" aria-label="Reddito dell'anno scorso in euro"><b>€</b></div></div>
+      <div class="riga-anagrafica" id="benvenutoRigaQuota" hidden><span>Quota sindacale al mese<small class="nota-riga-v5">La trovi sul cedolino</small></span><div class="perc-v5"><input type="number" id="benvenutoQuotaSindacale" min="0" step="0.01" inputmode="decimal" aria-label="Quota sindacale al mese in euro"><b>€</b></div></div>
     </div>
-    <p class="benvenuto-nota">Servono per stimare stipendio e tasse. Coniuge, figli over 21 e sindacato li aggiungi dopo in Altro → Anagrafica, nel riquadro "I tuoi dati".</p>
+    <p class="benvenuto-nota">Servono tutti per calcolare netto e tasse. Si cambiano quando vuoi in Altro → Anagrafica.</p>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="2" hidden>
     <p class="benvenuto-prog">Passo 2 di 5</p>

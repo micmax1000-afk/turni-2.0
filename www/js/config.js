@@ -26,6 +26,7 @@ window.TurniPSConfig = Object.freeze({
     CHIAVE_TEMA: 'simCedolino_tema_v1',
     CHIAVE_TEMA_SCURO: 'simCedolino_temaScuro_v1',
     CHIAVE_INDENNITA_NASCOSTE: 'simCedolino_indennitaNascoste_v1',
+    CHIAVE_CEDOLINO_TUTTE_VOCI: 'simCedolino_cedolinoTutteVoci_v1',
     CHIAVE_BENVENUTO: 'simCedolino_benvenutoFatto_v1',
     CHIAVE_PROMEMORIA_TURNO: 'simCedolino_promemoriaTurno_v1',
     CHIAVE_WIDGET: 'simCedolino_widget_v1',

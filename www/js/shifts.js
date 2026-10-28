@@ -207,6 +207,13 @@ function aggiornaEditorGiornoV3(){
   }).join('');
   el('contaIndennitaGiorno').textContent = attive ? `${attive} ${attive === 1 ? 'attiva' : 'attive'}` : '';
   el('notaControlloTerritorio').hidden = !el('campoControlloTerritorio').checked;
+  // Buono pasto acceso: quanti (1 o 2) in questo giorno.
+  const sceltaBP = el('sceltaBuoniPasto');
+  if(sceltaBP){
+    sceltaBP.hidden = !el('campoBuonoPasto').checked;
+    const n = el('campoBuoniPastoGiorno').value === '2' ? '2' : '1';
+    sceltaBP.querySelectorAll('[data-buoni-pasto]').forEach(b => b.classList.toggle('attivo', b.dataset.buoniPasto === n));
+  }
   // Assenza: elenco da toccare, con quanto resta di ognuna
   const elenco = el('elencoAssenzeGiorno');
   if(elenco && modo === 'assenza'){
@@ -307,6 +314,7 @@ function leggiTurnoDalModale(){
     compensazioneRiposo: el('campoCompensazioneRiposo').checked,
     recuperoFestivoLavorato: el('campoRecuperoFestivo').checked,
     buonoPasto: el('campoBuonoPasto').checked,
+    buoniPastoGiorno: el('campoBuonoPasto').checked ? (el('campoBuoniPastoGiorno').value === '2' ? 2 : 1) : 0,
     modelloId: el('campoRiposo').checked || el('campoAssenzaTipo').value ? null : modelloDaOrariGiorno()
   };
 }
@@ -460,6 +468,7 @@ function apriModaleTurno(iso){
   el('campoCompensazioneRiposo').checked = !!t.compensazioneRiposo;
   el('campoRecuperoFestivo').checked = !!t.recuperoFestivoLavorato;
   el('campoBuonoPasto').checked = !!t.buonoPasto;
+  el('campoBuoniPastoGiorno').value = String(numeroBuoniPasto(t) || 1);
   aggiornaVisibilitaCampiOrario();
   aggiornaAnteprima();
   // Il pannello "+ Aggiungi indennità o straordinario" resta sempre aperto (richiesto esplicitamente):
