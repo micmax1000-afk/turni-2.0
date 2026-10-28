@@ -104,12 +104,12 @@
     <!-- Nuovo turno personalizzato / modifica di un turno esistente (dei 5 di base o personalizzato) -->
     <div class="overlay" id="overlayModificaModello" hidden>
       <div class="modale">
-        <div class="modale-header"><h2 id="titoloModificaModello">Nuovo turno</h2><button class="btn-icona" id="btnChiudiModificaModello" aria-label="Chiudi">✕</button></div>
+        <div class="modale-header"><h2 id="titoloModificaModello">Nuovo servizio</h2><button class="btn-icona" id="btnChiudiModificaModello" aria-label="Chiudi">✕</button></div>
         <div class="modale-corpo">
           <div class="anteprima-modello" id="anteprimaModello" aria-hidden="true"></div>
           <div class="nome-sigla-modello">
-            <label class="campo-modale">Nome<input type="text" id="campoModModelloNome" placeholder="es. Turno spezzato"></label>
-            <label class="campo-modale"><span id="testoEtichettaSigla">Sigla</span><input type="text" id="campoModModelloSigla" placeholder="PA" maxlength="2" style="text-transform:uppercase;"></label>
+            <label class="campo-modale">Nome<input type="text" id="campoModModelloNome" placeholder="es. OP Partita"></label>
+            <label class="campo-modale"><span id="testoEtichettaSigla">Sigla</span><input type="text" id="campoModModelloSigla" placeholder="OP" maxlength="2" style="text-transform:uppercase;"></label>
           </div>
           <div id="campiModModelloOrario" class="orari-giorno">
             <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoModModelloInizio"></label>
@@ -643,12 +643,12 @@
     <div class="altri-v4 lista-strumenti-card-v4">
       <button type="button" class="turno-v4 turno-compatto-v4" id="btnApriEsportaCalendario">
         <span class="sigla-v4 sigla-strumento-v4" style="background:#E8F0FE;color:#1D4FD7">📤</span>
-        <strong>Esporta in Google Calendar</strong><small>I turni in un file da importare</small>
+        <span class="testo-v4"><strong>Esporta in Google Calendar</strong><small>I turni in un file da importare</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
       <button type="button" class="turno-v4 turno-compatto-v4" id="settingsColori">
         <span class="sigla-v4 sigla-strumento-v4" style="background:#F3E8FF;color:#7C3AED">🎨</span>
-        <strong>Colori e stile calendario</strong><small id="statoColoriTurni">Classico · a colori</small>
+        <span class="testo-v4"><strong>Colori e stile calendario</strong><small id="statoColoriTurni">Classico · a colori</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
     </div>
