@@ -428,9 +428,9 @@
 
   <div id="vistaStatistiche" hidden>
     <section class="scheda" id="sezioneReportTop">
-      <div class="intestazione-scheda">
-        <h2>Report</h2>
-        <button type="button" class="btn-icona" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
+      <div class="intestazione-scheda testa-v4">
+        <div><h2>Report</h2><p class="sotto-v4">Quanto arriva sul conto</p></div>
+        <button type="button" class="btn-icona tondo-v4" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
       </div>
       <div class="report-mese-nav">
         <button type="button" class="btn-freccia" id="btnReportMesePrec" aria-label="Mese precedente">‹</button>
@@ -474,7 +474,7 @@
     </section>
 
     <section class="scheda" id="sezioneRiepilogo">
-      <h2>Il mese</h2>
+      <h2 class="solo-lettori">Il mese</h2>
       <div class="mese-tiles mese-tiles-4" id="meseTilesReport">
         <div><b id="meseTileTurni">0</b><span>turni</span></div>
         <div><b id="meseTileRiposi">0</b><span>riposi</span></div>
@@ -525,6 +525,13 @@
         </div>
       </details>
       </div>
+    </section>
+
+    <!-- v2.94: in fondo al Report, buoni pasto e le parti da aprire (cedolino, statistiche) -->
+    <section class="scheda report-fondo-v4" id="reportFondoV4">
+      <div class="report-riga-v4" id="reportBuoniPasto" hidden><span>🍽️ Buoni pasto <small>· fuori busta</small></span><b id="reportBuoniPastoNumero">0</b></div>
+      <button type="button" class="report-riga-v4" data-apri-report="cedolino"><span>🧾 Cedolino stimato</span><b aria-hidden="true">›</b></button>
+      <button type="button" class="report-riga-v4" data-apri-report="statistiche"><span>📈 Statistiche dell'anno</span><b aria-hidden="true">›</b></button>
     </section>
 
     <section class="scheda" id="sezioneStatisticheGrafici">
@@ -699,26 +706,25 @@
   <!-- Assenze e permessi: pagina a sé, si apre da Altro -->
   <div id="vistaGestioneAssenze" hidden>
   <section class="scheda" id="sezioneAssenze">
-    <div class="intestazione-scheda">
-      <h2>Assenze e permessi</h2>
+    <div class="intestazione-scheda testa-v4">
+      <div><h2>Assenze</h2><p class="sotto-v4" id="sottotitoloAssenze">Quanto ti resta</p></div>
+      <button type="button" class="btn-icona tondo-v4" id="btnNuovaAssenzaTesta" aria-label="Aggiungi assenza personalizzata">＋</button>
     </div>
-    <p class="sotto-titolo" id="sottotitoloAssenze">Quanto ti resta. Solo informativo: non cambia il cedolino.</p>
-    <div id="assenzeSummaryGrid" class="saldi-hero" aria-live="polite"></div>
+    <div id="assenzeSummaryGrid" class="saldi-hero" aria-live="polite" hidden></div>
     <div id="saldiPartenzaBox"></div>
-    <div class="assenze-filtri-seg" role="group" aria-label="Filtra assenze">
+    <div class="assenze-filtri-seg" role="group" aria-label="Filtra assenze" hidden>
       <button type="button" class="filtro-assenze attivo" data-filtro-assenze="tutte">Tutte</button>
       <button type="button" class="filtro-assenze" data-filtro-assenze="gg">Giorni</button>
       <button type="button" class="filtro-assenze" data-filtro-assenze="h">Ore</button>
     </div>
-    <p class="strumenti-turni-titolo">Le tue assenze</p>
-    <div id="corpoAssenze" class="griglia-saldi"></div>
+    <div id="corpoAssenze" class="griglia-saldi lista-assenze-v4"></div>
     <details class="gruppo-assenze altri-modelli" id="gruppoAssenzeNonUsate" hidden>
       <summary><span id="titoloAssenzeNonUsate">Non usate</span><b aria-hidden="true">⌄</b></summary>
-      <div id="corpoAssenzeNonUsate" class="griglia-saldi"></div>
+      <div id="corpoAssenzeNonUsate" class="griglia-saldi lista-assenze-v4"></div>
     </details>
-    <p class="strumenti-turni-titolo">Tue personalizzate</p>
-    <div id="corpoAssenzePersonalizzate" class="griglia-saldi"></div>
-    <button type="button" class="btn-aggiungi-tratteggiato" id="btnAggiungiAssenzaPersonalizzata">＋ Aggiungi assenza personalizzata</button>
+    <p class="strumenti-turni-titolo" id="titoloAssenzePersonalizzate">Tue personalizzate</p>
+    <div id="corpoAssenzePersonalizzate" class="griglia-saldi lista-assenze-v4"></div>
+    <button type="button" class="btn-aggiungi-tratteggiato" id="btnAggiungiAssenzaPersonalizzata" hidden>＋ Aggiungi assenza personalizzata</button>
     <details class="info-richiudibile-assenze">
       <summary>ℹ️ Come funzionano queste voci</summary>
       <div class="info-richiudibile-assenze-corpo">

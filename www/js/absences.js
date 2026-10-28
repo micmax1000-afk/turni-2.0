@@ -290,7 +290,7 @@ function renderDashboardAssenze(){
     + `<span>⏱️ ${numeroIt(resto('Permesso breve'))} h di permesso breve</span>`
     + `<span>🔄 ${numeroIt(recuperi)} ${recuperi === 1 ? 'recupero' : 'recuperi'}</span></div>`;
   const sotto = el('sottotitoloAssenze');
-  if(sotto) sotto.textContent = `Quanto ti resta nel ${rif.anno}. Solo informativo: non cambia il cedolino.`;
+  if(sotto) sotto.textContent = `Quanto ti resta nel ${rif.anno} · non cambia il cedolino`;
   renderBoxSaldiPartenza();
 }
 
@@ -309,8 +309,8 @@ function renderBoxSaldiPartenza(){
   const recuperi = (s.recuperoRiposo || 0) + (s.recuperoFestivo || 0);
   if(recuperi) parti.push(`Recuperi ${numeroIt(recuperi)} gg`);
   if(s.riposoCompensativoOre) parti.push(`Riposo compensativo ${numeroIt(s.riposoCompensativoOre)} h`);
-  box.className = 'partenza-riass';
-  box.innerHTML = `<span aria-hidden="true">📌</span><i>Saldi di partenza al ${escapeHtml(data)}<small>${escapeHtml(parti.join(' · '))}</small></i><button type="button" data-apri-saldi>Correggi</button>`;
+  box.className = 'partenza-riass partenza-v4';
+  box.innerHTML = `<span aria-hidden="true">📌</span><i>Giorni di partenza al ${escapeHtml(data)}<small>Come risultavano all'ufficio: da lì conta l'app.</small></i><button type="button" data-apri-saldi title="${escapeHtml(parti.join(' · '))}">Modifica</button>`;
 }
 
 function inizializzaFiltriAssenze(){
@@ -459,19 +459,16 @@ function renderCardAssenzaItem(a){
     const resto = valoreEffettivo > 0 ? Math.min(100, Math.max(0, rimangono / valoreEffettivo * 100)) : 0;
     const coloreResto = rimangono < 0 ? '#D9534F' : (valoreEffettivo > 0 && resto <= 20) ? '#E08A00' : unitaEffettiva === 'h' ? '#2E7DD7' : '#2E9E5B';
     const valoreVisuale = valoreEffettivo || 0;
+    // v2.94: nel congedo ordinario, i giorni di ogni anno (anche quelli vecchi) sotto il nome.
+    const anniCongedoRiga = eCongedoOrdinario && saldoCO.perAnno
+      ? `<span class="anni-congedo-v4">${Object.entries(saldoCO.perAnno).filter(([y, g]) => g !== 0 || Number(y) === anno).sort((x, y) => y[0] - x[0]).map(([y, g]) => `<em>${y}: ${numeroIt(g)}</em>`).join('')}</span>` : '';
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
-      <div class="card-assenza-compact" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
-        <div class="card-assenza-compact-nome"><strong>${a.personalizzata ? (a.nome || 'Nuova voce') : a.nome}</strong></div>
-        <span class="card-assenza-apri" aria-hidden="true">⌄</span>
-        <div class="saldo-corpo">
-          ${anelloAssenzaHtml(valoreVisuale > 0 ? rimangono / valoreVisuale : 0, rimangono < 0 ? '#D64545' : coloreAnelloAssenza(a), icona)}
-          <div class="saldo-numeri">
-            <small class="saldo-etichetta">Rimangono</small>
-            <span class="saldo-resta"><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong> <small>${unitaEffettiva}</small></span>
-          </div>
-        </div>
-        <small class="saldo-usati">Usati <em>${numeroIt(usate)}</em> su <span class="saldo-su">${numeroIt(valoreVisuale)}</span></small>
+      <div class="card-assenza-compact riga-assenza-v4" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
+        ${anelloAssenzaHtml(valoreVisuale > 0 ? rimangono / valoreVisuale : 0, rimangono < 0 ? '#D64545' : coloreAnelloAssenza(a), icona)}
+        <div class="card-assenza-compact-nome"><strong>${a.personalizzata ? (a.nome || 'Nuova voce') : a.nome}</strong>${anniCongedoRiga}</div>
+        <span class="saldo-resta" style="color:${rimangono < 0 ? '#D64545' : coloreAnelloAssenza(a)}"><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small> / ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small></span>
+        <small class="saldo-usati" hidden>Usati <em>${numeroIt(usate)}</em> su <span class="saldo-su">${numeroIt(valoreVisuale)}</span></small>
       </div>
       <span class="barra-residuo-assenza" aria-hidden="true"><i style="width:${resto}%;background:${coloreResto}"></i></span>
       <div class="card-assenza-head">
@@ -528,9 +525,9 @@ function renderAssenze(){
   }
   if(boxPersonalizzate){
     const personalizzate = AppState.assenze.filter(a => a.personalizzata);
-    boxPersonalizzate.innerHTML = personalizzate.length
-      ? personalizzate.map(renderCardAssenzaItem).join('')
-      : '<p class="sotto-titolo" style="padding:10px 14px;margin:0;">Nessuna: aggiungine una con il pulsante qui sotto.</p>';
+    boxPersonalizzate.innerHTML = personalizzate.map(renderCardAssenzaItem).join('');
+    boxPersonalizzate.hidden = !personalizzate.length;
+    const titoloP = el('titoloAssenzePersonalizzate'); if(titoloP) titoloP.hidden = !personalizzate.length;
   }
 
   if(!window.__filtriAssenzeInizializzati){ inizializzaFiltriAssenze(); window.__filtriAssenzeInizializzati = true; }

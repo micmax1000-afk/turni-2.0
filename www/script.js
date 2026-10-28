@@ -656,6 +656,7 @@ function inizializza(){
     });
   });
 
+  on('btnNuovaAssenzaTesta','click', () => el('btnAggiungiAssenzaPersonalizzata').click());
   on('btnAggiungiAssenzaPersonalizzata','click', () => {
     AppState.assenze.push({ id: nuovoId(), nome:'Nuova voce', valore:0, unita:'gg', personalizzata:true });
     salvaAssenzeStorage();
@@ -1008,6 +1009,7 @@ function inizializza(){
   on('tabAltro','click', () => mostraScheda('altro'));
 
   on('btnPersonalizzaReport','click', apriPersonalizzaReport);
+  on('reportFondoV4','click', e => { const r = e.target.closest('[data-apri-report]'); if(r) apriChiudiReport(r.dataset.apriReport); });
   on('btnChiudiPersonalizzaReport','click', () => { el('overlayPersonalizzaReport').hidden = true; });
   on('btnFattoPersonalizzaReport','click', () => {
     AppState.reportBlocchi = {
@@ -1610,15 +1612,14 @@ function renderReportHero(){
     const lordo = round2((acc.fisseBase || 0) + (acc.tredicesimaAccredito || 0) + (acc.accessorieLorde || 0));
     const trattenute = round2(lordo - acc.netto);
     box.innerHTML = `
-      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()} <span class="tag-importo tag-netto">netto</span></div>
+      <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()} <span class="tag-importo tag-netto">netto</span> <span class="report-hero-stima">stima</span></div>
       <div class="report-hero-cifra">${f(acc.netto)}</div>
       <div class="report-hero-righe">
-        <div><span>Stipendio di ${precedente}</span><b>${f(acc.fisseBase)}</b></div>
+        <div title="Stipendio di ${precedente}"><span>Stipendio</span><b>${f(acc.fisseBase)}</b></div>
         ${acc.tredicesimaAccredito > 0 ? `<div><span>Tredicesima</span><b>${f(acc.tredicesimaAccredito)}</b></div>` : ''}
-        <div><span>Indennità e straordinari di ${dueMesiPrima}</span><b>${f(acc.accessorieLorde)}</b></div>
-        <div class="meno"><span>Tasse e contributi</span><b>−${f(trattenute)}</b></div>
-      </div>
-      <div class="report-hero-det">Stima · le voci sopra sono lorde</div>`;
+        <div title="Indennità e straordinari di ${dueMesiPrima}"><span>Indennità</span><b>${f(acc.accessorieLorde)}</b></div>
+        <div class="meno"><span>Tasse</span><b>−${f(trattenute)}</b></div>
+      </div>`;
     box.hidden = false;
   }catch(e){
     console.warn('Riquadro Report non calcolato:', e);
@@ -1670,18 +1671,28 @@ function renderMeseV3(){
   const quotaNetta = na.lordo > 0 ? na.netto / na.lordo : 0;
   const nettoVoce = v => Math.round((v || 0) * quotaNetta);
   const ciSonoZeri = !meseMostraZeriV3 && ([t.ordinarie, t.notturne, t.festive + t.domenicali + t.notturneFestive, str].some(v => !v) || [a.indOP, a.indReperibilita, a.indMissioni, a.indCambioTurno].some(v => !v));
+  // v2.94: tutto compatto. Ore in una barra unica con la legenda; indennità una riga ciascuna;
+  // la spiegazione del netto si apre con la "i"; buoni pasto, cedolino e statistiche in fondo.
+  const fasce = [['Diurne', t.ordinarie, 'diurne'], ['Serali/notturne', t.notturne, 'notturne'],
+    ['Festive', t.festive + t.domenicali + t.notturneFestive, 'festive', t.notturneFestive ? ` (${h(t.notturneFestive)} nott.)` : ''], ['Straord.', str, 'straordinario']]
+    .filter(x => meseMostraZeriV3 || x[1] > 0);
   host.innerHTML = `
-    ${str > 0 ? `<p class="mese-str-v3">Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} <span class="tag-importo tag-lordo">lordi</span> → <b>+${f(ns.netto)}</b> <span class="tag-importo tag-netto">netti</span>, arrivano a ${pag}.</p>` : ''}
-    <div class="mese-gruppo-v3"><h3>Ore lavorate · ${h(ore)}</h3>
-      ${righeOre.length ? righeOre.map(([n, v, cls, sub]) => `<div class="mese-riga-v3"><span>${n}</span><b>${h(v)}</b><div class="mese-barra-v3"><i class="${cls}" style="width:${ore ? Math.round(v / ore * 100) : 0}%"></i></div>${sub ? `<small>${sub}</small>` : ''}</div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna ora in questo mese.</p>'}
+    <div class="mese-ore-v4">
+      <div class="mese-ore-testa-v4"><span>Ore lavorate</span><b>${h(ore)}</b></div>
+      ${ore > 0 ? `<div class="mese-barra-v4">${fasce.filter(x => x[1] > 0).map(([, v, cls]) => `<i class="${cls}" style="width:${(v / ore * 100).toFixed(1)}%"></i>`).join('')}</div>
+      <div class="mese-legenda-v4">${fasce.map(([n, v, cls, extra]) => `<span><i class="${cls}"></i>${n} <b>${h(v)}</b>${extra || ''}</span>`).join('')}</div>` : '<p class="sotto-titolo" style="margin:0">Nessuna ora in questo mese.</p>'}
     </div>
-    <div class="mese-gruppo-v3"><h3>Indennità del mese</h3>
-      ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span><span class="tag-importo tag-lordo">lordo</span></span><span><span class="tag-importo tag-netto">netto</span></span></div>` : ''}
+    <div class="mese-gruppo-v3 mese-ind-box-v4"><h3>Indennità del mese</h3>
+      ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span>lordo</span><span>netto</span></div>` : ''}
       ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
-      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)} <span class="netto-v3">~${f(round2(totInd * quotaNetta))}</span></span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}. Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</div>` : ''}
-      ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi le voci a zero ▴' : 'Mostra anche le voci a zero ▾'}</button>` : ''}
-    </div>
-    ${r.buoniPasto ? `<div class="mese-gruppo-v3"><h3>Fuori busta paga</h3><div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">🍽️</span><span>Buoni pasto</span><b>${r.buoniPasto}</b></div></div>` : ''}`;
+      ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><b>${f(totInd)}</b><b class="netto-v3">~${f(round2(totInd * quotaNetta))}</b></div>` : ''}
+      <div class="mese-piede-v4">
+        ${ind.length ? `<details class="mese-info-v4"><summary>In busta a ${pag} · netto stimato <span aria-hidden="true">ⓘ</span></summary><p>${str > 0 ? `Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} lordi → +${f(ns.netto)} netti. ` : ''}Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</p></details>` : '<span></span>'}
+        ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi zeri ▴' : 'Voci a zero ▾'}</button>` : ''}
+      </div>
+    </div>`;
+  const bp = el('reportBuoniPasto');
+  if(bp){ bp.hidden = !r.buoniPasto; el('reportBuoniPastoNumero').textContent = r.buoniPasto; }
   const btn = el('btnMeseZeriV3');
   if(btn) btn.onclick = () => { meseMostraZeriV3 = !meseMostraZeriV3; renderMeseV3(); };
 }
@@ -3299,8 +3310,22 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   boxIndennita.innerHTML = pezzi.join('');
 }
 
+// v2.94: Cedolino e Statistiche dell'anno restano chiusi finché non si tocca la loro riga in fondo al Report.
+const reportAperto = { cedolino: false, statistiche: false };
+function apriChiudiReport(quale){
+  reportAperto[quale] = !reportAperto[quale];
+  applicaVisibilitaReportBlocchi();
+  if(reportAperto[quale]){
+    const dove = el(quale === 'cedolino' ? 'sezioneCedolino' : 'sezioneStatisticheGrafici');
+    if(dove) setTimeout(() => dove.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30);
+  }
+}
 function applicaVisibilitaReportBlocchi(){
   const b = AppState.reportBlocchi || {};
+  ['cedolino', 'statistiche'].forEach(k => {
+    const riga = document.querySelector(`[data-apri-report="${k}"]`);
+    if(riga){ riga.hidden = b[k] === false; riga.classList.toggle('aperto', !!reportAperto[k]); }
+  });
   const mappa = {
     prossimoTurno: 'prossimoTurnoWidget',
     riepilogoMese: 'riepilogoTurniV45',
@@ -3310,13 +3335,15 @@ function applicaVisibilitaReportBlocchi(){
   };
   Object.keys(mappa).forEach(chiave => {
     const el1 = el(mappa[chiave]);
-    if(el1) el1.hidden = (b[chiave] === false);
+    const chiuso = (chiave === 'cedolino' || chiave === 'statistiche') && !reportAperto[chiave];
+    if(el1) el1.hidden = (b[chiave] === false) || chiuso;
   });
   // Il Cedolino comprende più sezioni oltre a quella principale: le nascondiamo tutte insieme.
   ['sezioneAccreditoConto','sezioneStorico','sezioneRiepilogoAnnuale'].forEach(id => {
     const n = el(id);
-    if(n) n.hidden = (b.cedolino === false);
+    if(n) n.hidden = (b.cedolino === false) || !reportAperto.cedolino;
   });
+  document.querySelectorAll('#vistaCedolino > details.cedolino-sezione-secondaria').forEach(d => { d.hidden = (b.cedolino === false) || !reportAperto.cedolino; });
 }
 
 function apriPersonalizzaReport(){

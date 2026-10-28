@@ -2348,3 +2348,92 @@ html[data-tema="scuro"] .lista-strumenti-card-v4 .sigla-strumento-v4{filter:none
 .scelta-buoni-pasto[hidden]{display:none}
 .scelta-buoni-pasto .scelta-prima-dopo{flex:none;margin:0}
 .scelta-buoni-pasto .scelta-prima-dopo button{min-width:46px}
+
+/* v2.94 – Report compatto (stile della scheda Turni) */
+.testa-v4{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.testa-v4 h2{margin:0}
+.sotto-v4{margin:2px 0 0;font-size:.8rem;color:var(--testo-tenue)}
+.tondo-v4{width:40px;height:40px;border-radius:50%!important;border:1px solid var(--bordo)!important;background:var(--pannello)!important;flex:none;display:grid;place-items:center}
+#vistaStatistiche .scheda,#vistaCedolino .scheda{padding:14px 14px;margin-bottom:10px}
+#vistaStatistiche .report-mese-nav{margin:0 0 10px}
+.report-hero{background:#E8EEFD!important;color:#1B2238!important;border:1px solid #C3D2F7;border-radius:16px!important;padding:12px 14px!important;margin-bottom:0!important;box-shadow:none!important}
+.report-hero .report-hero-et{font-size:.78rem;font-weight:600;opacity:1;color:#2B3248}
+.report-hero .tag-netto{background:#DDF3E4!important;color:#1E7A46!important}
+.report-hero-stima{font-size:.7rem;color:#5A627A;font-weight:600}
+.report-hero .report-hero-cifra{font-size:1.7rem;margin:2px 0 4px;color:#1B2238}
+.report-hero-righe{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:.76rem;color:#2B3248}
+.report-hero-righe div{display:flex;gap:4px;align-items:baseline}
+.report-hero-righe span{opacity:.85}
+.report-hero-righe b{font-weight:700}
+html[data-tema="scuro"] .report-hero{background:#1E2A44!important;border-color:#3A5BA8;color:#E6ECFF!important}
+html[data-tema="scuro"] .report-hero .report-hero-cifra,html[data-tema="scuro"] .report-hero-righe,html[data-tema="scuro"] .report-hero .report-hero-et{color:#E6ECFF}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .report-hero{background:#1E2A44!important;border-color:#3A5BA8;color:#E6ECFF!important}html:not([data-tema="chiaro"]) .report-hero .report-hero-cifra,html:not([data-tema="chiaro"]) .report-hero-righe,html:not([data-tema="chiaro"]) .report-hero .report-hero-et{color:#E6ECFF}}
+#sezioneRiepilogo .mese-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:0 0 8px;border:0}
+#sezioneRiepilogo .mese-tiles > div{background:none!important;border:0!important;border-right:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;border-radius:0!important;padding:2px 0!important;text-align:center;box-shadow:none!important}
+#sezioneRiepilogo .mese-tiles > div:last-child{border-right:0!important}
+#sezioneRiepilogo .mese-tiles b{font-size:1.1rem!important}
+#sezioneRiepilogo .mese-tiles span{font-size:.7rem!important}
+.mese-ore-v4{border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);padding-top:8px;margin-bottom:10px}
+.mese-ore-testa-v4{display:flex;justify-content:space-between;font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--testo-tenue);margin-bottom:5px}
+.mese-ore-testa-v4 b{color:var(--testo);font-size:.85rem;letter-spacing:0}
+.mese-barra-v4{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;background:var(--carta)}
+.mese-barra-v4 i,.mese-legenda-v4 i{display:block;background:#9AA4B6}
+.mese-barra-v4 i.notturne,.mese-legenda-v4 i.notturne{background:#7B57E0}
+.mese-barra-v4 i.festive,.mese-legenda-v4 i.festive{background:#D64545}
+.mese-barra-v4 i.straordinario,.mese-legenda-v4 i.straordinario{background:#E08A00}
+.mese-legenda-v4{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:.76rem;margin-top:6px;color:var(--testo)}
+.mese-legenda-v4 span{display:flex;align-items:center;gap:4px}
+.mese-legenda-v4 i{width:8px;height:8px;border-radius:50%}
+.mese-legenda-v4 b{font-weight:700}
+.mese-ind-box-v4{margin:0!important;padding:8px 10px!important;border-radius:14px!important}
+.mese-ind-box-v4 h3{margin:0 0 4px!important;font-size:.72rem!important}
+.mese-ind-box-v4 .mese-ind-testa-v3 span{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--testo-tenue);text-align:right}
+.mese-ind-box-v4 .mese-ind-v3{padding:4px 0!important;font-size:.82rem!important;min-height:0}
+.mese-ind-box-v4 .mese-ind-v3 small{display:block;font-size:.68rem}
+.mese-ind-box-v4 .mese-ind-icona svg{width:16px;height:16px}
+.mese-ind-box-v4 .mese-tot-v3{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border-top:1px solid var(--bordo);padding-top:5px;margin-top:3px;font-size:.86rem;font-weight:800}
+.mese-ind-box-v4 .mese-tot-v3 .netto-v3{min-width:56px;text-align:right}
+.mese-piede-v4{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-top:5px}
+.mese-info-v4{font-size:.72rem;color:var(--testo-tenue);flex:1}
+.mese-info-v4 summary{cursor:pointer;list-style:none}
+.mese-info-v4 summary::-webkit-details-marker{display:none}
+.mese-info-v4 summary span{color:#1D4FD7;font-weight:700}
+.mese-info-v4 p{margin:4px 0 0;line-height:1.4}
+.mese-piede-v4 .mese-mostra-v3{margin:0!important;padding:0!important;font-size:.72rem!important;white-space:nowrap;background:none;border:0}
+.report-fondo-v4{padding:4px 14px!important}
+.report-riga-v4{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 0;border:0;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);background:none;font:inherit;font-size:.92rem;color:var(--testo);text-align:left;cursor:pointer}
+.report-riga-v4:last-child{border-bottom:0}
+.report-riga-v4[hidden]{display:none}
+.report-riga-v4 small{color:var(--testo-tenue);font-size:.74rem}
+.report-riga-v4 b{font-weight:700;transition:transform .15s}
+.report-riga-v4.aperto b{transform:rotate(90deg)}
+
+/* v2.94 – Assenze compatte: giorni di partenza in cima, una riga per voce */
+#sezioneAssenze{padding:14px}
+.partenza-v4{border:1px dashed var(--bordo)!important;background:var(--pannello)!important;border-radius:14px!important;padding:8px 10px!important;margin:0 0 10px!important;gap:8px!important}
+.partenza-v4 i{font-size:.86rem!important;font-weight:600}
+.partenza-v4 i small{font-size:.72rem!important;font-weight:500}
+.partenza-v4 button{color:#1D4FD7!important}
+.lista-assenze-v4{display:block!important;border:1px solid var(--bordo);border-radius:14px;background:var(--pannello);padding:2px 10px;margin:0 0 10px}
+.lista-assenze-v4[hidden]{display:none!important}
+.lista-assenze-v4 .card-assenza{border:0!important;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;border-radius:0!important;background:none!important;box-shadow:none!important;padding:0!important;margin:0!important}
+.lista-assenze-v4 .card-assenza:last-child{border-bottom:0!important}
+.lista-assenze-v4 .card-assenza-chiusa > :not(.card-assenza-compact){display:none!important}
+.riga-assenza-v4{display:flex!important;align-items:center;gap:10px;padding:7px 0!important;min-height:0!important;cursor:pointer;background:none!important;border:0!important}
+.riga-assenza-v4 .saldo-anello,.riga-assenza-v4 .saldo-anello svg{width:28px!important;height:28px!important;flex:none}
+.riga-assenza-v4 .saldo-anello span{font-size:.72rem!important}
+.riga-assenza-v4 .card-assenza-compact-nome{flex:1;min-width:0;margin:0!important}
+.riga-assenza-v4 .card-assenza-compact-nome strong{font-size:.88rem;font-weight:600}
+.riga-assenza-v4 .saldo-resta{flex:none;font-weight:800;font-size:.95rem;white-space:nowrap}
+.riga-assenza-v4 .saldo-resta small{font-weight:600;font-size:.72rem;color:var(--testo-tenue)}
+.anni-congedo-v4{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.anni-congedo-v4 em{font-style:normal;font-size:.68rem;font-weight:700;background:var(--carta);border-radius:8px;padding:1px 6px;color:var(--testo)}
+.lista-assenze-v4 .card-assenza-aperta{padding-bottom:8px!important}
+#gruppoAssenzeNonUsate{margin:0 0 10px}
+.riga-assenza-v4 .saldo-usati{display:none!important}
+.report-hero .report-hero-righe{display:flex!important;flex-wrap:wrap;gap:2px 12px!important;grid-template-columns:none!important}
+.report-hero .report-hero-righe div{display:flex!important;gap:4px;border:0!important;padding:0!important;margin:0!important;justify-content:flex-start!important}
+.assenze-filtri-seg[hidden],#btnAggiungiAssenzaPersonalizzata[hidden],#titoloAssenzePersonalizzate[hidden]{display:none!important}
+.riga-assenza-v4 .saldo-resta strong{font-size:1rem!important;font-weight:800}
+.mese-ind-box-v4{background:none!important;border:0!important;padding:8px 0 0!important;border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;border-radius:0!important}
+.report-hero .report-hero-righe{font-size:.74rem!important;margin:2px 0 0!important}
