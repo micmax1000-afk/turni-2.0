@@ -6,7 +6,12 @@ const APP_SHELL=[
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
  './icons/icon-48.png','./icons/icon-72.png','./icons/icon-96.png','./icons/icon-128.png','./icons/icon-144.png','./icons/icon-152.png','./icons/icon-192.png','./icons/icon-384.png','./icons/icon-512.png'
 ];
+// v2.99: nell'app Android (https://localhost, senza porta) i file sono già dentro l'app, quindi il
+// service worker non serve: si attiva subito, cancella la copia vecchia, si toglie di mezzo e
+// ricarica la pagina. Così, installata una versione nuova, parte subito senza "Aggiorna ora".
+const APP_ANDROID = self.location.hostname === 'localhost' && !self.location.port;
 self.addEventListener('install', event => {
+  if(APP_ANDROID){ self.skipWaiting(); return; }
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll(APP_SHELL))
@@ -17,6 +22,16 @@ self.addEventListener('message', event => {
   if(event.data && event.data.tipo === 'skipWaiting') self.skipWaiting();
 });
 self.addEventListener('activate', event => {
+  if(APP_ANDROID){
+    event.waitUntil(
+      caches.keys()
+        .then(keys => Promise.all(keys.map(key => caches.delete(key))))
+        .then(() => self.registration.unregister())
+        .then(() => self.clients.matchAll({ type: 'window' }))
+        .then(clients => Promise.all(clients.map(c => c.navigate(c.url).catch(() => {}))))
+    );
+    return;
+  }
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
@@ -24,6 +39,7 @@ self.addEventListener('activate', event => {
   );
 });
 self.addEventListener('fetch', event => {
+  if(APP_ANDROID) return;
   const request = event.request;
   if(request.method !== 'GET') return;
   if(new URL(request.url).origin !== self.location.origin) return;

@@ -3396,7 +3396,14 @@ document.addEventListener('DOMContentLoaded', inizializza);
 /* ---------------------------------------------------------
    PWA — registrazione service worker (offline + installabile)
    --------------------------------------------------------- */
-if('serviceWorker' in navigator){
+// v2.99: nell'app Android il service worker non serve (i file sono dentro l'app) e faceva
+// comparire "Nuova versione disponibile" a ogni installazione: lo togliamo se c'era.
+const APP_ANDROID_SW = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  || (location.hostname === 'localhost' && !location.port);
+if(APP_ANDROID_SW && 'serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(() => {});
+  if(window.caches) caches.keys().then(k => k.forEach(c => caches.delete(c))).catch(() => {});
+} else if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(registrazione => {
       // Controlla subito se c'è un aggiornamento in attesa (senza aspettare il controllo
