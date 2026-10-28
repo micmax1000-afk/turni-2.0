@@ -56,7 +56,11 @@ function popolaFormAnagrafica(){
     el('campoConiugeACarico').value = AppState.anagrafica.coniugeACarico || 'no';
     el('campoFigliOver21').value = AppState.anagrafica.figliOver21 ?? 0;
     el('campoSindacato').value = normalizzaSindacato(AppState.anagrafica.sindacato);
+    el('campoAddComunale').value = AppState.anagrafica.addComunaleConfermata ? (AppState.anagrafica.addComunale ?? '') : '';
+    el('campoQuotaSindacale').value = quotaSindacaleMensile(AppState.anagrafica);
   }
+  el('rigaQuotaSindacale').hidden = el('campoSindacato').value !== 'si';
+  aggiornaAvvisiDatiMancanti();
   aggiornaVisualizzazioneParametro();
   aggiornaProfiloAnagrafica();
 }
@@ -71,11 +75,7 @@ function aggiornaVisualizzazioneParametro(){
   const q = el('testataQualifica'); if(q) q.textContent = qualifica;
   const r = el('testataRegione'); if(r) r.textContent = el('campoRegione').value;
   const c = el('testataCompleta');
-  if(c){
-    const completa = !!AppState.anagrafica && Number(el('campoAnni').value) > 0;
-    c.textContent = completa ? 'Completa' : 'Da completare';
-    c.classList.toggle('da-completare', !completa);
-  }
+  if(c) aggiornaAvvisiDatiMancanti();
 }
 
 
@@ -112,6 +112,9 @@ function cancellaAnagrafica(){
   el('campoConiugeACarico').value = 'no';
   el('campoFigliOver21').value = 0;
   el('campoSindacato').value = 'no';
+  el('campoAddComunale').value = '';
+  el('campoQuotaSindacale').value = '';
+  el('rigaQuotaSindacale').hidden = true;
   aggiornaVisualizzazioneParametro();
   aggiornaRiassuntoAnagrafica();
   aggiornaProfiloAnagrafica();
@@ -123,13 +126,16 @@ function salvaAnagraficaDaModale(){
     qualifica: el('campoQualifica').value,
     anni: el('campoAnni').value,
     regione: el('campoRegione').value,
-    // L'addizionale comunale ora si modifica solo da Tabelle: qui ne preserviamo il valore
-    // già salvato, per non azzerarlo ogni volta che si salva il resto dell'anagrafica.
-    addComunale: (AppState.anagrafica && AppState.anagrafica.addComunale) ?? 0.8,
+    // v2.99: l'addizionale comunale si inserisce qui. Finché non la scrivi resta 0,8% (stima)
+    // e risulta "da inserire".
+    ...addComunaleDaCampo(),
     coniugeACarico: el('campoConiugeACarico').value,
     figliOver21: Number(el('campoFigliOver21').value) || 0,
-    sindacato: el('campoSindacato').value
+    sindacato: el('campoSindacato').value,
+    quotaSindacale: el('campoQuotaSindacale').value === '' ? quotaSindacaleMensile(AppState.anagrafica) : Math.max(0, Number(el('campoQuotaSindacale').value) || 0)
   };
+  el('rigaQuotaSindacale').hidden = el('campoSindacato').value !== 'si';
+  if(el('campoSindacato').value === 'si' && el('campoQuotaSindacale').value === '') el('campoQuotaSindacale').value = AppState.anagrafica.quotaSindacale;
   salvaAnagraficaStorage();
   aggiornaRiassuntoAnagrafica();
   aggiornaProfiloAnagrafica();
@@ -137,6 +143,61 @@ function salvaAnagraficaDaModale(){
   if(typeof aggiornaRiassuntoAnagraficaAltro === 'function') aggiornaRiassuntoAnagraficaAltro();
   const stato = el('statoSalvataggioAnagrafica');
   if(stato) stato.innerHTML = '<span class="stato-attivo">✓ Salvato</span> · le modifiche si salvano da sole';
+  aggiornaAvvisiDatiMancanti();
+}
+
+function addComunaleDaCampo(){
+  const prima = AppState.anagrafica || {};
+  const v = el('campoAddComunale').value;
+  if(v === '') return { addComunale: prima.addComunale ?? 0.8, addComunaleConfermata: !!prima.addComunaleConfermata };
+  return { addComunale: Math.max(0, Number(v) || 0), addComunaleConfermata: true };
+}
+
+// Quota sindacale al mese: quella scritta in Anagrafica, altrimenti il valore delle Tabelle.
+function quotaSindacaleMensile(a){
+  const q = a && a.quotaSindacale;
+  if(q !== undefined && q !== null && q !== '' && !isNaN(Number(q))) return Number(q);
+  return Number(AppState.tabelle && AppState.tabelle.sindacatoMensile) || 0;
+}
+
+// v2.99: dati dell'anagrafica che servono al netto e che mancano ancora.
+function datiAnagraficaMancanti(){
+  const a = AppState.anagrafica;
+  if(!a) return ['i tuoi dati (qualifica, anni, regione…)'];
+  const m = [];
+  if(!(Number(a.anni) > 0)) m.push('anni di servizio');
+  if(!a.addComunaleConfermata) m.push('addizionale comunale');
+  return m;
+}
+function testoDatiMancanti(m){
+  return m.length === 1 ? m[0] : m.slice(0, -1).join(', ') + ' e ' + m[m.length - 1];
+}
+function aggiornaAvvisiDatiMancanti(){
+  const m = datiAnagraficaMancanti();
+  const testo = testoDatiMancanti(m);
+  const maiusc = testo.charAt(0).toUpperCase() + testo.slice(1);
+  const rep = el('avvisoReportMancanti');
+  if(rep){
+    rep.hidden = !m.length;
+    if(m.length) rep.innerHTML = `<span aria-hidden="true">⚠️</span><i><b>Completa i tuoi dati</b><small>Manca${m.length > 1 ? 'no' : ''} ${escapeHtml(testo)}: netto e tasse potrebbero non tornare.</small></i><button type="button" class="btn-nuovo-turni-v4" data-completa-anagrafica>Completa</button>`;
+  }
+  const ana = el('avvisoAnagraficaMancanti');
+  if(ana){
+    ana.hidden = !m.length;
+    if(m.length) ana.innerHTML = `<span aria-hidden="true">⚠️</span><i><b>${m.length === 1 ? 'Manca 1 dato' : `Mancano ${m.length} dati`}</b><small>${escapeHtml(maiusc)}: senza, il netto non è giusto.</small></i>`;
+  }
+  // "da inserire" sotto le righe che mancano
+  const segna = (id, manca) => {
+    const riga = el(id) && el(id).closest('.riga-anagrafica');
+    if(!riga) return;
+    let s = riga.querySelector('.da-inserire-v5');
+    if(manca && !s){ s = document.createElement('small'); s.className = 'da-inserire-v5'; s.textContent = 'da inserire'; riga.querySelector('span').appendChild(s); }
+    if(!manca && s) s.remove();
+  };
+  segna('campoAnni', m.includes('anni di servizio'));
+  segna('campoAddComunale', m.includes('addizionale comunale'));
+  const c = el('testataCompleta');
+  if(c){ c.textContent = m.length ? (m.length === 1 ? 'Manca 1 dato' : `Mancano ${m.length} dati`) : 'Completa'; c.classList.toggle('da-completare', !!m.length); }
 }
 
 const PARAMETRO_STIPENDIALE = {

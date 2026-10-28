@@ -2549,3 +2549,32 @@ html[data-tema="scuro"] .riga-valore-v5 input::-webkit-inner-spin-button,.riga-v
 html[data-tema="scuro"] .piede-tabelle-v5 button{color:#FF9B8F}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .lista-gruppi-v5 .tabella-icon-v17,html:not([data-tema="chiaro"]) .conta-mod-v5,html:not([data-tema="chiaro"]) .riga-valore-v5 .tabella-reset-one,html:not([data-tema="chiaro"]) .filtro-mod-v5.attivo{background:#22305A;color:#C9D7FF;border-color:#33509E}html:not([data-tema="chiaro"]) .riga-valore-v5 input::-webkit-inner-spin-button,.riga-valore-v5 input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .riga-valore-v5.mod input{background:#1E2A44!important;border-color:#5B7BD6!important}html:not([data-tema="chiaro"]) .piede-tabelle-v5 button{color:#FF9B8F}}
+
+/* ===== v2.99 Anagrafica completa, avvisi "dati mancanti", Backup ===== */
+.perc-v5{display:flex;align-items:center;gap:6px;flex:none}
+.perc-v5 input{width:84px;text-align:right;border:1px solid var(--bordo);border-radius:10px;padding:8px;font:600 .95rem var(--font-corpo);background:var(--pannello);color:var(--testo);box-sizing:border-box;margin:0}
+.perc-v5 b{font-weight:700;color:var(--testo-tenue)}
+.seg-v5{display:flex;gap:6px;flex:none}
+.seg-v5 button{min-width:52px;padding:8px 12px;border-radius:999px;border:1px solid var(--bordo);background:var(--pannello);font:700 .85rem var(--font-corpo);color:var(--testo);cursor:pointer}
+.seg-v5 button.attivo{background:var(--acc,#1D4FD7);border-color:var(--acc,#1D4FD7);color:#fff}
+.nota-riga-v5{display:block;font-size:.72rem;color:var(--testo-tenue);font-weight:400}
+.da-inserire-v5{display:block;color:#B26A00;font-weight:700;font-size:.78rem}
+#rigaQuotaSindacale[hidden],#benvenutoRigaQuota[hidden],.manca-dati-v5[hidden]{display:none!important}
+.manca-dati-v5{display:flex;gap:12px;align-items:center;background:#FFF4E5;border:1px solid #F3C98B;border-radius:16px;padding:12px 14px;margin:0 0 12px;color:#5A3A00}
+.manca-dati-v5>span{font-size:1.3rem;flex:none}
+.manca-dati-v5 i{font-style:normal;flex:1;min-width:0}
+.manca-dati-v5 b{display:block;font-size:.92rem}
+.manca-dati-v5 small{display:block;font-size:.78rem;margin-top:2px;line-height:1.35}
+.manca-dati-v5 .btn-nuovo-turni-v4{height:38px;padding:0 14px;font-size:.85rem}
+html[data-tema="scuro"] .manca-dati-v5{background:#3A2A12;border-color:#7A5420;color:#FFD9A0}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .manca-dati-v5{background:#3A2A12;border-color:#7A5420;color:#FFD9A0}}
+/* Backup */
+#paginaBackupV4 #sezioneBackup h2,#paginaBackupV4 #sezioneBackupDrive h3{font-size:1.02rem;text-transform:none;letter-spacing:0;color:var(--testo);margin:0 0 6px}
+#paginaBackupV4 #statoBackup.avviso-backup{background:#FFF4E5;border:1px solid #F3C98B!important;border-radius:12px;padding:9px 12px;color:#7A4A00;font-size:.84rem;font-weight:600;outline:0;box-shadow:none}
+#paginaBackupV4 .barra-backup{display:grid!important;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+#paginaBackupV4 .barra-backup #btnEsportaBackup{grid-column:1/-1}
+#paginaBackupV4 .barra-backup button{min-height:44px!important;padding:10px 12px!important;font-size:.9rem!important;margin:0!important;white-space:nowrap}
+#paginaBackupV4 #sezioneBackupDrive .btn-primario{width:100%;min-height:44px;margin-top:6px}
+#paginaBackupV4 .spiegazione-backup summary{font-size:.86rem;color:var(--testo-tenue);font-weight:600}
+html[data-tema="scuro"] #paginaBackupV4 #statoBackup.avviso-backup{background:#3A2A12;border-color:#7A5420!important;color:#FFD9A0}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #paginaBackupV4 #statoBackup.avviso-backup{background:#3A2A12;border-color:#7A5420!important;color:#FFD9A0}}

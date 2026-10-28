@@ -623,6 +623,7 @@ function inizializza(){
     salvaAnagraficaDaModale();
   });
   on('btnChiudiAnagrafica','click', () => mostraScheda('altro'));
+  on('avvisoReportMancanti','click', e => { if(e.target.closest('[data-completa-anagrafica]')) mostraScheda('anagrafica'); });
   el('btnCancellaAnagrafica').addEventListener('click', () => {
     mostraConferma(
       'Questo cancellerà i dati anagrafici salvati (qualifica, anni di servizio, sede, regione, ecc.) e riporterà il form ai valori predefiniti. Turni, assenze, tabelle e cedolini generati non vengono toccati. Continuare?',
@@ -1594,6 +1595,7 @@ function eliminaPatternSempliceV2(){
 // Report: in cima quanto arriva sul conto il mese dopo quello visualizzato, più ore e netto
 // dello straordinario. Stessi calcoli di "Cosa arriva sul conto" e del riepilogo ore.
 function renderReportHero(){
+  if(typeof aggiornaAvvisiDatiMancanti === 'function') aggiornaAvvisiDatiMancanti();
   const box = el('reportHero');
   if(!box) return;
   el('reportMeseEtichetta').textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
@@ -3564,9 +3566,14 @@ function chiudiBenvenuto(){
 }
 function avantiBenvenuto(){
   if(benvenuto.passo === 1){
+    const segScelto = k => (document.querySelector(`[data-seg-benvenuto="${k}"] .attivo`) || {}).dataset?.valore || 'no';
+    const quota = el('benvenutoQuotaSindacale').value;
     AppState.anagrafica = Object.assign({ addComunale: 0.8, coniugeACarico: 'no', figliOver21: 0, sindacato: 'no' }, AppState.anagrafica || {}, {
-      qualifica: el('benvenutoQualifica').value, anni: el('benvenutoAnni').value, regione: el('benvenutoRegione').value
+      qualifica: el('benvenutoQualifica').value, anni: el('benvenutoAnni').value, regione: el('benvenutoRegione').value,
+      addComunale: Math.max(0, Number(el('benvenutoAddComunale').value) || 0), addComunaleConfermata: true,
+      coniugeACarico: segScelto('coniuge'), figliOver21: Math.max(0, Number(el('benvenutoFigli').value) || 0), sindacato: segScelto('sindacato')
     });
+    if(quota !== '') AppState.anagrafica.quotaSindacale = Math.max(0, Number(quota) || 0);
     salvaAnagraficaStorage();
     aggiornaRiassuntoAnagrafica();
     aggiornaRiassuntoAnagraficaAltro();
@@ -3628,6 +3635,17 @@ function inizializzaBenvenuto(){
   on('overlayBenvenuto', 'click', e => {
     const anni = e.target.closest('[data-passo-benvenuto-anni]');
     if(anni){ const c = el('benvenutoAnni'); c.value = Math.max(0, (Number(c.value) || 0) + Number(anni.dataset.passoBenvenutoAnni)); return; }
+    const figli = e.target.closest('[data-passo-benvenuto-figli]');
+    if(figli){ const c = el('benvenutoFigli'); c.value = Math.max(0, (Number(c.value) || 0) + Number(figli.dataset.passoBenvenutoFigli)); return; }
+    const seg = e.target.closest('[data-seg-benvenuto] [data-valore]');
+    if(seg){
+      seg.parentElement.querySelectorAll('[data-valore]').forEach(b => b.classList.toggle('attivo', b === seg));
+      if(seg.parentElement.dataset.segBenvenuto === 'sindacato'){
+        el('benvenutoRigaQuota').hidden = seg.dataset.valore !== 'si';
+        if(seg.dataset.valore === 'si' && el('benvenutoQuotaSindacale').value === '') el('benvenutoQuotaSindacale').value = quotaSindacaleMensile(null);
+      }
+      return;
+    }
     const seq = e.target.closest('[data-benvenuto-pattern]');
     if(seq){ benvenuto.pattern = seq.dataset.benvenutoPattern; benvenuto.fase = 0; renderSequenzeBenvenuto(); return; }
     const fase = e.target.closest('[data-benvenuto-fase]');

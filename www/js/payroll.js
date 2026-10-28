@@ -217,7 +217,7 @@ function calcolaRitenute(comp, meseIndice){
   const addizionali = inPeriodoRate ? round2((imponibileFisso + accessorieImp) * (aliqRegionale + aliqComunale) / 100) : 0;
 
   // Altre ritenute: quota sindacale (anche sulla tredicesima) + Fondo assistenza
-  const quotaSindacale = (normalizzaSindacato(A.sindacato) === 'si') ? T.sindacatoMensile * (tredicesima > 0 ? 2 : 1) : 0;
+  const quotaSindacale = (normalizzaSindacato(A.sindacato) === 'si') ? quotaSindacaleMensile(A) * (tredicesima > 0 ? 2 : 1) : 0;
   const sindacato = round2(quotaSindacale + (T.fondoAssistenzaMensile || 0));
 
   return { lordo, contributi, imponibile, redditoAnnuoStimato: R, aliquotaMarginale, aliquotaMedia, irpefTotale, detrazioniLavoro, detrazioniFamiliari, detrazioni,

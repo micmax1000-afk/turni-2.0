@@ -432,6 +432,7 @@
         <div><h2>Report</h2><p class="sotto-v4">Quanto arriva sul conto</p></div>
         <button type="button" class="btn-nuovo-turni-v4" id="btnPersonalizzaReport" title="Scegli cosa vedere">Personalizza</button>
       </div>
+      <div class="manca-dati-v5" id="avvisoReportMancanti" hidden></div>
       <div class="report-mese-nav">
         <button type="button" class="btn-freccia" id="btnReportMesePrec" aria-label="Mese precedente">‹</button>
         <b id="reportMeseEtichetta">—</b>
@@ -748,6 +749,7 @@
       <em id="testataCompleta">Da completare</em>
     </div>
 
+    <div class="manca-dati-v5" id="avvisoAnagraficaMancanti" hidden></div>
     <p class="strumenti-turni-titolo">I tuoi dati</p>
     <div class="gruppo-anagrafica">
       <label class="riga-anagrafica"><span>Qualifica</span><select id="campoQualifica">
@@ -768,9 +770,11 @@
           <option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option>
           <option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
         </select></label>
+      <div class="riga-anagrafica"><span>Addizionale comunale<small class="nota-riga-v5">Del tuo Comune di residenza</small></span><div class="perc-v5"><input type="number" id="campoAddComunale" min="0" max="2" step="0.01" inputmode="decimal" placeholder="—" aria-label="Addizionale comunale in percentuale"><b>%</b></div></div>
       <label class="riga-anagrafica"><span>Coniuge a carico</span><select id="campoConiugeACarico"><option value="no">No</option><option value="si">Sì</option></select></label>
       <div class="riga-anagrafica"><span>Figli over 21 a carico</span><div class="contatore-anagrafica"><button type="button" data-passo="campoFigliOver21" data-delta="-1" aria-label="Meno">−</button><input type="number" id="campoFigliOver21" min="0" step="1" value="0" inputmode="numeric" aria-label="Figli over 21 a carico"><button type="button" data-passo="campoFigliOver21" data-delta="1" aria-label="Più">+</button></div></div>
       <label class="riga-anagrafica"><span>Iscritto al sindacato</span><select id="campoSindacato"><option value="no">No</option><option value="si">Sì</option></select></label>
+      <div class="riga-anagrafica" id="rigaQuotaSindacale" hidden><span>Quota sindacale al mese<small class="nota-riga-v5">La trovi sul cedolino</small></span><div class="perc-v5"><input type="number" id="campoQuotaSindacale" min="0" step="0.01" inputmode="decimal" aria-label="Quota sindacale al mese in euro"><b>€</b></div></div>
     </div>
 
     <div class="info-richiudibile">
@@ -1079,8 +1083,13 @@
       <label class="riga-anagrafica"><span>Qualifica</span><span class="grado-benvenuto" id="benvenutoGrado" aria-hidden="true"></span><select id="benvenutoQualifica"></select></label>
       <div class="riga-anagrafica"><span>Anni di servizio</span><div class="contatore-anagrafica"><button type="button" data-passo-benvenuto-anni="-1" aria-label="Meno">−</button><input type="number" id="benvenutoAnni" min="0" value="0" inputmode="numeric" aria-label="Anni di servizio"><button type="button" data-passo-benvenuto-anni="1" aria-label="Più">+</button></div></div>
       <label class="riga-anagrafica"><span>Regione</span><select id="benvenutoRegione"></select></label>
+      <div class="riga-anagrafica"><span>Addizionale comunale<small class="nota-riga-v5">La trovi sul cedolino o sul sito del Comune</small></span><div class="perc-v5"><input type="number" id="benvenutoAddComunale" min="0" max="2" step="0.01" value="0.8" inputmode="decimal" aria-label="Addizionale comunale in percentuale"><b>%</b></div></div>
+      <div class="riga-anagrafica"><span>Coniuge a carico</span><div class="seg-v5" data-seg-benvenuto="coniuge"><button type="button" data-valore="no" class="attivo">No</button><button type="button" data-valore="si">Sì</button></div></div>
+      <div class="riga-anagrafica"><span>Figli over 21 a carico</span><div class="contatore-anagrafica"><button type="button" data-passo-benvenuto-figli="-1" aria-label="Meno">−</button><input type="number" id="benvenutoFigli" min="0" value="0" inputmode="numeric" aria-label="Figli over 21 a carico"><button type="button" data-passo-benvenuto-figli="1" aria-label="Più">+</button></div></div>
+      <div class="riga-anagrafica"><span>Iscritto al sindacato</span><div class="seg-v5" data-seg-benvenuto="sindacato"><button type="button" data-valore="no" class="attivo">No</button><button type="button" data-valore="si">Sì</button></div></div>
+      <div class="riga-anagrafica" id="benvenutoRigaQuota" hidden><span>Quota sindacale al mese<small class="nota-riga-v5">La trovi sul cedolino</small></span><div class="perc-v5"><input type="number" id="benvenutoQuotaSindacale" min="0" step="0.01" inputmode="decimal" aria-label="Quota sindacale al mese in euro"><b>€</b></div></div>
     </div>
-    <p class="benvenuto-nota">Servono per stimare stipendio e tasse. Coniuge, figli over 21 e sindacato li aggiungi dopo in Altro → Anagrafica, nel riquadro "I tuoi dati".</p>
+    <p class="benvenuto-nota">Servono tutti per calcolare netto e tasse. Si cambiano quando vuoi in Altro → Anagrafica.</p>
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="2" hidden>
     <p class="benvenuto-prog">Passo 2 di 5</p>

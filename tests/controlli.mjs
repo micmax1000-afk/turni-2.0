@@ -578,6 +578,28 @@ sezione('Modifica il giorno, Tabelle, avvisi');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Anagrafica completa e quota sindacale');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.click('#tabReport');
+  ok('Report: "Completa i tuoi dati" con anni di servizio e addizionale comunale', await p.evaluate(() => !el('avvisoReportMancanti').hidden && /anni di servizio e addizionale comunale/.test(el('avvisoReportMancanti').textContent)));
+  await p.click('[data-completa-anagrafica]');
+  ok('"Completa" apre l\'Anagrafica con "Mancano 2 dati" e le righe "da inserire"', await p.evaluate(() => !!el('sezioneAnagrafica').offsetParent && /Mancano 2 dati/.test(el('avvisoAnagraficaMancanti').textContent) && document.querySelectorAll('#sezioneAnagrafica .da-inserire-v5').length === 2));
+  const nettoPrima = await p.evaluate(() => generaCedolino(2026, 9).sindacato);
+  await p.fill('#campoAnni', '18'); await p.dispatchEvent('#campoAnni', 'change');
+  await p.fill('#campoAddComunale', '0.5'); await p.dispatchEvent('#campoAddComunale', 'change');
+  ok('inseriti anni e addizionale: l\'avviso sparisce e l\'addizionale comunale entra nel calcolo', await p.evaluate(() => el('avvisoAnagraficaMancanti').hidden && AppState.anagrafica.addComunale === 0.5 && AppState.anagrafica.addComunaleConfermata && generaCedolino(2026, 9).aliqComunale === 0.5));
+  ok('sindacato Sì: compare la quota mensile, già con il valore delle tabelle', await p.evaluate(() => !el('rigaQuotaSindacale').hidden && Number(el('campoQuotaSindacale').value) === AppState.tabelle.sindacatoMensile));
+  await p.fill('#campoQuotaSindacale', '12'); await p.dispatchEvent('#campoQuotaSindacale', 'change');
+  ok('quota sindacale 12 €: entra nel cedolino al posto di quella delle tabelle', await p.evaluate(([prima]) => AppState.anagrafica.quotaSindacale === 12 && Math.abs(generaCedolino(2026, 9).sindacato - (prima - AppState.tabelle.sindacatoMensile + 12)) < 0.01, [nettoPrima]));
+  await p.selectOption('#campoSindacato', 'no');
+  ok('sindacato No: la quota sparisce e non si paga', await p.evaluate(() => el('rigaQuotaSindacale').hidden && generaCedolino(2026, 9).sindacato === Math.round((AppState.tabelle.fondoAssistenzaMensile || 0) * 100) / 100));
+  ok('Tabelle: niente più quota sindacale (sta in Anagrafica)', await p.evaluate(() => { mostraScheda('tabelle'); return true; }) && await p.evaluate(() => { const t = el('toggleTabelleAvanzate'); t.checked = true; t.dispatchEvent(new Event('change')); return !document.querySelector('input[data-t="sindacatoMensile"]'); }));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
 {
   // Installazione nuova: niente anagrafica, niente turni → si apre la guida.
@@ -588,7 +610,13 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
   await p.goto(URL_APP); await p.waitForFunction(() => typeof renderCalendario === 'function' && document.querySelector('.giorno-cella'));
   ok('installazione nuova: si apre il primo avvio guidato', await p.evaluate(() => !document.getElementById('overlayBenvenuto').hidden));
   await p.selectOption('#benvenutoQualifica', 'Sovrintendente');
+  await p.fill('#benvenutoAddComunale', '0.6');
+  await p.click('[data-seg-benvenuto="sindacato"] [data-valore="si"]');
+  ok('primo avvio: sindacato Sì mostra la quota mensile già compilata', await p.evaluate(() => !el('benvenutoRigaQuota').hidden && Number(el('benvenutoQuotaSindacale').value) > 0));
+  await p.fill('#benvenutoQuotaSindacale', '10');
+  await p.click('[data-passo-benvenuto-figli="1"]');
   await p.click('#btnBenvenutoAvanti');
+  ok('primo avvio: salvati addizionale comunale, figli, sindacato e quota', await p.evaluate(() => { const a = AppState.anagrafica; return a.addComunale === 0.6 && a.addComunaleConfermata && a.figliOver21 === 1 && a.sindacato === 'si' && a.quotaSindacale === 10 && a.coniugeACarico === 'no'; }), await p.evaluate(() => JSON.stringify(AppState.anagrafica)));
   await p.click('[data-benvenuto-pattern="pattern_quinta5"]');
   await p.click('[data-benvenuto-fase="1"]');
   ok('guida: anteprima della settimana che parte da Pom. oggi', await p.evaluate(() => { const s = [...document.querySelectorAll('#benvenutoSettimana span')].map(x => x.textContent); return s.length === 7 && s[0] === 'P' && s[1] === 'M' && document.getElementById('btnBenvenutoAvanti').textContent === 'Crea i turni'; }));
