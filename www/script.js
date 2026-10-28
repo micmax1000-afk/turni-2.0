@@ -2697,6 +2697,37 @@ async function mandaNotificaProva(){
     mostraToast('Notifica di prova tra 10 secondi: puoi anche chiudere l\'app.', 'successo', 5000);
   }catch(e){ mostraToast('Notifica di prova non programmata.', 'avviso'); }
 }
+// ===================== Altro (v2.95): Tema e colore a comparsa, pagina Backup =====================
+function apriPaginaBackupV4(apri){
+  const sez = el('sezioneAltro');
+  if(!sez) return;
+  sez.classList.toggle('mostra-backup', apri);
+  el('paginaBackupV4').hidden = !apri;
+  window.scrollTo(0, 0);
+}
+function aggiornaRiassuntiAltroV4(){
+  const t = el('descrizioneTema'), a = el('descrizioneAccento'), r = el('riassuntoTemaColore');
+  if(r && t && a) r.textContent = `${t.textContent} · ${a.textContent}`;
+  const st = el('statoBackup'), rb = el('riassuntoBackupV4');
+  if(st && rb){
+    const m = /Ultimo backup:\s*([^.]*)/.exec(st.textContent || '');
+    rb.textContent = m ? `Ultimo: ${m[1].trim()}` : 'Sul telefono e su Google Drive';
+  }
+}
+function inizializzaAltroV4(){
+  on('rigaTemaColore', 'click', () => {
+    const o = el('opzioniTemaColore'), apri = o.hidden;
+    o.hidden = !apri;
+    el('rigaTemaColore').setAttribute('aria-expanded', String(apri));
+    el('rigaTemaColore').classList.toggle('aperta', apri);
+  });
+  on('settingsBackupV4', 'click', () => apriPaginaBackupV4(true));
+  on('btnChiudiBackupV4', 'click', () => apriPaginaBackupV4(false));
+  // I riassunti seguono da soli i testi che l'app già aggiorna (tema, colore, ultimo backup).
+  const osserva = id => { const n = el(id); if(n && window.MutationObserver) new MutationObserver(aggiornaRiassuntiAltroV4).observe(n, { childList: true, characterData: true, subtree: true }); };
+  ['descrizioneTema', 'descrizioneAccento', 'statoBackup'].forEach(osserva);
+  aggiornaRiassuntiAltroV4();
+}
 function inizializzaControlloPromemoria(){
   on('settingsControlloPromemoria', 'click', apriControlloPromemoria);
   on('btnChiudiControlloPromemoria', 'click', () => { el('overlayControlloPromemoria').hidden = true; controllaNotifichePromemoriaTurno(); });
@@ -3690,6 +3721,7 @@ function inizializzaPromemoriaTurno(){
     controllaNotifichePromemoriaTurno();
   });
   inizializzaControlloPromemoria();
+  inizializzaAltroV4();
   on('btnAttivaNotificheTurno', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(controllaNotifichePromemoriaTurno, 800); });
   document.addEventListener('visibilitychange', () => { if(!document.hidden) controllaNotifichePromemoriaTurno(); });
   on('sceltaModoPromemoriaTurno', 'click', e => { const b = e.target.closest('[data-modo-promemoria]'); if(b) cambiaPromemoriaTurno({ modo: b.dataset.modoPromemoria }); });

@@ -261,6 +261,24 @@ sezione('Buoni pasto: solo quanti, anche 2 in un giorno');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Altro: due gruppi, pagina Backup, Tabelle');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.click('#tabAltro');
+  const a = await p.evaluate(() => ({ titoli: [...document.querySelectorAll('#sezioneAltro .strumenti-turni-titolo')].map(x => x.textContent).join(','), backupVisibile: !!el('impostazioniBackupContainer').offsetParent, promemoria: el('campoPromemoriaTurno').checked }));
+  ok('Altro: gruppi Impostazioni e Dati e aiuto, backup non più in fondo alla pagina, promemoria spento', a.titoli === 'Impostazioni,Dati e aiuto' && !a.backupVisibile && !a.promemoria, JSON.stringify(a));
+  await p.click('#settingsBackupV4');
+  ok('"Backup" apre la sua pagina con telefono e Google Drive, il resto di Altro sparisce', await p.evaluate(() => !!el('btnEsportaBackup').offsetParent && !!el('sezioneBackupDrive').offsetParent && !el('settingsTabelle').offsetParent));
+  await p.click('#btnChiudiBackupV4');
+  ok('✕ torna ad Altro', await p.evaluate(() => !!el('settingsTabelle').offsetParent && el('paginaBackupV4').hidden));
+  await p.click('#settingsTabelle');
+  const t = await p.evaluate(() => ({ hero: document.querySelector('.tabelle-hero-v4')?.textContent.replace(/\s+/g, ' ') || '', righe: document.querySelectorAll('#corpoTabelle .riga-tabelle-v4').length, vecchio: !!document.querySelector('.tabelle-hero-v17') }));
+  ok('Tabelle: riquadro azzurro con qualifica e modificati, righe al posto del "Centro parametri"', /Assistente Capo · Lazio/.test(t.hero) && /modificati/.test(t.hero) && t.righe >= 1 && !t.vecchio, JSON.stringify(t));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Colori dei turni: ovunque il colore esatto');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva() });
@@ -645,6 +663,8 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   const sfondo = () => p.evaluate(() => getComputedStyle(document.body).backgroundColor);
   await p.click('#tabAltro');
+  ok('"Tema e colore" chiuso all\'inizio, con il riassunto "Come il telefono · Blu"', await p.evaluate(() => el('opzioniTemaColore').hidden && el('riassuntoTemaColore').textContent === 'Come il telefono · Blu'));
+  await p.click('#rigaTemaColore');
   ok('pulsanti del tema visibili, "Auto" attivo', await p.evaluate(() => document.querySelector('.scelta-tema [data-tema="auto"]').classList.contains('attivo') && !!document.querySelector('.scelta-tema [data-tema="nero"]').offsetParent));
   await p.click('.scelta-tema [data-tema="grigio"]');
   ok('"Grigio" con il telefono in chiaro: sfondo grigio scuro', await sfondo() === 'rgb(41, 45, 53)');
@@ -653,6 +673,7 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   ok('"Grigio" resta dopo la riapertura', await sfondo() === 'rgb(41, 45, 53)' && await p.evaluate(() => document.documentElement.dataset.tema === 'scuro'));
   await p.emulateMedia({ colorScheme: 'dark' });
   await p.click('#tabAltro');
+  await p.click('#rigaTemaColore');
   await p.click('.scelta-tema [data-tema="chiaro"]');
   ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(41, 45, 53)');
   await p.click('.scelta-tema [data-tema="auto"]');
@@ -899,7 +920,9 @@ sezione('Colore dell\'app e Scrivi allo sviluppatore');
   const { p, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   ok('all\'inizio il colore è Blu (nessun cambio)', await p.evaluate(() => accentoScelto() === 'blu' && ![...document.documentElement.classList].some(c => c.startsWith('accento-'))));
   await p.click('#tabAltro');
+  await p.click('#rigaTemaColore');
   await p.click('[data-accento="verde"]');
+  ok('il riassunto di "Tema e colore" segue la scelta', await p.evaluate(() => /Verde/.test(el('riassuntoTemaColore').textContent)));
   const v = await p.evaluate(() => ({ cls: document.documentElement.classList.contains('accento-verde'), desc: el('descrizioneAccento').textContent, ink: getComputedStyle(document.documentElement).getPropertyValue('--inchiostro').trim(), salvato: localStorage.getItem('simCedolino_accento_v1') }));
   ok('Verde: si applica subito e si salva', v.cls && v.desc === 'Verde' && v.ink.toUpperCase() === '#174A3E' && v.salvato === 'verde', JSON.stringify(v));
   await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));

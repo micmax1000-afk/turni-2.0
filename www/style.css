@@ -2437,3 +2437,40 @@ html[data-tema="scuro"] .report-hero .report-hero-cifra,html[data-tema="scuro"] 
 .riga-assenza-v4 .saldo-resta strong{font-size:1rem!important;font-weight:800}
 .mese-ind-box-v4{background:none!important;border:0!important;padding:8px 0 0!important;border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;border-radius:0!important}
 .report-hero .report-hero-righe{font-size:.74rem!important;margin:2px 0 0!important}
+
+/* v2.95 – Altro compatto, pagina Backup, Tabelle nel nuovo stile */
+#sezioneAltro{padding:14px}
+#sezioneAltro .stato-connessione-v23{background:none!important;border:0!important;padding:0!important;margin:2px 0 0!important;font-size:.8rem!important}
+#sezioneAltro .lista-strumenti-turni{border-radius:14px;margin-bottom:10px}
+#sezioneAltro .riga-strumento-turni{padding:8px 12px;min-height:0}
+#sezioneAltro .riga-strumento-turni i{font-size:.9rem}
+#sezioneAltro .riga-strumento-turni i small{font-size:.72rem;margin-top:1px}
+#sezioneAltro .strumenti-turni-titolo{margin:4px 2px 6px}
+#rigaTemaColore b{transition:transform .15s}
+#rigaTemaColore.aperta b{transform:rotate(90deg)}
+#opzioniTemaColore .riga-tema{border:0!important;padding:4px 0!important}
+#sezioneAltro.mostra-backup > :not(#paginaBackupV4){display:none!important}
+#paginaBackupV4 #sezioneBackup,#paginaBackupV4 #sezioneBackupDrive{border:1px solid var(--bordo);border-radius:14px;box-shadow:none;padding:12px;margin:0 0 10px}
+#paginaBackupV4 #sezioneBackup h2,#paginaBackupV4 #sezioneBackupDrive h3,#paginaBackupV4 #sezioneBackupDrive h2{font-size:.74rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--testo-tenue);margin:0 0 6px}
+#paginaBackupV4 #statoBackup{background:#E8EEFD;border:1px solid #C3D2F7;border-radius:12px;padding:8px 10px;font-weight:700;color:#1B2238;margin:0 0 10px}
+html[data-tema="scuro"] #paginaBackupV4 #statoBackup{background:#1E2A44;border-color:#3A5BA8;color:#E6ECFF}
+#paginaBackupV4 .barra-backup{gap:8px}
+.tabelle-hero-v4{display:flex;align-items:center;gap:12px;background:#E8EEFD;border:1px solid #C3D2F7;border-radius:14px;padding:10px 12px;margin:0 0 10px;color:#1B2238}
+.tabelle-hero-ico{font-size:1.3rem;flex:none}
+.tabelle-hero-testo{flex:1;min-width:0}
+.tabelle-hero-testo b{display:block;font-size:.98rem}
+.tabelle-hero-testo small{display:block;font-size:.74rem;color:#2B3248;margin-top:1px}
+.tabelle-hero-v4 .tabella-hero-badge{flex:none;text-align:center;background:none!important;padding:0!important;min-width:0!important;color:#1B2238}
+.tabelle-hero-v4 .tabella-hero-badge strong{display:block;font-size:1.2rem}
+.tabelle-hero-v4 .tabella-hero-badge small{font-size:.68rem;color:#2B3248}
+html[data-tema="scuro"] .tabelle-hero-v4,html[data-tema="scuro"] .tabelle-hero-v4 *{color:#E6ECFF}
+html[data-tema="scuro"] .tabelle-hero-v4{background:#1E2A44;border-color:#3A5BA8}
+.lista-tabelle-v4{border:1px solid var(--bordo);border-radius:14px;background:var(--pannello);margin:0 0 10px;overflow:hidden}
+.riga-tabelle-v4{display:flex!important;align-items:center;gap:10px;width:100%;padding:9px 12px!important;border:0!important;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;background:none!important;font:inherit;color:var(--testo);text-decoration:none;text-align:left;margin:0!important;border-radius:0!important;box-shadow:none!important;cursor:pointer}
+.riga-tabelle-v4:last-child{border-bottom:0!important}
+.riga-tabelle-v4 > span{width:24px;text-align:center;flex:none}
+.riga-tabelle-v4 i{flex:1;font-style:normal;font-size:.9rem}
+.riga-tabelle-v4 i small{display:block;font-size:.72rem;color:var(--testo-tenue)}
+.riga-tabelle-v4 b{color:var(--testo-tenue);font-weight:600}
+.nota-tabelle-v4{font-size:.74rem;color:var(--testo-tenue);margin:8px 2px 0;line-height:1.4}
+#sezioneTabelle{padding:14px}

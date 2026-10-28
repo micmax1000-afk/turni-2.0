@@ -809,13 +809,12 @@
 
 <div id="vistaTabelle" hidden>
   <section class="scheda" id="sezioneTabelle">
-    <div class="intestazione-scheda">
-      <h2>Tabelle ufficiali</h2>
-      <button class="btn-mini-icona" id="btnChiudiTabelle" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
+    <div class="intestazione-scheda testa-v4">
+      <div><h2>Tabelle ufficiali</h2><p class="sotto-v4" id="statoSalvataggioTabelle">Stipendi, indennità e aliquote usati nei calcoli</p></div>
+      <button class="btn-icona tondo-v4" id="btnChiudiTabelle" title="Torna ad Altro" aria-label="Torna ad Altro">✕</button>
     </div>
-    <p class="sotto-titolo" id="statoSalvataggioTabelle">Le modifiche si salvano da sole.</p>
-    <p class="nota-tabelle">⚠ Valori indicativi da fonti pubbliche (CCNL 2022-2024, Legge di Bilancio 2026): confrontali con il tuo cedolino NoiPA prima di usarli per decisioni economiche.</p>
     <div id="corpoTabelle"></div>
+    <p class="nota-tabelle-v4">⚠️ Valori indicativi da fonti pubbliche (CCNL 2022-2024, Legge di Bilancio 2026): confrontali con il cedolino NoiPA.</p>
     <div id="footerTabelleEsterno">
       <button class="link-cancella-anagrafica" id="btnResetTabelle" type="button">Ripristina i valori predefiniti</button>
       <button class="btn-primario" id="btnSalvaTabelle" type="button" hidden>Salva</button>
@@ -977,18 +976,14 @@
 
     <!-- Sezioni Fase 2: impostazioni / statistiche (stub funzionali) -->
   <div id="vistaImpostazioni" hidden>
-    <section class="scheda">
-      <h2>Altro</h2>
-      <div id="statoConnessioneV23" class="stato-connessione-v23" role="status" aria-live="polite"></div>
-      <p class="strumenti-turni-titolo">Impostazioni</p>
+    <section class="scheda" id="sezioneAltro">
+      <div class="intestazione-scheda testa-v4"><div><h2>Altro</h2><div id="statoConnessioneV23" class="stato-connessione-v23" role="status" aria-live="polite"></div></div></div>
+      <div class="parte-altro-v4">
       <div class="lista-strumenti-turni">
         <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span class="grado-altro" id="gradoAltro" aria-hidden="true">🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
-        <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
-        <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Indennità nel calendario<small>Simboli e quali mostrare</small></i><b>›</b></button>
-        <div class="riga-strumento-turni riga-interruttore">
-          <span>📋</span><i>Agenda sotto il calendario<small>Prossimi 14 giorni con turni, ore ed eventi</small></i>
-          <input type="checkbox" class="interruttore" id="campoAgendaSotto" aria-label="Agenda sotto il calendario">
-        </div>
+      </div>
+      <p class="strumenti-turni-titolo">Impostazioni</p>
+      <div class="lista-strumenti-turni">
         <div class="riga-strumento-turni riga-interruttore">
           <span>⏰</span><i>Promemoria del turno<small id="descrizionePromemoriaTurno">Spento</small></i>
           <input type="checkbox" class="interruttore" id="campoPromemoriaTurno" aria-label="Promemoria del turno">
@@ -1015,6 +1010,12 @@
           <button type="button" class="btn-secondario" id="btnAggiungiWidget" style="width:100%;">＋ Aggiungi alla schermata Home</button>
           <p class="sotto-titolo" id="aiutoWidget" style="margin:8px 0 0;font-size:.78rem;" hidden>Se non compare: tieni premuto su uno spazio vuoto della schermata Home → Widget → Turni &amp; Accessorio PS.</p>
         </div>
+        <div class="riga-strumento-turni riga-interruttore">
+          <span>📋</span><i>Agenda sotto il calendario<small>Prossimi 14 giorni con turni, ore ed eventi</small></i>
+          <input type="checkbox" class="interruttore" id="campoAgendaSotto" aria-label="Agenda sotto il calendario">
+        </div>
+        <button type="button" class="riga-strumento-turni" id="rigaTemaColore" aria-expanded="false"><span>🎨</span><i>Tema e colore<small id="riassuntoTemaColore">Come il telefono · Blu</small></i><b>›</b></button>
+        <div class="opzioni-riga-altro" id="opzioniTemaColore" hidden>
         <div class="riga-strumento-turni riga-tema">
           <span>🌓</span><i>Tema<small id="descrizioneTema">Come il telefono</small></i>
           <div class="scelta-tema" role="group" aria-label="Tema">
@@ -1036,16 +1037,25 @@
             <button type="button" data-accento="arancio"><span class="pallino-accento" style="background:#C76A1A" aria-hidden="true"></span>Arancio</button>
           </div>
         </div>
+        </div>
+        <button type="button" class="riga-strumento-turni" id="settingsSimboli"><span>🏷️</span><i>Simboli delle indennità<small>Quali mostrare nel calendario</small></i><b>›</b></button>
+      </div>
+      <p class="strumenti-turni-titolo">Dati e aiuto</p>
+      <div class="lista-strumenti-turni">
+        <button type="button" class="riga-strumento-turni" id="settingsBackupV4"><span>💾</span><i>Backup<small id="riassuntoBackupV4">Sul telefono e su Google Drive</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="settingsTabelle"><span>📊</span><i>Tabelle ufficiali<small>Stipendi, indennità, aliquote</small></i><b>›</b></button>
         <a class="riga-strumento-turni" id="linkGuida" href="https://micmax-apps.netlify.app/guida-turni.html" target="_blank" rel="noopener"><span>📖</span><i>Guida all'app<small>Come si usa, passo per passo</small></i><b>↗</b></a>
         <button type="button" class="riga-strumento-turni" id="settingsSegnala"><span>💬</span><i>Segnala un problema o un'idea<small>Scrivi allo sviluppatore</small></i><b>›</b></button>
         <button type="button" class="riga-strumento-turni" id="btnInstallaAppV23" hidden><span>📲</span><i>Installa l'app<small>Aggiungila alla schermata Home</small></i><b>›</b></button>
       </div>
-      <!-- I backup sono sempre visibili qui sotto: questi due tasti restano solo per compatibilità -->
+      </div>
+      <!-- I backup stanno nella loro pagina (riga "Backup"): questi due tasti restano solo per compatibilità -->
       <button type="button" id="settingsBackup" hidden>Backup locale</button>
       <button type="button" id="settingsDrive" hidden>Backup Drive</button>
-      <p class="strumenti-turni-titolo">Backup</p>
-
-      <div id="impostazioniBackupContainer"></div>
+      <div id="paginaBackupV4" hidden>
+        <div class="intestazione-scheda testa-v4"><div><h2>Backup</h2><p class="sotto-v4">I dati stanno solo sul telefono: salvali ogni tanto</p></div><button type="button" class="btn-icona tondo-v4" id="btnChiudiBackupV4" aria-label="Torna ad Altro">✕</button></div>
+        <div id="impostazioniBackupContainer"></div>
+      </div>
       <div id="impostazioniBackupPanel" hidden>
         <p class="sotto-titolo">Sezioni backup spostate qui sotto.</p>
         <button type="button" class="btn-secondario" id="btnChiudiSettingsBackup">Chiudi</button>

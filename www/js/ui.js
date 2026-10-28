@@ -116,12 +116,12 @@ function mostraScheda(nome){
   const tabId = { calendario: 'tabCalendario', report: 'tabReport', assenze: 'tabAssenze', turni: 'tabTurni', altro: 'tabAltro' };
   Object.keys(tabId).forEach(k => { const n = el(tabId[k]); if(n) n.classList.toggle('attiva', k === tabAttivo); });
   if(nome === 'assenze') renderAssenze();
-  if(nome === 'tabelle'){ renderTabelle(); const st = el('statoSalvataggioTabelle'); if(st) st.textContent = 'Le modifiche si salvano da sole.'; }
+  if(nome === 'tabelle'){ renderTabelle(); const st = el('statoSalvataggioTabelle'); if(st) st.textContent = 'Stipendi, indennità e aliquote usati nei calcoli'; }
   if(nome === 'anagrafica') popolaFormAnagrafica();
   if(nome === 'sequenza') renderSequenza();
   if(nome === 'turni' && typeof renderModelliTabTurni === 'function') renderModelliTabTurni();
   if(nome === 'statistiche' || nome === 'report'){ const a=el('campoAnnoStatistiche'); if(a && !a.value) a.value=new Date().getFullYear(); renderStatistiche(); if(typeof aggiornaRiepilogoMensile === 'function') aggiornaRiepilogoMensile(); if(typeof applicaVisibilitaReportBlocchi === 'function') applicaVisibilitaReportBlocchi(); }
-  if(nome === 'impostazioni' || nome === 'altro'){ inizializzaImpostazioni(); if(typeof aggiornaRiassuntoAssenzeAltro === 'function') aggiornaRiassuntoAssenzeAltro(); if(typeof aggiornaRiassuntoAnagraficaAltro === 'function') aggiornaRiassuntoAnagraficaAltro(); if(typeof controllaNotifichePromemoriaTurno === 'function') controllaNotifichePromemoriaTurno(); }
+  if(nome === 'impostazioni' || nome === 'altro'){ inizializzaImpostazioni(); if(typeof aggiornaRiassuntoAssenzeAltro === 'function') aggiornaRiassuntoAssenzeAltro(); if(typeof aggiornaRiassuntoAnagraficaAltro === 'function') aggiornaRiassuntoAnagraficaAltro(); if(typeof controllaNotifichePromemoriaTurno === 'function') controllaNotifichePromemoriaTurno(); if(typeof apriPaginaBackupV4 === 'function') apriPaginaBackupV4(false); if(typeof aggiornaRiassuntiAltroV4 === 'function') aggiornaRiassuntiAltroV4(); }
   window.scrollTo({ top:0, behavior:'instant' });
 }
 
