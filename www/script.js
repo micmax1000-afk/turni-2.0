@@ -3576,11 +3576,11 @@ function avantiBenvenuto(){
     const quota = el('benvenutoQuotaSindacale').value;
     AppState.anagrafica = Object.assign({ addComunale: 0.8, coniugeACarico: 'no', figliOver21: 0, sindacato: 'no' }, AppState.anagrafica || {}, {
       qualifica: el('benvenutoQualifica').value, anni: el('benvenutoAnni').value, regione: el('benvenutoRegione').value,
-      addComunale: Math.max(0, Number(el('benvenutoAddComunale').value) || 0),
+      addComunale: Math.max(0, leggiNumeroItaliano(el('benvenutoAddComunale').value)),
       coniugeACarico: segScelto('coniuge'), figliOver21: Math.max(0, Number(el('benvenutoFigli').value) || 0), sindacato: segScelto('sindacato')
     });
-    if(quota !== '') AppState.anagrafica.quotaSindacale = Math.max(0, Number(quota) || 0);
-    const reddito = Number(el('benvenutoReddito').value) || 0;
+    if(quota !== '') AppState.anagrafica.quotaSindacale = Math.max(0, leggiNumeroItaliano(quota));
+    const reddito = leggiNumeroItaliano(el('benvenutoReddito').value);
     if(reddito > 0){ AppState.anagrafica.redditoAnnoPrecedente = reddito; AppState.anagrafica.redditoAnnoPrecedenteAnno = new Date().getFullYear() - 1; }
     salvaAnagraficaStorage();
     aggiornaRiassuntoAnagrafica();
@@ -3650,7 +3650,7 @@ function inizializzaBenvenuto(){
       seg.parentElement.querySelectorAll('[data-valore]').forEach(b => b.classList.toggle('attivo', b === seg));
       if(seg.parentElement.dataset.segBenvenuto === 'sindacato'){
         el('benvenutoRigaQuota').hidden = seg.dataset.valore !== 'si';
-        if(seg.dataset.valore === 'si' && el('benvenutoQuotaSindacale').value === '') el('benvenutoQuotaSindacale').value = quotaSindacaleMensile(null);
+        if(seg.dataset.valore === 'si' && el('benvenutoQuotaSindacale').value === '') el('benvenutoQuotaSindacale').value = numeroIt2(quotaSindacaleMensile(null));
       }
       return;
     }

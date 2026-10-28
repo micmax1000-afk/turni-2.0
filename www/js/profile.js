@@ -56,10 +56,10 @@ function popolaFormAnagrafica(){
     el('campoConiugeACarico').value = AppState.anagrafica.coniugeACarico || 'no';
     el('campoFigliOver21').value = AppState.anagrafica.figliOver21 ?? 0;
     el('campoSindacato').value = normalizzaSindacato(AppState.anagrafica.sindacato);
-    el('campoAddComunale').value = AppState.anagrafica.addComunale ?? 0.8;
-    el('campoQuotaSindacale').value = quotaSindacaleMensile(AppState.anagrafica);
-    el('campoRedditoAnnoPrec').value = AppState.anagrafica.redditoAnnoPrecedente || '';
-    el('campoAddRegionaleAnnoPrec').value = AppState.anagrafica.addRegionaleAnnoPrecedente || '';
+    el('campoAddComunale').value = numeroIt2(AppState.anagrafica.addComunale ?? 0.8);
+    el('campoQuotaSindacale').value = numeroIt2(quotaSindacaleMensile(AppState.anagrafica));
+    el('campoRedditoAnnoPrec').value = AppState.anagrafica.redditoAnnoPrecedente ? numeroIt2(AppState.anagrafica.redditoAnnoPrecedente) : '';
+    el('campoAddRegionaleAnnoPrec').value = AppState.anagrafica.addRegionaleAnnoPrecedente ? numeroIt2(AppState.anagrafica.addRegionaleAnnoPrecedente) : '';
   }
   el('rigaQuotaSindacale').hidden = el('campoSindacato').value !== 'si';
   aggiornaAvvisiDatiMancanti();
@@ -114,7 +114,7 @@ function cancellaAnagrafica(){
   el('campoConiugeACarico').value = 'no';
   el('campoFigliOver21').value = 0;
   el('campoSindacato').value = 'no';
-  el('campoAddComunale').value = 0.8;
+  el('campoAddComunale').value = '0,8';
   el('campoRedditoAnnoPrec').value = '';
   el('campoAddRegionaleAnnoPrec').value = '';
   el('campoQuotaSindacale').value = '';
@@ -136,15 +136,20 @@ function salvaAnagraficaDaModale(){
     coniugeACarico: el('campoConiugeACarico').value,
     figliOver21: Number(el('campoFigliOver21').value) || 0,
     sindacato: el('campoSindacato').value,
-    quotaSindacale: el('campoQuotaSindacale').value === '' ? quotaSindacaleMensile(AppState.anagrafica) : Math.max(0, Number(el('campoQuotaSindacale').value) || 0),
-    redditoAnnoPrecedente: Math.max(0, Number(el('campoRedditoAnnoPrec').value) || 0),
+    quotaSindacale: el('campoQuotaSindacale').value === '' ? quotaSindacaleMensile(AppState.anagrafica) : Math.max(0, leggiNumeroItaliano(el('campoQuotaSindacale').value)),
+    redditoAnnoPrecedente: Math.max(0, leggiNumeroItaliano(el('campoRedditoAnnoPrec').value)),
     // A quale anno si riferisce il reddito: se lo cambi è quello dell'anno scorso, altrimenti resta com'era.
-    redditoAnnoPrecedenteAnno: (Number(el('campoRedditoAnnoPrec').value) || 0) !== (Number(AppState.anagrafica?.redditoAnnoPrecedente) || 0)
+    redditoAnnoPrecedenteAnno: leggiNumeroItaliano(el('campoRedditoAnnoPrec').value) !== (Number(AppState.anagrafica?.redditoAnnoPrecedente) || 0)
       ? new Date().getFullYear() - 1 : (AppState.anagrafica?.redditoAnnoPrecedenteAnno || new Date().getFullYear() - 1),
-    addRegionaleAnnoPrecedente: Math.max(0, Number(el('campoAddRegionaleAnnoPrec').value) || 0)
+    addRegionaleAnnoPrecedente: Math.max(0, leggiNumeroItaliano(el('campoAddRegionaleAnnoPrec').value))
   };
   el('rigaQuotaSindacale').hidden = el('campoSindacato').value !== 'si';
-  if(el('campoSindacato').value === 'si' && el('campoQuotaSindacale').value === '') el('campoQuotaSindacale').value = AppState.anagrafica.quotaSindacale;
+  if(el('campoSindacato').value === 'si' && el('campoQuotaSindacale').value === '') el('campoQuotaSindacale').value = numeroIt2(AppState.anagrafica.quotaSindacale);
+  // Dopo il salvataggio i numeri si riscrivono in formato italiano (35200 → 35.200, 0.5 → 0,5).
+  const a = AppState.anagrafica, rifai = (id, v) => { const c = el(id); if(c && document.activeElement !== c && c.value !== '') c.value = numeroIt2(v); };
+  rifai('campoAddComunale', a.addComunale); rifai('campoQuotaSindacale', a.quotaSindacale);
+  if(a.redditoAnnoPrecedente) rifai('campoRedditoAnnoPrec', a.redditoAnnoPrecedente);
+  if(a.addRegionaleAnnoPrecedente) rifai('campoAddRegionaleAnnoPrec', a.addRegionaleAnnoPrecedente);
   salvaAnagraficaStorage();
   aggiornaRiassuntoAnagrafica();
   aggiornaProfiloAnagrafica();
@@ -159,7 +164,12 @@ function addComunaleDaCampo(){
   const prima = AppState.anagrafica || {};
   const v = el('campoAddComunale').value;
   if(v === '') return { addComunale: prima.addComunale ?? 0.8 };
-  return { addComunale: Math.max(0, Number(v) || 0) };
+  return { addComunale: Math.max(0, leggiNumeroItaliano(v)) };
+}
+// Numero in formato italiano, fino a 2 decimali (0,8 · 9,77 · 35.200).
+function numeroIt2(v){
+  const n = Number(v);
+  return isFinite(n) ? n.toLocaleString('it-IT', { maximumFractionDigits: 2 }) : '';
 }
 
 // Quota sindacale al mese: quella scritta in Anagrafica, altrimenti il valore delle Tabelle.
