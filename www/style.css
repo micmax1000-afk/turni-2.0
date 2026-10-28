@@ -2691,11 +2691,7 @@ html[data-tema="scuro"] .riga-chiusa-v6 b{color:#8FB0FF}
 
 /* v3.8.1 — Calendario classico più pulito: un solo bordo, righina solo per le cose rare, oggi nel cerchio, eventi a pallino */
 body:not(.calendario-moderno) .giorno-cella{border:0!important;box-shadow:none!important}
-body:not(.calendario-moderno) .giorno-cella.ha-straordinario{box-shadow:inset 0 -4px 0 #8B5CF6!important}
-body:not(.calendario-moderno) .giorno-cella.ha-missione{box-shadow:inset 0 -4px 0 #2563EB!important}
-body:not(.calendario-moderno) .giorno-cella.ha-op{box-shadow:inset 0 -4px 0 #3158C7!important}
 body:not(.calendario-moderno) .giorno-cella.selezionata{box-shadow:inset 0 0 0 3px var(--testo)!important}
-body:not(.calendario-moderno) .giorno-cella.selezionata.ha-straordinario{box-shadow:inset 0 0 0 3px var(--testo),inset 0 -6px 0 #8B5CF6!important}
 body:not(.calendario-moderno) .giorno-cella.selezionata::before,body:not(.calendario-moderno) .giorno-cella.selezionata::after{display:none!important}
 body:not(.calendario-moderno) .giorno-cella.selezionata .giorno-turno-badge{box-shadow:none!important}
 body:not(.calendario-moderno) .giorno-cella.oggi::before{display:none!important}
@@ -2719,3 +2715,13 @@ html[data-tema="scuro"] #overlayEvento .foglio-evento-azioni > .btn-testo-evento
 /* v3.8.2 — Calendario moderno: eventi a pallino, come nel classico */
 body.calendario-moderno .mod-eventi{display:flex;justify-content:center;gap:3px;margin-top:2px}
 body.calendario-moderno .mod-eventi .mod-evento{display:block;width:8px!important;height:8px!important;padding:0!important;border-radius:50%!important;font-size:0!important;align-self:auto}
+
+/* v3.8.2 — Righina del classico: una barretta dritta e corta in fondo (con la casella arrotondata l'ombra faceva una curva) */
+body:not(.calendario-moderno) .giorno-cella.ha-straordinario,body:not(.calendario-moderno) .giorno-cella.ha-missione,body:not(.calendario-moderno) .giorno-cella.ha-op{background-repeat:no-repeat!important;background-size:56% 4px!important;background-position:center bottom 6px!important}
+body:not(.calendario-moderno) .giorno-cella.ha-op{background-image:linear-gradient(#3158C7,#3158C7)!important}
+body:not(.calendario-moderno) .giorno-cella.ha-missione{background-image:linear-gradient(#2563EB,#2563EB)!important}
+body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:linear-gradient(#8B5CF6,#8B5CF6)!important}
+/* Nuovo evento su telefoni stretti: gli orari restano sempre interi, la data si accorcia */
+#overlayEvento .foglio-evento-quando .foglio-evento-data{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#overlayEvento .orari-evento input{width:3.6em!important;flex:none;padding-left:2px!important;padding-right:2px!important}
+#overlayEvento.espanso .orari-evento input{width:auto!important}

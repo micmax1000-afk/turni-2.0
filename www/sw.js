@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V235 (v3.8.2 — eventi a pallino anche nel calendario moderno) */
+/* Turni & Accessorio PS — Service Worker V236 (v3.8.3 — orari evento su telefoni stretti, righina dritta nel classico) */
 'use strict';
-const CACHE='turni-ps-v235';
+const CACHE='turni-ps-v236';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
