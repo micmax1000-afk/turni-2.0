@@ -512,17 +512,10 @@ function renderAssenze(){
   renderDashboardAssenze();
   const box = el('corpoAssenze');
   const boxPersonalizzate = el('corpoAssenzePersonalizzate');
-  // Le voci a zero e mai usate (es. Riposo festivo, Maternità) stanno in "Non usate", chiuso.
+  // v2.98: tutte le voci in un unico elenco; quelle a zero e mai usate (es. Riposo festivo) in fondo.
   const nonUsata = a => { const x = saldoAssenza(a); return !x.spettanti && !x.usate; };
   const ufficiali = AppState.assenze.filter(a => !a.personalizzata);
-  box.innerHTML = ufficiali.filter(a => !nonUsata(a)).map(renderCardAssenzaItem).join('');
-  const boxNonUsate = el('corpoAssenzeNonUsate'), gruppoNonUsate = el('gruppoAssenzeNonUsate');
-  if(boxNonUsate && gruppoNonUsate){
-    const nonUsate = ufficiali.filter(nonUsata);
-    boxNonUsate.innerHTML = nonUsate.map(renderCardAssenzaItem).join('');
-    gruppoNonUsate.hidden = !nonUsate.length;
-    el('titoloAssenzeNonUsate').textContent = `Non usate (${nonUsate.length})`;
-  }
+  box.innerHTML = ufficiali.filter(a => !nonUsata(a)).concat(ufficiali.filter(nonUsata)).map(renderCardAssenzaItem).join('');
   if(boxPersonalizzate){
     const personalizzate = AppState.assenze.filter(a => a.personalizzata);
     boxPersonalizzate.innerHTML = personalizzate.map(renderCardAssenzaItem).join('');
@@ -532,7 +525,7 @@ function renderAssenze(){
 
   if(!window.__filtriAssenzeInizializzati){ inizializzaFiltriAssenze(); window.__filtriAssenzeInizializzati = true; }
 
-  [box, el('corpoAssenzeNonUsate'), boxPersonalizzate].filter(Boolean).forEach(contenitore => wireEventiCardAssenza(contenitore));
+  [box, boxPersonalizzate].filter(Boolean).forEach(contenitore => wireEventiCardAssenza(contenitore));
 }
 
 // Collega gli eventi (modifica campo, apri/chiudi date, rimuovi) alle card già renderizzate in un

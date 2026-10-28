@@ -14,13 +14,22 @@ function renderTabelle(){
   const defs = window.TurniPSData?.TABELLE_PREDEFINITE || window.TABELLE_PREDEFINITE || {};
   const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const val = (obj, path) => path.split('.').reduce((a,k)=>a?.[k], obj);
+  // v2.98: etichetta corta con l'unità sotto, casella a destra, ↺ solo sui valori cambiati.
+  const etichetta = label => {
+    const m = label.match(/^(.*?)\s*\(([^()]*)\)\s*(\([^()]*\))?$/);
+    let testo = m ? m[1] + (m[3] ? ' ' + m[3] : '') : label, unita = m ? m[2] : '';
+    if(unita === '€' && /\b(annuo|annua)\b/.test(testo)) unita = 'all’anno';
+    testo = testo.replace(/\s+(annuo|annua)\b/, '').replace(/ — /g, ' · ');
+    return { testo, unita };
+  };
   const row = (label, path, step='0.01', extra='') => {
     const current = val(t,path) ?? 0;
     const def = val(defs,path);
     const changed = def !== undefined && Number(current) !== Number(def);
-    return `<div class="tabella-riga-v17" data-table-row data-label="${esc(label)}"><div class="tabella-label"><strong>${esc(label)}</strong><span class="tabella-stato ${changed?'modificato':'predefinito'}">${changed?'Modificato':'Predefinito'}</span></div><div class="tabella-edit"><input data-t="${esc(path)}" type="number" step="${step}" value="${esc(current)}" aria-label="${esc(label)}"><button type="button" class="tabella-reset-one" data-reset-table="${esc(path)}" title="Ripristina valore predefinito" ${def===undefined?'disabled':''}>↺</button></div>${extra?`<small>${esc(extra)}</small>`:''}</div>`;
+    const e = etichetta(label);
+    return `<div class="tabella-riga-v17 riga-valore-v5${changed?' mod':''}" data-table-row data-label="${esc(label)}" data-state="${changed?'modificato':'predefinito'}"><span class="tabella-label">${esc(e.testo)}${e.unita?`<small>${esc(e.unita)}</small>`:''}${extra?`<small class="nota-valore-v5">${esc(extra)}</small>`:''}</span><input data-t="${esc(path)}" type="number" step="${step}" value="${esc(current)}" inputmode="decimal" aria-label="${esc(label)}"><button type="button" class="tabella-reset-one" data-reset-table="${esc(path)}" title="Torna al valore ufficiale" aria-label="Torna al valore ufficiale" ${def===undefined?'disabled':''}>↺</button></div>`;
   };
-  const section=(id,title,icon,subtitle,body,cls='')=>`<section class="tabella-gruppo-v17 ${cls}" data-table-section="${id}"><button class="tabella-head-v17" type="button" aria-expanded="false"><span class="tabella-icon-v17">${icon}</span><span><strong>${title}</strong><small>${subtitle}</small></span><b>⌄</b></button><div class="tabella-body-v17" hidden>${body}</div></section>`;
+  const section=(id,title,icon,subtitle,body,cls='')=>`<section class="tabella-gruppo-v17 gruppo-tabelle-v5 ${cls}" data-table-section="${id}"><button class="tabella-head-v17" type="button" aria-expanded="false"><span class="tabella-icon-v17">${icon}</span><span class="testo-gruppo-v5"><strong>${title}</strong><small>${String(subtitle).split(' — ')[0]}</small></span><em class="conta-mod-v5" hidden></em><b>⌄</b></button><div class="tabella-body-v17" hidden>${body}</div></section>`;
   const bodyFisse = row('Stipendio annuo — in vigore (€)',`stipendiAnnuiAttuale.${qualifica}`)+row('Stipendio annuo — proiettato 2027 (€)',`stipendiAnnui2027.${qualifica}`)+row('Indennità pensionabile annua — in vigore (€)',`indennitaPensionabileAnnuaAttuale.${qualifica}`)+row('Indennità pensionabile annua — proiettata 2027 (€)',`indennitaPensionabileAnnua2027.${qualifica}`);
   const bodyStra = row('Diurno (€/h)',`straordinarioOrarioAttuale.${qualifica}.diurno`)+row('Notturno o festivo (€/h)',`straordinarioOrarioAttuale.${qualifica}.notturnoOFestivo`)+row('Notturno festivo (€/h)',`straordinarioOrarioAttuale.${qualifica}.notturnoFestivo`);
   const bodyStra27 = row('Diurno (€/h)',`straordinarioOrario2027.${qualifica}.diurno`)+row('Notturno o festivo (€/h)',`straordinarioOrario2027.${qualifica}.notturnoOFestivo`)+row('Notturno festivo (€/h)',`straordinarioOrario2027.${qualifica}.notturnoFestivo`);
@@ -59,7 +68,7 @@ function renderTabelle(){
   // "ufficiale" uguale per tutti — dipende dal Comune di residenza di ciascuno — quindi resta
   // salvata in Anagrafica (non tra le tabelle predefinite), solo il controllo per modificarla
   // vive qui fisicamente, vicino all'addizionale regionale a cui è concettualmente imparentata.
-  const bodyComunale = `<div class="tabella-riga-v17"><div class="tabella-label"><strong>Aliquota (%)</strong></div><div class="tabella-edit"><input type="number" id="campoAddComunaleTabelle" step="0.01" min="0" value="${esc(AppState.anagrafica?.addComunale ?? 0.8)}"></div></div>`;
+  const bodyComunale = `<div class="tabella-riga-v17 riga-valore-v5"><span class="tabella-label">Aliquota<small>%</small></span><input type="number" id="campoAddComunaleTabelle" step="0.01" min="0" inputmode="decimal" value="${esc(AppState.anagrafica?.addComunale ?? 0.8)}"><i class="vuoto-v5"></i></div>`;
 
   // Addizionale regionale — mostriamo solo la regione impostata in Anagrafica, come per stipendio/qualifica.
   const datiRegione = val(defs, `regioniAddizionale.${regione}`);
@@ -86,7 +95,7 @@ function renderTabelle(){
     <label class="riga-tabelle-v4 switch-avanzate-v17"><span aria-hidden="true">✏️</span><i>Modifica i valori a mano<small>Solo se il tuo cedolino è diverso</small></i>
       <input type="checkbox" class="interruttore" id="toggleTabelleAvanzate" ${mostraTabelleAvanzate ? 'checked' : ''}></label>
   </div>
-  ${mostraTabelleAvanzate ? `<div class="tabelle-toolbar-v17"><label class="tabella-search-v17"><span>⌕</span><input id="ricercaTabelle" type="search" placeholder="Cerca una voce…" autocomplete="off"></label><div class="tabella-filtri-v17" role="group" aria-label="Filtra tabelle"><button type="button" class="tabella-filtro-v17 attivo" data-table-filter="tutte">Tutte</button><button type="button" class="tabella-filtro-v17" data-table-filter="modificati">Modificate</button><button type="button" class="tabella-filtro-v17" data-table-filter="predefiniti">Predefinite</button></div></div><div class="tabella-notice-v17"><span>ⓘ</span><p><strong>Attenzione ai valori economici.</strong> I parametri modificati possono cambiare il netto stimato. Verifica sempre il cedolino ufficiale prima di usare i risultati.</p></div>${section('fisse','Voci fisse','💶','Stipendio e indennità pensionabile',bodyFisse)}${section('straordinario','Straordinario','⏱️','Tariffe orarie in vigore',bodyStra)}${section('straordinario27','Straordinario 2027','📅','Valori proiettati, non ancora in vigore',bodyStra27,'proiezione')}${section('assegno','Assegno di funzione','🎖️',`${NOMI_RUOLO[catRuolo]} — soglie di servizio`,bodyAssegno,catRuolo==='funz'?'attenzione':'')}${section('indennita','Indennità e trasferte','🚓','Servizi, missioni e accessorie',bodyInd)}${section('fiscale','Fiscale e previdenziale','🧾','Parametri utilizzati per la stima',bodyFisc)}${section('irpef','IRPEF nazionale','🧮','Scaglioni e aliquote — Legge di Bilancio',bodyIrpef)}${section('regionale','Addizionale regionale','🗺️',`${esc(regione)} — aggiorna quando cambia la delibera regionale`,bodyRegionale)}${section('comunale','Addizionale comunale','🏛️','Dipende dal tuo Comune di residenza',bodyComunale)}${section('personalizzate','Indennità personalizzate','🎁','Voci libere non coperte dalle tabelle (es. Vacanza contrattuale)',bodyPersonalizzate + '<button type="button" class="btn-secondario" id="btnAggiungiIndennitaPersonalizzata" style="margin-top:10px;">+ Aggiungi indennità</button>')}<div class="tabelle-v17-footer"><button type="button" class="btn-secondario" id="btnResetTabelleV17">↺ Ripristina tutto</button><span>Le modifiche restano in memoria solo dopo <strong>Salva</strong>.</span></div>` : ''}</div>`;
+  ${mostraTabelleAvanzate ? `<div class="tabelle-toolbar-v17 cerca-tabelle-v5"><label class="tabella-search-v17"><span aria-hidden="true">⌕</span><input id="ricercaTabelle" type="search" placeholder="Cerca una voce…" autocomplete="off"></label><button type="button" class="filtro-mod-v5" id="filtroModificateTabelle" aria-pressed="false">Solo modificate · <span id="contaFiltroModificate">0</span></button></div><div class="lista-gruppi-v5">${section('fisse','Voci fisse','💶','Stipendio e indennità pensionabile',bodyFisse)}${section('straordinario','Straordinario','⏱️','Tariffe orarie in vigore',bodyStra)}${section('straordinario27','Straordinario 2027','📅','Valori proiettati, non ancora in vigore',bodyStra27,'proiezione')}${section('assegno','Assegno di funzione','🎖️',`${NOMI_RUOLO[catRuolo]} — soglie di servizio`,bodyAssegno,catRuolo==='funz'?'attenzione':'')}${section('indennita','Indennità e trasferte','🚓','Servizi, missioni e accessorie',bodyInd)}${section('fiscale','Fiscale e previdenziale','🧾','Parametri utilizzati per la stima',bodyFisc)}${section('irpef','IRPEF nazionale','🧮','Scaglioni e aliquote — Legge di Bilancio',bodyIrpef)}${section('regionale','Addizionale regionale','🗺️',`${esc(regione)} — aggiorna quando cambia la delibera regionale`,bodyRegionale)}${section('comunale','Addizionale comunale','🏛️','Dipende dal tuo Comune di residenza',bodyComunale)}${section('personalizzate','Indennità personalizzate','🎁','Voci libere non coperte dalle tabelle (es. Vacanza contrattuale)',bodyPersonalizzate + '<button type="button" class="btn-secondario" id="btnAggiungiIndennitaPersonalizzata" style="margin-top:10px;">+ Aggiungi indennità</button>')}</div><div class="tabelle-v17-footer piede-tabelle-v5"><button type="button" id="btnResetTabelleV17">↺ Ripristina tutti i valori ufficiali</button><p>Le modifiche si salvano da sole e cambiano subito i calcoli.</p></div>` : ''}</div>`;
 
   const toggleAvanzate = el('toggleTabelleAvanzate');
   if(toggleAvanzate) toggleAvanzate.addEventListener('change', () => {
@@ -96,22 +105,39 @@ function renderTabelle(){
   // Controlla aggiornamenti funziona anche con "Modifica i valori a mano" spento.
   on('btnControllaTabelle','click',()=>aggiornaTabelleDalSito({ forza: true, avvisaSeUguali: true }));
   const footerEsterno = el('footerTabelleEsterno');
-  if(footerEsterno) footerEsterno.hidden = !mostraTabelleAvanzate;
+  if(footerEsterno) footerEsterno.hidden = true;
+  document.querySelectorAll('.nota-tabelle-v4').forEach(n => { n.hidden = mostraTabelleAvanzate; });
   if(!mostraTabelleAvanzate) return; // il resto della funzione lavora solo sugli elementi delle sezioni avanzate, qui assenti
 
   const updateStatus=()=>{
     let changed=0;
     el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>{
       const input=r.querySelector('input[data-t]'); const def=val(defs,input.dataset.t); const is=def!==undefined && Number(input.value)!==Number(def);
-      const badge=r.querySelector('.tabella-stato'); badge.className=`tabella-stato ${is?'modificato':'predefinito'}`; badge.textContent=is?'Modificato':'Predefinito'; r.dataset.state=is?'modificato':'predefinito'; if(is) changed++;
-    }); el('tabellaCountModificati').textContent=changed;
+      r.classList.toggle('mod',is); r.dataset.state=is?'modificato':'predefinito'; if(is) changed++;
+    });
+    el('corpoTabelle').querySelectorAll('.gruppo-tabelle-v5').forEach(g=>{
+      const n=g.querySelectorAll('[data-table-row].mod').length, em=g.querySelector('.conta-mod-v5');
+      em.hidden=!n; em.textContent=n===1?'1 modificata':`${n} modificate`;
+    });
+    el('tabellaCountModificati').textContent=changed;
+    el('contaFiltroModificate').textContent=changed;
   };
   el('corpoTabelle').querySelectorAll('.tabella-head-v17').forEach(b=>b.addEventListener('click',()=>{const open=b.getAttribute('aria-expanded')==='true';b.setAttribute('aria-expanded',String(!open));b.nextElementSibling.hidden=open;b.querySelector('b').textContent=open?'⌄':'⌃';}));
   el('corpoTabelle').querySelectorAll('input[data-t]').forEach(i=>i.addEventListener('input',updateStatus));
   el('corpoTabelle').querySelectorAll('[data-reset-table]').forEach(b=>b.addEventListener('click',()=>{const d=val(defs,b.dataset.resetTable);if(d!==undefined){const i=el('corpoTabelle').querySelector(`input[data-t="${CSS.escape(b.dataset.resetTable)}"]`);if(i){i.value=d;updateStatus();leggiTabelleDaModale();segnaTabelleSalvate();}}}));
   el('corpoTabelle').querySelector('#ricercaTabelle').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>r.classList.toggle('tabella-nascosta',q && !r.dataset.label.toLowerCase().includes(q)));});
-  el('corpoTabelle').querySelectorAll('[data-table-filter]').forEach(b=>b.addEventListener('click',()=>{el('corpoTabelle').querySelectorAll('[data-table-filter]').forEach(x=>x.classList.remove('attivo'));b.classList.add('attivo');const f=b.dataset.tableFilter;el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>{const hide=f!=='tutte' && r.dataset.state!==(f==='modificati'?'modificato':'predefinito');r.classList.toggle('tabella-nascosta',hide);});}));
-  el('btnResetTabelleV17').addEventListener('click',()=>mostraConferma('Riportare tutte le tabelle ai valori predefiniti?',()=>{AppState.tabelle=clonaTabelleConSoglie(defs);salvaTabelleStorage();renderTabelle();segnaTabelleSalvate();}));
+  // "Solo modificate": mostra solo i valori cambiati, con i loro gruppi aperti.
+  on('filtroModificateTabelle','click',()=>{
+    const b=el('filtroModificateTabelle'), attivo=b.getAttribute('aria-pressed')!=='true';
+    b.setAttribute('aria-pressed',String(attivo)); b.classList.toggle('attivo',attivo);
+    el('corpoTabelle').querySelectorAll('[data-table-row]').forEach(r=>r.classList.toggle('tabella-nascosta',attivo && r.dataset.state!=='modificato'));
+    el('corpoTabelle').querySelectorAll('.gruppo-tabelle-v5').forEach(g=>{
+      const vuoto=attivo && !g.querySelector('[data-table-row].mod'); g.hidden=vuoto;
+      const h=g.querySelector('.tabella-head-v17'); const apri=attivo && !vuoto;
+      if(attivo){ h.setAttribute('aria-expanded',String(apri)); h.nextElementSibling.hidden=!apri; h.querySelector('b').textContent=apri?'⌃':'⌄'; }
+    });
+  });
+  el('btnResetTabelleV17').addEventListener('click',()=>mostraConferma('Riportare tutte le tabelle ai valori ufficiali? Le tue modifiche si perdono.',()=>{AppState.tabelle=clonaTabelleConSoglie(defs);salvaTabelleStorage();renderTabelle();segnaTabelleSalvate();}));
 
   // Indennità personalizzate: prima di aggiungere/rimuovere una voce, sincronizziamo dal DOM
   // le modifiche non ancora salvate alle altre righe, così un "+ Aggiungi" o "🗑️ Rimuovi" non

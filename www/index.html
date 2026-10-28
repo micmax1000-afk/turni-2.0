@@ -334,7 +334,7 @@
             <label class="campo-modale">Durata missione (ore)
               <input type="number" id="campoDurataMissione" min="0" step="0.5" value="0">
             </label>
-            <p class="sotto-titolo" style="margin:2px 0 0;">Indennità oraria di trasferta: 0€ fino a 4h, tariffa piena 4-8h, ridotta al 40% oltre le 8h (fonte SIULP). Il rimborso pasti su ricevuta non è calcolato automaticamente.</p>
+            <p class="sotto-titolo" style="margin:2px 0 0;">Indennità oraria di trasferta: 0€ fino a 4h, tariffa piena 4-8h, ridotta al 40% oltre le 8h. Il rimborso pasti su ricevuta non è calcolato automaticamente.</p>
           </div>
           <div id="campoOrdinePubblicoBox" style="display:none; margin-top:6px;">
             <label class="campo-modale">Sede del servizio di ordine pubblico
@@ -343,7 +343,7 @@
             <label class="campo-modale campo-riga" id="campoOPPernottamentoBox" style="margin-top:4px; display:none;">
               <input type="checkbox" id="campoOPPernottamento" checked> Con pernottamento fuori sede
             </label>
-            <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore (fonte SIULP); sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
+            <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore; sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
           </div>
 
           <p class="titolo-sezione-giorno">Straordinario</p>
@@ -430,7 +430,7 @@
     <section class="scheda" id="sezioneReportTop">
       <div class="intestazione-scheda testa-v4">
         <div><h2>Report</h2><p class="sotto-v4">Quanto arriva sul conto</p></div>
-        <button type="button" class="btn-icona tondo-v4" id="btnPersonalizzaReport" aria-label="Personalizza Report" title="Scegli cosa vedere">⚙️</button>
+        <button type="button" class="btn-nuovo-turni-v4" id="btnPersonalizzaReport" title="Scegli cosa vedere">Personalizza</button>
       </div>
       <div class="report-mese-nav">
         <button type="button" class="btn-freccia" id="btnReportMesePrec" aria-label="Mese precedente">‹</button>
@@ -691,7 +691,7 @@
   <section class="scheda" id="sezioneAssenze">
     <div class="intestazione-scheda testa-v4">
       <div><h2>Assenze</h2><p class="sotto-v4" id="sottotitoloAssenze">Quanto ti resta</p></div>
-      <button type="button" class="btn-icona tondo-v4" id="btnNuovaAssenzaTesta" aria-label="Aggiungi assenza personalizzata">＋</button>
+      <button type="button" class="btn-nuovo-turni-v4" id="btnNuovaAssenzaTesta">Nuova assenza</button>
     </div>
     <div id="assenzeSummaryGrid" class="saldi-hero" aria-live="polite" hidden></div>
     <div id="saldiPartenzaBox"></div>
@@ -701,13 +701,9 @@
       <button type="button" class="filtro-assenze" data-filtro-assenze="h">Ore</button>
     </div>
     <div id="corpoAssenze" class="griglia-saldi lista-assenze-v4"></div>
-    <details class="gruppo-assenze altri-modelli" id="gruppoAssenzeNonUsate" hidden>
-      <summary><span id="titoloAssenzeNonUsate">Non usate</span><b aria-hidden="true">⌄</b></summary>
-      <div id="corpoAssenzeNonUsate" class="griglia-saldi lista-assenze-v4"></div>
-    </details>
     <p class="strumenti-turni-titolo" id="titoloAssenzePersonalizzate">Tue personalizzate</p>
     <div id="corpoAssenzePersonalizzate" class="griglia-saldi lista-assenze-v4"></div>
-    <button type="button" class="btn-aggiungi-tratteggiato" id="btnAggiungiAssenzaPersonalizzata" hidden>＋ Aggiungi assenza personalizzata</button>
+    <button type="button" class="btn-aggiungi-tratteggiato" id="btnAggiungiAssenzaPersonalizzata">＋ Aggiungi un'assenza tua</button>
     <details class="info-richiudibile-assenze">
       <summary>ℹ️ Come funzionano queste voci</summary>
       <div class="info-richiudibile-assenze-corpo">
