@@ -2580,3 +2580,7 @@ html[data-tema="scuro"] #paginaBackupV4 #statoBackup.avviso-backup{background:#3
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) #paginaBackupV4 #statoBackup.avviso-backup{background:#3A2A12;border-color:#7A5420!important;color:#FFD9A0}}
 
 .euro-v5 input{width:96px}
+
+/* v3.3 cambio turno nel Report */
+.mese-cambio-v5{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--bordo) 30%,transparent);font-size:.8rem;color:var(--testo)}
+.mese-cambio-v5 .icona-indennita{flex:none;font-size:1rem;margin-top:1px}

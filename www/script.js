@@ -989,7 +989,7 @@ function inizializza(){
   });
 
   el('btnSalvaTurno').addEventListener('click', () => {
-    const nuovoTurno = leggiTurnoDalModale();
+    const nuovoTurno = segnaQuandoNuovo(leggiTurnoDalModale(), AppState.turni[giornoSelezionato]);
     const salva = () => {
       AppState.turni[giornoSelezionato] = nuovoTurno;
       salvaTurniStorage();
@@ -1657,11 +1657,14 @@ function renderMeseV3(){
     [iconaIndennita('ordinePubblico'), 'Ordine pubblico', `${r.ordinePubblico}`, a.indOP],
     [iconaIndennita('reperibilita'), 'Reperibilità', `${r.reperibilita}`, a.indReperibilita],
     [iconaIndennita('missione'), 'Missioni', `${r.missioni}`, a.indMissioni],
-    [iconaIndennita('cambioTurno'), 'Cambio turno', `${r.turniCambioTurno}`, a.indCambioTurno],
+    [iconaIndennita('cambioTurno'), 'Cambio turno', `tutto il ${annoCorrente - 1}`, a.indCambioTurno],
     [iconaIndennita('compensazioneRiposo'), 'Lavorato sul riposo', `${r.turniCompensazioneRiposo}`, a.indCompensazioneRiposo],
     [iconaIndennita('straordinario'), 'Straordinario', h(str), strLordo]
   ].filter(x => meseMostraZeriV3 || x[3] > 0);
   const totInd = round2(ind.reduce((s, x) => s + (x[3] || 0), 0));
+  // v3.3: il cambio turno si paga a luglio dell'anno dopo: qui quanti nel mese e nell'anno, e quanto varranno.
+  let cambiAnno = 0;
+  for(let m = 0; m < 12; m++) cambiAnno += calcolaRiepilogoOreMese(annoCorrente, m).turniCambioTurno || 0;
   // Netto: totale dal cedolino rifatto senza accessorie; per voce, in proporzione al lordo.
   const na = calcolaNettoAccessorie(annoCorrente, meseCorrente);
   const quotaNetta = na.lordo > 0 ? na.netto / na.lordo : 0;
@@ -1682,6 +1685,7 @@ function renderMeseV3(){
       ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span>lordo</span><span>netto</span></div>` : ''}
       ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
       ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><b>${f(totInd)}</b><b class="netto-v3">~${f(round2(totInd * quotaNetta))}</b></div>` : ''}
+      ${cambiAnno ? `<p class="mese-cambio-v5">${iconaIndennita('cambioTurno')}<span>Cambio turno: ${r.turniCambioTurno ? `${r.turniCambioTurno} a ${mese} · ` : ''}nel ${annoCorrente} ${cambiAnno} ${cambiAnno === 1 ? 'cambio' : 'cambi'} = <b>${f(round2(cambiAnno * AppState.tabelle.indennitaCambioTurno))}</b>, in busta a luglio ${annoCorrente + 1}</span></p>` : ''}
       <div class="mese-piede-v4">
         ${ind.length ? `<details class="mese-info-v4"><summary>In busta a ${pag} · netto stimato <span aria-hidden="true">ⓘ</span></summary><p>${str > 0 ? `Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} lordi → +${f(ns.netto)} netti. ` : ''}Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</p></details>` : '<span></span>'}
         ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi zeri ▴' : 'Voci a zero ▾'}</button>` : ''}
@@ -1942,7 +1946,7 @@ function applicaModelloV2(idModello){
 function applicaAssenzaV2(idAssenza){
   if(!giornoPerPopupV2) return;
   const iso = giornoPerPopupV2;
-  AppState.turni[iso] = { data: iso, assenzaTipo: idAssenza };
+  AppState.turni[iso] = segnaQuandoNuovo({ data: iso, assenzaTipo: idAssenza }, AppState.turni[iso]);
   salvaTurniStorage();
   salvaUltimoModelloUsato('assenza', idAssenza);
   el('overlaySelettoreModelli').hidden = true;
@@ -1963,8 +1967,10 @@ function applicaIndennitaRapidaV2(chiave){
     mostraToast('Assegna prima un turno di lavoro a questo giorno: le indennità si aggiungono a un turno.', 'avviso');
     return;
   }
+  const prima = { ...t };
   t[chiave] = !t[chiave];
   if(chiave === 'buonoPasto' && !t[chiave]) delete t.buoniPastoGiorno;
+  segnaQuandoNuovo(t, prima);
   salvaTurniStorage();
   renderCalendario();
   const nome = (INDENNITA_RAPIDE_V2.find(x => x.chiave === chiave) || {}).nome || chiave;

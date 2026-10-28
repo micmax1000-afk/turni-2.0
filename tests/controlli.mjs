@@ -625,6 +625,26 @@ sezione('Netto come il cedolino NoiPA (febbraio e luglio 2026)');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('Riposo compensativo, colori delle assenze, cambio turno');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  const rc = () => p.evaluate(() => saldoAssenza(AppState.assenze.find(x => x.nome === 'Riposo compensativo')).spettanti);
+  await p.evaluate(() => salvaSaldiPartenza({ congedoAnni: { 2026: 20 }, recuperoRiposo: 0, recuperoFestivo: 0, riposoCompensativoOre: 6 }));
+  const prima = await rc();
+  await p.clock.runFor(2000);
+  await p.evaluate(() => { const iso = '2026-10-05'; const t = { data: iso, oraInizio: '07:00', oraFine: '13:00', straordinarioDopoInizio: '13:00', straordinarioDopoFine: '15:00', compensaStraordinario: true }; AppState.turni[iso] = segnaQuandoNuovo(t, AppState.turni[iso]); salvaTurniStorage(); });
+  ok('straordinario a riposo compensativo segnato dopo i saldi su un giorno passato: le ore si aggiungono', (await rc()) === prima + 2, `${prima} → ${await rc()}`);
+  ok('assenze: ogni voce ha un colore suo (nessun colore ripetuto)', await p.evaluate(() => { const c = AppState.assenze.filter(a => !a.personalizzata).map(coloreAnelloAssenza); return new Set(c).size === c.length; }));
+  await p.click('#tabAssenze');
+  ok('assenze a 0 / 0: anello grigio pieno', await p.evaluate(() => { const r = [...document.querySelectorAll('#corpoAssenze .card-assenza-compact')].find(x => /Riposo festivo/.test(x.textContent)); const c = r && r.querySelector('.saldo-anello-pieno'); return !!c && c.getAttribute('stroke') === COLORE_ASSENZA_VUOTA && c.getAttribute('stroke-opacity') !== '0'; }));
+  await p.evaluate(() => { AppState.turni['2026-10-20'] = { data: '2026-10-20', oraInizio: '07:00', oraFine: '13:00', cambioTurno: true }; salvaTurniStorage(); renderCalendario(); });
+  await p.click('#tabReport');
+  ok('Report: cambio turno del mese e dell\'anno con quanto varrà a luglio', await p.evaluate(() => /Cambio turno: 1 a ottobre · nel 2026 1 cambio = 10,00 €, in busta a luglio 2027/.test(document.querySelector('.mese-cambio-v5')?.textContent || '')), await p.evaluate(() => document.querySelector('.mese-cambio-v5')?.textContent));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ─────────────────────────────────────────────────────────────
 sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
 {
   // Installazione nuova: niente anagrafica, niente turni → si apre la guida.

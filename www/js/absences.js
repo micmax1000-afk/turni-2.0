@@ -30,6 +30,7 @@ function salvaSaldiPartenza(valori){
   const vecchi = round2(Object.entries(anni).filter(([y]) => Number(y) < annoOggi).reduce((a, [, g]) => a + g, 0));
   const s = {
     data: dataISO(oggi),
+    salvatoIl: Date.now(),
     congedoAnni: anni,
     congedo: totale,
     congedoVecchi: vecchi,
@@ -40,8 +41,24 @@ function salvaSaldiPartenza(valori){
   TurniPSStorage.setItem(CHIAVE_SALDI_PARTENZA, JSON.stringify(s));
   return s;
 }
-// Il giorno dei saldi è già compreso nei numeri scritti: si conta dal giorno dopo.
-const dopoSaldi = (iso, s) => !s || iso > s.data;
+// Il giorno dei saldi è già compreso nei numeri scritti: si conta dal giorno dopo. v3.3: conta anche un giorno
+// passato se lo straordinario a riposo, il recupero o l'assenza li hai segnati DOPO aver salvato i saldi
+// (campo: compensaDal, recuperoRiposoDal, recuperoFestivoDal, assenzaDal = quando l'hai segnato).
+const momentoSaldi = s => s.salvatoIl || Date.parse(`${s.data}T23:59:59`);
+const dopoSaldi = (iso, s, t, campo) => !s || iso > s.data || !!(t && campo && t[campo] && t[campo] >= momentoSaldi(s));
+// Quando salvi un giorno: segna il momento in cui hai acceso straordinario a riposo, recuperi o un'assenza.
+const CAMPI_SEGNATI = [['compensaStraordinario', 'compensaDal'], ['compensazioneRiposo', 'recuperoRiposoDal'], ['recuperoFestivoLavorato', 'recuperoFestivoDal'], ['assenzaTipo', 'assenzaDal']];
+function segnaQuandoNuovo(nuovo, vecchio){
+  if(!nuovo) return nuovo;
+  const ora = Date.now();
+  for(const [campo, quando] of CAMPI_SEGNATI){
+    if(!nuovo[campo]){ delete nuovo[quando]; continue; }
+    const uguale = vecchio && vecchio[campo] && (campo !== 'assenzaTipo' || vecchio[campo] === nuovo[campo]);
+    nuovo[quando] = uguale ? (vecchio[quando] || nuovo[quando]) : ora;
+    if(!nuovo[quando]) delete nuovo[quando];
+  }
+  return nuovo;
+}
 // L'anno e il mese di oggi: la pagina Assenze non segue il mese aperto nel calendario.
 function rifAssenze(){ const d = new Date(); return { anno: d.getFullYear(), mese: d.getMonth() }; }
 
@@ -51,7 +68,7 @@ function trovaAssenzaRecuperoFestivo(){
 
 function calcolaGiorniRecuperoFestivoAccumulati(){
   const s = saldiPartenza();
-  return (s ? s.recuperoFestivo || 0 : 0) + Object.entries(AppState.turni).filter(([iso, t]) => t.recuperoFestivoLavorato && dopoSaldi(iso, s)).length;
+  return (s ? s.recuperoFestivo || 0 : 0) + Object.entries(AppState.turni).filter(([iso, t]) => t.recuperoFestivoLavorato && dopoSaldi(iso, s, t, 'recuperoFestivoDal')).length;
 }
 
 function trovaAssenzaRecuperoRiposo(){
@@ -60,14 +77,14 @@ function trovaAssenzaRecuperoRiposo(){
 
 function calcolaGiorniRecuperoAccumulati(){
   const s = saldiPartenza();
-  return (s ? s.recuperoRiposo || 0 : 0) + Object.entries(AppState.turni).filter(([iso, t]) => t.compensazioneRiposo && dopoSaldi(iso, s)).length;
+  return (s ? s.recuperoRiposo || 0 : 0) + Object.entries(AppState.turni).filter(([iso, t]) => t.compensazioneRiposo && dopoSaldi(iso, s, t, 'recuperoRiposoDal')).length;
 }
 
 function calcolaOreCompensateAccumulate(){
   const s = saldiPartenza();
   let totale = s ? s.riposoCompensativoOre || 0 : 0;
   for(const [iso, t] of Object.entries(AppState.turni)){
-    if(t.riposo || t.assenzaTipo || !dopoSaldi(iso, s)) continue;
+    if(t.riposo || t.assenzaTipo || !dopoSaldi(iso, s, t, 'compensaDal')) continue;
     totale += classificaTurno(t).oreCompensate || 0;
   }
   return round2(totale);
@@ -77,7 +94,7 @@ function calcolaOreCompensateAccumulate(){
 function calcolaOreAssenzaUsate(assenzaId, daData){
   let totale = 0;
   for(const [iso, t] of Object.entries(AppState.turni)){
-    if(t.assenzaTipo !== assenzaId || (daData && iso <= daData)) continue;
+    if(t.assenzaTipo !== assenzaId || (daData && iso <= daData && !dopoSaldi(iso, saldiPartenza(), t, 'assenzaDal'))) continue;
     const f = finestraDaOrari(t.data, t.riposoCompensativoOraInizio, t.riposoCompensativoOraFine);
     totale += f.ore;
   }
@@ -85,7 +102,8 @@ function calcolaOreAssenzaUsate(assenzaId, daData){
 }
 
 function contaGiorniUsatiAssenza(assenzaId, daData){
-  return Object.entries(AppState.turni).filter(([iso, t]) => t.assenzaTipo === assenzaId && (!daData || iso > daData)).length;
+  const s = daData ? saldiPartenza() : null;
+  return Object.entries(AppState.turni).filter(([iso, t]) => t.assenzaTipo === assenzaId && (!daData || iso > daData || (s && dopoSaldi(iso, s, t, 'assenzaDal')))).length;
 }
 
 function contaGiorniUsatiAssenzaNelMese(assenzaId, anno, mese){
@@ -154,7 +172,7 @@ function calcolaSaldoCongedoOrdinario(anno){
   const s = saldiPartenza();
   const anno0 = s ? Number(s.data.slice(0, 4)) : null;
   if(!s || anno < anno0) return { valoreEffettivo: voce.valore, usate: contaGiorniUsatiAssenzaNelAnno(voce.id, anno), riporto: 0, daInserire: !s };
-  const usatiDopo = y => Object.entries(AppState.turni).filter(([iso, t]) => iso.startsWith(`${y}-`) && t.assenzaTipo === voce.id && dopoSaldi(iso, s)).length;
+  const usatiDopo = y => Object.entries(AppState.turni).filter(([iso, t]) => iso.startsWith(`${y}-`) && t.assenzaTipo === voce.id && dopoSaldi(iso, s, t, 'assenzaDal')).length;
   const somma = o => round2(Object.values(o).reduce((a, b) => a + b, 0));
   if(anno === anno0){
     const vecchi = round2(Object.entries(s.congedoAnni).filter(([y]) => Number(y) < anno0).reduce((a, [, g]) => a + g, 0));
@@ -175,7 +193,7 @@ function congedoPerAnno(anno, finoA){
   const conti = {};
   Object.entries(s.congedoAnni).forEach(([y, g]) => { conti[y] = Number(g) || 0; });
   const usati = Object.entries(AppState.turni)
-    .filter(([iso, t]) => t.assenzaTipo === voce.id && dopoSaldi(iso, s) && (!finoA || iso <= finoA))
+    .filter(([iso, t]) => t.assenzaTipo === voce.id && dopoSaldi(iso, s, t, 'assenzaDal') && (!finoA || iso <= finoA))
     .map(([iso]) => Number(iso.slice(0, 4)));
   for(let y = anno0; y <= anno; y++){
     if(y > anno0) conti[y] = (conti[y] || 0) + voce.valore;
@@ -233,7 +251,7 @@ function elencoDateDisponibiliCredito(nomeVoce, campoFonte){
   if(!voce) return [];
   const s = saldiPartenza();
   const dateGuadagnate = Object.entries(AppState.turni)
-    .filter(([iso, t]) => t[campoFonte] && dopoSaldi(iso, s))
+    .filter(([iso, t]) => t[campoFonte] && dopoSaldi(iso, s, t, campoFonte === 'compensazioneRiposo' ? 'recuperoRiposoDal' : 'recuperoFestivoDal'))
     .map(([iso]) => iso)
     .sort();
   // I giorni dei saldi di partenza (senza data) si usano per primi.
@@ -369,10 +387,10 @@ function aggiornaCardAssenza(riga, voce){
   const anello = riga.querySelector('.saldo-anello-pieno');
   if(anello){
     const c = 2 * Math.PI * 22;
-    const pieno = spettanti > 0 ? Math.min(1, Math.max(0, rimangono / spettanti)) : 0;
+    const pieno = spettanti > 0 ? Math.min(1, Math.max(0, rimangono / spettanti)) : 1;
     anello.setAttribute('stroke-dasharray', `${(c * pieno).toFixed(1)} ${c.toFixed(1)}`);
     anello.setAttribute('stroke-opacity', pieno ? '1' : '0');
-    anello.setAttribute('stroke', rimangono < 0 ? '#D64545' : coloreAnelloAssenza(voce));
+    anello.setAttribute('stroke', rimangono < 0 ? '#D64545' : spettanti > 0 ? coloreAnelloAssenza(voce) : COLORE_ASSENZA_VUOTA);
   }
   const barra = riga.querySelector('.barra-residuo-assenza i');
   if(barra){
@@ -389,9 +407,19 @@ function aggiornaCardAssenza(riga, voce){
 }
 
 // Anello del saldo: pieno quando la voce è tutta da usare, si svuota man mano che la si usa.
+// v3.3: ogni voce ha il suo colore (prima andavano per posizione e alcuni si ripetevano); senza
+// niente da usare (0 / 0) l'anello è grigio.
 const COLORI_ANELLO_ASSENZE = ['#2E9E5B','#3A55B4','#E08A00','#8E44AD','#00838F','#D64545','#2E7DD7','#6D4C41','#546E7A'];
+const COLORE_PER_ASSENZA = {
+  'Congedo ordinario':'#2E9E5B', 'Congedo straordinario':'#3A55B4', 'Riposo legge':'#E08A00', 'Riposo festivo':'#8E44AD',
+  'Recupero festivo':'#00838F', 'Recupero riposo':'#D64545', 'Riposo compensativo':'#2E7DD7', 'Aspettativa':'#6D4C41',
+  'Maternità/Paternità':'#C2185B', 'Congedo parentale':'#689F38', 'L104':'#5C6BC0', 'Donazione sangue':'#B71C1C',
+  'Ore studio':'#6A1B9A', 'Permesso breve':'#00897B', 'Permesso sindacale':'#F4511E'
+};
+const COLORE_ASSENZA_VUOTA = '#9AA1B0';
 function coloreAnelloAssenza(a){
-  const i = Math.max(0, AppState.assenze.indexOf(a));
+  if(COLORE_PER_ASSENZA[a.nome]) return COLORE_PER_ASSENZA[a.nome];
+  const i = Math.max(0, AppState.assenze.filter(x => !COLORE_PER_ASSENZA[x.nome]).indexOf(a));
   return COLORI_ANELLO_ASSENZE[i % COLORI_ANELLO_ASSENZE.length];
 }
 function anelloAssenzaHtml(frazione, colore, icona){
@@ -465,9 +493,9 @@ function renderCardAssenzaItem(a){
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
       <div class="card-assenza-compact riga-assenza-v4" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
-        ${anelloAssenzaHtml(valoreVisuale > 0 ? rimangono / valoreVisuale : 0, rimangono < 0 ? '#D64545' : coloreAnelloAssenza(a), icona)}
+        ${anelloAssenzaHtml(valoreVisuale > 0 ? rimangono / valoreVisuale : 1, rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA, icona)}
         <div class="card-assenza-compact-nome"><strong>${a.personalizzata ? (a.nome || 'Nuova voce') : a.nome}</strong>${anniCongedoRiga}</div>
-        <span class="saldo-resta" style="color:${rimangono < 0 ? '#D64545' : coloreAnelloAssenza(a)}"><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small> / ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small></span>
+        <span class="saldo-resta" style="color:${rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA}"><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small> / ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small></span>
         <small class="saldo-usati" hidden>Usati <em>${numeroIt(usate)}</em> su <span class="saldo-su">${numeroIt(valoreVisuale)}</span></small>
       </div>
       <span class="barra-residuo-assenza" aria-hidden="true"><i style="width:${resto}%;background:${coloreResto}"></i></span>
