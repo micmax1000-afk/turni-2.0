@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V232 (v3.7.0 — numeri dell'Anagrafica in formato italiano) */
+/* Turni & Accessorio PS — Service Worker V233 (v3.8.0 — un tocco mostra il giorno, straordinario chiuso, netti spiegati) */
 'use strict';
-const CACHE='turni-ps-v232';
+const CACHE='turni-ps-v233';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

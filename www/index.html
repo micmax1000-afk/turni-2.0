@@ -346,8 +346,9 @@
             <p class="sotto-titolo" style="margin:2px 0 0;">Spetta solo per turni di almeno 4 ore; sotto le 4h fuori sede spetterebbe invece il trattamento di missione, da spuntare separatamente.</p>
           </div>
 
-          <p class="titolo-sezione-giorno">Straordinario</p>
-          <div class="riquadro-giorno">
+          <button type="button" class="riga-chiusa-v6" id="btnApriStraordinario"><span class="ic" aria-hidden="true">⏱️</span><i><strong>Straordinario</strong><small>Ore prima o dopo il turno, anche a riposo compensativo</small></i><b>＋ Aggiungi</b></button>
+          <p class="titolo-sezione-giorno" id="titoloStraordinarioGiorno">Straordinario</p>
+          <div class="riquadro-giorno" id="riquadroStraordinarioGiorno">
             <div id="bloccoStrPrimo">
             <div class="riga-ore-straordinario">
               <span>Ore</span>
@@ -387,7 +388,7 @@
           </div>
 
           <details class="riquadro-giorno altro-giorno">
-            <summary>Altro: rientro, permesso breve, recupero<b aria-hidden="true">⌄</b></summary>
+            <summary><span class="ic" aria-hidden="true">🧩</span><i><strong>Altro per questo giorno</strong><small>Rientro, permesso breve, recupero</small></i><b aria-hidden="true">⌄</b></summary>
             <label class="campo-modale campo-riga">
               <input type="checkbox" id="campoSecondoAttivo"> Rientro / turno spezzato con pausa
             </label>
