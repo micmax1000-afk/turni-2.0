@@ -3330,7 +3330,7 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   if(!boxIndennita) return;
   if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
   const pezzi = [];
-  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge">${iconaIndennita(x.chiave)}${escapeHtml(x.nome)}</span>`); });
+  INDENNITA_RAPIDE_V2.forEach(x => { if(t[x.chiave]) pezzi.push(`<span class="indennita-giorno-badge">${iconaIndennita(x.chiave)}${escapeHtml(x.chiave === 'buonoPasto' && numeroBuoniPasto(t) === 2 ? '2 buoni pasto' : x.nome)}</span>`); });
   if(typeof classificaTurno === 'function' && typeof totaleStraordinario === 'function'){
     const c = classificaTurno(t);
     const oreStr = totaleStraordinario(c);
