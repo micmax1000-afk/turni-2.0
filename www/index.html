@@ -193,83 +193,101 @@
         <button type="button" class="foglio-evento-maniglia" id="manigliaFoglioEvento" aria-label="Altre opzioni"></button>
         <h2 id="titoloModaleEvento" class="solo-lettori">Nuovo evento</h2>
         <div class="modale-corpo">
-          <input type="text" id="campoEventoTitolo" class="foglio-evento-titolo" placeholder="Aggiungi un titolo" aria-label="Titolo dell'evento" enterkeyhint="done">
-          <div class="foglio-evento-riga solo-espanso"><span aria-hidden="true">🎨</span><i>Colore</i><div class="scelta-colore-evento" id="sceltaColoreEvento" role="radiogroup" aria-label="Colore dell'evento"></div></div>
-          <label class="foglio-evento-riga solo-espanso"><span aria-hidden="true">☀️</span><i>Tutto il giorno</i><input type="checkbox" class="interruttore" id="campoEventoTuttoIlGiorno"></label>
-          <div class="foglio-evento-riga foglio-evento-quando"><span aria-hidden="true">🕒</span>
+          <input type="text" id="campoEventoTitolo" class="foglio-evento-titolo" placeholder="Aggiungi titolo" aria-label="Titolo dell'evento" enterkeyhint="done">
+          <label class="riga-g solo-espanso"><span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><i>Tutto il giorno</i><input type="checkbox" class="interruttore" id="campoEventoTuttoIlGiorno"></label>
+          <div class="foglio-evento-quando">
+            <span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
             <b class="foglio-evento-data" id="dataEventoFoglio"></b>
             <div id="campiEventoOrario" class="orari-evento">
               <input type="time" id="campoEventoOraInizio" aria-label="Inizio">
-              <span aria-hidden="true">→</span>
+              <span class="orari-evento-trattino" aria-hidden="true">–</span>
+              <b class="foglio-evento-data foglio-evento-data-fine solo-espanso" id="dataEventoFoglioFine" aria-hidden="true"></b>
               <input type="time" id="campoEventoOraFine" aria-label="Fine">
             </div>
-            <b class="foglio-evento-data" id="etichettaTuttoGiornoEvento" hidden>Tutto il giorno</b>
+            <b class="foglio-evento-tutto" id="etichettaTuttoGiornoEvento" hidden>Tutto il giorno</b>
           </div>
           <p class="avviso-sovrapposizione-evento" id="avvisoSovrapposizioneEvento" hidden></p>
-          <div class="foglio-evento-scorciatoie solo-compatto">
-            <button type="button" data-opzione-evento="colore">🎨 Colore</button>
-            <button type="button" data-opzione-evento="ripeti">🔁 <span id="scorciatoiaRipetiEvento">Non si ripete</span></button>
-            <button type="button" data-opzione-evento="promemoria">🔔 <span id="scorciatoiaPromemoriaEvento">Promemoria</span></button>
+          <div class="foglio-evento-riepilogo solo-compatto">
+            <button type="button" data-opzione-evento="colore"><span class="pallino-colore-evento" id="pallinoColoreEvento"></span><span id="scorciatoiaColoreEvento">Blu</span></button>
+            <button type="button" data-opzione-evento="ripeti"><span id="scorciatoiaRipetiEvento">Non si ripete</span></button>
+            <button type="button" data-opzione-evento="promemoria"><span id="scorciatoiaPromemoriaEvento">Promemoria</span></button>
           </div>
           <div class="solo-espanso foglio-evento-opzioni">
-          <label class="campo-modale">Ripeti
-            <select id="campoEventoRipeti">
-              <option value="" selected>Non si ripete</option>
-              <option value="settimana">Ogni settimana</option>
-              <option value="2settimane">Ogni 2 settimane</option>
-              <option value="mese">Ogni mese, stesso giorno</option>
-              <option value="anno">Ogni anno</option>
-            </select>
-          </label>
-          <label class="campo-modale" id="campoEventoRipetiFinoWrap" hidden>Fino al (facoltativo)<input type="date" id="campoEventoRipetiFino"></label>
-          <small id="hintRipetiEvento" class="hint-evento" hidden>Le modifiche valgono per tutte le ripetizioni.</small>
-          <label class="campo-modale" id="campoEventoOraPromemoriaWrap" hidden>Il promemoria arriva alle<input type="time" id="campoEventoOraPromemoria" value="08:00"></label>
-          <div class="campo-modale" id="campoEventoPromemoriaWrap">
-            <strong>🔔 Promemoria</strong>
-            <div id="listaPromemoriaEvento"></div>
-            <button type="button" class="btn-testo-evento" id="btnAggiungiPromemoria">＋ Aggiungi promemoria</button>
-            <small id="hintPromemoriaEvento"></small>
-            <div class="avviso-permessi-evento" id="avvisoPermessiEvento" hidden>
-              <span>⚠️ Le notifiche dell'app sono disattivate: i promemoria non arriveranno.</span>
-              <button type="button" class="btn-secondario" id="btnAttivaNotificheEvento">Attiva notifiche</button>
-            </div>
-            <div class="avviso-batteria" id="avvisoBatteriaEvento" hidden>
-              <span aria-hidden="true">🔋</span><i><b>I promemoria potrebbero arrivare in ritardo</b>Il risparmio batteria di Android limita l'app quando è chiusa.<button type="button" class="btn-secondario" data-sistema-batteria>Sistema adesso</button></i>
+          <div class="riga-g riga-g-alta">
+            <span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h16"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg></span>
+            <div class="riga-g-corpo">
+              <select id="campoEventoRipeti" aria-label="Ripeti">
+                <option value="" selected>Non si ripete</option>
+                <option value="settimana">Ogni settimana</option>
+                <option value="2settimane">Ogni 2 settimane</option>
+                <option value="mese">Ogni mese, stesso giorno</option>
+                <option value="anno">Ogni anno</option>
+              </select>
+              <label class="campo-modale" id="campoEventoRipetiFinoWrap" hidden>Fino al (facoltativo)<input type="date" id="campoEventoRipetiFino"></label>
+              <small id="hintRipetiEvento" class="hint-evento" hidden>Le modifiche valgono per tutte le ripetizioni.</small>
             </div>
           </div>
-          <div class="campo-modale" id="campoEventoAvvisoWrap" hidden>
-            <strong>⏰ Avviso forte (facoltativo)</strong>
-            <label class="campo-modale">Durata
+          <div class="riga-g riga-g-alta" id="campoEventoPromemoriaWrap">
+            <span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></span>
+            <div class="riga-g-corpo">
+              <div id="listaPromemoriaEvento"></div>
+              <button type="button" class="btn-testo-evento" id="btnAggiungiPromemoria">Aggiungi promemoria</button>
+              <label class="campo-modale" id="campoEventoOraPromemoriaWrap" hidden>Il promemoria arriva alle<input type="time" id="campoEventoOraPromemoria" value="08:00"></label>
+              <small id="hintPromemoriaEvento"></small>
+              <div class="avviso-permessi-evento" id="avvisoPermessiEvento" hidden>
+                <span>⚠️ Le notifiche dell'app sono disattivate: i promemoria non arriveranno.</span>
+                <button type="button" class="btn-secondario" id="btnAttivaNotificheEvento">Attiva notifiche</button>
+              </div>
+              <div class="avviso-batteria" id="avvisoBatteriaEvento" hidden>
+                <span aria-hidden="true">🔋</span><i><b>I promemoria potrebbero arrivare in ritardo</b>Il risparmio batteria di Android limita l'app quando è chiusa.<button type="button" class="btn-secondario" data-sistema-batteria>Sistema adesso</button></i>
+              </div>
+            </div>
+          </div>
+          <!-- v3.8.1: l'avviso forte è un solo interruttore (10 secondi, suono e vibrazione); i campi sotto restano nascosti per il salvataggio -->
+          <div id="campoEventoAvvisoWrap" hidden>
+            <label class="riga-g">
+              <span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></span>
+              <i>Suona anche in silenzioso<small>10 secondi di suono e vibrazione</small></i>
+              <input type="checkbox" class="interruttore" id="campoEventoAvvisoForte">
+            </label>
+            <div hidden>
               <select id="campoEventoAvvisoDurata">
-                <option value="0" selected>Nessuno (solo notifica normale)</option>
+                <option value="0" selected>Nessuno</option>
                 <option value="5">5 secondi</option>
                 <option value="10">10 secondi</option>
                 <option value="15">15 secondi</option>
               </select>
-            </label>
-            <label class="campo-modale" id="campoEventoAvvisoModoWrap">Come avvisa
-              <select id="campoEventoAvvisoModo">
-                <option value="suono_vibra" selected>Suono e vibrazione</option>
-                <option value="vibra">Solo vibrazione</option>
-                <option value="suono">Solo suono</option>
-                <option value="bip">Solo bip</option>
-              </select>
-            </label>
-            <small>Suona/vibra anche in silenzioso, poi si ferma da sola. La notifica resta con i tasti Spegni e Posticipa 5 min (che ci sono anche senza avviso forte).</small>
+              <div id="campoEventoAvvisoModoWrap">
+                <select id="campoEventoAvvisoModo">
+                  <option value="suono_vibra" selected>Suono e vibrazione</option>
+                  <option value="vibra">Solo vibrazione</option>
+                  <option value="suono">Solo suono</option>
+                  <option value="bip">Solo bip</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <details class="riquadro-giorno altro-giorno dettagli-evento">
-            <summary>Luogo e note<b aria-hidden="true">⌄</b></summary>
-            <label class="campo-modale">Luogo<input type="text" id="campoEventoLuogo" placeholder="facoltativo"></label>
-            <label class="campo-modale">Note<textarea id="campoEventoNote" rows="2" placeholder="facoltativo"></textarea></label>
-          </details>
+          <div class="riga-g riga-g-colore">
+            <span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-1.2-1-1.5-1-2.6 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></span>
+            <div class="scelta-colore-evento" id="sceltaColoreEvento" role="radiogroup" aria-label="Colore dell'evento"></div>
+          </div>
+          <label class="riga-g">
+            <span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+            <input type="text" id="campoEventoLuogo" class="campo-g" placeholder="Aggiungi luogo" aria-label="Luogo">
+          </label>
+          <label class="riga-g riga-g-alta">
+            <span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+            <textarea id="campoEventoNote" class="campo-g" rows="2" placeholder="Aggiungi note" aria-label="Note"></textarea>
+          </label>
+          <div class="gruppo-elimina-evento">
+            <button class="btn-testo-elimina" id="btnEliminaEventoGiorno" type="button" hidden>🗑️ Solo questo giorno</button>
+            <button class="btn-testo-elimina" id="btnEliminaEvento" type="button">🗑️ Elimina</button>
+          </div>
           </div>
         </div>
         <div class="modale-footer foglio-evento-azioni">
-          <button class="btn-secondario solo-compatto" id="btnAltreOpzioniEvento" type="button">Altre opzioni ⌃</button>
-          <div class="gruppo-elimina-evento solo-espanso">
-            <button class="btn-secondario" id="btnEliminaEventoGiorno" type="button" hidden>🗑️ Solo questo giorno</button>
-            <button class="btn-secondario" id="btnEliminaEvento" type="button">🗑️ Elimina</button>
-          </div>
+          <button class="btn-icona-g solo-espanso" id="btnChiudiEventoFoglio" type="button" aria-label="Chiudi senza salvare"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          <button class="btn-testo-evento solo-compatto" id="btnAltreOpzioniEvento" type="button">Altre opzioni</button>
           <button class="btn-primario" id="btnSalvaEvento" type="button">Salva</button>
         </div>
       </div>
@@ -1136,7 +1154,7 @@
     <h2>Tutto pronto! 🎉</h2>
     <div class="benvenuto-card benvenuto-riepilogo" id="benvenutoRiepilogo"></div>
     <p class="titolo-sezione-giorno">Tre cose utili</p>
-    <div class="benvenuto-consiglio"><span>👆</span><div><b>Tocca un giorno</b> per vederlo, <b>due volte</b> per cambiare turno.</div></div>
+    <div class="benvenuto-consiglio"><span>👆</span><div><b>Tocca un giorno</b> per vederlo, poi <b>Turno</b> o <b>Modifica</b> per cambiarlo.</div></div>
     <div class="benvenuto-consiglio"><span>💰</span><div>In <b>Report</b> vedi quanto arriva sul conto e il cedolino.</div></div>
     <div class="benvenuto-consiglio"><span>🌙</span><div>Il pulsante in alto nel calendario passa al <b>tema scuro</b>.</div></div>
   </div>

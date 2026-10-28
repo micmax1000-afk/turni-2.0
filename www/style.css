@@ -2618,3 +2618,100 @@ html[data-tema="scuro"] .riga-chiusa-v6 .ic,html[data-tema="scuro"] .altro-giorn
 html[data-tema="scuro"] .riga-chiusa-v6 b{color:#8FB0FF}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .riga-chiusa-v6 .ic,html:not([data-tema="chiaro"]) .altro-giorno summary .ic{background:#22305A}html:not([data-tema="chiaro"]) .riga-chiusa-v6 b{color:#8FB0FF}}
 .scelta-prima-dopo button.attivo,.scelta-n-buoni button.attivo{background:var(--acc,#1D4FD7)!important;border-color:var(--acc,#1D4FD7)!important;color:#fff!important}
+
+/* v3.8.1 — Nuovo evento in stile Google Calendar: righe semplici con icone, orari grandi, "Altre opzioni" a tutto schermo */
+#overlayEvento .ic-g{width:24px;flex:none;display:flex;justify-content:center;color:var(--testo-tenue)}
+#overlayEvento .ic-g svg,#overlayEvento .btn-icona-g svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#overlayEvento .foglio-evento-titolo{border-bottom:0!important;font-size:1.4rem!important;font-weight:400;padding:4px 0 10px 40px!important}
+#overlayEvento .foglio-evento-titolo::placeholder{color:var(--testo-tenue)}
+#overlayEvento .riga-g{display:flex;align-items:center;gap:16px;min-height:50px;padding:2px 0;margin:0;font-size:1rem;color:var(--testo)}
+#overlayEvento .riga-g[hidden]{display:none}
+#overlayEvento .riga-g > i{font-style:normal;flex:1}
+#overlayEvento .riga-g > i small{display:block;font-size:.76rem;color:var(--testo-tenue);margin-top:1px}
+#overlayEvento .riga-g-alta{align-items:flex-start;padding:12px 0 8px}
+#overlayEvento .riga-g-alta > .ic-g{padding-top:1px}
+#overlayEvento .riga-g-corpo{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+#overlayEvento .riga-g-corpo > small{color:var(--testo-tenue);font-size:.78rem}
+#overlayEvento .riga-g-corpo select,#overlayEvento .riga-promemoria select,#overlayEvento .riga-promemoria input{border:0!important;background:none!important;box-shadow:none!important;padding:0!important;margin:0!important;height:auto!important;min-height:26px;font:inherit;font-size:1rem!important;color:var(--testo);-webkit-appearance:none;appearance:none;width:auto}
+#overlayEvento .riga-promemoria .pr-num{border-bottom:1px solid var(--bordo)!important;width:48px;flex:0 0 48px;text-align:center}
+#overlayEvento .riga-promemoria{margin:0 0 2px}
+#overlayEvento .riga-promemoria .pr-x{width:30px;height:30px;margin-left:auto}
+#overlayEvento .riga-g-corpo .btn-testo-evento{color:var(--testo-tenue);font-weight:400;font-size:1rem;padding:4px 0}
+#overlayEvento .campo-g{flex:1;min-width:0;border:0!important;background:none!important;box-shadow:none!important;padding:0!important;margin:0!important;font:inherit;font-size:1rem!important;color:var(--testo);outline:0;resize:none}
+#overlayEvento .campo-g::placeholder{color:var(--testo-tenue)}
+#overlayEvento .foglio-evento-opzioni{gap:0!important;padding:0 0 10px!important}
+#overlayEvento .foglio-evento-opzioni > *{border-bottom:1px solid color-mix(in srgb,var(--bordo) 75%,transparent)}
+#overlayEvento .foglio-evento-opzioni > .riga-g:has(+ .riga-g-alta textarea),#overlayEvento .foglio-evento-opzioni > .gruppo-elimina-evento,#overlayEvento .foglio-evento-opzioni > :last-child{border-bottom:0}
+#overlayEvento #campoEventoAvvisoWrap[hidden]{display:none}
+#overlayEvento .riga-g-colore .scelta-colore-evento{margin:0;gap:8px;flex:1}
+#overlayEvento .riga-g-colore .scelta-colore-evento button{width:28px;height:28px}
+
+/* Quando: compatta = una riga (data a sinistra, orari a destra); aperta = inizio e fine su due righe */
+#overlayEvento .foglio-evento-quando{display:flex;align-items:center;gap:16px;min-height:50px;padding:0!important;border:0!important;flex-wrap:nowrap!important}
+#overlayEvento .foglio-evento-data{background:none!important;padding:0!important;font-weight:400;font-size:1rem!important;flex:1;white-space:nowrap}
+#overlayEvento .foglio-evento-tutto{font-weight:600;font-size:1rem}
+#overlayEvento .foglio-evento-tutto[hidden]{display:none}
+#overlayEvento .orari-evento input{background:none!important;padding:10px 4px!important;font-size:1.05rem!important;font-weight:700;width:auto!important;text-align:right}
+#overlayEvento .orari-evento-trattino{color:var(--testo-tenue)}
+#overlayEvento.espanso .foglio-evento-quando > .ic-g{visibility:hidden}
+#overlayEvento.espanso .foglio-evento-quando{display:grid;grid-template-columns:24px 1fr auto;column-gap:16px;align-items:center}
+#overlayEvento.espanso #campiEventoOrario{display:contents}
+#overlayEvento.espanso #campiEventoOrario[hidden]{display:none}
+#overlayEvento.espanso .orari-evento-trattino{display:none}
+#overlayEvento.espanso #dataEventoFoglio{grid-column:2;grid-row:1}
+#overlayEvento.espanso #campoEventoOraInizio{grid-column:3;grid-row:1;font-weight:400}
+#overlayEvento.espanso #dataEventoFoglioFine{grid-column:2;grid-row:2}
+#overlayEvento.espanso #campoEventoOraFine{grid-column:3;grid-row:2;font-weight:400}
+#overlayEvento.espanso .foglio-evento-tutto{display:none}
+#overlayEvento .foglio-evento-quando:has(#campiEventoOrario[hidden]) #dataEventoFoglioFine{display:none}
+
+/* Avviso del turno: una riga, senza riquadro */
+#overlayEvento .avviso-sovrapposizione-evento{background:none!important;color:#8A5A00;padding:0 0 8px 40px!important;margin:0!important;font-size:.84rem!important;position:relative}
+#overlayEvento .avviso-sovrapposizione-evento::before{content:'⚠';position:absolute;left:4px;top:-1px;font-size:1rem;color:#C27C0E}
+
+/* Riepilogo nella scheda compatta: "● Blu · Non si ripete · 10 minuti prima" */
+#overlayEvento .foglio-evento-riepilogo{display:flex;flex-wrap:wrap;align-items:center;gap:0;padding:2px 0 4px 40px;position:relative;min-height:36px}
+#overlayEvento .foglio-evento-riepilogo button{border:0;background:none;padding:6px 0;font:inherit;font-size:.88rem;color:var(--testo-tenue);cursor:pointer;display:inline-flex;align-items:center}
+#overlayEvento .foglio-evento-riepilogo button + button::before{content:'·';margin:0 7px}
+#overlayEvento .pallino-colore-evento{position:absolute;left:4px;width:16px;height:16px;border-radius:50%;background:#2E7DD7}
+
+/* Pulsanti: compatta = "Altre opzioni" a sinistra e Salva a destra; aperta = in alto, come Google */
+#overlayEvento .foglio-evento-azioni{align-items:center!important;justify-content:space-between;padding:6px 16px 12px!important}
+#overlayEvento .foglio-evento-azioni > .btn-primario{flex:none!important;padding:10px 26px!important;border-radius:999px!important;margin-left:auto}
+#overlayEvento .foglio-evento-azioni > .btn-testo-evento{color:var(--acc,#1D4FD7);font-weight:700;align-self:center;padding:10px 4px}
+#overlayEvento .btn-icona-g{border:0;background:none;color:var(--testo);width:42px;height:42px;display:grid;place-items:center;margin-left:-10px;cursor:pointer}
+#overlayEvento.espanso .foglio-evento{top:0!important;border-radius:0!important;box-shadow:none}
+#overlayEvento.espanso .foglio-evento-maniglia{order:-2;padding:8px 0 0}
+#overlayEvento.espanso .foglio-evento-azioni{order:-1;padding:8px 16px 4px!important}
+#overlayEvento.espanso .foglio-evento .modale-corpo{padding-bottom:16px}
+#overlayEvento .gruppo-elimina-evento{flex-direction:row;flex-wrap:wrap;gap:4px 18px;padding:10px 0 0 40px}
+#overlayEvento .gruppo-elimina-evento:not(:has(button:not([hidden]))){display:none}
+#overlayEvento .btn-testo-elimina{border:0;background:none;color:#C0392B;font:inherit;font-weight:600;font-size:.95rem;padding:8px 0;cursor:pointer}
+#overlayEvento .btn-testo-elimina[hidden]{display:none}
+
+/* v3.8.1 — Calendario classico più pulito: un solo bordo, righina solo per le cose rare, oggi nel cerchio, eventi a pallino */
+body:not(.calendario-moderno) .giorno-cella{border:0!important;box-shadow:none!important}
+body:not(.calendario-moderno) .giorno-cella.ha-straordinario{box-shadow:inset 0 -4px 0 #8B5CF6!important}
+body:not(.calendario-moderno) .giorno-cella.ha-missione{box-shadow:inset 0 -4px 0 #2563EB!important}
+body:not(.calendario-moderno) .giorno-cella.ha-op{box-shadow:inset 0 -4px 0 #3158C7!important}
+body:not(.calendario-moderno) .giorno-cella.selezionata{box-shadow:inset 0 0 0 3px var(--testo)!important}
+body:not(.calendario-moderno) .giorno-cella.selezionata.ha-straordinario{box-shadow:inset 0 0 0 3px var(--testo),inset 0 -6px 0 #8B5CF6!important}
+body:not(.calendario-moderno) .giorno-cella.selezionata::before,body:not(.calendario-moderno) .giorno-cella.selezionata::after{display:none!important}
+body:not(.calendario-moderno) .giorno-cella.selezionata .giorno-turno-badge{box-shadow:none!important}
+body:not(.calendario-moderno) .giorno-cella.oggi::before{display:none!important}
+body:not(.calendario-moderno) .giorno-cella.oggi .giorno-numero{background:#155EEF;color:#fff!important;border-radius:999px;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;margin:-1px 0 0;box-sizing:border-box}
+body:not(.calendario-moderno) .giorno-evento-titolo{font-size:0!important;width:9px!important;height:9px!important;min-width:0!important;padding:0!important;border-radius:50%!important;position:absolute!important;top:7px!important;right:7px!important;left:auto!important;bottom:auto!important;box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+body:not(.calendario-moderno) .giorno-evento-titolo *{display:none!important}
+body:not(.calendario-moderno) .giorno-cella .giorno-numero{text-decoration:none!important}
+#overlayEvento.espanso .foglio-evento-quando{row-gap:0}
+#overlayEvento.espanso .orari-evento input{padding:12px 4px!important}
+#overlayEvento .foglio-evento-azioni > .btn-testo-evento{font-family:inherit;font-size:.95rem}
+/* Il nuovo evento nella giornata: blocco pieno del suo colore, come in Google Calendar */
+#overlayEvento .giornata-nuovo{background:var(--colore-blocco);color:#fff;box-shadow:0 3px 10px rgba(27,36,64,.28)}
+#overlayEvento .giornata-nuovo b,#overlayEvento .giornata-nuovo small{color:#fff!important}
+html[data-tema="scuro"] #overlayEvento .avviso-sovrapposizione-evento{color:#F2D58A}
+html[data-tema="scuro"] #overlayEvento .foglio-evento-azioni > .btn-testo-evento{color:#9FB4FF}
+@media (prefers-color-scheme: dark){
+  html:not([data-tema="chiaro"]) #overlayEvento .avviso-sovrapposizione-evento{color:#F2D58A}
+  html:not([data-tema="chiaro"]) #overlayEvento .foglio-evento-azioni > .btn-testo-evento{color:#9FB4FF}
+}
