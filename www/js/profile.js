@@ -175,8 +175,8 @@ function datiAnagraficaMancanti(){
   if(!a) return ['i tuoi dati (qualifica, anni, regione…)'];
   const m = [];
   if(!(Number(a.anni) > 0)) m.push('anni di servizio');
-  if(!(Number(a.redditoAnnoPrecedente) > 0)) m.push('reddito dell\u2019anno scorso');
-  else if(redditoDaAggiornare(a)) m.push(`reddito ${new Date().getFullYear() - 1} (nuova CU)`);
+  // v3.4: il reddito è facoltativo (privacy): se manca l'app lo stima; se c'è ed è vecchio, chiede la CU nuova.
+  if(Number(a.redditoAnnoPrecedente) > 0 && redditoDaAggiornare(a)) m.push(`reddito ${new Date().getFullYear() - 1} (nuova CU)`);
   return m;
 }
 // La CU con i redditi dell'anno scorso arriva in primavera: da giugno, se il reddito è ancora di due anni fa, va aggiornato.
@@ -195,7 +195,7 @@ function aggiornaAvvisiDatiMancanti(){
   const rep = el('avvisoReportMancanti');
   if(rep){
     rep.hidden = !m.length;
-    if(m.length) rep.innerHTML = `<span aria-hidden="true">⚠️</span><i><b>Completa i tuoi dati</b><small>Manca${m.length > 1 ? 'no' : ''} ${escapeHtml(testo)}: netto e tasse potrebbero non tornare.</small></i><button type="button" class="btn-nuovo-turni-v4" data-completa-anagrafica>Completa</button>`;
+    if(m.length) rep.innerHTML = `<span aria-hidden="true">⚠️</span><i><b>Completa i tuoi dati</b><small>Da inserire: ${escapeHtml(testo)}. Senza, netto e tasse potrebbero non tornare.</small></i><button type="button" class="btn-nuovo-turni-v4" data-completa-anagrafica>Completa</button>`;
   }
   const ana = el('avvisoAnagraficaMancanti');
   if(ana){
@@ -215,7 +215,7 @@ function aggiornaAvvisiDatiMancanti(){
   const notaReddito = el('notaRedditoAnnoPrec');
   if(notaReddito){
     const a = AppState.anagrafica || {}, anno = Number(a.redditoAnnoPrecedenteAnno) || (new Date().getFullYear() - 1);
-    notaReddito.textContent = Number(a.redditoAnnoPrecedente) > 0 ? `Redditi ${anno}, dalla CU ${anno + 1}: serve per detrazioni e addizionali` : '"Reddito" della CU: serve per detrazioni e addizionali';
+    notaReddito.textContent = Number(a.redditoAnnoPrecedente) > 0 ? `Redditi ${anno}, dalla CU ${anno + 1} · resta solo sul telefono` : 'Facoltativo, dalla CU: detrazioni e addizionali più precise. Resta solo sul telefono';
   }
   const c = el('testataCompleta');
   if(c){ c.textContent = m.length ? (m.length === 1 ? 'Manca 1 dato' : `Mancano ${m.length} dati`) : 'Completa'; c.classList.toggle('da-completare', !!m.length); }

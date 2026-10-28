@@ -3580,6 +3580,8 @@ function avantiBenvenuto(){
       coniugeACarico: segScelto('coniuge'), figliOver21: Math.max(0, Number(el('benvenutoFigli').value) || 0), sindacato: segScelto('sindacato')
     });
     if(quota !== '') AppState.anagrafica.quotaSindacale = Math.max(0, Number(quota) || 0);
+    const reddito = Number(el('benvenutoReddito').value) || 0;
+    if(reddito > 0){ AppState.anagrafica.redditoAnnoPrecedente = reddito; AppState.anagrafica.redditoAnnoPrecedenteAnno = new Date().getFullYear() - 1; }
     salvaAnagraficaStorage();
     aggiornaRiassuntoAnagrafica();
     aggiornaRiassuntoAnagraficaAltro();
