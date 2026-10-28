@@ -879,6 +879,8 @@ function inizializza(){
       if(m){ el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; modelloGiornoScelto = m.id; aggiornaAnteprima(); aggiornaEditorGiornoV3(); }
       return;
     }
+    const bp = e.target.closest('[data-buoni-pasto]');
+    if(bp){ el('campoBuoniPastoGiorno').value = bp.dataset.buoniPasto; aggiornaEditorGiornoV3(); return; }
     const ind = e.target.closest('[data-indennita-giorno]');
     if(ind){
       const casella = el(ind.dataset.indennitaGiorno);
@@ -1353,7 +1355,7 @@ function aggiornaPassiDueTreV2(){
   el('sceltaFaseSequenza').innerHTML = p.giorni.map((g, i) => {
     const m = modelli.find(x => x.id === g.modelloId);
     const scelta = i === editorSeq.fase;
-    const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
+    const colore = m ? coloreModelloV2(m) : '#888';
     return `<button type="button" data-fase="${i}" class="${scelta ? 'attivo' : ''}" ${scelta ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
   el('sceltaDurataSequenza').querySelectorAll('[data-durata]').forEach(b => b.classList.toggle('attivo', b.dataset.durata === editorSeq.durata));
@@ -1438,7 +1440,7 @@ function renderCicloPatternSempliceV2(){
   host.innerHTML = p.giorni.map((g, i) => {
     const m = modelli.find(x => x.id === g.modelloId);
     const colore = m ? coloreModelloV2(m) : '#E8ECF0';
-    const forte = scurisciColore(colore, 0.35);
+    const forte = colore; // v2.92.1: colore esatto, come nel calendario
     const icone = (g.indennita || []).slice(0, 2).map(k => iconaIndennita(k)).join('') + (g.straordinario ? iconaIndennita('straordinario') : '');
     return `<button type="button" class="giorno-ciclo-v3${i === giornoPatternSelezionatoSemplcieV2 ? ' selezionato' : ''}" data-giorno-index="${i}">
       <small>${i + 1}°</small><b style="background:${forte};color:${testoSuColore(forte)}">${escapeHtml(nomeBreveModelloSeq(m))}</b><span style="background:${colore};color:${testoSuColore(colore)}">${icone || '&nbsp;'}</span>
@@ -1523,7 +1525,7 @@ function renderTavolozzaPatternSempliceV2(){
   if(!host) return;
   host.innerHTML = (AppState.modelliTurno || []).map(m => {
     const colore = coloreModelloV2(m);
-    const forte = scurisciColore(colore, 0.35);
+    const forte = colore; // v2.92.1: colore esatto, come nel calendario
     return `<button type="button" class="tavolozza-pattern-v3" data-modello-id-pattern="${escapeHtml(m.id)}" style="background:${forte};color:${testoSuColore(forte)}" title="${escapeHtml(m.nome)}">${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
 }
@@ -1679,7 +1681,7 @@ function renderMeseV3(){
       ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><span>${f(totInd)} <span class="netto-v3">~${f(round2(totInd * quotaNetta))}</span></span></div><div class="mese-sub-v3">Arrivano in busta a ${pag}. Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</div>` : ''}
       ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi le voci a zero ▴' : 'Mostra anche le voci a zero ▾'}</button>` : ''}
     </div>
-    ${r.buoniPasto ? `<div class="mese-gruppo-v3"><h3>Fuori busta paga</h3><div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">🍽️</span><span>Buoni pasto</span><em>${r.buoniPasto}</em><b>${f(round2(r.buoniPasto * (AppState.tabelle.buonoPastoValore || 0)))}</b></div></div>` : ''}`;
+    ${r.buoniPasto ? `<div class="mese-gruppo-v3"><h3>Fuori busta paga</h3><div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">🍽️</span><span>Buoni pasto</span><b>${r.buoniPasto}</b></div></div>` : ''}`;
   const btn = el('btnMeseZeriV3');
   if(btn) btn.onclick = () => { meseMostraZeriV3 = !meseMostraZeriV3; renderMeseV3(); };
 }
@@ -1932,6 +1934,7 @@ function applicaIndennitaRapidaV2(chiave){
     return;
   }
   t[chiave] = !t[chiave];
+  if(chiave === 'buonoPasto' && !t[chiave]) delete t.buoniPastoGiorno;
   salvaTurniStorage();
   renderCalendario();
   const nome = (INDENNITA_RAPIDE_V2.find(x => x.chiave === chiave) || {}).nome || chiave;
@@ -2003,7 +2006,7 @@ function aggiornaAnteprimaModelloV2(){
   const finto = { id: m ? m.id : 'nuovo', riposo: !!(m && m.riposo), nome: el('campoModModelloNome').value.trim() || 'Nuovo servizio',
     oraInizio: el('campoModModelloInizio').value, oraFine: el('campoModModelloFine').value };
   const colore = el('campoModModelloColore').value || '#E4E7EC';
-  const forte = scurisciColore(colore, 0.35);
+  const forte = colore; // v2.92.1: colore esatto, come nel calendario
   const sigla = (el('campoModModelloSigla').value || finto.nome.slice(0, 2)).toUpperCase();
   const durata = durataModelloTesto(finto);
   const orario = finto.riposo ? 'Giornata libera' : finto.oraInizio && finto.oraFine ? `${finto.oraInizio} – ${finto.oraFine}${durata ? ' · ' + durata : ''}` : 'Orario da scegliere';
@@ -3435,7 +3438,7 @@ function renderSequenzeBenvenuto(){
     el('benvenutoFase').innerHTML = p.giorni.map((g, i) => {
       const m = modelli.find(x => x.id === g.modelloId);
       const scelto = i === benvenuto.fase;
-      const colore = m ? scurisciColore(coloreModelloV2(m), 0.35) : '#888';
+      const colore = m ? coloreModelloV2(m) : '#888';
       return `<button type="button" data-benvenuto-fase="${i}" class="${scelto ? 'attivo' : ''}" ${scelto ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
     }).join('');
     // Anteprima: i prossimi 7 giorni come verranno.

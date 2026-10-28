@@ -2342,3 +2342,9 @@ html[data-tema="scuro"] .azione-genera-v4 i small{color:#B7C6F2}
 .lista-strumenti-card-v4{margin-top:0}
 .lista-strumenti-card-v4 .sigla-strumento-v4{font-size:1.1rem}
 html[data-tema="scuro"] .lista-strumenti-card-v4 .sigla-strumento-v4{filter:none}
+
+/* v2.93 – Buoni pasto: quanti in un giorno (1 o 2), senza importo */
+.scelta-buoni-pasto{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bordo);border-radius:14px;padding:8px 10px 8px 12px;margin:8px 0 0;font-size:.88rem;color:var(--testo)}
+.scelta-buoni-pasto[hidden]{display:none}
+.scelta-buoni-pasto .scelta-prima-dopo{flex:none;margin:0}
+.scelta-buoni-pasto .scelta-prima-dopo button{min-width:46px}
