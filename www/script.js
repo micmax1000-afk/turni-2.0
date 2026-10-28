@@ -3570,7 +3570,7 @@ function avantiBenvenuto(){
     const quota = el('benvenutoQuotaSindacale').value;
     AppState.anagrafica = Object.assign({ addComunale: 0.8, coniugeACarico: 'no', figliOver21: 0, sindacato: 'no' }, AppState.anagrafica || {}, {
       qualifica: el('benvenutoQualifica').value, anni: el('benvenutoAnni').value, regione: el('benvenutoRegione').value,
-      addComunale: Math.max(0, Number(el('benvenutoAddComunale').value) || 0), addComunaleConfermata: true,
+      addComunale: Math.max(0, Number(el('benvenutoAddComunale').value) || 0),
       coniugeACarico: segScelto('coniuge'), figliOver21: Math.max(0, Number(el('benvenutoFigli').value) || 0), sindacato: segScelto('sindacato')
     });
     if(quota !== '') AppState.anagrafica.quotaSindacale = Math.max(0, Number(quota) || 0);

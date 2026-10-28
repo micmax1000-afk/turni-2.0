@@ -56,7 +56,7 @@ function popolaFormAnagrafica(){
     el('campoConiugeACarico').value = AppState.anagrafica.coniugeACarico || 'no';
     el('campoFigliOver21').value = AppState.anagrafica.figliOver21 ?? 0;
     el('campoSindacato').value = normalizzaSindacato(AppState.anagrafica.sindacato);
-    el('campoAddComunale').value = AppState.anagrafica.addComunaleConfermata ? (AppState.anagrafica.addComunale ?? '') : '';
+    el('campoAddComunale').value = AppState.anagrafica.addComunale ?? 0.8;
     el('campoQuotaSindacale').value = quotaSindacaleMensile(AppState.anagrafica);
     el('campoRedditoAnnoPrec').value = AppState.anagrafica.redditoAnnoPrecedente || '';
     el('campoAddRegionaleAnnoPrec').value = AppState.anagrafica.addRegionaleAnnoPrecedente || '';
@@ -114,7 +114,7 @@ function cancellaAnagrafica(){
   el('campoConiugeACarico').value = 'no';
   el('campoFigliOver21').value = 0;
   el('campoSindacato').value = 'no';
-  el('campoAddComunale').value = '';
+  el('campoAddComunale').value = 0.8;
   el('campoRedditoAnnoPrec').value = '';
   el('campoAddRegionaleAnnoPrec').value = '';
   el('campoQuotaSindacale').value = '';
@@ -158,8 +158,8 @@ function salvaAnagraficaDaModale(){
 function addComunaleDaCampo(){
   const prima = AppState.anagrafica || {};
   const v = el('campoAddComunale').value;
-  if(v === '') return { addComunale: prima.addComunale ?? 0.8, addComunaleConfermata: !!prima.addComunaleConfermata };
-  return { addComunale: Math.max(0, Number(v) || 0), addComunaleConfermata: true };
+  if(v === '') return { addComunale: prima.addComunale ?? 0.8 };
+  return { addComunale: Math.max(0, Number(v) || 0) };
 }
 
 // Quota sindacale al mese: quella scritta in Anagrafica, altrimenti il valore delle Tabelle.
@@ -175,7 +175,6 @@ function datiAnagraficaMancanti(){
   if(!a) return ['i tuoi dati (qualifica, anni, regione…)'];
   const m = [];
   if(!(Number(a.anni) > 0)) m.push('anni di servizio');
-  if(!a.addComunaleConfermata) m.push('addizionale comunale');
   if(!(Number(a.redditoAnnoPrecedente) > 0)) m.push('reddito dell\u2019anno scorso');
   else if(redditoDaAggiornare(a)) m.push(`reddito ${new Date().getFullYear() - 1} (nuova CU)`);
   return m;
@@ -212,7 +211,6 @@ function aggiornaAvvisiDatiMancanti(){
     if(!manca && s) s.remove();
   };
   segna('campoAnni', m.includes('anni di servizio'));
-  segna('campoAddComunale', m.includes('addizionale comunale'));
   segna('campoRedditoAnnoPrec', m.some(x => x.startsWith('reddito')));
   const notaReddito = el('notaRedditoAnnoPrec');
   if(notaReddito){

@@ -195,7 +195,7 @@ function leggiTabelleDaModale(){
   // ufficiale), quindi si legge e si salva separatamente dal resto di questa scheda.
   const campoComunale = el('campoAddComunaleTabelle');
   if(campoComunale && AppState.anagrafica){
-    if(Number(campoComunale.value) !== Number(AppState.anagrafica.addComunale) || AppState.anagrafica.addComunaleConfermata){ AppState.anagrafica.addComunale = Number(campoComunale.value) || 0; AppState.anagrafica.addComunaleConfermata = true; }
+    AppState.anagrafica.addComunale = Number(campoComunale.value) || 0;
     salvaAnagraficaStorage();
   }
 }

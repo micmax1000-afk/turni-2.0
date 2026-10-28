@@ -159,7 +159,7 @@ function detrazioneFigliOver21Annua(R, n){
 // annoReddito: le aliquote sono quelle dell'anno del reddito (nel 2026 si trattiene quella sui redditi 2025).
 function addizionaleRegionaleAnnua(regione, R, annoReddito){
   const T = AppState.tabelle || {};
-  const tab = (annoReddito === 2025 && T.regioniAddizionale2025) || T.regioniAddizionale || {};
+  const tab = (T.regioniAddizionaleAnni && T.regioniAddizionaleAnni[annoReddito]) || T.regioniAddizionale || {};
   const d = tab[regione];
   if(!d || !(R > 0)) return 0;
   if(d.esenteFino && R <= d.esenteFino) return 0;
