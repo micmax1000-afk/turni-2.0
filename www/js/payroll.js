@@ -288,107 +288,55 @@ function generaAccreditoConto(anno, mese){
   };
 }
 
+// v2.97: tutte le voci in tre elenchi (Stipendio, Indennità e straordinario, Tasse e contributi);
+// le voci a zero non si mostrano. Netto e totali sono gli stessi del riassunto sopra.
 function renderCedolino(){
   const c = generaCedolino(annoCorrente, meseCorrente);
   const box = el('contenitoreCedolino');
-  const riga = (nome, val, sottr=false, meta='') => `<div class="cedolino-riga${sottr?' sottrazione':''}"><span>${nome}${meta ? `<small>${meta}</small>` : ''}</span><span>${sottr?'− ':''}${euro(val)}</span></div>`;
-  const totaleAccessorie = c.comp.totaleAccessorie;
-  const totaleFisse = c.comp.totaleFisse;
+  const riga = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, euro(val), '', sotto) : '';
+  const meno = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, `−${euro(val)}`, 'meno', sotto) : '';
+  const piu = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, `+${euro(val)}`, 'piu', sotto) : '';
+  const ore = h => h ? `${String(h).replace('.', ',')} h` : '';
+  const f = c.comp.fisse, a = c.comp.accessorie, t = c.comp.tot;
   const lordo = c.comp.totaleLordo;
-  const ritenute = round2(c.contributi + c.irpefTotale + c.addizionali + c.sindacato);
-  const trattenuteNetto = round2(ritenute - c.detrazioni - c.trattamentoIntegrativo - c.conguagli);
-  const percent = (v) => lordo > 0 ? Math.max(0, Math.min(100, (v / lordo) * 100)) : 0;
-  const pill = (label, value, cls='') => `<div class="cedolino-pill ${cls}"><span>${label}</span><strong>${euro(value)}</strong></div>`;
+  const trattenuteNetto = round2(c.contributi + c.irpefTotale + c.addizionali + c.sindacato - c.detrazioni - c.trattamentoIntegrativo - c.conguagli);
+  const lista = (titolo, totale, righe, classe = '') => `<div class="ced-lista-v4"><h3>${titolo} <b class="${classe}">${totale}</b></h3>${righe || rigaCedolinoV4('Nessuna voce', '—')}</div>`;
 
-  box.innerHTML = `
-    <div class="cedolino-v12-head">
-      <div>
-        <span class="cedolino-v12-kicker">CEDOLINO SIMULATO · ${NOMI_MESI[meseCorrente]} ${annoCorrente}</span>
-        <h3>${c.comp.qualifica}</h3>
-        <small>Stima non ufficiale basata sui dati inseriti</small>
-      </div>
-      <span class="cedolino-v12-badge">NON UFFICIALE</span>
-    </div>
-
-    <div class="cedolino-v12-netto">
-      <div><span>NETTO STIMATO</span><small>Importo indicativo</small></div>
-      <strong>${euro(c.netto)}</strong>
-    </div>
-
-    <div class="cedolino-v12-pills">
-      ${pill('Lordo', lordo, 'lordo')}
-      ${pill('Competenze fisse', totaleFisse)}
-      ${pill('Accessorie', totaleAccessorie)}
-      ${pill('Ritenute', ritenute, 'negativo')}
-    </div>
-    <div class="cedolino-v39-riepilogo" aria-label="Riepilogo cedolino">
-      <div><span>Lordo</span><strong>${euro(lordo)}</strong></div>
-      <div><span>Trattenute nette</span><strong>${euro(trattenuteNetto)}</strong></div>
-      <div class="evidenza"><span>Netto stimato</span><strong>${euro(c.netto)}</strong></div>
-    </div>
-
-    <div class="cedolino-v12-composizione">
-      <div class="cedolino-v12-section-title"><strong>Composizione del lordo</strong><span>${euro(lordo)}</span></div>
-      <div class="cedolino-v12-barra"><span class="fisse" style="width:${percent(totaleFisse)}%"></span><span class="accessorie" style="width:${percent(totaleAccessorie)}%"></span></div>
-      <div class="cedolino-v12-legenda"><span><i class="fisse"></i> Fisse ${percent(totaleFisse).toFixed(0)}%</span><span><i class="accessorie"></i> Accessorie ${percent(totaleAccessorie).toFixed(0)}%</span></div>
-    </div>
-
-    <details class="cedolino-v12-details" open>
-      <summary><span>💼 Competenze fisse</span><strong>${euro(totaleFisse)}</strong></summary>
-      <div class="cedolino-v12-body">
-        ${riga('Stipendio Tabellare (incl. IIS conglobata)', c.comp.fisse.stipendioTabellare)}
-        ${c.comp.fisse.iis > 0 ? riga('IIS', c.comp.fisse.iis) : ''}
-        ${riga('Indennità Pensionabile', c.comp.fisse.indennitaPensionabile)}
-        ${riga('Assegno Funzionale', c.comp.fisse.assegnoFunzione)}
-        ${c.comp.fisse.tredicesima ? riga('Tredicesima Mensilità', c.comp.fisse.tredicesima) : ''}
-      </div>
-    </details>
-
-    <details class="cedolino-v12-details">
-      <summary><span>🚓 Competenze accessorie</span><strong>${euro(totaleAccessorie)}</strong></summary>
-      <div class="cedolino-v12-body">
-        ${riga(`Straordinario Diurno`, c.comp.accessorie.strDiurno, false, `${c.comp.tot.strDiurno} h`)}
-        ${riga(`Straordinario Notturno`, c.comp.accessorie.strNotturno, false, `${c.comp.tot.strNotturno} h`)}
-        ${riga(`Straordinario Festivo`, c.comp.accessorie.strFestivo, false, `${c.comp.tot.strFestivo} h`)}
-        ${riga(`Straordinario Notturno Festivo`, c.comp.accessorie.strNotturnoFestivo, false, `${c.comp.tot.strNotturnoFestivo} h`)}
-        ${riga('Ind. Turno Notturno', c.comp.accessorie.indTurnoNotturno, false, `${c.comp.tot.notturne} h`)}
-        ${riga('Ind. Festiva/Domenicale', c.comp.accessorie.indFestiva)}
-        ${c.comp.accessorie.indFestivitaParticolare ? riga('Ind. Festività Particolari', c.comp.accessorie.indFestivitaParticolare) : ''}
-        ${riga('Ind. Ordine Pubblico', c.comp.accessorie.indOP)}
-        ${riga('Ind. Servizi Esterni', c.comp.accessorie.indServizioEsterno)}
-        ${riga('Ind. Controllo Territorio', c.comp.accessorie.indControlloTerritorio)}
-        ${riga('Reperibilità', c.comp.accessorie.indReperibilita)}
-        ${riga('Missioni', c.comp.accessorie.indMissioni)}
-        ${riga('Compensazione Riposo Lavorato', c.comp.accessorie.indCompensazioneRiposo)}
-        ${riga('Cambio Turno', c.comp.accessorie.indCambioTurno)}
-        ${c.comp.accessorie.indProduttivitaCollettiva > 0 ? riga('Produttività Collettiva', c.comp.accessorie.indProduttivitaCollettiva, false, `anno ${annoCorrente - 1}`) : ''}
-        ${c.comp.personalizzate.map(p => riga(p.nome, p.importo, false, p.unita === 'turno' ? 'per turno lavorato' : 'fisso al mese')).join('')}
-      </div>
-    </details>
-
-    <details class="cedolino-v12-details">
-      <summary><span>🧾 Ritenute e fiscalità</span><strong>− ${euro(ritenute)}</strong></summary>
-      <div class="cedolino-v12-body">
-        ${riga('Imponibile Previdenziale', c.imponibilePrevidenziale)}
-        ${riga('Contributi', c.contributi, true)}
-        ${riga('Imponibile Fiscale', c.imponibileFiscaleTotale)}
-        ${riga('IRPEF', c.irpefTotale, true)}
-        ${riga('Detrazioni Lavoro Dipendente', c.detrazioniLavoro)}
-        ${c.detrazioniFamiliari ? riga('Detrazioni Familiari', c.detrazioniFamiliari) : ''}
-        ${riga('Trattamento Integrativo', c.trattamentoIntegrativo)}
-        ${riga(`Addizionali Regionale/Comunale`, c.addizionali, true, `${c.aliqRegionale.toFixed(2)}% / ${c.aliqComunale.toFixed(2)}%`)}
-        ${riga('Quota Sindacale', c.sindacato, true)}
-        ${riga('Conguagli', c.conguagli)}
-      </div>
-    </details>
-
-    <div class="cedolino-v12-footer">
-      <span>Netto stimato</span><strong>${euro(c.netto)}</strong>
-      <small>Le cifre sono indicative: verifica sempre il cedolino NoiPA reale.</small>
-    </div>`;
+  box.innerHTML =
+    lista('Stipendio', euro(c.comp.totaleFisse),
+      riga('Stipendio tabellare', f.stipendioTabellare, 'IIS conglobata')
+      + riga('IIS', f.iis)
+      + riga('Indennità pensionabile', f.indennitaPensionabile)
+      + riga('Assegno funzionale', f.assegnoFunzione)
+      + riga('Tredicesima', f.tredicesima))
+    + lista('Indennità e straordinario', euro(c.comp.totaleAccessorie),
+      riga('Straordinario diurno', a.strDiurno, ore(t.strDiurno))
+      + riga('Straordinario notturno', a.strNotturno, ore(t.strNotturno))
+      + riga('Straordinario festivo', a.strFestivo, ore(t.strFestivo))
+      + riga('Straordinario notturno festivo', a.strNotturnoFestivo, ore(t.strNotturnoFestivo))
+      + riga('Turni notturni', a.indTurnoNotturno, ore(t.notturne))
+      + riga('Festivi e domeniche', a.indFestiva)
+      + riga('Festività particolari', a.indFestivitaParticolare)
+      + riga('Ordine pubblico', a.indOP)
+      + riga('Servizio esterno', a.indServizioEsterno)
+      + riga('Controllo territorio', a.indControlloTerritorio)
+      + riga('Reperibilità', a.indReperibilita)
+      + riga('Missioni', a.indMissioni)
+      + riga('Lavorato sul riposo', a.indCompensazioneRiposo)
+      + riga('Cambio turno', a.indCambioTurno)
+      + riga('Produttività collettiva', a.indProduttivitaCollettiva, `anno ${annoCorrente - 1}`)
+      + c.comp.personalizzate.map(x => riga(x.nome, x.importo, x.unita === 'turno' ? 'per turno lavorato' : 'fisso al mese')).join(''))
+    + lista('Tasse e contributi', `−${euro(trattenuteNetto)}`,
+      meno('Contributi previdenziali', c.contributi, `Su ${euro(c.imponibilePrevidenziale)}`)
+      + meno('IRPEF lorda', c.irpefTotale, `Su ${euro(c.imponibileFiscaleTotale)}`)
+      + piu('Detrazioni lavoro dipendente', c.detrazioniLavoro)
+      + piu('Detrazioni familiari', c.detrazioniFamiliari)
+      + piu('Trattamento integrativo', c.trattamentoIntegrativo)
+      + meno('Addizionali', c.addizionali, `Regionale ${c.aliqRegionale.toFixed(2).replace('.', ',')}% · comunale ${c.aliqComunale.toFixed(2).replace('.', ',')}%`)
+      + meno('Sindacato', c.sindacato)
+      + (c.conguagli > 0 ? piu('Conguaglio', c.conguagli) : c.conguagli < 0 ? meno('Conguaglio', -c.conguagli) : ''), 'meno')
+    + `<div class="ced-solo-stampa-v4">${rigaCedolinoV4('<b>Netto stimato</b>', euro(c.netto))}</div>`;
   box.hidden = false;
-  el('btnStampaCedolino').hidden = false;
-  el('btnNascondiCedolino').hidden = false;
 
   AppState.storico[chiaveMese(annoCorrente, meseCorrente)] = { totaleLordo: c.comp.totaleLordo, netto: c.netto };
   salvaStoricoStorage();
@@ -426,6 +374,7 @@ function renderAccreditoConto(){
 
 function renderStorico(){
   const tbody = document.querySelector('#tabellaStorico tbody');
+  if(!tbody){ renderStatisticheStorico(); return; }
   const chiavi = Object.keys(AppState.storico).sort();
   if(chiavi.length === 0){
     tbody.innerHTML = '<tr><td colspan="3" class="sotto-titolo">Nessun cedolino generato finora.</td></tr>';

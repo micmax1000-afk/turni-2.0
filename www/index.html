@@ -551,21 +551,18 @@
 
   <div id="vistaCedolino" hidden>
   <section class="scheda" id="sezioneCedolino">
-    <h2 id="titoloCedolinoV3">🧾 Cedolino</h2>
-    <p class="sotto-titolo" id="sottotitoloCedolinoV3">Stima dal tuo profilo, dai turni e dalle tabelle.</p>
+    <div class="intestazione-scheda testa-v4"><div><h2 id="titoloCedolinoV3">Cedolino</h2><p class="sotto-v4" id="sottotitoloCedolinoV3">Stima dal tuo profilo, dai turni e dalle tabelle</p></div><button type="button" class="btn-icona tondo-v4" id="btnChiudiCedolinoV4" aria-label="Chiudi il cedolino">✕</button></div>
     <div id="cedolinoRiassuntoV3"></div>
-    <button class="btn-secondario cedolino-tutte-voci" id="btnGeneraCedolino" type="button">Vedi tutte le voci ▾</button>
     <div id="contenitoreCedolino" class="contenitore-cedolino" hidden></div>
-    <details class="conguagli-v3">
-      <summary>Conguagli manuali del mese</summary>
-      <label class="campo-modale" style="max-width:260px; margin:8px 0 4px;">Importo da aggiungere o togliere al netto (€)
-        <input type="number" id="campoConguagliMese" step="0.01" value="0">
-      </label>
-    </details>
-    <div class="azioni-cedolino">
-      <button class="btn-secondario" id="btnStampaCedolino" type="button" hidden>🖨️ Stampa / PDF</button>
-      <button class="btn-secondario" id="btnNascondiCedolino" type="button" hidden>Chiudi cedolino</button>
+    <div class="ced-azioni-v4">
+      <button type="button" id="btnGeneraCedolino" aria-expanded="false">Tutte le voci ▾</button>
+      <button type="button" id="btnConguaglioV4" aria-expanded="false">± Conguaglio</button>
+      <button type="button" id="btnStampaCedolino">🖨️ PDF</button>
     </div>
+    <label class="campo-modale ced-conguaglio-v4" id="boxConguaglioV4" hidden>Importo da aggiungere o togliere al netto (€)
+      <input type="number" id="campoConguagliMese" step="0.01" value="0">
+    </label>
+    <p class="ced-nota-v4">Cifre indicative: verifica sempre il cedolino NoiPA.</p>
   </section>
 
   <details class="cedolino-sezione-secondaria nascosta-report">
@@ -576,20 +573,6 @@
     <button class="btn-primario" id="btnGeneraAccreditoConto" type="button">Genera Stima Accredito</button>
     <div id="contenitoreAccreditoConto" class="contenitore-cedolino" hidden></div>
     <button class="btn-secondario" id="btnCancellaAccreditoConto" type="button" hidden style="margin-top:12px;">🗑️ Cancella Stima Accredito</button>
-    </section>
-  </details>
-
-  <details class="cedolino-sezione-secondaria">
-    <summary>📊 Storico Mensile ▾</summary>
-    <section class="scheda" id="sezioneStorico">
-    <div style="display:flex; justify-content:flex-end;">
-      <button class="btn-mini-icona" id="btnCancellaStorico" title="Cancella storico" aria-label="Cancella storico">🗑️</button>
-    </div>
-    <p class="sotto-titolo">Ogni cedolino generato viene archiviato qui per il confronto tra mesi diversi.</p>
-    <table class="tabella-voci" id="tabellaStorico">
-      <thead><tr><th>Mese</th><th>Totale Lordo</th><th>Netto</th></tr></thead>
-      <tbody><tr><td colspan="3" class="sotto-titolo">Nessun cedolino generato finora.</td></tr></tbody>
-    </table>
     </section>
   </details>
 

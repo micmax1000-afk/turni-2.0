@@ -2474,3 +2474,31 @@ html[data-tema="scuro"] .tabelle-hero-v4{background:#1E2A44;border-color:#3A5BA8
 .riga-tabelle-v4 b{color:var(--testo-tenue);font-weight:600}
 .nota-tabelle-v4{font-size:.74rem;color:var(--testo-tenue);margin:8px 2px 0;line-height:1.4}
 #sezioneTabelle{padding:14px}
+
+/* ===== v2.97 Cedolino nello stile del Report ===== */
+#sezioneCedolino .testa-v4 h2{font-size:1.25rem}
+.ced-hero-v4{margin-bottom:10px!important}
+.ced-lista-v4{border:1px solid var(--bordo);border-radius:16px;background:var(--pannello);margin:0 0 10px;overflow:hidden}
+.ced-lista-v4 h3{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0;padding:8px 14px;font-size:.74rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--testo-tenue);background:color-mix(in srgb,var(--bordo) 30%,transparent)}
+.ced-lista-v4 h3 b{font-size:.92rem;letter-spacing:0;text-transform:none;color:var(--testo);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ced-riga-v4{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 14px;border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);font-size:.9rem}
+.ced-lista-v4 h3+.ced-riga-v4{border-top:0}
+.ced-riga-v4 span small{display:block;font-size:.72rem;color:var(--testo-tenue)}
+.ced-riga-v4>b{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+.ced-lista-v4 h3 b.meno,.ced-riga-v4.meno>b{color:#B42318}
+.ced-riga-v4.piu>b{color:#1E7A46}
+html[data-tema="scuro"] .ced-lista-v4 h3 b.meno,html[data-tema="scuro"] .ced-riga-v4.meno>b{color:#FF9B8F}
+html[data-tema="scuro"] .ced-riga-v4.piu>b{color:#7FE0A6}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .ced-lista-v4 h3 b.meno,html:not([data-tema="chiaro"]) .ced-riga-v4.meno>b{color:#FF9B8F}html:not([data-tema="chiaro"]) .ced-riga-v4.piu>b{color:#7FE0A6}}
+#sezioneCedolino.ced-tutte-v4 .ced-sintesi-v4{display:none}
+#contenitoreCedolino{margin:0;padding:0;background:none;border:0;box-shadow:none}
+.ced-solo-stampa-v4{display:none}
+@media print{.ced-solo-stampa-v4{display:block;border:1px solid #ccc;border-radius:12px}}
+.ced-azioni-v4{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 8px}
+.ced-azioni-v4 button{border:1px solid var(--bordo);background:var(--pannello);border-radius:12px;padding:9px 4px;min-height:42px;font:inherit;font-size:.8rem;font-weight:700;color:var(--testo);margin:0}
+.ced-azioni-v4 button.attivo{background:#E8EEFD;border-color:#C3D2F7;color:#1D4FD7}
+html[data-tema="scuro"] .ced-azioni-v4 button.attivo{background:#22305A;border-color:#33509E;color:#C9D7FF}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .ced-azioni-v4 button.attivo{background:#22305A;border-color:#33509E;color:#C9D7FF}}
+.ced-conguaglio-v4{display:block;margin:0 0 8px;font-size:.82rem}
+.ced-conguaglio-v4[hidden]{display:none!important}
+.ced-nota-v4{font-size:.72rem;color:var(--testo-tenue);text-align:center;margin:4px 0 0}

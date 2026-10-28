@@ -549,12 +549,10 @@ function inizializza(){
   el('btnMesePrec').addEventListener('click', () => {
     meseCorrente--; if(meseCorrente < 0){ meseCorrente = 11; annoCorrente--; }
     renderCalendario();
-    el('contenitoreCedolino').hidden = true;
   });
   el('btnMeseSucc').addEventListener('click', () => {
     meseCorrente++; if(meseCorrente > 11){ meseCorrente = 0; annoCorrente++; }
     renderCalendario();
-    el('contenitoreCedolino').hidden = true;
   });
 
   el('etichettaMese').addEventListener('click', () => {
@@ -570,7 +568,6 @@ function inizializza(){
     if(!annoScelto) return;
     meseCorrente = meseScelto; annoCorrente = annoScelto;
     renderCalendario();
-    el('contenitoreCedolino').hidden = true;
     el('overlayVaiAMese').hidden = true;
   });
   el('btnVaiOggi').addEventListener('click', () => {
@@ -578,7 +575,6 @@ function inizializza(){
     meseCorrente = adesso.getMonth(); annoCorrente = adesso.getFullYear();
     giornoSelezionato = dataISO(adesso);
     renderCalendario();
-    el('contenitoreCedolino').hidden = true;
     el('overlayVaiAMese').hidden = true;
   });
 
@@ -590,7 +586,6 @@ function inizializza(){
       annoCorrente = adesso.getFullYear();
       giornoSelezionato = dataISO(adesso);
       renderCalendario();
-      el('contenitoreCedolino').hidden = true;
     });
   }
   const btnColoriHeader = el('btnApriColoriHeader');
@@ -723,7 +718,6 @@ function inizializza(){
   on('campoPatternRientroFine','change', aggiornaStraordinarioRientroPatternSempliceV2);
 
   el('btnCancellaTurniMese').addEventListener('click', cancellaTurniMese);
-  el('btnCancellaStorico').addEventListener('click', cancellaStorico);
 
   el('btnEsportaBackup').addEventListener('click', esportaBackup);
   el('btnImportaBackup').addEventListener('click', () => el('campoImportaBackup').click());
@@ -753,18 +747,23 @@ function inizializza(){
     e.target.value = '';
   });
 
+  // v2.97: "Tutte le voci" apre il dettaglio; la scelta resta ricordata per le volte dopo.
   el('btnGeneraCedolino').addEventListener('click', () => {
-    if(el('contenitoreCedolino').hidden){ renderCedolino(); el('btnGeneraCedolino').textContent = 'Nascondi le voci ▴'; }
-    else { el('btnNascondiCedolino').click(); }
+    TurniPSStorage.setItem(CHIAVE_CEDOLINO_TUTTE_VOCI, cedolinoTutteVoci() ? '0' : '1');
+    sincronizzaTutteVociCedolino();
   });
   el('btnGeneraAccreditoConto').addEventListener('click', renderAccreditoConto);
-  el('btnStampaCedolino').addEventListener('click', () => stampaSezione('contenitoreCedolino'));
-  el('btnNascondiCedolino').addEventListener('click', () => {
-    el('contenitoreCedolino').hidden = true;
-    el('contenitoreCedolino').innerHTML = '';
-    el('btnStampaCedolino').hidden = true;
-    el('btnNascondiCedolino').hidden = true;
-    el('btnGeneraCedolino').textContent = 'Vedi tutte le voci ▾';
+  el('btnStampaCedolino').addEventListener('click', () => {
+    if(el('contenitoreCedolino').hidden) mostraTutteVociCedolino(true);
+    stampaSezione('contenitoreCedolino');
+  });
+  on('btnChiudiCedolinoV4','click', () => apriChiudiReport('cedolino'));
+  on('btnConguaglioV4','click', () => {
+    const box = el('boxConguaglioV4');
+    box.hidden = !box.hidden;
+    el('btnConguaglioV4').setAttribute('aria-expanded', String(!box.hidden));
+    el('btnConguaglioV4').classList.toggle('attivo', !box.hidden);
+    if(!box.hidden) el('campoConguagliMese').focus();
   });
   el('btnCancellaAccreditoConto').addEventListener('click', () => {
     el('contenitoreAccreditoConto').hidden = true;
@@ -1692,8 +1691,11 @@ function renderMeseV3(){
   if(btn) btn.onclick = () => { meseMostraZeriV3 = !meseMostraZeriV3; renderMeseV3(); };
 }
 
-// Cedolino sempre in vista: Lordo (stipendio + accessorie), Trattenute (voce per voce), Netto.
-// "Vedi tutte le voci" apre il cedolino completo di prima.
+// v2.97: Cedolino nello stile del Report: netto in alto, poi Lordo e Tasse e contributi voce per voce.
+// "Tutte le voci" mostra il dettaglio al posto dei due elenchi (scelta ricordata).
+function rigaCedolinoV4(nome, valore, classe, sotto){
+  return `<div class="ced-riga-v4${classe ? ' ' + classe : ''}"><span>${nome}${sotto ? `<small>${sotto}</small>` : ''}</span><b>${valore}</b></div>`;
+}
 function renderCedolinoRiassuntoV3(){
   const host = el('cedolinoRiassuntoV3');
   if(!host) return;
@@ -1701,26 +1703,46 @@ function renderCedolinoRiassuntoV3(){
   const g = generaCedolino(annoCorrente, meseCorrente);
   const c = calcolaCompetenze(annoCorrente, meseCorrente), a = c.accessorie;
   const mese = NOMI_MESI[meseCorrente].toLowerCase(), pag = NOMI_MESI[(meseCorrente + 2) % 12].toLowerCase();
-  el('titoloCedolinoV3').textContent = `🧾 Cedolino di ${mese}`;
-  el('sottotitoloCedolinoV3').textContent = `Stima dal tuo profilo, dai turni e dalle tabelle. Accessorie di ${mese}: in busta a ${pag}.${meseCorrente === 11 ? ' A dicembre c\'è anche la tredicesima.' : ''}`;
+  el('titoloCedolinoV3').textContent = `Cedolino di ${mese}`;
+  el('sottotitoloCedolinoV3').textContent = `Stima · le indennità di ${mese} arrivano a ${pag}${meseCorrente === 11 ? ' · c\'è anche la tredicesima' : ''}`;
   const lordo = round2(g.comp.totaleLordo), fisse = round2(g.comp.totaleFisse), accT = round2(lordo - fisse);
   const strL = round2(a.strDiurno + a.strNotturno + a.strFestivo + a.strNotturnoFestivo), indL = round2(accT - strL);
   const irpef = round2(Math.max(0, (g.irpefTotale || 0) - (g.detrazioni || 0) - (g.trattamentoIntegrativo || 0)));
-  const voci = [['Contributi previdenziali', g.contributi], ['IRPEF (già tolte le detrazioni)', irpef], ['Addizionali regionale e comunale', g.addizionali], ['Sindacato', g.sindacato]].filter(x => x[1] > 0);
+  const voci = [['Contributi previdenziali', g.contributi], ['IRPEF', irpef, 'Già tolte le detrazioni'], ['Addizionali', g.addizionali, 'Regionale e comunale'], ['Sindacato', g.sindacato]].filter(x => x[1] > 0);
   const tratt = round2(lordo - g.netto);
   const altro = round2(tratt - voci.reduce((s, x) => s + x[1], 0));
   if(Math.abs(altro) >= 0.01) voci.push([altro > 0 ? 'Altre trattenute e conguagli' : 'Conguagli e rimborsi', altro]);
   host.innerHTML = `
-    <div class="ced-blocco-v3 ced-lordo-v3"><span class="tag-importo tag-lordo">Lordo</span><small>prima delle tasse</small>
-      <div class="ced-riga-v3"><span>Stipendio (voci fisse)</span><b>${f(fisse)}</b></div>
-      <div class="ced-riga-v3"><span>Accessorie<small>indennità ${f(indL)} · straordinario ${f(strL)}</small></span><b>${f(accT)}</b></div>
-      <div class="ced-riga-v3 ced-tot-v3"><span>Totale lordo</span><b>${f(lordo)}</b></div>
+    <div class="report-hero ced-hero-v4">
+      <div class="report-hero-et">💰 Netto del cedolino <span class="report-hero-stima">stima</span></div>
+      <div class="report-hero-cifra">${f(g.netto)}</div>
+      <div class="report-hero-righe"><div><span>Lordo</span><b>${f(lordo)}</b></div><div class="meno"><span>Tasse e contributi</span><b>−${f(tratt)}</b></div></div>
     </div>
-    <div class="ced-blocco-v3 ced-tratt-v3"><span class="tag-importo tag-trattenute">Trattenute</span>
-      ${voci.map(([n, v]) => `<div class="ced-riga-v3"><span>${n}</span><b>${v < 0 ? '+' : '−'}${f(Math.abs(v))}</b></div>`).join('')}
-      <div class="ced-riga-v3 ced-tot-v3"><span>Totale trattenute</span><b>−${f(tratt)}</b></div>
-    </div>
-    <div class="ced-blocco-v3 ced-netto-v3"><div><span class="tag-importo tag-netto">Netto</span><small>quello che arriva sul conto</small></div><span class="ced-cifra-v3">${f(g.netto)}</span></div>`;
+    <div class="ced-sintesi-v4">
+      <div class="ced-lista-v4"><h3>Lordo <b>${f(lordo)}</b></h3>
+        ${rigaCedolinoV4(fisse === lordo || !g.comp.fisse.tredicesima ? 'Stipendio' : 'Stipendio e tredicesima', f(fisse), '', 'Voci fisse')}
+        ${rigaCedolinoV4('Indennità', f(indL), '', `Del mese di ${mese}`)}
+        ${strL > 0 ? rigaCedolinoV4('Straordinario', f(strL)) : ''}
+      </div>
+      <div class="ced-lista-v4"><h3>Tasse e contributi <b class="meno">−${f(tratt)}</b></h3>
+        ${voci.map(([n, v, sotto]) => rigaCedolinoV4(n, `${v < 0 ? '+' : '−'}${f(Math.abs(v))}`, v < 0 ? 'piu' : 'meno', sotto)).join('')}
+      </div>
+    </div>`;
+  sincronizzaTutteVociCedolino();
+}
+function cedolinoTutteVoci(){ return TurniPSStorage.getItem(CHIAVE_CEDOLINO_TUTTE_VOCI) === '1'; }
+function mostraTutteVociCedolino(aperto){
+  const box = el('contenitoreCedolino');
+  if(aperto) renderCedolino();
+  else { box.hidden = true; box.innerHTML = ''; }
+  el('sezioneCedolino').classList.toggle('ced-tutte-v4', aperto);
+  const btn = el('btnGeneraCedolino');
+  btn.textContent = aperto ? 'Meno voci ▴' : 'Tutte le voci ▾';
+  btn.classList.toggle('attivo', aperto);
+  btn.setAttribute('aria-expanded', String(aperto));
+}
+function sincronizzaTutteVociCedolino(){
+  try{ mostraTutteVociCedolino(cedolinoTutteVoci()); }catch(e){ console.warn('Dettaglio cedolino non calcolato:', e); }
 }
 
 // Scheda Turni: i modelli di turno con il loro colore e orario, toccandone uno si modifica.
@@ -3349,7 +3371,7 @@ function applicaVisibilitaReportBlocchi(){
     if(el1) el1.hidden = (b[chiave] === false) || chiuso;
   });
   // Il Cedolino comprende più sezioni oltre a quella principale: le nascondiamo tutte insieme.
-  ['sezioneAccreditoConto','sezioneStorico','sezioneRiepilogoAnnuale'].forEach(id => {
+  ['sezioneAccreditoConto','sezioneRiepilogoAnnuale'].forEach(id => {
     const n = el(id);
     if(n) n.hidden = (b.cedolino === false) || !reportAperto.cedolino;
   });

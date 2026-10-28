@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V221 (v2.96.0 — calendario senza simboli, 2 buoni pasto nel riquadro) */
+/* Turni & Accessorio PS — Service Worker V222 (v2.97.0 — cedolino nello stile del Report, senza storico) */
 'use strict';
-const CACHE='turni-ps-v221';
+const CACHE='turni-ps-v222';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
