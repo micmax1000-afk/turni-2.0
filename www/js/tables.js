@@ -68,7 +68,7 @@ function renderTabelle(){
   // "ufficiale" uguale per tutti — dipende dal Comune di residenza di ciascuno — quindi resta
   // salvata in Anagrafica (non tra le tabelle predefinite), solo il controllo per modificarla
   // vive qui fisicamente, vicino all'addizionale regionale a cui è concettualmente imparentata.
-  const bodyComunale = `<div class="tabella-riga-v17 riga-valore-v5"><span class="tabella-label">Aliquota<small>%</small></span><input type="number" id="campoAddComunaleTabelle" step="0.01" min="0" inputmode="decimal" value="${esc(AppState.anagrafica?.addComunale ?? 0.8)}"><i class="vuoto-v5"></i></div>`;
+  const bodyComunale = `<div class="tabella-riga-v17 riga-valore-v5"><span class="tabella-label">Aliquota<small>%</small></span><input type="text" autocomplete="off" id="campoAddComunaleTabelle" inputmode="decimal" value="${esc(Number(AppState.anagrafica?.addComunale ?? 0.8).toLocaleString('it-IT', { maximumFractionDigits: 2 }))}"><i class="vuoto-v5"></i></div>`;
 
   // Addizionale regionale — mostriamo solo la regione impostata in Anagrafica, come per stipendio/qualifica.
   const datiRegione = val(defs, `regioniAddizionale.${regione}`);
@@ -215,7 +215,7 @@ function leggiTabelleDaModale(){
   // ufficiale), quindi si legge e si salva separatamente dal resto di questa scheda.
   const campoComunale = el('campoAddComunaleTabelle');
   if(campoComunale && AppState.anagrafica){
-    AppState.anagrafica.addComunale = Number(campoComunale.value) || 0;
+    AppState.anagrafica.addComunale = leggiNumeroItaliano(campoComunale.value);
     salvaAnagraficaStorage();
   }
 }
