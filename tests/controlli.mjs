@@ -457,6 +457,13 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno', eventi: { '2026-10-16': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }, { id: 'evento_2', titolo: 'Palestra', oraInizio: '18:00', colore: '#D64545' }] } });
+  const m = await p.evaluate(() => [...document.querySelectorAll('.giorno-cella[data-data="2026-10-16"] .mod-evento')].map(e => getComputedStyle(e).backgroundColor + ' ' + getComputedStyle(e).width + ' ' + e.textContent.length));
+  ok('calendario moderno: un pallino per evento, del suo colore, senza nome tagliato', m.join('|') === 'rgb(46, 158, 91) 8px 0|rgb(214, 69, 69) 8px 0', JSON.stringify(m));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
 
 // ─────────────────────────────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');

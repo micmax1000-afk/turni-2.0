@@ -2715,3 +2715,7 @@ html[data-tema="scuro"] #overlayEvento .foglio-evento-azioni > .btn-testo-evento
   html:not([data-tema="chiaro"]) #overlayEvento .avviso-sovrapposizione-evento{color:#F2D58A}
   html:not([data-tema="chiaro"]) #overlayEvento .foglio-evento-azioni > .btn-testo-evento{color:#9FB4FF}
 }
+
+/* v3.8.2 — Calendario moderno: eventi a pallino, come nel classico */
+body.calendario-moderno .mod-eventi{display:flex;justify-content:center;gap:3px;margin-top:2px}
+body.calendario-moderno .mod-eventi .mod-evento{display:block;width:8px!important;height:8px!important;padding:0!important;border-radius:50%!important;font-size:0!important;align-self:auto}

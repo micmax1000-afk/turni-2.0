@@ -732,8 +732,9 @@ function renderCalendario(){
       const etichettaTurno = t && categoria
         ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoBadge)};color:${testoSuColore(sfondoBadge)}">${escapeHtml(nomeEtichetta)}</b></span>`
         : '';
+      // v3.8.2: un pallino per evento (al massimo 3), del colore dell'evento; il nome si legge toccando il giorno.
       const rigaEvento = eventiCella.length
-        ? `<span class="mod-evento"${coloreEventoStile(eventiCella[0].ev)} title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}">${escapeHtml(eventiCella[0].ev.titolo || 'Evento')}${eventiCella.length > 1 ? ` <b>+${eventiCella.length - 1}</b>` : ''}</span>`
+        ? `<span class="mod-eventi" title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}">${eventiCella.slice(0, 3).map(x => `<i class="mod-evento"${coloreEventoStile(x.ev)}></i>`).join('')}</span>`
         : '';
       cella.innerHTML = `
         <span class="mod-numero">${g}</span>
