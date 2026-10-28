@@ -2329,8 +2329,10 @@ html[data-tema="scuro"] #riassuntoControlloPromemoria.da-sistemare{color:#F2D58A
 .chev-v4{flex:none;opacity:.5}
 .turno-compatto-v4{padding:10px 12px;gap:12px;border-radius:14px}
 .turno-compatto-v4 .sigla-v4{width:36px;height:36px;border-radius:11px;font-size:.8rem}
-.turno-compatto-v4 strong{flex:1;font-size:.95rem;font-weight:600}
-.turno-compatto-v4 small{font-size:.8rem;color:var(--testo-tenue)}
+.testo-v4{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.testo-v4 strong{font-size:1.05rem;font-weight:600;overflow-wrap:anywhere}
+.testo-v4 small{font-size:.8rem;color:var(--testo-tenue)}
+.turno-compatto-v4 .testo-v4 strong{font-size:.95rem}
 html[data-tema="scuro"] .azione-genera-v4{background:#1E2A44;border-color:#3A5BA8;color:#E6ECFF}
 html[data-tema="scuro"] .azione-genera-v4 i small{color:#B7C6F2}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .azione-genera-v4{background:#1E2A44;border-color:#3A5BA8;color:#E6ECFF}html:not([data-tema="chiaro"]) .azione-genera-v4 i small{color:#B7C6F2}}

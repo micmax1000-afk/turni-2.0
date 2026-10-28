@@ -876,7 +876,7 @@ function inizializza(){
     const mod = e.target.closest('[data-modello-giorno]');
     if(mod){
       const m = (AppState.modelliTurno || []).find(x => x.id === mod.dataset.modelloGiorno);
-      if(m){ el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; aggiornaAnteprima(); aggiornaEditorGiornoV3(); }
+      if(m){ el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; modelloGiornoScelto = m.id; aggiornaAnteprima(); aggiornaEditorGiornoV3(); }
       return;
     }
     const ind = e.target.closest('[data-indennita-giorno]');
@@ -1756,30 +1756,22 @@ function renderModelliTabTurni(){
   const inAlto = m => usatiDiRecente.size ? usatiDiRecente.has(m.id) : !MODELLI_DI_SOLITO_RARI.includes(m.id);
   const nomeMese = NOMI_MESI[meseCorrente].toLowerCase();
   const chev = '<svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
-  const datiModello = m => {
+  // Riga di un turno: sigla colorata, nome con l'orario sotto, freccia. Quelli usati stanno in alto con la sigla più grande,
+  // gli altri in fondo in forma compatta. Nome e orario in colonna: i nomi lunghi non spezzano più l'orario.
+  const riga = (m, grande) => {
     const colore = coloreModelloV2(m);
-    const forte = typeof scurisciColore === 'function' ? scurisciColore(colore, 0.35) : colore;
     const sigla = m.sigla || (m.nome || '??').slice(0, 2).toUpperCase();
-    const durata = durataModelloTesto(m);
-    const orario = m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}${durata ? ' · ' + durata : ''}`;
-    const volte = voci.filter(([iso, t]) => iso.startsWith(prefissoMese) && turnoUsaModello(t, m)).length;
-    const barra = m.riposo ? '' : `<span class="barra24-v4" aria-hidden="true" style="--c:${escapeHtml(forte)}">${segmentiGiornataTurno(m.oraInizio, m.oraFine).map(g => `<i style="left:${g.da}%;width:${g.larg}%"></i>`).join('')}</span>`;
-    return { colore, sigla, orario, volte, barra };
-  };
-  // Tutte le righe stesso stile compatto (come Aggiornamento / Ufficio):
-  // sigla colorata, nome, orario — niente conteggi mensili né barre.
-  const rigaCompatta = m => {
-    const d = datiModello(m);
-    return `<button type="button" class="turno-v4 turno-compatto-v4" data-modello-tab="${escapeHtml(m.id)}">
-      <span class="sigla-v4" style="background:${escapeHtml(d.colore)};color:${testoSuColore(d.colore)}">${escapeHtml(d.sigla)}</span>
-      <strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}`)}</small>${chev}
+    const orario = m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}`;
+    return `<button type="button" class="turno-v4${grande ? '' : ' turno-compatto-v4'}" data-modello-tab="${escapeHtml(m.id)}">
+      <span class="sigla-v4" style="background:${escapeHtml(colore)};color:${testoSuColore(colore)}">${escapeHtml(sigla)}</span>
+      <span class="testo-v4"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(orario)}</small></span>${chev}
     </button>`;
   };
   const sopra = modelli.filter(inAlto), sotto = modelli.filter(m => !inAlto(m));
   const meseTitolo = el('meseTurniV4');
   if(meseTitolo) meseTitolo.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
-  host.innerHTML = `<div class="elenco-turni-v4 altri-v4">${sopra.map(rigaCompatta).join('')}</div>`
-    + (sotto.length ? `<p class="strumenti-turni-titolo">Altri modelli</p><div class="altri-v4">${sotto.map(rigaCompatta).join('')}</div>` : '');
+  host.innerHTML = `<div class="elenco-turni-v4">${sopra.map(m => riga(m, true)).join('')}</div>`
+    + (sotto.length ? `<p class="strumenti-turni-titolo">Altri modelli</p><div class="altri-v4">${sotto.map(m => riga(m, false)).join('')}</div>` : '');
   aggiornaStatoStrumentiTurni();
 }
 // Sotto le voci degli strumenti: com'è adesso, invece di una descrizione fissa.
@@ -1971,12 +1963,12 @@ function aggiornaStatoColoreModelloV2(){
   if(!stato) return;
   stato.textContent = modelloColoreForzatoV2
     ? 'Colore scelto a mano — resta questo, qualsiasi orario tu imposti.'
-    : 'Colore automatico, in base alla fascia oraria del turno.';
+    : 'Colore automatico, in base alla fascia oraria del servizio.';
 }
 function apriModificaModelloV2(id){
   modelloInModificaV2 = id;
   const m = id ? (AppState.modelliTurno || []).find(x => x.id === id) : null;
-  el('titoloModificaModello').textContent = m ? `Modifica "${m.nome}"` : 'Nuovo turno';
+  el('titoloModificaModello').textContent = m ? `Modifica "${m.nome}"` : 'Nuovo servizio';
   el('campoModModelloNome').value = m ? m.nome : '';
   // Mattino, Pomeriggio, Sera, Notte e Riposo hanno una lettera fissa sul calendario (M/P/S/N/R),
   // qualunque nome tu dia loro: il campo resta visibile ma bloccato, così non sembra modificabile.
@@ -2008,7 +2000,7 @@ function aggiornaAnteprimaModelloV2(){
   const box = el('anteprimaModello');
   if(!box) return;
   const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
-  const finto = { id: m ? m.id : 'nuovo', riposo: !!(m && m.riposo), nome: el('campoModModelloNome').value.trim() || 'Nuovo turno',
+  const finto = { id: m ? m.id : 'nuovo', riposo: !!(m && m.riposo), nome: el('campoModModelloNome').value.trim() || 'Nuovo servizio',
     oraInizio: el('campoModModelloInizio').value, oraFine: el('campoModModelloFine').value };
   const colore = el('campoModModelloColore').value || '#E4E7EC';
   const forte = scurisciColore(colore, 0.35);

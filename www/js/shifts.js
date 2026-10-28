@@ -156,10 +156,15 @@ const CASELLE_INDENNITA_GIORNO = [
   ['cambioTurno', 'campoCambioTurno'], ['compensazioneRiposo', 'campoCompensazioneRiposo'], ['recuperoFestivoLavorato', 'campoRecuperoFestivo']
 ];
 // Il modello del turno: quello che ha esattamente questi orari (se era già quello, resta).
+// Turno toccato nell'editor del giorno. Più turni possono avere lo stesso orario (Aggiornamento professionale,
+// Addestramento tiro e Ufficio sono tutti 08:00–14:00): dal solo orario non si capisce quale sia, quindi si ricorda
+// quello toccato. Si azzera ogni volta che si apre l'editor.
+let modelloGiornoScelto = null;
 function modelloDaOrariGiorno(){
   const inizio = el('campoOraInizio').value, fine = el('campoOraFine').value;
   if(!inizio || !fine) return null;
   const adatti = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio === inizio && m.oraFine === fine);
+  if(modelloGiornoScelto && adatti.some(m => m.id === modelloGiornoScelto)) return modelloGiornoScelto;
   const prima = (AppState.turni[giornoSelezionato] || {}).modelloId;
   return (adatti.find(m => m.id === prima) || adatti[0] || {}).id || null;
 }
@@ -394,6 +399,7 @@ function aggiornaAnteprima(){
 }
 
 function apriModaleTurno(iso){
+  modelloGiornoScelto = null;
   giornoSelezionato = iso;
   const t = AppState.turni[iso] || {};
   el('pannelloTurno').dataset.iso = iso;

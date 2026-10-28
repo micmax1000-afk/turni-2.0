@@ -157,12 +157,13 @@ for(const stile of ['classico', 'moderno']){
       return {
         orari: [...document.querySelectorAll('.mod-turno')].some(e => /\d{1,2}:\d{2}/.test(e.textContent)),
         indennita: [...q('2026-10-02').querySelectorAll('.mod-indennita [aria-label]')].map(b => b.getAttribute('aria-label')).join(','),
+        piu: (q('2026-10-02').querySelector('.mod-indennita .giorno-badge:not([aria-label])') || {}).textContent || '',
         senzaIndennita: !q('2026-10-03').querySelector('.mod-indennita'),
         badgeInAlto: !!document.querySelector('.giorno-cella .mod-badge')
       };
     });
     ok('moderno: nessun orario nelle etichette', !m.orari);
-    ok('moderno: all\'inizio tutti i simboli sono visibili (missione, servizio esterno, buono pasto, reperibilità)', ['Missione', 'Servizio esterno', 'Buono pasto', 'Reperibilità'].every(n => m.indennita.split(',').includes(n)), m.indennita);
+    ok('moderno: all\'inizio nessun simbolo nascosto; al massimo 3 nella casella, gli altri come "+1"', ['Missione', 'Servizio esterno', 'Buono pasto'].every(n => m.indennita.split(',').includes(n)) && m.piu === '+1', m.indennita + ' ' + m.piu);
     ok('moderno: giorno senza indennità senza riga in più, niente simboli in alto', m.senzaIndennita && !m.badgeInAlto);
   }
   ok(`${stile}: barra in basso con Calendario/Report/Assenze/Turni/Altro e il giorno di oggi (9)`, c.barraInBasso && c.nomi === 'Calendario,Report,Assenze,Turni,Altro' && c.oggiIcona === '9', c.nomi);
@@ -382,7 +383,7 @@ sezione('Turni: cambio orario di un modello');
   await p.click('#tabTurni');
   const tab = await p.evaluate(() => ({ tessere: [...document.querySelectorAll('.elenco-turni-v4 [data-modello-tab]')].map(b => b.dataset.modelloTab).join(), altri: [...document.querySelectorAll('.altri-v4 [data-modello-tab]')].map(b => b.dataset.modelloTab).join(), sera: document.querySelector('[data-modello-tab="sera"]').innerText, assenzeQui: !!document.querySelector('#vistaAssenze #btnApriAssenzeV64') }));
   ok('Turni: in alto i 5 modelli usati, gli altri 3 in "Altri modelli"', tab.tessere === 'sera,pomeriggio,mattina,notte,riposo' && tab.altri.split(',').length === 3, tab.tessere + ' | ' + tab.altri);
-  ok('riga con orario, durata e volte nel mese', /19:00 – 01:00 · 6 h/.test(tab.sera) && /6×\s*a ottobre/.test(tab.sera), tab.sera);
+  ok('riga con nome e orario', /Sera/.test(tab.sera) && /19:00 – 01:00/.test(tab.sera), tab.sera);
   ok('"Assenze e permessi" non è più in Turni', !tab.assenzeQui);
   ok('i modelli hanno colori diversi', await p.evaluate(() => new Set([...document.querySelectorAll('#listaModelliTabTurni .sigla-v4')].map(b => b.style.background)).size >= 4));
   await p.locator('#listaModelliTabTurni [data-modello-tab="sera"]').click();
