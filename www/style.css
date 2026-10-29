@@ -2741,3 +2741,11 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 #sezioneStrumentiTurni .icona-genera-v4{width:36px!important;height:36px!important;min-width:36px!important;border-radius:10px!important}
 #sezioneStrumentiTurni .strumenti-turni-titolo{margin:16px 2px 6px!important}
 .mese-ore-testa-v4 b{text-transform:none}
+
+/* v3.8.6 — Statistiche dell'anno nello stile del Report */
+#contenitoreStatistiche .stat-v5{display:flex;flex-direction:column;gap:12px}
+#contenitoreStatistiche .stat-v5 .mese-tiles{margin:0}
+.stat-riga-v5{grid-template-columns:24px 1fr auto!important}
+.stat-ic-testo{font-size:.95rem;line-height:1}
+.stat-mesi-v5 .stat-switch-v17{margin:6px 0 4px}
+.stat-mesi-v5 .stat-switch-btn.attivo{background:var(--pannello);color:var(--testo);box-shadow:0 1px 3px rgba(20,25,40,.15)}

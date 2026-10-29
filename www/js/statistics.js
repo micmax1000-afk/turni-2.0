@@ -40,30 +40,42 @@ function renderStatistiche(){
   const haDati=s.mesi.some(x=>x.ore||x.turni||x.assenze||x.netto||x.lordo);
   const euroFmt=v=>typeof euro==='function'?euro(v):`${Number(v||0).toFixed(2)} €`;
   const oreFmt=v=>typeof formatOreDashboard==='function'?formatOreDashboard(v):`${Number(v||0).toFixed(1)} h`;
-  // Un unico riepilogo annuale, invece di due pannelli separati con la stessa natura di dato
-  // (entrambi totali sull'anno) — meno blocchi da scorrere, stessa informazione.
-  const valoriCards=[s.ore,s.turni,s.straordinario,s.assenze,s.missioni,s.netto,s.riposi,s.reperibilita,s.servizioEsterno,s.ordinePubblico,s.lordo];
-  const cards=[['🕐',oreFmt(s.ore),'Ore lavorate'],['📅',s.turni,'Giornate lavorate'],['⏱️',oreFmt(s.straordinario),'Straordinario'],['🗂️',s.assenze,'Assenze'],['🚓',s.missioni,'Missioni'],['💶',euroFmt(s.netto),'Netto stimato'],['💤',s.riposi,'Riposi'],['🛰️',s.reperibilita,'Reperibilità'],['🚗',s.servizioEsterno,'Servizio esterno'],['🛡️',s.ordinePubblico,'Ordine pubblico'],['💶',euroFmt(s.lordo),'Lordo stimato']].filter((c, i) => i < 2 || Number(valoriCards[i]) > 0); // i riquadri a zero non si mostrano (ore e giornate sempre)
-  // I 3 andamenti mese-per-mese (Ore/Straordinario/Netto) ripetevano gli stessi 12 mesi tre
-  // volte una sotto l'altra, più una tabella che li ripeteva una quarta volta: un solo grafico
-  // con un selettore per cambiare vista mostra la stessa informazione senza la ripetizione.
+  // v3.8.6: stesso stile del Report — riquadro blu con il netto dell'anno, quattro caselle, righe con le icone.
+  const tasse=Math.max(0,s.lordo-s.netto);
+  const mesiConDati=s.mesi.filter(x=>x.netto>0).length;
+  const ic=k=>typeof iconaIndennita==='function'?iconaIndennita(k):'';
+  const gg=n=>`${n} ${n===1?'giorno':'giorni'}`;
+  const righe=[[ic('servizioEsterno'),'Servizio esterno',s.servizioEsterno],[ic('ordinePubblico'),'Ordine pubblico',s.ordinePubblico],[ic('reperibilita'),'Reperibilità',s.reperibilita],[ic('missione'),'Missioni',s.missioni],['<span class="stat-ic-testo">🗂️</span>','Assenze',s.assenze]].filter(x=>x[2]>0);
   const maxOre=Math.max(...s.mesi.map(x=>x.ore),1), maxNet=Math.max(...s.mesi.map(x=>x.netto),1), maxStra=Math.max(...s.mesi.map(x=>x.straordinario),1);
-  const righeOre=s.mesi.map(x=>`<div class="stat-v-row"><span>${NOMI_MESI[x.mese-1].slice(0,3)}</span><div class="stat-v-track"><div class="stat-v-fill" style="width:${x.ore?Math.max(3,x.ore/maxOre*100):0}%"></div></div><b>${x.ore?oreFmt(x.ore):'—'}</b></div>`).join('');
-  const righeNet=s.mesi.map(x=>`<div class="stat-v-row"><span>${NOMI_MESI[x.mese-1].slice(0,3)}</span><div class="stat-v-track"><div class="stat-v-fill stat-netto" style="width:${x.netto?Math.max(3,x.netto/maxNet*100):0}%"></div></div><b>${x.netto?euroFmt(x.netto):'—'}</b></div>`).join('');
-  const righeStra=s.mesi.map(x=>`<div class="stat-v-row"><span>${NOMI_MESI[x.mese-1].slice(0,3)}</span><div class="stat-v-track"><div class="stat-v-fill stat-stra" style="width:${x.straordinario?Math.max(3,x.straordinario/maxStra*100):0}%"></div></div><b>${x.straordinario?oreFmt(x.straordinario):'—'}</b></div>`).join('');
-  host.innerHTML=`<div class="stat-v17">
-    <div class="stat-cards-v17">${cards.map(x=>`<div class="stat-card"><span>${x[0]}</span><strong>${x[1]}</strong><small>${x[2]}</small></div>`).join('')}</div>
-    ${!haDati?'<div class="stat-empty">📊 <strong>Nessun dato disponibile</strong><span>Inserisci turni o genera un cedolino per vedere le statistiche.</span></div>':''}
-    <div class="stat-panel-v17">
-      <div class="stat-switch-v17" role="group" aria-label="Scegli il grafico mensile">
-        <button type="button" class="stat-switch-btn attivo" data-stat-grafico="ore">🕐 Ore</button>
-        <button type="button" class="stat-switch-btn" data-stat-grafico="straordinario">⏱️ Straordinario</button>
-        <button type="button" class="stat-switch-btn" data-stat-grafico="netto">💶 Netto</button>
+  const barre=(campo,max,fmt,cls)=>s.mesi.map(x=>`<div class="stat-v-row"><span>${NOMI_MESI[x.mese-1].slice(0,3)}</span><div class="stat-v-track"><div class="stat-v-fill ${cls}" style="width:${x[campo]?Math.max(3,x[campo]/max*100):0}%"></div></div><b>${x[campo]?fmt(x[campo]):'—'}</b></div>`).join('');
+  host.innerHTML=`<div class="stat-v17 stat-v5">
+    ${!haDati?'<div class="stat-empty">📊 <strong>Nessun dato disponibile</strong><span>Inserisci i turni per vedere le statistiche.</span></div>':`
+    <div class="report-hero stat-hero-v5">
+      <div class="report-hero-et">💶 Netto del ${anno} <span class="report-hero-stima">stima</span></div>
+      <div class="report-hero-cifra">${euroFmt(s.netto)}</div>
+      <div class="report-hero-righe">
+        <div><span>Lordo</span><b>${euroFmt(s.lordo)}</b></div>
+        <div class="meno"><span>Tasse</span><b>−${euroFmt(tasse)}</b></div>
       </div>
-      <div data-stat-corpo="ore">${righeOre}</div>
-      <div data-stat-corpo="straordinario" hidden>${righeStra}</div>
-      <div data-stat-corpo="netto" hidden>${righeNet}</div>
+      <div class="report-hero-spiega">Somma dei ${mesiConDati} ${mesiConDati===1?'mese lavorato':'mesi lavorati'} del ${anno}</div>
     </div>
+    <div class="mese-tiles mese-tiles-4">
+      <div><b>${s.turni}</b><span>turni</span></div>
+      <div><b>${s.riposi}</b><span>riposi</span></div>
+      <div><b>${formatOreMinuti(s.ore)}</b><span>ore</span></div>
+      <div><b>${formatOreMinuti(s.straordinario)}</b><span>straord.</span></div>
+    </div>
+    ${righe.length?`<div class="mese-gruppo-v3 mese-ind-box-v4"><h3>Nell'anno</h3>${righe.map(([i,n,v])=>`<div class="mese-riga-v3 stat-riga-v5"><span class="mese-ind-icona">${i}</span><span>${n}</span><b>${gg(v)}</b></div>`).join('')}</div>`:''}
+    <div class="mese-gruppo-v3 mese-ind-box-v4 stat-mesi-v5"><h3>Mese per mese</h3>
+      <div class="stat-switch-v17" role="group" aria-label="Scegli il grafico mensile">
+        <button type="button" class="stat-switch-btn attivo" data-stat-grafico="ore">Ore</button>
+        <button type="button" class="stat-switch-btn" data-stat-grafico="straordinario">Straordinario</button>
+        <button type="button" class="stat-switch-btn" data-stat-grafico="netto">Netto</button>
+      </div>
+      <div data-stat-corpo="ore">${barre('ore',maxOre,oreFmt,'')}</div>
+      <div data-stat-corpo="straordinario" hidden>${barre('straordinario',maxStra,oreFmt,'stat-stra')}</div>
+      <div data-stat-corpo="netto" hidden>${barre('netto',maxNet,euroFmt,'stat-netto')}</div>
+    </div>`}
   </div>`;
   host.querySelectorAll('[data-stat-grafico]').forEach(btn => btn.addEventListener('click', () => {
     host.querySelectorAll('[data-stat-grafico]').forEach(b => b.classList.toggle('attivo', b === btn));
