@@ -2740,3 +2740,4 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 #sezioneStrumentiTurni .azione-genera-v4{padding:10px 12px!important;min-height:0!important}
 #sezioneStrumentiTurni .icona-genera-v4{width:36px!important;height:36px!important;min-width:36px!important;border-radius:10px!important}
 #sezioneStrumentiTurni .strumenti-turni-titolo{margin:16px 2px 6px!important}
+.mese-ore-testa-v4 b{text-transform:none}

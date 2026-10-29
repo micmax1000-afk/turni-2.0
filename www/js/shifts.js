@@ -338,7 +338,7 @@ function aggiornaAnteprima(){
           ? finestraDaOrari(AppState.turni[giornoSelezionato].data, AppState.turni[giornoSelezionato].riposoCompensativoOraInizio, AppState.turni[giornoSelezionato].riposoCompensativoOraFine).ore : 0;
         const usateAltrove = calcolaOreAssenzaUsate(voceSel.id, daData) - oreStessoGiornoAltrove;
         const rimanentiDopo = round2(totaleDisponibile - usateAltrove - f.ore);
-        boxRC.textContent = `Consuma ${f.ore}h dal saldo di ${voceSel.nome}` + (rimanentiDopo < 0 ? ` — ⚠ saldo insufficiente, andresti a ${rimanentiDopo}h` : ` (resterebbero ${rimanentiDopo}h).`);
+        boxRC.textContent = `Consuma ${oreEMinuti(f.ore)} dal saldo di ${voceSel.nome}` + (rimanentiDopo < 0 ? ` — ⚠ saldo insufficiente, andresti a ${oreEMinuti(rimanentiDopo)}` : ` (resterebbero ${oreEMinuti(rimanentiDopo)}).`);
       } else {
         boxRC.textContent = 'Indica l\'orario del turno sostituito per calcolare le ore consumate.';
       }
@@ -363,9 +363,9 @@ function aggiornaAnteprima(){
   if(boxPB){
     if(t.permessoBreveAttivo && c.orePermessoBreve > 0 && vocePB){
       const rimanentiDopo = round2(vocePB.valore - usateAnnoAltrove - c.orePermessoBreve);
-      boxPB.textContent = `Turno ridotto a ${round2(c.oreTotali)}h lavorate. Toglie ${c.orePermessoBreve}h dal saldo di Permesso breve (in modo permanente)` +
-        (rimanentiDopo < 0 ? ` — ⚠ saldo insufficiente, andresti a ${rimanentiDopo}h.` : ` (resterebbero ${rimanentiDopo}h nel ${annoCorrente}).`) +
-        ` Ricordati di recuperarle: ti restano da recuperare ${c.orePermessoBreve}h in più rispetto a prima.`;
+      boxPB.textContent = `Turno ridotto a ${oreEMinuti(c.oreTotali)} lavorate. Toglie ${oreEMinuti(c.orePermessoBreve)} dal saldo di Permesso breve (in modo permanente)` +
+        (rimanentiDopo < 0 ? ` — ⚠ saldo insufficiente, andresti a ${oreEMinuti(rimanentiDopo)}.` : ` (resterebbero ${oreEMinuti(rimanentiDopo)} nel ${annoCorrente}).`) +
+        ` Ricordati di recuperarle: ti restano da recuperare ${oreEMinuti(c.orePermessoBreve)} in più rispetto a prima.`;
     } else if(t.permessoBreveAttivo){
       boxPB.textContent = 'Indica l\'orario del permesso breve per calcolare le ore da togliere al turno.';
     } else {
@@ -374,7 +374,7 @@ function aggiornaAnteprima(){
   }
   if(boxRPB){
     if(t.recuperoPermessoBreveAttivo && c.oreRecuperoPermessoBreve > 0){
-      boxRPB.textContent = `${c.oreRecuperoPermessoBreve}h retribuite in più (non contano nel totale ore del turno). Scalano dalle ore ancora da recuperare, senza toccare il saldo di Permesso breve rimanente.`;
+      boxRPB.textContent = `${oreEMinuti(c.oreRecuperoPermessoBreve)} retribuite in più (non contano nel totale ore del turno). Scalano dalle ore ancora da recuperare, senza toccare il saldo di Permesso breve rimanente.`;
     } else if(t.recuperoPermessoBreveAttivo){
       boxRPB.textContent = 'Indica l\'orario del recupero per calcolare le ore da aggiungere al turno.';
     } else {
@@ -388,22 +388,22 @@ function aggiornaAnteprima(){
     // solo l'orario reale e non deve pensare a questa distinzione.
     let testo = '';
     if(primaCalc.ore > 0 && dopoCalc.ore > 0){
-      testo = `Ore di straordinario calcolate: ${primaCalc.ore}h + ${dopoCalc.ore}h = ${round2(primaCalc.ore + dopoCalc.ore)}h totali`;
+      testo = `Ore di straordinario calcolate: ${oreEMinuti(primaCalc.ore)} + ${oreEMinuti(dopoCalc.ore)} = ${oreEMinuti(primaCalc.ore + dopoCalc.ore)} totali`;
     } else if(primaCalc.ore > 0 || dopoCalc.ore > 0){
-      testo = `Ore di straordinario calcolate: ${primaCalc.ore || dopoCalc.ore}h`;
+      testo = `Ore di straordinario calcolate: ${oreEMinuti(primaCalc.ore || dopoCalc.ore)}`;
     }
-    if(t.compensaStraordinario && c.oreCompensate > 0) testo += `${testo ? ' — ' : ''}${c.oreCompensate}h convertite in riposo compensativo, escluse dalla paga.`;
+    if(t.compensaStraordinario && c.oreCompensate > 0) testo += `${testo ? ' — ' : ''}${oreEMinuti(c.oreCompensate)} convertite in riposo compensativo, escluse dalla paga.`;
     boxStr.textContent = testo;
   }
   if(c.errore){ box.textContent = '⚠ ' + c.errore; return; }
   if(!t.oraInizio || !t.oraFine){ box.textContent = 'Inserisci ora inizio e ora fine per vedere la classificazione automatica.'; return; }
   // Etichette solo per le voci che ci sono (niente lunghe file di zeri).
-  const n = v => String(round2(v)).replace('.', ',');
+  const n = oreEMinuti;
   const voci = [[c.ordinarie, 'ordinarie'], [c.notturne, 'notturne'], [c.festive, 'festive'], [c.domenicali, 'domenicali'], [c.notturneFestive, 'notturne festive']]
     .filter(([v]) => v > 0).map(([v, t]) => `<span>${n(v)} ${t}</span>`);
   const str = [[c.strDiurno, 'diurno'], [c.strNotturno, 'notturno'], [c.strFestivo, 'festivo'], [c.strNotturnoFestivo, 'notturno festivo']]
-    .filter(([v]) => v > 0).map(([v, t]) => `<span class="et-str">${n(v)} h straord. ${t}</span>`);
-  box.innerHTML = `<b>${n(c.oreTotali)} h</b>${voci.join('')}${str.join('')}`;
+    .filter(([v]) => v > 0).map(([v, t]) => `<span class="et-str">${n(v)} straord. ${t}</span>`);
+  box.innerHTML = `<b>${n(c.oreTotali)}</b>${voci.join('')}${str.join('')}`;
 }
 
 function apriModaleTurno(iso){

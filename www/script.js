@@ -1632,7 +1632,7 @@ let meseMostraZeriV3 = false;
 function renderMeseV3(){
   const host = el('meseDettaglioV3');
   if(!host) return;
-  const f = v => euro(v), h = v => String(Math.round(v * 10) / 10).replace('.', ',') + ' h';
+  const f = v => euro(v), h = oreEMinuti;
   const r = calcolaRiepilogoOreMese(annoCorrente, meseCorrente), t = r.tot;
   const c = calcolaCompetenze(annoCorrente, meseCorrente), a = c.accessorie;
   const ns = calcolaEffettoNettoStraordinario(annoCorrente, meseCorrente);
@@ -1641,8 +1641,9 @@ function renderMeseV3(){
   const ore = t.ordinarie + t.notturne + t.festive + t.domenicali + t.notturneFestive + str;
   el('meseTileTurni').textContent = r.giorniPresenzaEffettiva;
   el('meseTileRiposi').textContent = r.riposi;
-  el('meseTileOre').textContent = String(Math.round(ore * 10) / 10).replace('.', ',');
-  el('meseTileStraordinario').textContent = h(str);
+  // Nelle caselle in alto le ore in formato orologio (148:25), perché stiano su una riga.
+  el('meseTileOre').textContent = formatOreMinuti(ore);
+  el('meseTileStraordinario').textContent = formatOreMinuti(str);
   const righeOre = [
     ['Diurne feriali', t.ordinarie, 'diurne', ''],
     ['Serali e notturne', t.notturne, 'notturne', ''],
@@ -3237,7 +3238,7 @@ function aggiornaStrRapidoV2(){
   let r = null;
   if(mi && mf) r = { inizio: mi, fine: mf };
   else if(ore > 0 && t.oraInizio && t.oraFine) r = calcolaOrarioStraordinarioDaOre(t.oraInizio, t.oraFine, ore, el('campoStrRapidoPosizione').value);
-  box.textContent = r && r.inizio ? `${r.inizio} → ${r.fine}` + (ore > 0 && !(mi && mf) ? ` · ${String(ore).replace('.', ',')} h` : '') : '';
+  box.textContent = r && r.inizio ? `${r.inizio} → ${r.fine}` + (ore > 0 && !(mi && mf) ? ` · ${oreEMinuti(ore)}` : '') : '';
 }
 function salvaStraordinarioRapidoV2(){
   if(!giornoPerPopupV2) return;

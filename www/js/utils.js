@@ -46,4 +46,12 @@ function formattaDataBreve(iso){
   return `${g}/${m}/${a}`;
 }
 
+// Ore decimali → ore e minuti, come su un orologio: 7,58 → "7 h 35 min", 8 → "8 h", 0,5 → "30 min".
+function oreEMinuti(v){
+  const tot = Math.round((Number(v) || 0) * 60), a = Math.abs(tot);
+  const h = Math.floor(a / 60), m = a % 60;
+  if(!h && !m) return '0 h';
+  return (tot < 0 ? '−' : '') + [h ? `${h} h` : '', m ? `${m} min` : ''].filter(Boolean).join(' ');
+}
+
 const el = id => document.getElementById(id);

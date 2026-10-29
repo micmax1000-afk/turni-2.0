@@ -3,7 +3,7 @@
 /* FASE 2 — Dashboard mobile: riepilogo del mese visualizzato + oggi + prossimi giorni. */
 
 function formatOreDashboard(n){
-  return Number(n || 0).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return oreEMinuti(n);
 }
 
 function descrizioneTurnoDashboard(t){
@@ -24,7 +24,7 @@ function descrizioneTurnoDashboard(t){
     if(t.ordinePubblico) extra.push('Ordine pubblico');
     return {
       titolo: `${nomi[categoria] || 'Turno'} · ${t.oraInizio}–${t.oraFine}`,
-      dettaglio: extra.length ? extra.slice(0,2).join(' · ') : `${formatOreDashboard(c.oreTotali)} ore`,
+      dettaglio: extra.length ? extra.slice(0,2).join(' · ') : formatOreDashboard(c.oreTotali),
       classe: categoria || 'turno'
     };
   }
@@ -243,7 +243,7 @@ function aggiornaRiepilogoVisualeMese(){
   const extra = [
     ['Missioni', missioni], ['Reperibilità', reperibilita], ['Esterno', esterno], ['Ordine pubblico', op], ['Festivi lavorati', festivi]
   ];
-  extraEl.innerHTML = `<div class="riepilogo-extra-head"><strong>Servizi ed eventi</strong><span>${ore ? `${formatOreDashboard(ore)} ore ordinarie` : 'Nessuna ora registrata'}</span></div><div class="riepilogo-extra-grid">${extra.map(([label,val]) => `<div><span>${escapeHtml(label)}</span><strong>${val}</strong></div>`).join('')}</div>`;
+  extraEl.innerHTML = `<div class="riepilogo-extra-head"><strong>Servizi ed eventi</strong><span>${ore ? `${formatOreDashboard(ore)} di ore ordinarie` : 'Nessuna ora registrata'}</span></div><div class="riepilogo-extra-grid">${extra.map(([label,val]) => `<div><span>${escapeHtml(label)}</span><strong>${val}</strong></div>`).join('')}</div>`;
   periodoEl.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
 }
 
