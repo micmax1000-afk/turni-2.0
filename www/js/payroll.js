@@ -335,7 +335,7 @@ function renderCedolino(){
   const riga = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, euro(val), '', sotto) : '';
   const meno = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, `−${euro(val)}`, 'meno', sotto) : '';
   const piu = (nome, val, sotto = '') => val ? rigaCedolinoV4(nome, `+${euro(val)}`, 'piu', sotto) : '';
-  const ore = h => h ? `${String(h).replace('.', ',')} h` : '';
+  const ore = h => h ? oreEMinuti(h) : '';
   const f = c.comp.fisse, a = c.comp.accessorie, t = c.comp.tot;
   const lordo = c.comp.totaleLordo;
   const trattenuteNetto = round2(c.contributi + c.irpefTotale + c.addizionali + c.sindacato - c.detrazioni - c.trattamentoIntegrativo - c.conguagli);

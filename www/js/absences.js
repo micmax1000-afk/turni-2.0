@@ -305,7 +305,7 @@ function renderDashboardAssenze(){
     + (daInserire
       ? `<b class="saldi-hero-numero">— giorni</b><div class="saldi-hero-voci"><span>🌴 congedo ordinario da inserire</span>`
       : `<b class="saldi-hero-numero">${numeroIt(congedo)} ${congedo === 1 ? 'giorno' : 'giorni'}</b><div class="saldi-hero-voci"><span>🌴 di congedo ordinario</span>`)
-    + `<span>⏱️ ${numeroIt(resto('Permesso breve'))} h di permesso breve</span>`
+    + `<span>⏱️ ${oreEMinuti(resto('Permesso breve'))} di permesso breve</span>`
     + `<span>🔄 ${numeroIt(recuperi)} ${recuperi === 1 ? 'recupero' : 'recuperi'}</span></div>`;
   const sotto = el('sottotitoloAssenze');
   if(sotto) sotto.textContent = `Quanto ti resta nel ${rif.anno} · non cambia il cedolino`;
@@ -326,7 +326,7 @@ function renderBoxSaldiPartenza(){
   const parti = [`Congedo ${numeroIt(s.congedo)} gg`];
   const recuperi = (s.recuperoRiposo || 0) + (s.recuperoFestivo || 0);
   if(recuperi) parti.push(`Recuperi ${numeroIt(recuperi)} gg`);
-  if(s.riposoCompensativoOre) parti.push(`Riposo compensativo ${numeroIt(s.riposoCompensativoOre)} h`);
+  if(s.riposoCompensativoOre) parti.push(`Riposo compensativo ${oreEMinuti(s.riposoCompensativoOre)}`);
   box.className = 'partenza-riass partenza-v4';
   box.innerHTML = `<span aria-hidden="true">📌</span><i>Giorni di partenza al ${escapeHtml(data)}<small>Come risultavano all'ufficio: da lì conta l'app.</small></i><button type="button" data-apri-saldi title="${escapeHtml(parti.join(' · '))}">Modifica</button>`;
 }
@@ -470,7 +470,7 @@ function renderCardAssenzaItem(a){
       const daRecuperare = calcolaOreDaRecuperareAnno(anno);
       const recuperate = calcolaOreRecuperateAnno(anno);
       if(daRecuperare > 0 || recuperate > 0){
-        dettaglioRecuperoPB = `<div class="riga-assenza-nota" style="margin-top:2px;"><span class="sotto-titolo" style="font-size:0.75rem;">Ore da recuperare: ${daRecuperare} h · Ore recuperate nel ${anno}: ${recuperate} h</span></div>`;
+        dettaglioRecuperoPB = `<div class="riga-assenza-nota" style="margin-top:2px;"><span class="sotto-titolo" style="font-size:0.75rem;">Ore da recuperare: ${oreEMinuti(daRecuperare)} · Ore recuperate nel ${anno}: ${oreEMinuti(recuperate)}</span></div>`;
       }
     }
 
