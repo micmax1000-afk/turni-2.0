@@ -1,10 +1,8 @@
 <it-IT>
-• Nuova scheda Assenze con anelli colorati: quanto ti resta
-• Saldi di partenza: congedo diviso per anno, recuperi e riposo compensativo
-• Calendario: giorni del mese prima e dopo, sbiaditi
-• Report e Turni molto più veloci
-• Agenda sotto il calendario (da Altro)
-• Indennità con lordo e netto
-• Tabelle ufficiali aggiornate dal sito
-• Colore dell'app a scelta e "Segnala un problema"
+• Nuovo evento come in Google Calendar: tocca un'ora nella giornata, orari grandi
+• "Suona anche in silenzioso" per i promemoria importanti
+• Calendario più pulito: oggi nel cerchio, eventi a pallino
+• Un tocco sul giorno lo mostra, Turno e Modifica per cambiarlo
+• Report: spiegati i due netti (arriva sul conto / mese lavorato)
+• Straordinario più compatto in "Modifica il giorno"
 </it-IT>
