@@ -2725,3 +2725,18 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 #overlayEvento .foglio-evento-quando .foglio-evento-data{min-width:0;overflow:hidden;text-overflow:ellipsis}
 #overlayEvento .orari-evento input{width:3.6em!important;flex:none;padding-left:2px!important;padding-right:2px!important}
 #overlayEvento.espanso .orari-evento input{width:auto!important}
+
+/* v3.8.4 — Scheda Turni più corta: i turni in un'unica lista (una riga ciascuno, orario a destra),
+   altri modelli e strumenti in liste uniche con il nome e sotto l'orario o la descrizione */
+#sezioneStrumentiTurni .elenco-turni-v4,#sezioneStrumentiTurni .altri-v4{display:flex!important;flex-direction:column!important;gap:0!important;background:var(--pannello)!important;border:1px solid var(--bordo)!important;border-radius:16px!important;overflow:hidden;padding:0!important}
+#sezioneStrumentiTurni .turno-v4{border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;padding:9px 12px!important;min-height:0!important;gap:12px!important;background:none!important;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important}
+#sezioneStrumentiTurni .elenco-turni-v4 > .turno-v4:last-child,#sezioneStrumentiTurni .altri-v4 > .turno-v4:last-child{border-bottom:0!important}
+#sezioneStrumentiTurni .sigla-v4{width:34px!important;height:34px!important;min-width:34px!important;border-radius:10px!important;font-size:.74rem!important}
+#sezioneStrumentiTurni .testo-v4{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:8px;min-width:0;flex:1}
+#sezioneStrumentiTurni .testo-v4 strong{font-size:.95rem!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#sezioneStrumentiTurni .testo-v4 small{margin:0!important;white-space:nowrap;font-size:.82rem!important;flex:none}
+#sezioneStrumentiTurni .altri-v4 .testo-v4{flex-direction:column!important;align-items:flex-start!important;gap:0}
+#sezioneStrumentiTurni .altri-v4 .testo-v4 strong,#sezioneStrumentiTurni .altri-v4 .testo-v4 small{white-space:normal}
+#sezioneStrumentiTurni .azione-genera-v4{padding:10px 12px!important;min-height:0!important}
+#sezioneStrumentiTurni .icona-genera-v4{width:36px!important;height:36px!important;min-width:36px!important;border-radius:10px!important}
+#sezioneStrumentiTurni .strumenti-turni-titolo{margin:16px 2px 6px!important}
