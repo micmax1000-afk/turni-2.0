@@ -95,7 +95,7 @@ function costruisciDatiBackup(){
 
 /** True se l'utente ha attivato il backup Drive a pagamento. */
 function backupDriveAttivo(){
-  return proAttivo();
+  return TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1';
 }
 
 // Modulo di acquisto per Capacitor (Google Play Billing diretto, senza bundler — vedi
@@ -119,13 +119,23 @@ async function inizializzaPlayBilling(){
       // per questo prodotto (prezzo, nome, ecc.) — senza questo passaggio buy() fallisce sempre
       // con "Product not registered", anche se l'app è installata correttamente dal Play Store.
       try{
-        await plugin.getAvailableProducts({ inAppSkus: [PLAY_PRODUCT_ID_PRO, PLAY_PRODUCT_ID_CAFFE, PLAY_PRODUCT_ID_BACKUP_DRIVE], subsSkus: [] });
+        await plugin.getAvailableProducts({ inAppSkus: [PLAY_PRODUCT_ID_BACKUP_DRIVE], subsSkus: [] });
       }catch(e){
         console.warn('Interrogazione del catalogo prodotti non riuscita:', e);
       }
       if(!listenerAcquistiCollegato){
         listenerAcquistiCollegato = true;
-        await plugin.addListener('purchasesUpdated', (dati) => gestisciAcquistiArrivati(plugin, dati.purchases || [], true));
+        await plugin.addListener('purchasesUpdated', (dati) => {
+          const acquisti = dati.purchases || [];
+          const trovato = acquisti.find(p => p.productId === PLAY_PRODUCT_ID_BACKUP_DRIVE || (p.productIds || []).includes(PLAY_PRODUCT_ID_BACKUP_DRIVE));
+          if(!trovato) return;
+          TurniPSStorage.setItem(CHIAVE_BACKUP_DRIVE_ATTIVO, '1');
+          if(!trovato.acknowledged && trovato.purchaseToken){
+            plugin.acknowledgePurchase({ purchaseToken: trovato.purchaseToken }).catch(() => {});
+          }
+          if(typeof renderSezioneBackupDrive === 'function') renderSezioneBackupDrive();
+          if(typeof mostraAvviso === 'function') mostraAvviso('Acquisto completato! Ora collega il tuo account Google Drive per attivare il backup automatico.');
+        });
       }
       await verificaAcquistoBackupDrive();
       return;
@@ -158,10 +168,7 @@ async function verificaAcquistoBackupDrive(){
         const handle = await plugin.addListener('setPurchases', (dati) => {
           handle.remove();
           const acquisti = dati.purchases || [];
-          // Cosa risulta comprato su Google Play: Pro, oppure il vecchio backup Drive da 1,99 € (vale come Pro).
-          TurniPSStorage.setItem(CHIAVE_PRO_ATTIVO, acquisti.some(p => acquistoDi(p, PLAY_PRODUCT_ID_PRO)) ? '1' : '0');
-          gestisciAcquistiArrivati(plugin, acquisti.filter(p => acquistoDi(p, PLAY_PRODUCT_ID_CAFFE)), false);
-          concludi(acquisti.some(p => acquistoDi(p, PLAY_PRODUCT_ID_BACKUP_DRIVE)));
+          concludi(acquisti.some(p => p.productId === PLAY_PRODUCT_ID_BACKUP_DRIVE || (p.productIds || []).includes(PLAY_PRODUCT_ID_BACKUP_DRIVE)));
         });
         plugin.getPurchases().catch(() => { handle.remove(); concludi(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1'); });
         setTimeout(() => { handle.remove(); concludi(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1'); }, 5000); // tetto di sicurezza
@@ -175,46 +182,11 @@ async function verificaAcquistoBackupDrive(){
     const acquisti = await servizioPlayBilling.listPurchases();
     const haAcquistato = acquisti.some(a => a.itemId === PLAY_PRODUCT_ID_BACKUP_DRIVE);
     TurniPSStorage.setItem(CHIAVE_BACKUP_DRIVE_ATTIVO, haAcquistato ? '1' : '0');
-    if(acquisti.some(a => a.itemId === PLAY_PRODUCT_ID_PRO)) TurniPSStorage.setItem(CHIAVE_PRO_ATTIVO, '1');
     return haAcquistato;
   }catch(e){
     // Se non riusciamo a controllare (es. offline), ci fidiamo di quanto risultava l'ultima volta
     return TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1';
   }
-}
-
-// v3.9: un acquisto qualsiasi (Pro o caffè) dalla finestra di Google Play.
-async function acquistaProdotto(productId){
-  const plugin = pluginAcquistiNativo();
-  if(!plugin){
-    mostraAvviso('Gli acquisti si fanno dall\'app Android installata dal Play Store.');
-    return;
-  }
-  try{
-    await plugin.buy({ productId });
-    // L'esito arriva dall'evento 'purchasesUpdated' (gestisciAcquistiArrivati)
-  }catch(e){
-    if(e && e.message !== 'USER_CANCELED') mostraAvviso('Acquisto non riuscito. Riprova più tardi.');
-  }
-}
-function acquistoDi(p, id){ return p.productId === id || (p.productIds || []).includes(id); }
-// Pro (o vecchio backup Drive): si conferma a Google e si sblocca. Caffè: si "consuma", così si può offrire di nuovo.
-function gestisciAcquistiArrivati(plugin, acquisti, nuovo){
-  let pro = false, caffe = false;
-  acquisti.forEach(p => {
-    if(acquistoDi(p, PLAY_PRODUCT_ID_PRO) || acquistoDi(p, PLAY_PRODUCT_ID_BACKUP_DRIVE)){
-      TurniPSStorage.setItem(acquistoDi(p, PLAY_PRODUCT_ID_PRO) ? CHIAVE_PRO_ATTIVO : CHIAVE_BACKUP_DRIVE_ATTIVO, '1');
-      if(!p.acknowledged && p.purchaseToken) plugin.acknowledgePurchase({ purchaseToken: p.purchaseToken }).catch(() => {});
-      pro = true;
-    } else if(acquistoDi(p, PLAY_PRODUCT_ID_CAFFE) && p.purchaseToken){
-      plugin.consumePurchase({ purchaseToken: p.purchaseToken }).catch(() => {});
-      caffe = true;
-    }
-  });
-  if(typeof aggiornaInterfacciaPro === 'function') aggiornaInterfacciaPro();
-  if(!nuovo) return;
-  if(pro) mostraToast('⭐ Pro sbloccata. Grazie!', 'successo', 4000);
-  else if(caffe) mostraToast('☕ Grazie del caffè! Aiuta a tenere l\'app aggiornata.', 'successo', 4000);
 }
 
 async function acquistaBackupDrive(){
@@ -513,7 +485,7 @@ async function ripristinaBackupDaDrive(opz){
 }
 
 async function controllaBackupDriveAutomatico(){
-  if(!proAttivo()) return;
+  if(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO)!=='1') return;
   if(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_AUTO)!=='1') return; // spento di default
   if(!navigator.onLine || !tokenClientGoogle) return;
   const ultimo=TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP_DRIVE);
@@ -536,13 +508,13 @@ async function controllaBackupDriveAutomatico(){
 
 function renderSezioneBackupDrive(){
   const box=el('sezioneBackupDrive'); if(!box) return;
-  const acquistato=proAttivo();
+  const acquistato=TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO)==='1';
   const ultimo=TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP_DRIVE);
   const stato=TurniPSStorage.getItem(CHIAVE_STATO_BACKUP_DRIVE)||'non_collegato';
   const messaggio=TurniPSStorage.getItem(CHIAVE_MESSAGGIO_BACKUP_DRIVE)||'';
   if(!acquistato){
-    box.innerHTML=`<h3>☁️ Backup su Google Drive</h3><p class="sotto-titolo">Salva copie dei dati sul tuo Google Drive e ripristinale quando serve (fino a 5 copie conservate).</p><button class="btn-primario" id="btnAcquistaBackupDrive" type="button">⭐ Incluso nella Pro</button>`;
-    const btn=el('btnAcquistaBackupDrive'); if(btn) btn.addEventListener('click',()=>apriPaginaPro());
+    box.innerHTML=`<h3>☁️ Backup su Google Drive</h3><p class="sotto-titolo">Salva copie dei dati sul tuo Google Drive e ripristinale quando serve (fino a 5 copie conservate).</p><button class="btn-primario" id="btnAcquistaBackupDrive" type="button">Attiva per 1,99€</button>`;
+    const btn=el('btnAcquistaBackupDrive'); if(btn) btn.addEventListener('click',acquistaBackupDrive);
     return;
   }
   const statoTesto={ok:'✓ Backup confermato da Google Drive',backup:'⏳ Salvataggio in corso…',collegato:'✓ Account Google collegato',connessione:'⏳ Collegamento a Google…',offline:'⚠ Offline — operazione rimandata',ripristino:'⏳ Lettura da Drive…',errore:'⚠ Operazione non riuscita',ricollega:'🔑 È necessario ricollegare Google',negato:'⚠ Permesso Google negato',configurazione:'⚙️ Configurazione Google mancante',non_collegato:'Non ancora collegato'}[stato]||stato;
@@ -756,11 +728,6 @@ const GOOGLE_CLIENT_ID = window.GOOGLE_CLIENT_ID || 'INSERISCI-QUI-IL-TUO-CLIENT
 const PLAY_PRODUCT_ID_BACKUP_DRIVE = 'backup_drive_automatico';
 
 const CHIAVE_BACKUP_DRIVE_ATTIVO = 'simCedolino_backupDriveAttivo_v1';
-// v3.9: versione Pro (acquisto unico) e "Offrimi un caffè" (si può offrire più volte).
-const PLAY_PRODUCT_ID_PRO = 'turni_pro';
-const PLAY_PRODUCT_ID_CAFFE = 'offri_caffe';
-const CHIAVE_PRO_ATTIVO = 'simCedolino_proAttivo_v1';
-const CHIAVE_PRO_REGALO = 'simCedolino_proRegalo_v1';
 
 const CHIAVE_ULTIMO_BACKUP_DRIVE = 'simCedolino_ultimoBackupDrive_v1';
 
