@@ -16,7 +16,16 @@ COSA FA L'APP
 - Esportazione dei turni in Google Calendar
 - Tema chiaro, grigio, nero oppure automatico in base alla luce
 - Apertura guidata: in pochi passi l'app è pronta
-- Backup manuale dei dati in un file, e backup automatico opzionale su Google Drive (a pagamento)
+- Backup manuale dei dati in un file
+
+VERSIONE PRO (acquisto unico, 3,99 €, nessun abbonamento)
+- Cedolino completo, voce per voce, da stampare in PDF
+- Statistiche dell'anno
+- Backup automatico su Google Drive
+- Promemoria del turno e widget
+- "Suona anche in silenzioso" per gli eventi importanti
+Calendario, turni, ore e indennità del mese, quanto arriva sul conto, assenze ed eventi restano gratis.
+Chi ha già comprato il backup su Drive ha la Pro inclusa.
 
 PRIVACY PRIMA DI TUTTO
 Tutti i tuoi dati restano sul tuo telefono. L'app non mostra pubblicità, non traccia il tuo utilizzo e non condivide nulla con terze parti.

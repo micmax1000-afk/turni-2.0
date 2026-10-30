@@ -247,7 +247,7 @@
           <div id="campoEventoAvvisoWrap" hidden>
             <label class="riga-g">
               <span class="ic-g" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></span>
-              <i>Suona anche in silenzioso<small>10 secondi di suono e vibrazione</small></i>
+              <i><span data-badge-pro>Suona anche in silenzioso</span><small>10 secondi di suono e vibrazione</small></i>
               <input type="checkbox" class="interruttore" id="campoEventoAvvisoForte">
             </label>
             <div hidden>
@@ -293,6 +293,8 @@
       </div>
     </div>
   </section>
+
+
 
   <!-- Avvisi (benvenuto, turni finiti...): solo nel Calendario -->
   <div id="appAlerts" class="app-alerts-v20" hidden></div>
@@ -550,8 +552,8 @@
     <!-- v2.94: in fondo al Report, buoni pasto e le parti da aprire (cedolino, statistiche) -->
     <section class="scheda report-fondo-v4" id="reportFondoV4">
       <div class="report-riga-v4" id="reportBuoniPasto" hidden><span>🍽️ Buoni pasto <small>· fuori busta</small></span><b id="reportBuoniPastoNumero">0</b></div>
-      <button type="button" class="report-riga-v4" data-apri-report="cedolino"><span>🧾 Cedolino stimato</span><b aria-hidden="true">›</b></button>
-      <button type="button" class="report-riga-v4" data-apri-report="statistiche"><span>📈 Statistiche dell'anno</span><b aria-hidden="true">›</b></button>
+      <button type="button" class="report-riga-v4" data-apri-report="cedolino"><span data-badge-pro>🧾 Cedolino stimato</span><b aria-hidden="true">›</b></button>
+      <button type="button" class="report-riga-v4" data-apri-report="statistiche"><span data-badge-pro>📈 Statistiche dell'anno</span><b aria-hidden="true">›</b></button>
     </section>
 
     <section class="scheda" id="sezioneStatisticheGrafici">
@@ -986,10 +988,14 @@
       <div class="lista-strumenti-turni">
         <button type="button" class="riga-strumento-turni" id="settingsAnagrafica"><span class="grado-altro" id="gradoAltro" aria-hidden="true">🪪</span><i>Anagrafica<small id="riassuntoAnagraficaAltro">Qualifica, regione, famiglia</small></i><b>›</b></button>
       </div>
+      <div class="lista-strumenti-turni lista-pro-altro">
+        <button type="button" class="riga-strumento-turni" id="btnApriProAltro"><span>⭐</span><i>Turni &amp; Accessorio Pro<small id="riassuntoProAltro">Cedolino, statistiche, backup e altro</small></i><b>›</b></button>
+        <button type="button" class="riga-strumento-turni" id="btnOffriCaffeAltro"><span>☕</span><i>Offrimi un caffè<small>1,99 € · se l'app ti è utile</small></i><b>›</b></button>
+      </div>
       <p class="strumenti-turni-titolo">Impostazioni</p>
       <div class="lista-strumenti-turni">
         <div class="riga-strumento-turni riga-interruttore">
-          <span>⏰</span><i>Promemoria del turno<small id="descrizionePromemoriaTurno">Spento</small></i>
+          <span>⏰</span><i><span data-badge-pro>Promemoria del turno</span><small id="descrizionePromemoriaTurno">Spento</small></i>
           <input type="checkbox" class="interruttore" id="campoPromemoriaTurno" aria-label="Promemoria del turno">
         </div>
         <div class="opzioni-riga-altro" id="opzioniPromemoriaTurno" hidden>
@@ -1006,7 +1012,7 @@
         </div>
         <button type="button" class="riga-strumento-turni" id="settingsControlloPromemoria" hidden><span>🩺</span><i>Controllo promemoria<small id="riassuntoControlloPromemoria">Notifiche, batteria, prova</small></i><b>›</b></button>
         <div class="riga-strumento-turni riga-interruttore">
-          <span>📱</span><i>Widget nella schermata Home<small id="descrizioneWidget">Spento</small></i>
+          <span>📱</span><i><span data-badge-pro>Widget nella schermata Home</span><small id="descrizioneWidget">Spento</small></i>
           <input type="checkbox" class="interruttore" id="campoWidget" aria-label="Widget nella schermata Home">
         </div>
         <div class="opzioni-riga-altro" id="opzioniWidget" hidden>
@@ -1254,6 +1260,27 @@
 </main>
 
 <!-- Moduli core (ordine obbligatorio) -->
+  <!-- v3.9: versione Pro e "Offrimi un caffè" -->
+  <div class="pagina-pro" id="overlayPro" role="dialog" aria-labelledby="titoloPaginaPro" hidden>
+    <div class="pro-testa"><button type="button" id="btnChiudiPro" aria-label="Chiudi">✕</button></div>
+    <div class="pro-hero"><div class="pro-stella" aria-hidden="true">⭐</div><h2 id="titoloPaginaPro">Turni &amp; Accessorio Pro</h2><p id="sottoPaginaPro">Un solo acquisto, tuo per sempre. Nessun abbonamento.</p></div>
+    <p class="pro-sez">Con la Pro</p>
+    <div class="pro-lista">
+      <div class="pro-riga"><span class="ic">🧾</span><i>Cedolino completo<small>Ogni voce, da stampare in PDF</small></i><b>✓</b></div>
+      <div class="pro-riga"><span class="ic">📈</span><i>Statistiche dell'anno<small>Netto, ore e indennità mese per mese</small></i><b>✓</b></div>
+      <div class="pro-riga"><span class="ic">☁️</span><i>Backup automatico<small>Su Google Drive, anche se cambi telefono</small></i><b>✓</b></div>
+      <div class="pro-riga"><span class="ic">🔔</span><i>Promemoria del turno e widget<small>La sera prima e sulla schermata Home</small></i><b>✓</b></div>
+      <div class="pro-riga"><span class="ic">🔊</span><i>Suona anche in silenzioso<small>Per gli eventi che non puoi perdere</small></i><b>✓</b></div>
+    </div>
+    <p class="pro-sez">Sempre gratis</p>
+    <p class="pro-gratis"><b>Calendario e turni, ore e indennità del mese, quanto arriva sul conto, assenze, eventi.</b> L'app resta completa anche senza la Pro.</p>
+    <div class="pro-piede">
+      <button type="button" class="pro-compra" id="btnAcquistaPro">Sblocca la Pro <span>3,99 €</span></button>
+      <div class="pro-sotto"><button type="button" id="btnRipristinaPro">Ripristina acquisto</button><button type="button" id="btnOffriCaffePro">☕ Offrimi un caffè</button></div>
+      <p class="pro-nota">Pagamento sicuro con Google Play · i tuoi dati restano sul telefono</p>
+    </div>
+  </div>
+
 <script src="js/config.js"></script>
 <script src="js/state.js"></script>
 <script src="js/data/tabelle-2026.js"></script>
@@ -1267,6 +1294,7 @@
 <script src="js/sequence.js"></script>
 <script src="js/payroll.js"></script>
 <script src="js/backup.js"></script>
+<script src="js/pro.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/statistics.js"></script>
