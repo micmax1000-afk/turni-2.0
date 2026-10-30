@@ -248,7 +248,7 @@ let turnoCopiato = null; // clipboard in memoria, non persistito
 
 
 // ============================================================================
-// BACKUP AUTOMATICO SU GOOGLE DRIVE (funzione a pagamento, 1,99€ una tantum)
+// BACKUP AUTOMATICO SU GOOGLE DRIVE (gratuito dalla v3.8.7)
 // ============================================================================
 // ATTENZIONE: sostituisci questo segnaposto con il tuo Client ID reale ottenuto
 // da Google Cloud Console (vedi setup-google-cloud.md). Senza un Client ID valido

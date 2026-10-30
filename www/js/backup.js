@@ -93,9 +93,9 @@ function costruisciDatiBackup(){
   };
 }
 
-/** True se l'utente ha attivato il backup Drive a pagamento. */
+/** v3.8.7: il backup su Drive è gratuito per tutti (nessun acquisto). */
 function backupDriveAttivo(){
-  return TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO) === '1';
+  return true;
 }
 
 // Modulo di acquisto per Capacitor (Google Play Billing diretto, senza bundler — vedi
@@ -485,7 +485,7 @@ async function ripristinaBackupDaDrive(opz){
 }
 
 async function controllaBackupDriveAutomatico(){
-  if(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO)!=='1') return;
+  if(!backupDriveAttivo()) return;
   if(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_AUTO)!=='1') return; // spento di default
   if(!navigator.onLine || !tokenClientGoogle) return;
   const ultimo=TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP_DRIVE);
@@ -508,7 +508,7 @@ async function controllaBackupDriveAutomatico(){
 
 function renderSezioneBackupDrive(){
   const box=el('sezioneBackupDrive'); if(!box) return;
-  const acquistato=TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_ATTIVO)==='1';
+  const acquistato=backupDriveAttivo();
   const ultimo=TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP_DRIVE);
   const stato=TurniPSStorage.getItem(CHIAVE_STATO_BACKUP_DRIVE)||'non_collegato';
   const messaggio=TurniPSStorage.getItem(CHIAVE_MESSAGGIO_BACKUP_DRIVE)||'';

@@ -264,6 +264,7 @@ sezione('Altro: due gruppi, pagina Backup, Tabelle');
   ok('Altro: gruppi Impostazioni e Dati e aiuto, backup non più in fondo alla pagina, promemoria spento', a.titoli === 'Impostazioni,Dati e aiuto' && !a.backupVisibile && !a.promemoria, JSON.stringify(a));
   await p.click('#settingsBackupV4');
   ok('"Backup" apre la sua pagina con telefono e Google Drive, il resto di Altro sparisce', await p.evaluate(() => !!el('btnEsportaBackup').offsetParent && !!el('sezioneBackupDrive').offsetParent && !el('settingsTabelle').offsetParent));
+  ok('v3.8.7: backup su Google Drive gratuito, nessun pulsante di acquisto', await p.evaluate(() => !!el('btnSalvaDrive') && !el('btnAcquistaBackupDrive') && !/1,99/.test(el('sezioneBackupDrive').textContent)));
   await p.click('#btnChiudiBackupV4');
   ok('✕ torna ad Altro', await p.evaluate(() => !!el('settingsTabelle').offsetParent && el('paginaBackupV4').hidden));
   await p.click('#settingsTabelle');
