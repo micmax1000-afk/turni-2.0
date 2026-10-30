@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V239 (v3.8.6 — statistiche dell anno nello stile del Report) */
+/* Turni & Accessorio PS — Service Worker V240 (v3.8.7 — tutto gratuito, backup su Drive compreso) */
 'use strict';
-const CACHE='turni-ps-v239';
+const CACHE='turni-ps-v240';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',

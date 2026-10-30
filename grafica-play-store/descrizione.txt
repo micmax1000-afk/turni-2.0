@@ -16,7 +16,7 @@ COSA FA L'APP
 - Esportazione dei turni in Google Calendar
 - Tema chiaro, grigio, nero oppure automatico in base alla luce
 - Apertura guidata: in pochi passi l'app è pronta
-- Backup manuale dei dati in un file, e backup automatico opzionale su Google Drive (a pagamento)
+- Backup manuale dei dati in un file, e backup automatico opzionale su Google Drive
 
 PRIVACY PRIMA DI TUTTO
 Tutti i tuoi dati restano sul tuo telefono. L'app non mostra pubblicità, non traccia il tuo utilizzo e non condivide nulla con terze parti.
