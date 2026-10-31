@@ -595,7 +595,10 @@ function renderCalendario(){
     // Stile moderno: la casella resta chiara (il colore va solo nell'etichetta del turno, sotto).
     const moderno = typeof calendarioModernoAttivo === 'function' && calendarioModernoAttivo();
     let coloreTurno = '';
-    if(calendarioAColoriAttivo()){
+    // v3.8.10: ogni assenza può avere il suo colore (scelto nella sua scheda in Assenze); senza, il grigio.
+    const coloreAssenzaScelto = t && t.assenzaTipo ? ((AppState.assenze || []).find(a => a.id === t.assenzaTipo) || {}).coloreCalendario || '' : '';
+    if(calendarioAColoriAttivo() && coloreAssenzaScelto) coloreTurno = coloreAssenzaScelto;
+    else if(calendarioAColoriAttivo()){
       const modelloColoreCustomM = (t && t.riposo) ? (AppState.modelliTurno || []).find(m => m.riposo) : (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
       coloreTurno = modelloColoreCustomM && modelloColoreCustomM.colore ? modelloColoreCustomM.colore : (categoria ? coloreCategoria(categoria) : '');
     }
@@ -603,7 +606,8 @@ function renderCalendario(){
       cella.style.background = '';
     } else if(calendarioAColoriAttivo()){
       const modelloColoreCustom = (t && t.riposo) ? (AppState.modelliTurno || []).find(m => m.riposo) : (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
-      if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
+      if(coloreAssenzaScelto) cella.style.background = coloreAssenzaScelto;
+      else if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
       else if(categoria) cella.style.background = coloreCategoria(categoria);
       else cella.style.background = '';
     } else {

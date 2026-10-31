@@ -532,6 +532,16 @@ sezione('v3.8.10: colori solo sui turni, "Stile calendario" senza tavolozza');
     return getComputedStyle(document.querySelector(`[data-data="${d}"] .mod-turno b`)).backgroundColor;
   });
   ok('colore cambiato sul turno Mattino: il calendario si aggiorna', r === 'rgb(255, 0, 0)', r);
+  const ass = await p.evaluate(() => {
+    const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
+    AppState.turni['2026-10-21'] = { data: '2026-10-21', assenzaTipo: co.id };
+    renderCalendario();
+    const prima = getComputedStyle(document.querySelector('[data-data="2026-10-21"] .mod-turno b')).backgroundColor;
+    co.coloreCalendario = '#A8E0B0'; renderCalendario();
+    const dopo = getComputedStyle(document.querySelector('[data-data="2026-10-21"] .mod-turno b')).backgroundColor;
+    return { prima, dopo };
+  });
+  ok('assenza: grigio di partenza, poi il colore scelto nella sua scheda (C.O. verde)', ass.prima === 'rgb(216, 218, 224)' && ass.dopo === 'rgb(168, 224, 176)', JSON.stringify(ass));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

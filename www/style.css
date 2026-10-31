@@ -2763,3 +2763,8 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 .partenza-settimana .scelta-settimana{flex:1;max-width:260px}
 /* v3.8.10: colori solo sui turni; "Stile calendario" senza tavolozza */
 .btn-colori-predefiniti{display:block;margin:8px auto 0;font-size:.86rem;color:var(--testo-tenue);font-weight:600}
+.riga-colore-assenza{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 6px;font-size:.86rem;color:var(--testo-tenue)}
+.colore-assenza-scelta{display:flex;align-items:center;gap:8px}
+.colore-assenza-scelta input[type=color]{width:44px;height:34px;border:1px solid var(--bordo);border-radius:10px;padding:2px;background:var(--pannello)}
+.colore-assenza-scelta .btn-secondario{padding:6px 10px;font-size:.8rem}
+.colore-assenza-scelta .btn-secondario.attivo{background:var(--acc,#1D4FD7);color:#fff;border-color:var(--acc,#1D4FD7)}
