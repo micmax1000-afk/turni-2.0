@@ -556,7 +556,7 @@ function renderCardAssenzaItem(a){
     const notaCongedoAuto = eCongedoOrdinario
       ? `<div class="congedo-orario">${sceltaSettimanaCongedoHtml()}</div>` + (a.manuale
         ? `<p class="nota-congedo-auto">Inserito a mano. Con ${anniServizio} anni di servizio sarebbero ${giorniCongedoSpettanti()} giorni. <button type="button" class="btn-testo-evento" data-congedo-auto>↺ Usa il calcolo automatico</button></p>`
-        : `<p class="nota-congedo-auto">Spettano ${a.valore} giorni l'anno con ${anniServizio} ${anniServizio === 1 ? 'anno' : 'anni'} di servizio. Comprendono 2 riposi legge.</p>`)
+        : `<p class="nota-congedo-auto">Spettano ${a.valore} giorni l'anno con ${anniServizio} ${anniServizio === 1 ? 'anno' : 'anni'} di servizio.</p>`)
       : '';
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
