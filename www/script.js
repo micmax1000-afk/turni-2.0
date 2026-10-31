@@ -549,13 +549,16 @@ function inizializza(){
   }
 
   el('btnMesePrec').addEventListener('click', () => {
+    if(spostaVistaCalendario(-1)) return;
     meseCorrente--; if(meseCorrente < 0){ meseCorrente = 11; annoCorrente--; }
     renderCalendario();
   });
   el('btnMeseSucc').addEventListener('click', () => {
+    if(spostaVistaCalendario(1)) return;
     meseCorrente++; if(meseCorrente > 11){ meseCorrente = 0; annoCorrente++; }
     renderCalendario();
   });
+  inizializzaVisteCalendario();
 
   el('etichettaMese').addEventListener('click', () => {
     el('campoVaiMese').value = meseCorrente;

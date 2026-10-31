@@ -2768,3 +2768,51 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 .colore-assenza-scelta input[type=color]{width:44px;height:34px;border:1px solid var(--bordo);border-radius:10px;padding:2px;background:var(--pannello)}
 .colore-assenza-scelta .btn-secondario{padding:6px 10px;font-size:.8rem}
 .colore-assenza-scelta .btn-secondario.attivo{background:var(--acc,#1D4FD7);color:#fff;border-color:var(--acc,#1D4FD7)}
+
+/* v3.8.10 — Viste del calendario: pulsantino in alto, Giorno, Settimana, Agenda */
+.scheda-calendario-v2{position:relative}
+.btn-vista-calendario{white-space:nowrap;flex:none;border:1px solid var(--bordo);background:var(--pannello);border-radius:999px;padding:4px 8px;font:700 .74rem var(--font-corpo);color:var(--testo);cursor:pointer}
+.menu-vista-calendario{position:absolute;z-index:60;right:16px;top:64px;background:var(--pannello);border:1px solid var(--bordo);border-radius:14px;box-shadow:0 8px 24px rgba(20,25,40,.18);padding:6px;min-width:170px}
+.menu-vista-calendario[hidden]{display:none}
+.menu-vista-calendario button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:10px 12px;border-radius:10px;font:600 .92rem var(--font-corpo);color:var(--testo);text-align:left;cursor:pointer}
+.menu-vista-calendario button.attivo{background:color-mix(in srgb,#155EEF 10%,var(--pannello));color:#155EEF}
+.menu-vista-calendario svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.scheda-calendario-v2:not([data-vista="mese"]) .calendario-giorni-settimana,.scheda-calendario-v2:not([data-vista="mese"]) #calendarioGriglia{display:none}
+.scheda-calendario-v2[data-vista="agenda"] .riepilogo-giorno-selezionato-box-v2,.scheda-calendario-v2[data-vista="agenda"] #btnCancellaTurniMese,.scheda-calendario-v2[data-vista="agenda"] .agenda-sotto-titolo{display:none}
+.scheda-calendario-v2[data-vista="agenda"] .btn-freccia{visibility:hidden}
+.scheda-calendario-v2:not([data-vista="mese"]) #btnCancellaTurniMese{display:none}
+.vista-giorno-cal[hidden],.vista-settimana-cal[hidden]{display:none}
+.vg-striscia{display:flex;margin:2px 0 8px}
+.vg-giorno{flex:1;border:0;background:none;font:700 .7rem var(--font-corpo);color:var(--testo-tenue);cursor:pointer;padding:2px 0}
+.vg-giorno b{display:block;margin:3px auto 0;width:30px;height:30px;line-height:30px;border-radius:999px;font-size:1rem;color:var(--testo)}
+.vg-giorno.oggi b{color:#155EEF}
+.vg-giorno.attivo b{background:#155EEF;color:#fff}
+.vg-tutto{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 6px 44px}
+.vg-tutto span{padding:3px 8px;border-radius:7px;font-size:.78rem;font-weight:700;color:#1E2129}
+.vg-tutto .vg-ev-tutto{color:#fff}
+.vg-scorri{height:340px;overflow-y:auto;border-top:1px solid var(--bordo)}
+.vg-ore{position:relative}
+.vg-ora{position:absolute;left:0;right:0;border-top:1px solid color-mix(in srgb,var(--bordo) 60%,transparent)}
+.vg-ora span{font-size:.66rem;color:var(--testo-tenue);padding-left:2px}
+.vg-blocco{position:absolute;left:44px;right:4px;border:0;border-radius:9px;padding:4px 9px;text-align:left;font:inherit;font-size:.8rem;color:#1E2129;overflow:hidden;cursor:pointer}
+.vg-blocco small{display:block;font-size:.72rem;opacity:.85}
+.vg-evento{left:auto;width:48%;color:#fff}
+.vg-adesso{position:absolute;left:40px;right:0;border-top:2px solid #E53935;pointer-events:none}
+.vs-lista{display:flex;flex-direction:column}
+.vs-riga{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;padding:7px 2px;border:0;border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent);background:none;text-align:left;font:inherit;color:var(--testo);cursor:pointer}
+.vs-riga:last-child{border-bottom:0}
+.vs-riga.attivo{background:color-mix(in srgb,#155EEF 7%,transparent)}
+.vs-data{text-align:center;line-height:1}
+.vs-data small{display:block;font-size:.62rem;color:var(--testo-tenue);text-transform:uppercase;font-weight:700;margin-bottom:2px}
+.vs-data b{font-size:1.05rem}
+.vs-riga.festivo .vs-data b{color:#C62828}
+.vs-riga.oggi .vs-data b{color:#fff;background:#155EEF;border-radius:999px;padding:2px 6px}
+.vs-corpo{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:.82rem;color:var(--testo-tenue);min-width:0}
+.vs-corpo > b{padding:2px 8px;border-radius:7px;font-size:.78rem}
+.vs-ev{flex-basis:100%;font-size:.76rem;color:var(--testo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vs-ev i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+.vs-ore{font-family:var(--font-cifre);font-weight:700;font-size:.84rem}
+.vs-totale{display:flex;justify-content:space-between;padding:8px 2px 4px;font-size:.82rem;color:var(--testo-tenue);border-top:1px solid var(--bordo)}
+.vs-totale b{color:var(--testo)}
+.calendario-header-v2 .etichetta-mese-btn{white-space:nowrap;font-size:clamp(.98rem,4.8vw,1.22rem);padding-left:4px;padding-right:4px}
+.calendario-header-v2 .mese-e-simboli{gap:6px;flex-wrap:nowrap;min-width:0}

@@ -1076,15 +1076,14 @@ sezione('Tabelle: modifiche personali e aggiornamento dal sito');
   await ctx.close();
 }
 
-sezione('Agenda sotto il calendario');
+sezione('Agenda (vista del calendario)');
 {
   const { p, errori } = await apri({ turni: turniDiProva(), eventi: { '2026-10-12': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }] } });
   const prima = await p.evaluate(() => ({ nascosta: el('agendaSottoCalendario').hidden, campo: el('campoAgendaSotto').checked, prossimi: !el('prossimiEventiV2').hidden && getComputedStyle(el('prossimiEventiV2')).display !== 'none' }));
   ok('all\'inizio l\'agenda è spenta e restano "Prossimi 7 giorni"', prima.nascosta && !prima.campo && prima.prossimi, JSON.stringify(prima));
-  await p.click('#tabAltro');
-  await p.evaluate(() => el('campoAgendaSotto').scrollIntoView({ block: 'center' }));
-  await p.click('#campoAgendaSotto', { force: true });
-  await p.click('#tabCalendario');
+  ok('in Altro non c\'è più l\'interruttore dell\'agenda (si sceglie dal calendario)', await p.evaluate(() => !el('campoAgendaSotto').offsetParent));
+  await p.click('#btnVistaCalendario');
+  await p.click('[data-vista-calendario="agenda"]');
   const a = await p.evaluate(() => {
     const righe = [...document.querySelectorAll('.agenda-giorno')];
     return { n: righe.length, primo: righe[0].dataset.agendaGiorno, oggi: righe[0].classList.contains('oggi'), testoPrimo: righe[0].textContent,
@@ -1092,7 +1091,7 @@ sezione('Agenda sotto il calendario');
       riposo: document.querySelector('[data-agenda-giorno="2026-10-10"]').textContent, evento: document.querySelector('[data-agenda-giorno="2026-10-12"] .agenda-evento')?.textContent || '',
       prossimi: getComputedStyle(el('prossimiEventiV2')).display };
   });
-  ok('acceso da Altro: 14 giorni da oggi sotto il calendario, che resta visibile', a.n === 14 && a.primo === '2026-10-09' && a.oggi && a.griglia !== 'none' && /Ottobre 2026/.test(a.mese), JSON.stringify(a));
+  ok('vista Agenda dal menu: 14 giorni da oggi, a tutta pagina (senza il mese)', a.n === 14 && a.primo === '2026-10-09' && a.oggi && a.griglia === 'none' && /Agenda/.test(a.mese), JSON.stringify(a));
   ok('Agenda: turno con nome e orario, riposo e "Oggi"', /Oggi/.test(a.testoPrimo) && /Notte/.test(a.testoPrimo) && /01:00 – 07:00/.test(a.testoPrimo) && /Riposo/.test(a.riposo), a.testoPrimo);
   ok('Agenda: ore di servizio della settimana (30:00)', /Questa settimana/.test(a.settimana) && /30:00 ore di servizio/.test(a.settimana), a.settimana);
   const om = await p.evaluate(() => { AppState.turni['2026-10-14'] = { data: '2026-10-14', oraInizio: '12:40', oraFine: '19:15', modelloId: 'pomeriggio' }; renderAgenda(); return document.querySelector('[data-agenda-giorno="2026-10-14"] .agenda-ore').textContent; });
@@ -1107,7 +1106,7 @@ sezione('Agenda sotto il calendario');
   await p.click('#btnAgendaAltri');
   ok('"Mostra altri" aggiunge altri 14 giorni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length === 28));
   await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
-  ok('dopo la riapertura l\'agenda resta accesa', await p.evaluate(() => !el('agendaSottoCalendario').hidden && el('campoAgendaSotto').checked && document.querySelectorAll('.agenda-giorno').length === 14));
+  ok('dopo la riapertura resta la vista Agenda', await p.evaluate(() => !el('agendaSottoCalendario').hidden && vistaCalendario() === 'agenda' && document.querySelectorAll('.agenda-giorno').length === 14));
   ok('la scelta finisce nel backup', await p.evaluate(() => JSON.stringify(costruisciDatiBackup()).includes('"agendaSottoCalendario":true')));
   await p.click('[data-agenda-giorno="2026-10-13"] .agenda-corpo');
   const g = await p.evaluate(() => ({ t: el('titoloModaleTurno').textContent, iso: giornoSelezionato }));
@@ -1115,8 +1114,25 @@ sezione('Agenda sotto il calendario');
   await p.click('#btnChiudiTurno');
   await p.click('[data-agenda-giorno="2026-10-12"] .agenda-evento');
   ok('tocco su un evento: si apre la modifica dell\'evento', await p.evaluate(() => !el('overlayEvento').hidden && el('campoEventoTitolo').value === 'Visita medica'));
-  await p.evaluate(() => { el('overlayEvento').hidden = true; impostaAgendaSotto(false); });
-  ok('spenta di nuovo: sparisce e tornano "Prossimi 7 giorni"', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('prossimiEventiV2')).display !== 'none'));
+  await p.evaluate(() => { el('overlayEvento').hidden = true; });
+  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
+  ok('di nuovo Mese: torna il calendario e "Prossimi 7 giorni"', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none' && getComputedStyle(el('prossimiEventiV2')).display !== 'none'));
+  // Vista Settimana: una riga per giorno con le ore e il totale; frecce di una settimana.
+  await p.evaluate(() => { selezionaGiorno('2026-10-09'); });
+  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="settimana"]');
+  const w = await p.evaluate(() => ({ righe: document.querySelectorAll('#vistaSettimanaCal .vs-riga').length, tit: el('etichettaMese').textContent, primo: document.querySelector('#vistaSettimanaCal .vs-riga').dataset.vistaGiorno, tot: document.querySelector('.vs-totale b').textContent, griglia: getComputedStyle(el('calendarioGriglia')).display }));
+  ok('vista Settimana: 7 giorni da lunedì 5 ottobre, titolo "5–11 ott", totale ore, niente mese', w.righe === 7 && w.primo === '2026-10-05' && w.tit === '5–11 ott' && /\d+:\d\d/.test(w.tot) && w.griglia === 'none', JSON.stringify(w));
+  await p.click('#btnMeseSucc');
+  ok('freccia › in Settimana: settimana dopo (12–18 ott)', await p.evaluate(() => el('etichettaMese').textContent === '12–18 ott' && giornoSelezionato === '2026-10-16'));
+  await p.click('#vistaSettimanaCal [data-vista-giorno="2026-10-13"]');
+  ok('tocco su un giorno della settimana: diventa il giorno selezionato', await p.evaluate(() => giornoSelezionato === '2026-10-13' && /13/.test(el('riepilogoGiornoSelezionatoV2').textContent)));
+  // Vista Giorno: striscia della settimana, giornata a ore con il turno.
+  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="giorno"]');
+  const gg = await p.evaluate(() => ({ tit: el('etichettaMese').textContent, blocchi: [...document.querySelectorAll('#vistaGiornoCal .vg-turno')].map(b => b.textContent), striscia: document.querySelectorAll('.vg-giorno').length }));
+  ok('vista Giorno: "mar 13 ott", striscia di 7 giorni e il turno nella giornata a ore', /13 ott/.test(gg.tit) && gg.striscia === 7 && gg.blocchi.length >= 1, JSON.stringify(gg));
+  await p.click('#btnMesePrec');
+  ok('freccia ‹ in Giorno: giorno prima (12 ottobre)', await p.evaluate(() => giornoSelezionato === '2026-10-12'));
+  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await p.context().close();
 }
