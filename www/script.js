@@ -834,7 +834,7 @@ function inizializza(){
   on('btnChiudiColoriTurni','click', chiudiPannelloColori);
   on('btnChiudiColoriTurni2','click', chiudiPannelloColori);
   el('btnRipristinaColoriTurni').addEventListener('click', () => {
-    mostraConferma('Questo riporta tutti i colori dei turni ai valori predefiniti, anche quelli scelti sui singoli turni. Continuare?', () => {
+    mostraConferma('Tutti i turni tornano ai colori di partenza (Sera rosa, Pomeriggio arancio, Mattino giallo…). Continuare?', () => {
       AppState.coloriTurni = {};
       CATEGORIE_COLORABILI.forEach(c => { AppState.coloriTurni[c.chiave] = c.predefinito; });
       salvaColoriTurniStorage();

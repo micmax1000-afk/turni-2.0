@@ -2761,3 +2761,5 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 .partenza-settimana{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 10px}
 .partenza-settimana > span{font-size:.86rem;color:var(--testo-tenue)}
 .partenza-settimana .scelta-settimana{flex:1;max-width:260px}
+/* v3.8.10: colori solo sui turni; "Stile calendario" senza tavolozza */
+.btn-colori-predefiniti{display:block;margin:8px auto 0;font-size:.86rem;color:var(--testo-tenue);font-weight:600}

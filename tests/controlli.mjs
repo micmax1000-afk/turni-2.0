@@ -520,6 +520,23 @@ sezione('v3.8.9: regole delle assenze (SIULP)');
 }
 
 // ───────────────────────────────────────
+sezione('v3.8.10: colori solo sui turni, "Stile calendario" senza tavolozza');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  await p.click('#tabTurni');
+  await p.click('#settingsColori');
+  ok('"Stile calendario": solo Classico/Moderno e a colori, nessun colore da scegliere', await p.evaluate(() => !document.querySelector('#pannelloColoriTurni input[type=color]') && !!document.querySelector('#pannelloColoriTurni [data-stile-calendario]') && /Stile calendario/.test(el('pannelloColoriTurni').textContent)));
+  const r = await p.evaluate(() => {
+    const m = AppState.modelliTurno.find(x => x.id === 'mattina'); m.colore = '#FF0000'; salvaModelliTurnoStorage(); renderCalendario();
+    const d = Object.keys(AppState.turni).find(k => AppState.turni[k].modelloId === 'mattina');
+    return getComputedStyle(document.querySelector(`[data-data="${d}"] .mod-turno b`)).backgroundColor;
+  });
+  ok('colore cambiato sul turno Mattino: il calendario si aggiorna', r === 'rgb(255, 0, 0)', r);
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');
 {
   const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});
