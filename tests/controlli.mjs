@@ -467,6 +467,23 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('v3.8.8: lavorato in festivo / sul riposo mostrano il turno svolto');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  const r = await p.evaluate(() => {
+    Object.assign(AppState.turni['2026-10-14'], { recuperoFestivoLavorato: true });
+    AppState.turni['2026-10-15'] = { data: '2026-10-15', oraInizio: '07:00', oraFine: '13:00', modelloId: 'mattina', compensazioneRiposo: true };
+    renderCalendario();
+    const t = d => document.querySelector(`[data-data="${d}"] .mod-turno`)?.textContent;
+    return { lf: t('2026-10-14'), lr: t('2026-10-15'), atteso: document.querySelector('[data-data="2026-10-13"] .mod-turno')?.textContent };
+  });
+  ok('casella con "Lavorato in festivo": il turno (non "LF")', r.lf && r.lf !== 'LF', JSON.stringify(r));
+  ok('casella con "Lavorato sul riposo": il turno (Matt., non "LR")', r.lr === 'Matt.', JSON.stringify(r));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');
 {
   const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});
