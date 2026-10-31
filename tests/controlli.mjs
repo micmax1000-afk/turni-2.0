@@ -528,7 +528,7 @@ sezione('v3.8.10: colori solo sui turni, "Stile calendario" senza tavolozza');
   ok('"Stile calendario": solo Classico/Moderno e a colori, nessun colore da scegliere', await p.evaluate(() => !document.querySelector('#pannelloColoriTurni input[type=color]') && !!document.querySelector('#pannelloColoriTurni [data-stile-calendario]') && /Stile calendario/.test(el('pannelloColoriTurni').textContent)));
   const r = await p.evaluate(() => {
     const m = AppState.modelliTurno.find(x => x.id === 'mattina'); m.colore = '#FF0000'; salvaModelliTurnoStorage(); renderCalendario();
-    const d = Object.keys(AppState.turni).find(k => AppState.turni[k].modelloId === 'mattina');
+    const d = Object.keys(AppState.turni).find(k => k.startsWith('2026-10') && AppState.turni[k].modelloId === 'mattina');
     return getComputedStyle(document.querySelector(`[data-data="${d}"] .mod-turno b`)).backgroundColor;
   });
   ok('colore cambiato sul turno Mattino: il calendario si aggiorna', r === 'rgb(255, 0, 0)', r);
