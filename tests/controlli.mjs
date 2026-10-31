@@ -146,7 +146,12 @@ for(const stile of ['classico', 'moderno']){
   });
   ok(`${stile}: 31 giorni nel calendario`, c.celle === 31);
   const fm = await p.evaluate(() => { const f = [...document.querySelectorAll('#calendarioGriglia .giorno-cella.fuori-mese')]; return { n: f.length, primo: f[0]?.innerText.trim().split(/\s+/)[0], ultimo: f[f.length - 1]?.innerText.trim().split(/\s+/)[0], conTurno: f.filter(x => /Sera|Pom|Matt|Notte|Riposo|S|P|M|N|R/.test(x.innerText)).length, toccabili: f.filter(x => getComputedStyle(x).pointerEvents !== 'none').length }; });
-  ok(`${stile}: giorni del mese prima e dopo sbiaditi (28–30 settembre, 1 novembre), non toccabili`, fm.n === 4 && fm.primo === '28' && fm.ultimo === '1' && fm.toccabili === 0, JSON.stringify(fm));
+  ok(`${stile}: giorni del mese prima e dopo sbiaditi (28–30 settembre, 1 novembre), toccabili`, fm.n === 4 && fm.primo === '28' && fm.ultimo === '1' && fm.toccabili === 4, JSON.stringify(fm));
+  if(stile === 'moderno'){
+    await p.click('#calendarioGriglia .giorno-cella.fuori-mese[data-vai-giorno="2026-09-29"]');
+    ok('tocco su 29 settembre (sbiadito): si va a settembre con il 29 selezionato', await p.evaluate(() => meseCorrente === 8 && giornoSelezionato === '2026-09-29' && !!document.querySelector('.giorno-cella.selezionata[data-data="2026-09-29"]')));
+    await p.evaluate(() => { meseCorrente = 9; giornoSelezionato = '2026-10-09'; renderCalendario(); });
+  }
   ok(`${stile}: stile applicato`, c.moderno === (stile === 'moderno'));
   if(stile === 'moderno'){
     ok('moderno: etichetta del 1/10 "Sera"', c.etichetta1 === 'Sera');

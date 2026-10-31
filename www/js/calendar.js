@@ -777,18 +777,24 @@ function renderCalendario(){
     return cella;
   };
 
-  // Giorni del mese prima e del mese dopo: si vede come continua la turnazione, ma sono solo da guardare.
+  // Giorni del mese prima e del mese dopo: sbiaditi; v3.8.10: toccandoli si va a quel mese con il giorno
+  // già selezionato, così si possono vedere e modificare come gli altri.
   const cellaFuoriMese = (d) => {
     const cella = costruisciCella(d);
-    const copia = cella.cloneNode(true); // la copia non porta con sé il tocco: non si possono aprire
+    const copia = cella.cloneNode(true); // la copia non porta con sé il tocco: lo aggiungiamo sotto
+    const iso = dataISO(d);
     copia.classList.add('fuori-mese');
     copia.classList.remove('oggi', 'selezionata');
     delete copia.dataset.data;
     delete copia.dataset.filtro;
-    copia.removeAttribute('title');
-    copia.setAttribute('aria-hidden', 'true');
-    copia.tabIndex = -1;
-    if(copia.tagName === 'BUTTON') copia.disabled = true;
+    copia.dataset.vaiGiorno = iso;
+    copia.setAttribute('aria-label', `Vai a ${d.getDate()} ${NOMI_MESI[d.getMonth()]} ${d.getFullYear()}`);
+    copia.title = `Vai a ${NOMI_MESI[d.getMonth()].toLowerCase()}`;
+    copia.addEventListener('click', () => {
+      meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
+      renderCalendario();
+      gestisciTocchGiornoV2(iso);
+    });
     return copia;
   };
   for(let i = offset; i > 0; i--) griglia.appendChild(cellaFuoriMese(new Date(annoCorrente, meseCorrente, 1 - i)));

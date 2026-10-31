@@ -2097,7 +2097,7 @@ html[data-tema=scuro] .saldo-resta{color:#7FE0A6}
 html[data-tema=scuro] .saldo-usati em,html[data-tema=scuro] .card-assenza.esaurito .saldo-resta{color:#FF8A80}
 
 /* Calendario: giorni del mese prima e dopo, sbiaditi e non toccabili */
-#calendarioGriglia .giorno-cella.fuori-mese{opacity:.38;pointer-events:none;filter:saturate(.7);box-shadow:none}
+#calendarioGriglia .giorno-cella.fuori-mese{opacity:.38;filter:saturate(.7);box-shadow:none;cursor:pointer}
 #sezioneAssenze .griglia-saldi .card-assenza-compact span{opacity:1;font-size:inherit}
 #sezioneAssenze .griglia-saldi .card-assenza-compact-nome strong{display:block;line-height:1.25}
 #sezioneAssenze .saldo-usati .saldo-su{font-weight:700;color:var(--testo-tenue)}
