@@ -670,8 +670,10 @@ function renderCalendario(){
 
     if(t && t.aggiornamentoProfessionale) etichetta = 'AGG';
     else if(t && t.addestramentoTiro) etichetta = 'TIRI';
-    else if(t && t.compensazioneRiposo) etichetta = 'LR';
-    else if(t && t.recuperoFestivoLavorato) etichetta = 'LF';
+    // v3.8.8: "Lavorato sul riposo" e "Lavorato in festivo" sono indennità, non turni: la casella
+    // mostra il turno svolto (es. Matt.); la sigla resta solo se il giorno non ha un turno.
+    else if(t && t.compensazioneRiposo && !etichetta) etichetta = 'LR';
+    else if(t && t.recuperoFestivoLavorato && !etichetta) etichetta = 'LF';
 
     const ore = t && !t.riposo && !t.assenzaTipo && t.oraInizio && t.oraFine
       ? classificaTurno(t).oreTotali
@@ -721,7 +723,7 @@ function renderCalendario(){
     if(moderno){
       // Nome per esteso dove ci sta (Sera, Notte, Mattina...), sigla per i nomi lunghi.
       let nomeEtichetta = categoria === 'assenza' ? tipoLabel
-        : (t && (t.aggiornamentoProfessionale || t.addestramentoTiro || t.compensazioneRiposo || t.recuperoFestivoLavorato)) ? etichetta
+        : (t && (t.aggiornamentoProfessionale || t.addestramentoTiro || ((t.compensazioneRiposo || t.recuperoFestivoLavorato) && !categoria))) ? etichetta
         // Turni di base: nomi brevi fissi, che entrano sempre nella casella.
         : NOME_BREVE_CATEGORIA[categoria] && (!modelloUsato || NOME_BREVE_CATEGORIA[modelloUsato.id]) ? NOME_BREVE_CATEGORIA[categoria]
         : nomeCategoria;
@@ -1088,7 +1090,7 @@ function corpoGiornoAgenda(iso, t){
     straordinario: !!((t.straordinarioPrimaInizio && t.straordinarioPrimaFine) || (t.straordinarioDopoInizio && t.straordinarioDopoFine) || (t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine)),
     missione: !!t.missione, servizioEsterno: !!t.servizioEsterno, ordinePubblico: !!t.ordinePubblico, reperibilita: !!t.reperibilita,
     controlloTerritorio: !!t.controlloTerritorio, buonoPasto: !!t.buonoPasto, cambioTurno: !!t.cambioTurno,
-    compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
+    compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: typeof lavoratoInFestivo === 'function' ? lavoratoInFestivo(t) : !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
   };
   const chip = ELENCO_INDENNITA.filter(x => presenti[x.chiave])
     .map(x => `<span>${iconaIndennita(x.chiave)}${escapeHtml(x.chiave === 'buonoPasto' && numeroBuoniPasto(t) === 2 ? '2 buoni pasto' : x.nome)}</span>`).join('');

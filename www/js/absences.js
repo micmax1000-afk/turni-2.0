@@ -68,7 +68,67 @@ function trovaAssenzaRecuperoFestivo(){
 
 function calcolaGiorniRecuperoFestivoAccumulati(){
   const s = saldiPartenza();
-  return (s ? s.recuperoFestivo || 0 : 0) + Object.entries(AppState.turni).filter(([iso, t]) => t.recuperoFestivoLavorato && dopoSaldi(iso, s, t, 'recuperoFestivoDal')).length;
+  return (s ? s.recuperoFestivo || 0 : 0) + Object.entries(AppState.turni).filter(([iso, t]) => lavoratoInFestivo(t) && dopoSaldi(iso, s, t, 'recuperoFestivoDal')).length;
+}
+
+// v3.8.9: chi lavora in un giorno festivo che non è domenica ha diritto a recuperarlo (art. 63 L. 121/1981):
+// "Lavorato in festivo" si accende da solo; chi lo spegne a mano lo esclude (recuperoFestivoEscluso).
+function festivoNonDomenica(iso){
+  return !!iso && typeof eFestivoFisso === 'function' && eFestivoFisso(iso) && !eDomenica(iso);
+}
+function lavoratoInFestivo(t){
+  if(!t) return false;
+  if(t.recuperoFestivoLavorato) return true;
+  const lavorato = !!(t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo);
+  return lavorato && !t.recuperoFestivoEscluso && festivoNonDomenica(t.data);
+}
+
+// v3.8.9: giorni di congedo ordinario che spettano (art. 14 DPR 395/1995, tabella SIULP), compresi i 2 riposi legge.
+// Turnista = orario su 6 giorni, settimana corta = 5 giorni: si sceglie nel congedo ordinario
+// (scheda in Assenze e giorni di partenza). Finché non scegli, si guarda la turnazione.
+function settimanaLavoro(){
+  const co = (AppState.assenze || []).find(a => a.nome === 'Congedo ordinario');
+  if(co && (co.settimana === '5' || co.settimana === '6')) return co.settimana;
+  return TurniPSStorage.getItem('simCedolino_sequenzaPattern_v1') === 'pattern_settimana_corta' ? '5' : '6';
+}
+function sceltaSettimanaCongedoHtml(){
+  const s = settimanaLavoro();
+  return `<div class="scelta-prima-dopo scelta-settimana" role="group" aria-label="Orario di lavoro"><button type="button" data-settimana-congedo="6" class="${s === '6' ? 'attivo' : ''}">Turnista</button><button type="button" data-settimana-congedo="5" class="${s === '5' ? 'attivo' : ''}">Settimana corta</button></div>`;
+}
+function impostaSettimanaCongedo(v){
+  const co = (AppState.assenze || []).find(a => a.nome === 'Congedo ordinario');
+  if(!co) return;
+  co.settimana = v;
+  if(co.manuale) co.manuale = false; // cambiando l'orario si torna al calcolo automatico
+  aggiornaCongedoAutomatico();
+  salvaAssenzeStorage();
+  document.querySelectorAll('[data-settimana-congedo]').forEach(b => b.classList.toggle('attivo', b.dataset.settimanaCongedo === v));
+  ['notaSaldiPartenza', 'benvenutoNotaSaldi'].forEach(id => { const n = el(id); if(n && n.innerHTML) n.innerHTML = notaSpettantiCongedo(); });
+  if(el('corpoAssenze') && el('corpoAssenze').offsetParent){
+    // Ridisegna le schede lasciando aperte quelle che lo erano (la scelta si fa dentro la scheda aperta).
+    const aperte = [...document.querySelectorAll('.card-assenza-aperta')].map(c => c.dataset.id);
+    renderAssenze();
+    aperte.forEach(id => { const c = document.querySelector(`.card-assenza[data-id="${id}"]`); if(c){ c.classList.add('card-assenza-aperta'); c.classList.remove('card-assenza-chiusa'); } });
+  }
+}
+function giorniCongedoSpettanti(){
+  const anni = Number((AppState.anagrafica || {}).anni) || 0;
+  const t = settimanaLavoro() === '5' ? [26, 28, 32, 39] : [30, 32, 37, 45];
+  return anni > 25 ? t[3] : anni > 15 ? t[2] : anni > 3 ? t[1] : t[0];
+}
+// Il congedo ordinario segue da solo gli anni di servizio, finché non lo cambi a mano nella sua scheda.
+function aggiornaCongedoAutomatico(){
+  const co = (AppState.assenze || []).find(a => a.nome === 'Congedo ordinario');
+  if(!co) return;
+  if(co.manuale === undefined) co.manuale = Number(co.valore) !== 30; // chi l'aveva già cambiato lo tiene
+  if(co.manuale) return;
+  const g = giorniCongedoSpettanti();
+  if(co.valore !== g){ co.valore = g; salvaAssenzeStorage(); }
+}
+// Permesso breve: massimo 36 ore l'anno (art. 17 DPR 395/1995); prima l'app ne metteva 54.
+function correggiPermessoBreve(){
+  const pb = (AppState.assenze || []).find(a => a.nome === 'Permesso breve');
+  if(pb && Number(pb.valore) === 54){ pb.valore = 36; salvaAssenzeStorage(); }
 }
 
 function trovaAssenzaRecuperoRiposo(){
@@ -225,7 +285,7 @@ function stimaSaldiPartenza(){
   const tutti = Object.values(AppState.turni);
   const rr = voce('Recupero riposo'), rf = voce('Recupero festivo'), rc = voce('Riposo compensativo');
   const recuperoRiposo = Math.max(0, tutti.filter(t => t.compensazioneRiposo).length - (rr ? tutti.filter(t => t.assenzaTipo === rr.id).length : 0));
-  const recuperoFestivo = Math.max(0, tutti.filter(t => t.recuperoFestivoLavorato).length - (rf ? tutti.filter(t => t.assenzaTipo === rf.id).length : 0));
+  const recuperoFestivo = Math.max(0, tutti.filter(lavoratoInFestivo).length - (rf ? tutti.filter(t => t.assenzaTipo === rf.id).length : 0));
   let oreRc = 0;
   for(const t of tutti){
     if(!t.riposo && !t.assenzaTipo) oreRc += classificaTurno(t).oreCompensate || 0;
@@ -251,7 +311,7 @@ function elencoDateDisponibiliCredito(nomeVoce, campoFonte){
   if(!voce) return [];
   const s = saldiPartenza();
   const dateGuadagnate = Object.entries(AppState.turni)
-    .filter(([iso, t]) => t[campoFonte] && dopoSaldi(iso, s, t, campoFonte === 'compensazioneRiposo' ? 'recuperoRiposoDal' : 'recuperoFestivoDal'))
+    .filter(([iso, t]) => (campoFonte === 'recuperoFestivoLavorato' ? lavoratoInFestivo(t) : t[campoFonte]) && dopoSaldi(iso, s, t, campoFonte === 'compensazioneRiposo' ? 'recuperoRiposoDal' : 'recuperoFestivoDal'))
     .map(([iso]) => iso)
     .sort();
   // I giorni dei saldi di partenza (senza data) si usano per primi.
@@ -488,8 +548,16 @@ function renderCardAssenzaItem(a){
     const coloreResto = rimangono < 0 ? '#D9534F' : (valoreEffettivo > 0 && resto <= 20) ? '#E08A00' : unitaEffettiva === 'h' ? '#2E7DD7' : '#2E9E5B';
     const valoreVisuale = valoreEffettivo || 0;
     // v2.94: nel congedo ordinario, i giorni di ogni anno (anche quelli vecchi) sotto il nome.
-    const anniCongedoRiga = eCongedoOrdinario && saldoCO.perAnno
-      ? `<span class="anni-congedo-v4">${Object.entries(saldoCO.perAnno).filter(([y, g]) => g !== 0 || Number(y) === anno).sort((x, y) => y[0] - x[0]).map(([y, g]) => `<em>${y}: ${numeroIt(g)}</em>`).join('')}</span>` : '';
+    const anniCongedoRiga = (eCongedoOrdinario && saldoCO.perAnno
+      ? `<span class="anni-congedo-v4">${Object.entries(saldoCO.perAnno).filter(([y, g]) => g !== 0 || Number(y) === anno).sort((x, y) => y[0] - x[0]).map(([y, g]) => `<em>${y}: ${numeroIt(g)}</em>`).join('')}</span>` : '')
+      // v3.8.9: i 4 riposi legge vanno usati entro il 31/12 (da ottobre in arancione).
+      + (a.nome === 'Riposo legge' && rimangono > 0 ? `<span class="scadenza-assenza${mese >= 9 ? ' vicina' : ''}">Entro il 31/12</span>` : '');
+    const anniServizio = Number((AppState.anagrafica || {}).anni) || 0;
+    const notaCongedoAuto = eCongedoOrdinario
+      ? `<div class="congedo-orario">${sceltaSettimanaCongedoHtml()}</div>` + (a.manuale
+        ? `<p class="nota-congedo-auto">Inserito a mano. Con ${anniServizio} anni di servizio sarebbero ${giorniCongedoSpettanti()} giorni. <button type="button" class="btn-testo-evento" data-congedo-auto>↺ Usa il calcolo automatico</button></p>`
+        : `<p class="nota-congedo-auto">Spettano ${a.valore} giorni l'anno con ${anniServizio} ${anniServizio === 1 ? 'anno' : 'anni'} di servizio.</p>`)
+      : '';
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
       <div class="card-assenza-compact riga-assenza-v4" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
@@ -515,6 +583,7 @@ function renderCardAssenzaItem(a){
       <div class="saldo-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(percentuale)}" aria-label="Utilizzo ${Math.round(percentuale)} percento">
         <span style="width:${percentuale}%"></span>
       </div>
+      ${notaCongedoAuto}
       <div class="card-assenza-meta">
         <span>${etichettaUsate}</span>
         <span>${Math.round(percentuale)}% utilizzato</span>
@@ -537,6 +606,8 @@ function renderCardAssenzaItem(a){
 }
 
 function renderAssenze(){
+  correggiPermessoBreve();
+  aggiornaCongedoAutomatico();
   renderDashboardAssenze();
   const box = el('corpoAssenze');
   const boxPersonalizzate = el('corpoAssenzePersonalizzate');
@@ -571,7 +642,7 @@ function wireEventiCardAssenza(box){
     const voce = AppState.assenze.find(a => a.id === id);
     riga.querySelectorAll('input, select').forEach(campo => {
       const salvaModificaCampo = () => {
-        if(campo.dataset.campo === 'valore') voce.valore = Math.max(0, Number(campo.value) || 0);
+        if(campo.dataset.campo === 'valore'){ voce.valore = Math.max(0, Number(campo.value) || 0); if(voce.nome === 'Congedo ordinario') voce.manuale = voce.valore !== giorniCongedoSpettanti(); }
         else voce[campo.dataset.campo] = campo.value;
         salvaAssenzeStorage();
         aggiornaCardAssenza(riga, voce);
@@ -626,7 +697,7 @@ const ASSENZE_PREDEFINITE = [
   { nome:'L104', valore:3, unita:'gg' },
   { nome:'Donazione sangue', valore:12, unita:'gg' },
   { nome:'Ore studio', valore:150, unita:'h' },
-  { nome:'Permesso breve', valore:54, unita:'h' },
+  { nome:'Permesso breve', valore:36, unita:'h' }, // art. 17 DPR 395/1995: massimo 36 ore l'anno
   { nome:'Permesso sindacale', valore:36, unita:'h' }
 ];
 
@@ -663,7 +734,7 @@ function formSaldiPartenzaHtml(prefisso, v){
   const righeAnni = anni.map((y, i) => riga(`Giorni del ${y}`, y === annoOggi ? 'che ti restano' : 'non ancora goduti', `Congedo${y}`, numeroIt(Math.max(0, valAnni[y] || 0)).replace(',', '.'), 'gg', 1, i ? 'partenza-sotto' : '').replace('class="partenza-riga', `data-anno-congedo="${y}" data-prefisso="${prefisso}" class="partenza-riga`)).join('');
   const totale = round2(anni.reduce((a, y) => a + Math.max(0, valAnni[y] || 0), 0));
   const vecchio = anni[anni.length - 1];
-  return voce('🌴', 'Congedo ordinario', righeAnni
+  return voce('🌴', 'Congedo ordinario', `<div class="partenza-settimana"><span>Orario</span>${sceltaSettimanaCongedoHtml()}</div>` + righeAnni
       + `<div class="partenza-totale"><span>Totale</span><b id="${prefisso}CongedoTotale">${numeroIt(totale)} ${totale === 1 ? 'giorno' : 'giorni'}</b></div>`
       + `<p class="partenza-nota">Si usano prima i giorni più vecchi (dal ${vecchio} in poi). Non scadono.</p>`)
     + voce('🔄', 'Recupero riposo', riga('Giorni da recuperare', 'riposi lavorati non ancora recuperati', 'RecuperoRiposo', v.recuperoRiposo, 'gg', 1))
@@ -693,7 +764,8 @@ function aggiornaTotaleCongedoForm(prefisso){
 }
 function notaSpettantiCongedo(){
   const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
-  return co ? `📅 A gennaio l'app aggiunge da sola i <b>${numeroIt(co.valore)} giorni</b> dell'anno nuovo (li cambi in Assenze, nella scheda del Congedo ordinario).` : '';
+  if(co) aggiornaCongedoAutomatico();
+  return co ? `📅 A gennaio l'app aggiunge da sola i <b>${numeroIt(co.valore)} giorni</b> dell'anno nuovo (${settimanaLavoro() === '5' ? 'settimana corta' : 'turnista'}, con i tuoi anni di servizio; li cambi in Assenze, nella scheda del Congedo ordinario).` : '';
 }
 function apriSaldiPartenza(){
   el('formSaldiPartenza').innerHTML = formSaldiPartenzaHtml('saldo', valoriSaldiPartenza());
@@ -708,6 +780,13 @@ function salvaSaldiPartenzaDaForm(){
 }
 function inizializzaSaldiPartenza(){
   document.addEventListener('click', e => {
+    const sett = e.target.closest('[data-settimana-congedo]');
+    if(sett){ impostaSettimanaCongedo(sett.dataset.settimanaCongedo); return; }
+    if(e.target.closest('[data-congedo-auto]')){
+      const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
+      if(co){ co.manuale = false; aggiornaCongedoAutomatico(); salvaAssenzeStorage(); renderAssenze(); }
+      return;
+    }
     const passo = e.target.closest('[data-saldo-campo]');
     if(passo){
       const c = el(passo.dataset.saldoCampo);

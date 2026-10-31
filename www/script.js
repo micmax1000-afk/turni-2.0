@@ -464,6 +464,8 @@ function inizializza(){
   aggiornaStatoBackup();
   renderSezioneBackupDrive();
   if(typeof inizializzaOffline==='function') inizializzaOffline();
+  // v3.8.9: permesso breve a 36 ore e congedo ordinario dagli anni di servizio.
+  correggiPermessoBreve(); aggiornaCongedoAutomatico();
   inizializzaPlayBilling().then(() => renderSezioneBackupDrive());
   mostraVersioneApp();
   aggiornaClasseCalendarioColori();

@@ -158,6 +158,8 @@ function salvaAnagraficaDaModale(){
   const stato = el('statoSalvataggioAnagrafica');
   if(stato) stato.innerHTML = '<span class="stato-attivo">✓ Salvato</span> · le modifiche si salvano da sole';
   aggiornaAvvisiDatiMancanti();
+  // v3.8.9: il congedo ordinario segue anni di servizio e orario.
+  if(typeof aggiornaCongedoAutomatico === 'function') aggiornaCongedoAutomatico();
 }
 
 function addComunaleDaCampo(){

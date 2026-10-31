@@ -467,6 +467,59 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
 }
 
 // ─────────────────────────────────────────────────────────────
+sezione('v3.8.8: lavorato in festivo / sul riposo mostrano il turno svolto');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  const r = await p.evaluate(() => {
+    Object.assign(AppState.turni['2026-10-14'], { recuperoFestivoLavorato: true });
+    AppState.turni['2026-10-15'] = { data: '2026-10-15', oraInizio: '07:00', oraFine: '13:00', modelloId: 'mattina', compensazioneRiposo: true };
+    renderCalendario();
+    const t = d => document.querySelector(`[data-data="${d}"] .mod-turno`)?.textContent;
+    return { lf: t('2026-10-14'), lr: t('2026-10-15'), atteso: document.querySelector('[data-data="2026-10-13"] .mod-turno')?.textContent };
+  });
+  ok('casella con "Lavorato in festivo": il turno (non "LF")', r.lf && r.lf !== 'LF', JSON.stringify(r));
+  ok('casella con "Lavorato sul riposo": il turno (Matt., non "LR")', r.lr === 'Matt.', JSON.stringify(r));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.9: regole delle assenze (SIULP)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  const r = await p.evaluate(() => {
+    const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
+    const pb = AppState.assenze.find(a => a.nome === 'Permesso breve');
+    const out = { pb: pb.valore };
+    const prova = (anni, sett) => { AppState.anagrafica = { ...AppState.anagrafica, anni: String(anni) }; co.settimana = sett; aggiornaCongedoAutomatico(); return co.valore; };
+    out.t2 = prova(2, '6'); out.t10 = prova(10, '6'); out.t18 = prova(18, '6'); out.t30 = prova(30, '6');
+    out.u18 = prova(18, '5'); out.u2 = prova(2, '5');
+    prova(18, '6');
+    co.valore = 40; co.manuale = true; aggiornaCongedoAutomatico(); out.manuale = co.valore;
+    co.manuale = false; aggiornaCongedoAutomatico(); out.ritorno = co.valore;
+    // 8 dicembre 2026 è martedì, 1 novembre 2026 è domenica.
+    out.dic8 = lavoratoInFestivo({ data: '2026-12-08', oraInizio: '07:00', oraFine: '13:00' });
+    out.nov1 = lavoratoInFestivo({ data: '2026-11-01', oraInizio: '07:00', oraFine: '13:00' });
+    out.riposo = lavoratoInFestivo({ data: '2026-12-08', riposo: true });
+    out.escluso = lavoratoInFestivo({ data: '2026-12-08', oraInizio: '07:00', oraFine: '13:00', recuperoFestivoEscluso: true });
+    return out;
+  });
+  ok('permesso breve: 36 ore l\'anno (non più 54)', r.pb === 36, JSON.stringify(r));
+  ok('congedo turnista (6 giorni): 30 / 32 / 37 / 45 per 2, 10, 18, 30 anni', r.t2 === 30 && r.t10 === 32 && r.t18 === 37 && r.t30 === 45, JSON.stringify(r));
+  ok('congedo settimana corta (5 giorni): 26 con 2 anni, 32 con 18 anni', r.u2 === 26 && r.u18 === 32, JSON.stringify(r));
+  ok('congedo cambiato a mano resta; "usa il calcolo automatico" lo rimette', r.manuale === 40 && r.ritorno === 37, JSON.stringify(r));
+  ok('lavorato in festivo: sì l\'8 dicembre (martedì), no il 1° novembre (domenica), no a riposo o se spento a mano', r.dic8 && !r.nov1 && !r.riposo && !r.escluso, JSON.stringify(r));
+  await p.evaluate(() => { localStorage.setItem('simCedolino_saldiPartenza_v1', JSON.stringify({ data: '2026-10-01', congedoAnni: { 2026: 20 }, recuperoRiposo: 0, recuperoFestivo: 0, riposoCompensativoOre: 0 })); });
+  await p.click('#tabAssenze');
+  await p.evaluate(() => { renderAssenze(); document.querySelector('.card-assenza[data-id] .card-assenza-compact').click(); });
+  await p.click('.card-assenza-aperta [data-settimana-congedo="5"]');
+  ok('scheda Congedo ordinario: "Settimana corta" porta i giorni a 32 (18 anni), "Turnista" a 37', await p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').valore === 32) && await (async () => { await p.click('[data-settimana-congedo="6"]'); return p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').valore === 37); })());
+  ok('riposi legge: "Entro il 31/12" (a ottobre in arancione)', await p.evaluate(() => /Entro il 31\/12/.test(document.body.innerText) && !!document.querySelector('.scadenza-assenza.vicina')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');
 {
   const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});

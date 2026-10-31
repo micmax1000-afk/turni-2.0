@@ -313,6 +313,8 @@ function leggiTurnoDalModale(){
     cambioTurno: el('campoCambioTurno').checked,
     compensazioneRiposo: el('campoCompensazioneRiposo').checked,
     recuperoFestivoLavorato: el('campoRecuperoFestivo').checked,
+    // v3.8.9: in un festivo non domenicale è acceso da solo; se lo spegni, resta spento.
+    recuperoFestivoEscluso: !el('campoRecuperoFestivo').checked && festivoNonDomenica(giornoSelezionato),
     buonoPasto: el('campoBuonoPasto').checked,
     buoniPastoGiorno: el('campoBuonoPasto').checked ? (el('campoBuoniPastoGiorno').value === '2' ? 2 : 1) : 0,
     modelloId: el('campoRiposo').checked || el('campoAssenzaTipo').value ? null : modelloDaOrariGiorno()
@@ -365,7 +367,9 @@ function aggiornaAnteprima(){
       const rimanentiDopo = round2(vocePB.valore - usateAnnoAltrove - c.orePermessoBreve);
       boxPB.textContent = `Turno ridotto a ${oreEMinuti(c.oreTotali)} lavorate. Toglie ${oreEMinuti(c.orePermessoBreve)} dal saldo di Permesso breve (in modo permanente)` +
         (rimanentiDopo < 0 ? ` — ⚠ saldo insufficiente, andresti a ${oreEMinuti(rimanentiDopo)}.` : ` (resterebbero ${oreEMinuti(rimanentiDopo)} nel ${annoCorrente}).`) +
-        ` Ricordati di recuperarle: ti restano da recuperare ${oreEMinuti(c.orePermessoBreve)} in più rispetto a prima.`;
+        ` Ricordati di recuperarle: ti restano da recuperare ${oreEMinuti(c.orePermessoBreve)} in più rispetto a prima.` +
+        // Art. 17 DPR 395/1995: il permesso breve non può superare metà dell'orario del giorno.
+        (c.orePermessoBreve > (c.oreTotali + c.orePermessoBreve) / 2 + 0.001 ? ` ⚠ Supera metà turno: il permesso breve può durare al massimo ${oreEMinuti((c.oreTotali + c.orePermessoBreve) / 2)}.` : '');
     } else if(t.permessoBreveAttivo){
       boxPB.textContent = 'Indica l\'orario del permesso breve per calcolare le ore da togliere al turno.';
     } else {
@@ -466,7 +470,7 @@ function apriModaleTurno(iso){
   el('campoControlloTerritorio').checked = !!t.controlloTerritorio;
   el('campoCambioTurno').checked = !!t.cambioTurno;
   el('campoCompensazioneRiposo').checked = !!t.compensazioneRiposo;
-  el('campoRecuperoFestivo').checked = !!t.recuperoFestivoLavorato;
+  el('campoRecuperoFestivo').checked = lavoratoInFestivo({ ...t, data: t.data || giornoSelezionato });
   el('campoBuonoPasto').checked = !!t.buonoPasto;
   el('campoBuoniPastoGiorno').value = String(numeroBuoniPasto(t) || 1);
   aggiornaVisibilitaCampiOrario();
