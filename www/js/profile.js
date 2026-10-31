@@ -52,7 +52,6 @@ function popolaFormAnagrafica(){
   if(AppState.anagrafica){
     el('campoQualifica').value = AppState.anagrafica.qualifica || 'Agente';
     el('campoAnni').value = AppState.anagrafica.anni || '';
-    el('campoSettimana').value = settimanaLavoro();
     el('campoRegione').value = AppState.anagrafica.regione || 'Lombardia';
     el('campoConiugeACarico').value = AppState.anagrafica.coniugeACarico || 'no';
     el('campoFigliOver21').value = AppState.anagrafica.figliOver21 ?? 0;
@@ -130,7 +129,6 @@ function salvaAnagraficaDaModale(){
   AppState.anagrafica = {
     qualifica: el('campoQualifica').value,
     anni: el('campoAnni').value,
-    settimana: el('campoSettimana').value,
     regione: el('campoRegione').value,
     // v2.99: l'addizionale comunale si inserisce qui. Finché non la scrivi resta 0,8% (stima)
     // e risulta "da inserire".

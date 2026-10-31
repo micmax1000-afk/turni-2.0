@@ -2755,3 +2755,9 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 .scadenza-assenza.vicina{color:#C27C0E;font-weight:700}
 .nota-congedo-auto{font-size:.78rem;color:var(--testo-tenue);margin:8px 0 0;line-height:1.4}
 .nota-congedo-auto .btn-testo-evento{display:block;font-size:.82rem;padding:4px 0 0}
+.congedo-orario{margin:10px 0 0}
+.scelta-settimana{display:flex;gap:6px}
+.scelta-settimana button{flex:1}
+.partenza-settimana{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 10px}
+.partenza-settimana > span{font-size:.86rem;color:var(--testo-tenue)}
+.partenza-settimana .scelta-settimana{flex:1;max-width:260px}

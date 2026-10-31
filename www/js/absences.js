@@ -84,11 +84,32 @@ function lavoratoInFestivo(t){
 }
 
 // v3.8.9: giorni di congedo ordinario che spettano (art. 14 DPR 395/1995, tabella SIULP), compresi i 2 riposi legge.
-// Turni continuativi = orario su 6 giorni, ufficio = 5 giorni (si sceglie in Anagrafica).
+// Turnista = orario su 6 giorni, settimana corta = 5 giorni: si sceglie nel congedo ordinario
+// (scheda in Assenze e giorni di partenza). Finché non scegli, si guarda la turnazione.
 function settimanaLavoro(){
-  const a = AppState.anagrafica || {};
-  if(a.settimana === '5' || a.settimana === '6') return a.settimana;
+  const co = (AppState.assenze || []).find(a => a.nome === 'Congedo ordinario');
+  if(co && (co.settimana === '5' || co.settimana === '6')) return co.settimana;
   return TurniPSStorage.getItem('simCedolino_sequenzaPattern_v1') === 'pattern_settimana_corta' ? '5' : '6';
+}
+function sceltaSettimanaCongedoHtml(){
+  const s = settimanaLavoro();
+  return `<div class="scelta-prima-dopo scelta-settimana" role="group" aria-label="Orario di lavoro"><button type="button" data-settimana-congedo="6" class="${s === '6' ? 'attivo' : ''}">Turnista</button><button type="button" data-settimana-congedo="5" class="${s === '5' ? 'attivo' : ''}">Settimana corta</button></div>`;
+}
+function impostaSettimanaCongedo(v){
+  const co = (AppState.assenze || []).find(a => a.nome === 'Congedo ordinario');
+  if(!co) return;
+  co.settimana = v;
+  if(co.manuale) co.manuale = false; // cambiando l'orario si torna al calcolo automatico
+  aggiornaCongedoAutomatico();
+  salvaAssenzeStorage();
+  document.querySelectorAll('[data-settimana-congedo]').forEach(b => b.classList.toggle('attivo', b.dataset.settimanaCongedo === v));
+  ['notaSaldiPartenza', 'benvenutoNotaSaldi'].forEach(id => { const n = el(id); if(n && n.innerHTML) n.innerHTML = notaSpettantiCongedo(); });
+  if(el('corpoAssenze') && el('corpoAssenze').offsetParent){
+    // Ridisegna le schede lasciando aperte quelle che lo erano (la scelta si fa dentro la scheda aperta).
+    const aperte = [...document.querySelectorAll('.card-assenza-aperta')].map(c => c.dataset.id);
+    renderAssenze();
+    aperte.forEach(id => { const c = document.querySelector(`.card-assenza[data-id="${id}"]`); if(c){ c.classList.add('card-assenza-aperta'); c.classList.remove('card-assenza-chiusa'); } });
+  }
 }
 function giorniCongedoSpettanti(){
   const anni = Number((AppState.anagrafica || {}).anni) || 0;
@@ -533,9 +554,9 @@ function renderCardAssenzaItem(a){
       + (a.nome === 'Riposo legge' && rimangono > 0 ? `<span class="scadenza-assenza${mese >= 9 ? ' vicina' : ''}">Entro il 31/12</span>` : '');
     const anniServizio = Number((AppState.anagrafica || {}).anni) || 0;
     const notaCongedoAuto = eCongedoOrdinario
-      ? (a.manuale
-        ? `<p class="nota-congedo-auto">Inserito a mano. In base agli anni di servizio sarebbero ${giorniCongedoSpettanti()} giorni. <button type="button" class="btn-testo-evento" data-congedo-auto>↺ Usa il calcolo automatico</button></p>`
-        : `<p class="nota-congedo-auto">Calcolato da solo: ${a.valore} giorni con ${anniServizio} ${anniServizio === 1 ? 'anno' : 'anni'} di servizio, ${settimanaLavoro() === '5' ? 'ufficio (5 giorni)' : 'turni (6 giorni)'}. Comprende 2 riposi legge.</p>`)
+      ? `<div class="congedo-orario">${sceltaSettimanaCongedoHtml()}</div>` + (a.manuale
+        ? `<p class="nota-congedo-auto">Inserito a mano. Con ${anniServizio} anni di servizio sarebbero ${giorniCongedoSpettanti()} giorni. <button type="button" class="btn-testo-evento" data-congedo-auto>↺ Usa il calcolo automatico</button></p>`
+        : `<p class="nota-congedo-auto">Spettano ${a.valore} giorni l'anno con ${anniServizio} ${anniServizio === 1 ? 'anno' : 'anni'} di servizio. Comprendono 2 riposi legge.</p>`)
       : '';
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
@@ -713,7 +734,7 @@ function formSaldiPartenzaHtml(prefisso, v){
   const righeAnni = anni.map((y, i) => riga(`Giorni del ${y}`, y === annoOggi ? 'che ti restano' : 'non ancora goduti', `Congedo${y}`, numeroIt(Math.max(0, valAnni[y] || 0)).replace(',', '.'), 'gg', 1, i ? 'partenza-sotto' : '').replace('class="partenza-riga', `data-anno-congedo="${y}" data-prefisso="${prefisso}" class="partenza-riga`)).join('');
   const totale = round2(anni.reduce((a, y) => a + Math.max(0, valAnni[y] || 0), 0));
   const vecchio = anni[anni.length - 1];
-  return voce('🌴', 'Congedo ordinario', righeAnni
+  return voce('🌴', 'Congedo ordinario', `<div class="partenza-settimana"><span>Orario</span>${sceltaSettimanaCongedoHtml()}</div>` + righeAnni
       + `<div class="partenza-totale"><span>Totale</span><b id="${prefisso}CongedoTotale">${numeroIt(totale)} ${totale === 1 ? 'giorno' : 'giorni'}</b></div>`
       + `<p class="partenza-nota">Si usano prima i giorni più vecchi (dal ${vecchio} in poi). Non scadono.</p>`)
     + voce('🔄', 'Recupero riposo', riga('Giorni da recuperare', 'riposi lavorati non ancora recuperati', 'RecuperoRiposo', v.recuperoRiposo, 'gg', 1))
@@ -743,7 +764,8 @@ function aggiornaTotaleCongedoForm(prefisso){
 }
 function notaSpettantiCongedo(){
   const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
-  return co ? `📅 A gennaio l'app aggiunge da sola i <b>${numeroIt(co.valore)} giorni</b> dell'anno nuovo (li cambi in Assenze, nella scheda del Congedo ordinario).` : '';
+  if(co) aggiornaCongedoAutomatico();
+  return co ? `📅 A gennaio l'app aggiunge da sola i <b>${numeroIt(co.valore)} giorni</b> dell'anno nuovo (${settimanaLavoro() === '5' ? 'settimana corta' : 'turnista'}, con i tuoi anni di servizio; li cambi in Assenze, nella scheda del Congedo ordinario).` : '';
 }
 function apriSaldiPartenza(){
   el('formSaldiPartenza').innerHTML = formSaldiPartenzaHtml('saldo', valoriSaldiPartenza());
@@ -758,6 +780,8 @@ function salvaSaldiPartenzaDaForm(){
 }
 function inizializzaSaldiPartenza(){
   document.addEventListener('click', e => {
+    const sett = e.target.closest('[data-settimana-congedo]');
+    if(sett){ impostaSettimanaCongedo(sett.dataset.settimanaCongedo); return; }
     if(e.target.closest('[data-congedo-auto]')){
       const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
       if(co){ co.manuale = false; aggiornaCongedoAutomatico(); salvaAssenzeStorage(); renderAssenze(); }
