@@ -1090,7 +1090,7 @@ function corpoGiornoAgenda(iso, t){
     straordinario: !!((t.straordinarioPrimaInizio && t.straordinarioPrimaFine) || (t.straordinarioDopoInizio && t.straordinarioDopoFine) || (t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine)),
     missione: !!t.missione, servizioEsterno: !!t.servizioEsterno, ordinePubblico: !!t.ordinePubblico, reperibilita: !!t.reperibilita,
     controlloTerritorio: !!t.controlloTerritorio, buonoPasto: !!t.buonoPasto, cambioTurno: !!t.cambioTurno,
-    compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
+    compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: typeof lavoratoInFestivo === 'function' ? lavoratoInFestivo(t) : !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
   };
   const chip = ELENCO_INDENNITA.filter(x => presenti[x.chiave])
     .map(x => `<span>${iconaIndennita(x.chiave)}${escapeHtml(x.chiave === 'buonoPasto' && numeroBuoniPasto(t) === 2 ? '2 buoni pasto' : x.nome)}</span>`).join('');

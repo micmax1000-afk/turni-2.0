@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V241 (v3.8.8 — lavorato in festivo e sul riposo mostrano il turno) */
+/* Turni & Accessorio PS — Service Worker V242 (v3.8.9 — regole assenze: congedo dagli anni, permesso breve 36 ore, recupero festivo) */
 'use strict';
-const CACHE='turni-ps-v241';
+const CACHE='turni-ps-v242';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
