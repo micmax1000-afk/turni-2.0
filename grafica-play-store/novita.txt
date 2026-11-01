@@ -1,9 +1,6 @@
 <it-IT>
-• Viste Giorno, Settimana, Mese e Agenda; pulsante ＋ per aggiungere
-• Riempi più giorni: scegli un turno e tocca i giorni
-• Scorri col dito per cambiare mese; pulsante Oggi
-• "Annulla" dopo ogni modifica
-• Condividi il mese come immagine (WhatsApp)
-• Nome delle feste nel giorno
-• Colori su ogni turno e assenza; congedo dagli anni di servizio
+• Detta a voce: tocca ＋ e di' "domani notte", "ferie dal 3 al 10 dicembre", "giovedì alle 10 dentista". La voce è riconosciuta sul telefono, senza internet
+• Settimana e Agenda con indennità, straordinario a parte (+2:00), servizio svolto ed eventi
+• Vista Giorno con le indennità in alto
+• Tocca un evento nella Settimana per aprirlo
 </it-IT>
