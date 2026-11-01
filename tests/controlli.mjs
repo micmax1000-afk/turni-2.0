@@ -561,7 +561,7 @@ sezione('v3.8.10: giorno come Google Calendar (riga del turno e pulsante ＋)');
   ok('tocco sulla riga del turno: si apre "Modifica il giorno"', await p.evaluate(() => !el('pannelloTurno').hidden));
   await p.click('#btnChiudiTurno');
   await p.click('#btnFabGiorno');
-  ok('＋ apre Evento, Cambia turno, Assenza, Straordinario', await p.evaluate(() => !el('menuFabGiorno').hidden && ['Evento','Cambia turno','Assenza','Straordinario'].every(x => el('menuFabGiorno').innerText.includes(x))));
+  ok('＋ apre Evento, Cambia turno, Assenza, Straordinario, Modifica giorno', await p.evaluate(() => !el('menuFabGiorno').hidden && ['Evento','Cambia turno','Assenza','Straordinario','Modifica giorno'].every(x => el('menuFabGiorno').innerText.includes(x))));
   await p.click('#btnAssenzaGiornoFab');
   ok('＋ → Assenza: "Modifica il giorno" già su Assenza', await p.evaluate(() => !el('pannelloTurno').hidden && el('menuFabGiorno').hidden && document.querySelector('[data-tipo-giorno="assenza"]').classList.contains('attivo')));
   await p.click('#btnChiudiTurno');

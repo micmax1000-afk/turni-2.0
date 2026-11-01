@@ -2851,3 +2851,7 @@ html[data-tema="scuro"] .fab-menu button span{background:#26304A}
 #overlaySelettoreModelli .lista-modelli-selettore *:not(.badge-pro):not([style*="background"]){background-color:transparent}
 #overlaySelettoreModelli .lista-modelli-selettore > div,#overlaySelettoreModelli .lista-modelli-selettore > details > div{background:var(--pannello)!important}
 #overlaySelettoreModelli .lista-modelli-selettore .attivo,#overlaySelettoreModelli .lista-modelli-selettore [aria-checked="true"],#overlaySelettoreModelli .lista-modelli-selettore .selezionato{background-color:color-mix(in srgb,#155EEF 8%,var(--pannello))!important}
+/* Selettore Turni / Assenze / Indennità: sfondo bianco, scelta attiva nel blu dei pulsanti */
+#overlaySelettoreModelli .switch-turno-assenza{background:var(--pannello);border:1px solid var(--bordo)}
+#overlaySelettoreModelli .switch-turno-assenza-btn.attivo{background:var(--acc,#1D4FD7)!important;color:#fff!important}
+#overlaySelettoreModelli .modale-header{background:var(--pannello)}

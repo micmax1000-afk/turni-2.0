@@ -1108,6 +1108,7 @@ function inizializza(){
   on('veloFabGiorno','click', chiudiFabGiorno);
   on('btnAssenzaGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; apriModaleTurno(giornoSelezionato); const b = document.querySelector('[data-tipo-giorno="assenza"]'); if(b) b.click(); });
   // Straordinario: la scheda piccola (ore prima o dopo il turno), non tutto "Modifica il giorno".
+  on('btnModificaGiornoFab','click', () => { chiudiFabGiorno(); if(giornoSelezionato) apriModaleTurno(giornoSelezionato); });
   on('btnStraordinarioGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriStraordinarioRapidoV2(); });
   on('btnTurnoGiornoV3','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
