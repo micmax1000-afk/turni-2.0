@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V243 (v3.8.10 — viste del calendario, giorno come Google Calendar, colori su turni e assenze) */
+/* Turni & Accessorio PS — Service Worker V244 (v3.8.11 — ＋ con 4 voci, selettore a tutta pagina, orari evento leggibili) */
 'use strict';
-const CACHE='turni-ps-v243';
+const CACHE='turni-ps-v244';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/data/tabelle-2026.js',
