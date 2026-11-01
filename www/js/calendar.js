@@ -1216,9 +1216,23 @@ function renderVistaSettimana(iso){
   }).join('');
   host.innerHTML = `<div class="vs-lista">${righe}</div><div class="vs-totale"><span>Ore della settimana</span><span>${totaleSettimanaHtml(tot, totStr)}</span></div>`;
 }
+// v3.8.15: il titolo ("Novembre 2026", "26 ott–1 nov") si rimpicciolisce quanto basta per starci
+// intero, anche con i caratteri grandi del telefono, invece di essere tagliato con "…".
+function adattaTitoloCalendario(){
+  const t = el('etichettaMese');
+  if(!t) return;
+  t.style.fontSize = '';
+  let px = parseFloat(getComputedStyle(t).fontSize) || 18, giri = 0;
+  while(t.scrollWidth > t.clientWidth + 1 && px > 11 && giri++ < 20){ px -= 1; t.style.fontSize = px + 'px'; }
+}
 function inizializzaVisteCalendario(){
   const menu = el('menuVistaCalendario');
   if(!menu) return;
+  if(el('etichettaMese') && window.MutationObserver){
+    new MutationObserver(() => requestAnimationFrame(adattaTitoloCalendario)).observe(el('etichettaMese'), { childList: true, characterData: true, subtree: true });
+    window.addEventListener('resize', () => requestAnimationFrame(adattaTitoloCalendario));
+    requestAnimationFrame(adattaTitoloCalendario);
+  }
   on('btnCondividiMese', 'click', condividiMese);
   on('btnVistaCalendario', 'click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; el('btnVistaCalendario').setAttribute('aria-expanded', String(!menu.hidden)); });
   document.addEventListener('click', e => {

@@ -3014,3 +3014,10 @@ html[data-tema=scuro] .icona-linea{color:#8FA6FF}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .icona-linea{color:#8FA6FF}}
 .saldo-anello svg.icona-linea,#sezioneAssenze .saldo-anello svg.icona-linea,.riga-assenza-v4 .saldo-anello svg.icona-linea{width:15px!important;height:15px!important;transform:none;filter:none;display:inline-block}
 .card-assenza-icon .icona-linea{color:inherit}
+/* v3.8.15: righe da togliere (Detta a voce) e spazio intorno al microfono */
+.voce-riga-togli .voce-testo > div{color:#B42318}
+.voce-riga-togli .voce-ic{color:#B42318}
+html[data-tema=scuro] .voce-riga-togli .voce-testo > div,html[data-tema=scuro] .voce-riga-togli .voce-ic{color:#FF8A80}
+.voce-mic{margin:44px auto 40px}
+.voce-titolo.voce-centro{margin-bottom:0}
+.calendario-header-v2 .etichetta-mese-btn{text-overflow:clip}
