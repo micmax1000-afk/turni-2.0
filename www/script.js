@@ -674,6 +674,7 @@ function inizializza(){
   on('btnModificaGiornoSelezionatoV2','click', () => { if(giornoSelezionato) apriModaleTurno(giornoSelezionato); });
   on('campoAgendaSotto','change', e => impostaAgendaSotto(e.target.checked));
   on('agendaCalendario','click', clicAgenda);
+  if(typeof inizializzaCercaAgenda === 'function') inizializzaCercaAgenda();
 
   on('settingsSequenza','click', () => mostraScheda('sequenza'));
   on('btnChiudiSequenza','click', () => mostraScheda('turni'));
@@ -4148,6 +4149,7 @@ function chiudiPennello(){
 // ── v3.8.12: pulsante "Oggi" e scorrimento col dito (mese, settimana, giorno) ──
 function vaiAOggi(){
   const oggiIso = dataISO(new Date()), d = new Date();
+  if(typeof riportaAgendaAOggi === 'function' && vistaCalendario() === 'agenda') riportaAgendaAOggi();
   meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
   giornoSelezionato = oggiIso;
   renderCalendario();

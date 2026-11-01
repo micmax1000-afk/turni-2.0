@@ -1082,6 +1082,7 @@ function impostaVistaCalendario(v){
   if(!giornoSelezionato) giornoSelezionato = dataISO(new Date());
   if(v !== 'agenda'){ const d = dataDaIso(giornoSelezionato); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); }
   el('menuVistaCalendario').hidden = true;
+  if(v === 'agenda' && typeof riportaAgendaAOggi === 'function') riportaAgendaAOggi();
   impostaAgendaSotto(v === 'agenda'); // ridisegna anche la vista
   renderCalendario();
   window.scrollTo(0, 0);
@@ -1292,40 +1293,123 @@ function corpoGiornoAgenda(iso, t){
     + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}${nota}</span>`
     + `${oreConStraordinarioHtml(t, 'agenda-ore')}</span>`;
 }
+// ── v3.8.16: Agenda come una vera agenda ──
+// Giorni prima e dopo (si caricano da soli scorrendo), ＋ su ogni giorno per un nuovo evento,
+// filtro Tutto · Eventi · Turni, ricerca negli eventi e nei servizi svolti, eventi con fine, luogo e promemoria.
+let agendaDa = null, filtroAgenda = 'tutto', cercaAgenda = '', osservatoreAgenda = null;
+function inizioAgenda(){ if(!agendaDa) agendaDa = dataISO(new Date()); return agendaDa; }
+function riportaAgendaAOggi(){ agendaDa = dataISO(new Date()); giorniAgenda = GIORNI_AGENDA_PASSO; cercaAgenda = ''; const c = el('campoCercaAgenda'); if(c) c.value = ''; }
+function iconaLineaAgenda(nome){ return typeof svgLinea === 'function' ? svgLinea(nome, 'agenda-ic') : ''; }
+function rigaEventoAgenda(iso, ev, isoOrigine){
+  const quando = ev.tuttoIlGiorno ? 'Tutto il giorno' : `${escapeHtml(ev.oraInizio || '')}${ev.oraFine ? '–' + escapeHtml(ev.oraFine) : ''}`;
+  const extra = [
+    ev.luogo ? `<span class="agenda-ev-luogo">${iconaLineaAgenda('puntina')}${escapeHtml(ev.luogo)}</span>` : '',
+    (ev.promemoria && ev.promemoria.length) || ev.ricordami ? `<span title="Con promemoria">${iconaLineaAgenda('campana')}</span>` : '',
+    ev.ripeti ? `<span title="Si ripete">${iconaLineaAgenda('giro')}</span>` : ''
+  ].join('');
+  return `<button type="button" class="agenda-evento" data-evento-giorno="${iso}" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine || iso)}">`
+    + `<i style="background:${coloreEvento(ev)}" aria-hidden="true"></i><em>${quando}</em>`
+    + `<span class="agenda-ev-testo"><b>${escapeHtml(ev.titolo || 'Senza titolo')}</b>${extra ? `<small>${extra}</small>` : ''}</span></button>`;
+}
+function barraAgendaHtml(){
+  const lente = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>';
+  return `<div class="agenda-barra"><div class="agenda-filtri" role="tablist" aria-label="Cosa mostrare">`
+    + ['tutto', 'eventi', 'turni'].map(f => `<button type="button" role="tab" data-filtro-agenda="${f}">${f === 'tutto' ? 'Tutto' : f === 'eventi' ? 'Eventi' : 'Turni'}</button>`).join('')
+    + `</div><button type="button" class="agenda-cerca-btn" data-agenda-cerca aria-label="Cerca">${lente}</button></div>`
+    + `<div class="agenda-cerca" id="boxCercaAgenda" hidden><input type="search" id="campoCercaAgenda" placeholder="Cerca eventi e servizi svolti" autocomplete="off" enterkeyhint="search"></div>`
+    + `<div id="agendaElenco"></div>`;
+}
+function risultatiCercaAgenda(q){
+  const parole = (typeof normalizzaVoce === 'function' ? normalizzaVoce(q) : q.toLowerCase()).split(' ').filter(Boolean);
+  const norm = t => typeof normalizzaVoce === 'function' ? normalizzaVoce(t) : String(t || '').toLowerCase();
+  const va = testo => { const n = norm(testo); return parole.every(w => n.includes(w)); };
+  const trovati = [];
+  Object.keys(AppState.eventiGiorno || {}).forEach(iso => (AppState.eventiGiorno[iso] || []).forEach(ev => {
+    if(va(`${ev.titolo || ''} ${ev.luogo || ''} ${ev.note || ''}`)) trovati.push({ iso, html: rigaEventoAgenda(iso, ev, iso) });
+  }));
+  Object.keys(AppState.turni || {}).forEach(iso => {
+    const t = AppState.turni[iso];
+    if(t && t.servizioSvolto && va(t.servizioSvolto)) trovati.push({ iso, html: `<button type="button" class="agenda-evento agenda-risultato-servizio" data-agenda-giorno="${iso}">${iconaLineaAgenda('matita')}<em>${escapeHtml(nomeGiornoVista(t) || 'Turno')}</em><span class="agenda-ev-testo"><b>${escapeHtml(t.servizioSvolto)}</b><small>Servizio svolto</small></span></button>` });
+  });
+  const oggiIso = dataISO(new Date());
+  const futuri = trovati.filter(x => x.iso >= oggiIso).sort((a, b) => a.iso.localeCompare(b.iso));
+  const passati = trovati.filter(x => x.iso < oggiIso).sort((a, b) => b.iso.localeCompare(a.iso));
+  const riga = x => { const d = dataDaIso(x.iso); return `<div class="agenda-giorno${eFestivoOdDomenica(x.iso) ? ' festivo' : ''}"><div class="agenda-data"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b><small>${meseBreveAgenda(d)}${d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''}</small></div><div class="agenda-righe">${x.html}</div></div>`; };
+  if(!trovati.length) return `<p class="agenda-vuota">Nessun evento o servizio svolto con «${escapeHtml(q)}».</p>`;
+  return (futuri.length ? `<div class="agenda-settimana"><span>In arrivo</span><b>${futuri.length}</b></div>${futuri.map(riga).join('')}` : '')
+    + (passati.length ? `<div class="agenda-settimana"><span>Passati</span><b>${passati.length}</b></div>${passati.map(riga).join('')}` : '');
+}
 function renderAgenda(){
   const host = el('agendaCalendario');
   if(!host) return;
-  const oggi = new Date(); oggi.setHours(12, 0, 0, 0);
-  let html = '', lunedi = null;
+  if(!el('agendaElenco')) host.innerHTML = barraAgendaHtml();
+  host.querySelectorAll('[data-filtro-agenda]').forEach(b => { const on = b.dataset.filtroAgenda === filtroAgenda; b.classList.toggle('attivo', on); b.setAttribute('aria-selected', String(on)); });
+  const elenco = el('agendaElenco');
+  if(cercaAgenda.trim()){ elenco.innerHTML = risultatiCercaAgenda(cercaAgenda.trim()); return; }
+  const oggiIso = dataISO(new Date()), domaniIso = giornoPiu(oggiIso, 1), ieriIso = giornoPiu(oggiIso, -1);
+  const primo = dataDaIso(inizioAgenda());
+  let html = `<button type="button" class="agenda-precedenti" id="btnAgendaPrecedenti">${iconaLineaAgenda('calendario')}Mostra i ${GIORNI_AGENDA_PASSO} giorni prima</button>`;
+  let lunedi = null, mostrati = 0;
   for(let i = 0; i < giorniAgenda; i++){
-    const d = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() + i, 12);
+    const d = new Date(primo.getFullYear(), primo.getMonth(), primo.getDate() + i, 12);
     const iso = dataISO(d);
-    const lun = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7, 12);
-    if(dataISO(lun) !== lunedi){ lunedi = dataISO(lun); html += intestazioneSettimanaAgenda(lun, i === 0); }
     const t = AppState.turni[iso];
     const eventi = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : [])
       .slice().sort((a, b) => (a.ev.tuttoIlGiorno ? '' : a.ev.oraInizio || '').localeCompare(b.ev.tuttoIlGiorno ? '' : b.ev.oraInizio || ''));
-    const righeEventi = eventi.map(({ ev, isoOrigine }) =>
-      `<button type="button" class="agenda-evento" data-evento-giorno="${iso}" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">`
-      + `<i style="background:${coloreEvento(ev)}" aria-hidden="true"></i><em>${ev.tuttoIlGiorno ? 'Tutto il giorno' : escapeHtml(ev.oraInizio || '')}</em>`
-      + `<span>${escapeHtml(ev.titolo || 'Senza titolo')}</span></button>`).join('');
+    if(filtroAgenda === 'eventi' && !eventi.length) continue;
+    const lun = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7, 12);
+    if(dataISO(lun) !== lunedi){ lunedi = dataISO(lun); html += intestazioneSettimanaAgenda(lun, iso <= oggiIso && oggiIso <= giornoPiu(lunedi, 6)); }
+    const righeEventi = filtroAgenda === 'turni' ? '' : eventi.map(({ ev, isoOrigine }) => rigaEventoAgenda(iso, ev, isoOrigine)).join('');
     const festa = typeof nomeFestivita === 'function' ? nomeFestivita(iso) : '';
-    const parole = [i === 0 ? 'Oggi' : i === 1 ? 'Domani' : '', festa ? `<em>${escapeHtml(festa)}</em>` : ''].filter(Boolean).join(' · ');
+    const parole = [iso === oggiIso ? 'Oggi' : iso === domaniIso ? 'Domani' : iso === ieriIso ? 'Ieri' : '', festa ? `<em>${escapeHtml(festa)}</em>` : ''].filter(Boolean).join(' · ');
     const quando = parole ? `<span class="agenda-quando">${parole}</span>` : '';
-    const classi = 'agenda-giorno' + (i === 0 ? ' oggi' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
+    const classi = 'agenda-giorno' + (iso === oggiIso ? ' oggi' : '') + (iso < oggiIso ? ' passato' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
+    const corpo = filtroAgenda === 'eventi' ? '' : `<button type="button" class="agenda-corpo" aria-label="${d.getDate()} ${NOMI_MESI[d.getMonth()]}: apri il giorno">${corpoGiornoAgenda(iso, t)}</button>`;
     html += `<div class="${classi}" data-agenda-giorno="${iso}">`
-      + `<div class="agenda-data" aria-hidden="true"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b></div>`
-      + `<div class="agenda-righe">${quando}<button type="button" class="agenda-corpo" aria-label="${d.getDate()} ${NOMI_MESI[d.getMonth()]}: apri il giorno">${corpoGiornoAgenda(iso, t)}</button>${righeEventi}</div></div>`;
+      + `<div class="agenda-data"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b>`
+      + `<button type="button" class="agenda-piu" data-agenda-nuovo="${iso}" aria-label="Nuovo evento il ${d.getDate()} ${NOMI_MESI[d.getMonth()]}">＋</button></div>`
+      + `<div class="agenda-righe">${quando}${corpo}${righeEventi}</div></div>`;
+    mostrati++;
   }
+  if(!mostrati) html += `<p class="agenda-vuota">Nessun evento in questi giorni.</p>`;
   html += `<button type="button" class="btn-secondario agenda-altri" id="btnAgendaAltri">Mostra altri ${GIORNI_AGENDA_PASSO} giorni</button>`;
-  host.innerHTML = html;
+  elenco.innerHTML = html;
+  // In fondo i giorni dopo arrivano da soli, scorrendo (come in un'agenda vera); il tasto resta per sicurezza.
+  if(window.IntersectionObserver){
+    if(osservatoreAgenda) osservatoreAgenda.disconnect();
+    osservatoreAgenda = new IntersectionObserver(voci => {
+      if(voci.some(v => v.isIntersecting) && giorniAgenda < 400 && vistaCalendario() === 'agenda'){ giorniAgenda += GIORNI_AGENDA_PASSO; renderAgenda(); }
+    }, { rootMargin: '200px' });
+    const altri = el('btnAgendaAltri'); if(altri) osservatoreAgenda.observe(altri);
+  }
 }
 function clicAgenda(e){
+  const filtro = e.target.closest('[data-filtro-agenda]');
+  if(filtro){ filtroAgenda = filtro.dataset.filtroAgenda; renderAgenda(); return; }
+  if(e.target.closest('[data-agenda-cerca]')){
+    const box = el('boxCercaAgenda'); box.hidden = !box.hidden;
+    if(!box.hidden) el('campoCercaAgenda').focus(); else { cercaAgenda = ''; el('campoCercaAgenda').value = ''; renderAgenda(); }
+    return;
+  }
+  const nuovo = e.target.closest('[data-agenda-nuovo]');
+  if(nuovo){
+    const iso = nuovo.dataset.agendaNuovo, d = dataDaIso(iso);
+    meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); giornoSelezionato = iso;
+    if(typeof apriModificaEventoV2 === 'function') apriModificaEventoV2(null);
+    return;
+  }
   const evento = e.target.closest('[data-evento-id]');
   if(evento){ apriEventoDaProssimi(evento); return; }
   if(e.target.closest('#btnAgendaAltri')){ giorniAgenda += GIORNI_AGENDA_PASSO; renderAgenda(); return; }
+  if(e.target.closest('#btnAgendaPrecedenti')){
+    const h0 = document.documentElement.scrollHeight;
+    agendaDa = giornoPiu(inizioAgenda(), -GIORNI_AGENDA_PASSO); giorniAgenda += GIORNI_AGENDA_PASSO;
+    renderAgenda();
+    window.scrollBy(0, document.documentElement.scrollHeight - h0);
+    return;
+  }
   const riga = e.target.closest('[data-agenda-giorno]');
-  if(!riga) return;
+  if(!riga || !e.target.closest('.agenda-corpo, .agenda-risultato-servizio')) return;
   const iso = riga.dataset.agendaGiorno;
   const d = dataDaIso(iso);
   meseCorrente = d.getMonth();
@@ -1333,6 +1417,9 @@ function clicAgenda(e){
   giornoSelezionato = iso;
   renderCalendario();
   apriModaleTurno(iso);
+}
+function inizializzaCercaAgenda(){
+  document.addEventListener('input', e => { if(e.target && e.target.id === 'campoCercaAgenda'){ cercaAgenda = e.target.value; renderAgenda(); } });
 }
 
 

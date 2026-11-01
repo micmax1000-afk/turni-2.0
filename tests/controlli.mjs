@@ -762,6 +762,35 @@ sezione('v3.8.16: barra del pennello');
 }
 
 // ───────────────────────────────────────
+sezione('v3.8.16: Agenda come una vera agenda');
+{
+  const eventi = { '2026-10-12': [{ id: 'ev_a1', titolo: 'Dentista', oraInizio: '10:00', oraFine: '11:00', luogo: 'Via Roma 3', promemoria: [{ min: 30 }], ricordami: true }], '2026-10-03': [{ id: 'ev_a2', titolo: 'Corso tiro', oraInizio: '09:00' }] };
+  const t = turniDiProva(); t['2026-10-05'].servizioSvolto = 'OP Stadio Olimpico';
+  const { p, ctx, errori } = await apri({ turni: t, eventi });
+  await p.waitForTimeout(900);
+  await p.evaluate(() => impostaVistaCalendario('agenda'));
+  await p.waitForTimeout(200);
+  const a = await p.evaluate(() => ({ filtri: [...document.querySelectorAll('[data-filtro-agenda]')].map(b => b.textContent).join('|'), piu: document.querySelectorAll('.agenda-piu').length, dett: document.querySelector('[data-evento-id="ev_a1"]')?.textContent || '' }));
+  ok('filtri Tutto · Eventi · Turni e un ＋ su ogni giorno', a.filtri === 'Tutto|Eventi|Turni' && a.piu >= 14, JSON.stringify(a));
+  ok('evento con ora di fine e luogo', /10:00–11:00/.test(a.dett) && /Via Roma 3/.test(a.dett), a.dett);
+  await p.click('[data-filtro-agenda="eventi"]');
+  ok('"Eventi": solo i giorni con eventi, senza turni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length >= 1 && !document.querySelector('#agendaElenco .agenda-corpo') && [...document.querySelectorAll('.agenda-giorno')].every(g => g.querySelector('.agenda-evento'))));
+  await p.click('[data-filtro-agenda="tutto"]');
+  await p.click('#btnAgendaPrecedenti');
+  ok('"Mostra i giorni prima": si vede anche il 3 ottobre (passato)', await p.evaluate(() => !!document.querySelector('.agenda-giorno.passato[data-agenda-giorno="2026-10-03"]')));
+  await p.click('[data-agenda-cerca]');
+  await p.fill('#campoCercaAgenda', 'stadio');
+  ok('Cerca "stadio": trova il servizio svolto del 5 ottobre', await p.evaluate(() => /OP Stadio Olimpico/.test(el('agendaElenco').textContent) && /Passati/.test(el('agendaElenco').textContent)));
+  await p.fill('#campoCercaAgenda', 'dentista');
+  ok('Cerca "dentista": trova l\'evento', await p.evaluate(() => !!document.querySelector('#agendaElenco [data-evento-id="ev_a1"]')));
+  await p.click('[data-agenda-cerca]');
+  await p.click('.agenda-piu[data-agenda-nuovo="2026-10-14"]');
+  ok('＋ sul 14: si apre "Nuovo evento" su quel giorno', await p.evaluate(() => !el('overlayEvento').hidden && giornoSelezionato === '2026-10-14'));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');
 {
   const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});
@@ -1310,9 +1339,9 @@ sezione('Agenda (vista del calendario)');
   ok('Agenda: il totale della settimana è la somma dei giorni (5 × 6:35 + 5:35 = 38:30)', /38:30 ore di servizio/.test(tot), tot);
   ok('Agenda: eventi sotto il giorno, "Prossimi 7 giorni" nascosto', /10:00/.test(a.evento) && /Visita medica/.test(a.evento) && a.prossimi === 'none', JSON.stringify(a));
   await p.click('#btnAgendaAltri');
-  ok('"Mostra altri" aggiunge altri 14 giorni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length === 28));
+  ok('"Mostra altri" aggiunge altri 14 giorni (v3.8.16: e arrivano da soli scorrendo)', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length >= 28));
   await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
-  ok('dopo la riapertura resta la vista Agenda', await p.evaluate(() => !el('agendaSottoCalendario').hidden && vistaCalendario() === 'agenda' && document.querySelectorAll('.agenda-giorno').length === 14));
+  ok('dopo la riapertura resta la vista Agenda', await p.evaluate(() => !el('agendaSottoCalendario').hidden && vistaCalendario() === 'agenda' && document.querySelectorAll('.agenda-giorno').length >= 14 && document.querySelector('.agenda-giorno.oggi')));
   ok('la scelta finisce nel backup', await p.evaluate(() => JSON.stringify(costruisciDatiBackup()).includes('"agendaSottoCalendario":true')));
   await p.click('[data-agenda-giorno="2026-10-13"] .agenda-corpo');
   const g = await p.evaluate(() => ({ t: el('titoloModaleTurno').textContent, iso: giornoSelezionato }));
