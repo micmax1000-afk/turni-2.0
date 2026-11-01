@@ -644,7 +644,7 @@ sezione('v3.8.13: detta a voce');
     return { righe: righe.map(r => r.tipo === 'turno' ? `${r.iso} ${r.nuovo.riposo ? 'riposo' : r.nuovo.modelloId || (r.nuovo.oraInizio + '-' + r.nuovo.oraFine)}`
       : r.tipo === 'assenza' ? `${r.giorni[0]}..${r.giorni[r.giorni.length - 1]} ${r.nome} ${r.giorni.length}`
       : r.tipo === 'straordinario' ? `${r.iso} str ${r.da}-${r.al}${r.prima ? ' prima' : ''}`
-      : r.tipo === 'evento' ? `${r.iso} ev ${r.ora || 'tutto'} ${r.titolo}`
+      : r.tipo === 'evento' ? `${r.iso} ev ${r.ora || 'tutto'} ${r.titolo}${r.promemoria !== null && r.promemoria !== undefined ? ' pr' + r.promemoria : ''}`
       : r.tipo === 'nota' ? `${r.iso} nota ${r.testo}`
       : r.tipo === 'cancella' ? `${r.iso} cancella`
       : r.tipo === 'togliStr' ? `${r.iso} togli str ${r.quale}`
@@ -670,6 +670,12 @@ sezione('v3.8.13: detta a voce');
   ok('"giovedì alle 10 dentista": evento', r.righe.join(' | ') === '2026-10-15 ev 10:00 Dentista', JSON.stringify(r));
   r = await capisci('giovedì 22 alle 10 e mezza dentista');
   ok('"giovedì 22 alle 10 e mezza dentista": conta il 22', r.righe.join(' | ') === '2026-10-22 ev 10:30 Dentista', JSON.stringify(r));
+  r = await capisci('Aggiungi dentista alle ore 15.00');
+  ok('"Aggiungi dentista alle ore 15.00": evento alle 15, senza "Aggiungi" nel titolo', r.righe.join(' | ') === '2026-10-09 ev 15:00 Dentista', JSON.stringify(r));
+  r = await capisci('lunedì ore 9 e 30 visita medica con promemoria');
+  ok('"lunedì ore 9 e 30 visita medica con promemoria": 30 minuti prima', r.righe.join(' | ') === '2026-10-12 ev 09:30 Visita medica pr30', JSON.stringify(r));
+  r = await capisci('domani alle 18 palestra avvisami un\'ora prima');
+  ok('"domani alle 18 palestra avvisami un\'ora prima": un\'ora prima', r.righe.join(' | ') === '2026-10-10 ev 18:00 Palestra pr60', JSON.stringify(r));
   r = await capisci('sabato compleanno di Marco');
   ok('"sabato compleanno di Marco": evento di tutto il giorno', r.righe.join(' | ') === '2026-10-10 ev tutto Compleanno di Marco', JSON.stringify(r));
   r = await capisci('il 20 dalle 8 alle 14');
