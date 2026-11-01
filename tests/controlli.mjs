@@ -53,7 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.16');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.17');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -627,8 +627,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 2 fumetti: Agenda e Detta a voce', passi.join(' | ') === 'Novità: l\'Agenda (1 di 2) | Detta a voce: anche per eliminare (2 di 2)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.16'));
+  ok('chi usava già l\'app vede 2 fumetti: Utilità e il giorno', passi.join(' | ') === 'Novità: le Utilità (1 di 2) | Anche nel giorno (2 di 2)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.17'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

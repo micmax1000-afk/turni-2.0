@@ -4208,10 +4208,10 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.16';
+const VERSIONE_NOVITA = '3.8.17';
 const PASSI_NOVITA = [
-  { id: 'btnVistaCalendario', titolo: 'Novità: l\'Agenda', testo: 'Da "Mese ▾" scegli Agenda: giorni prima e dopo, filtro Tutto · Eventi · Turni, la lente per cercare e un ＋ su ogni giorno per aggiungere un evento.' },
-  { id: 'btnFabGiorno', titolo: 'Detta a voce: anche per eliminare', testo: 'Tocca ＋ → "Detta a voce": "elimina lo straordinario di oggi", "giovedì alle 15 dentista con promemoria", "servizio svolto OP Stadio".' }
+  { id: 'tabAltro', titolo: 'Novità: le Utilità', testo: 'In Altro → Utilità: Scadenze (visita medica, tiro, tesserino) con avvisi, Note di servizio, Cambi con i colleghi e Gestione veicolo (km, carburante, anomalie).' },
+  { id: 'btnFabGiorno', titolo: 'Anche nel giorno', testo: 'Tocca il turno del giorno: sotto «Altro per questo giorno» registri l\'uscita del veicolo, uno scambio con un collega o una nota.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

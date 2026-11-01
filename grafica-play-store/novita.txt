@@ -1,7 +1,8 @@
 <it-IT>
-• Agenda come una vera agenda: giorni prima e dopo, filtro Tutto · Eventi · Turni, ricerca e un ＋ su ogni giorno
-• Detta a voce: "alle ore 15", promemoria a voce ("con promemoria", "avvisami un'ora prima")
-• Calendario classico più compatto e nuovo pannello Stile calendario
-• Il ＋ si nasconde mentre scorri; icone tutte dello stesso colore
-• Riempi più giorni: tutti i turni in vista, Cancella per primo
+• Nuove Utilità in Altro:
+  – Scadenze (visita medica, tiro, tesserino…) con avvisi
+  – Note di servizio, anche dettate
+  – Cambi con i colleghi: chi deve un turno a chi
+  – Gestione veicolo: km a mano o a voce, carburante, anomalie
+• Nel giorno: veicolo, scambio e note sotto «Altro per questo giorno»
 </it-IT>
