@@ -1,9 +1,9 @@
 <it-IT>
-• Viste del calendario: Giorno, Settimana, Mese e Agenda
-• Pulsante ＋ per evento, cambio turno, assenza e straordinario
-• Tocca il turno del giorno per modificarlo
-• Colori: si cambiano su ogni turno, e ogni assenza può avere il suo
-• Congedo ordinario calcolato dagli anni di servizio
-• Permesso breve a 36 ore, recupero festivo automatico
-• Backup su Google Drive gratuito
+• Viste Giorno, Settimana, Mese e Agenda; pulsante ＋ per aggiungere
+• Riempi più giorni: scegli un turno e tocca i giorni
+• Scorri col dito per cambiare mese; pulsante Oggi
+• "Annulla" dopo ogni modifica
+• Condividi il mese come immagine (WhatsApp)
+• Nome delle feste nel giorno
+• Colori su ogni turno e assenza; congedo dagli anni di servizio
 </it-IT>
