@@ -601,6 +601,23 @@ sezione('v3.8.12: pennello, scorrimento, Oggi, Annulla');
 }
 
 // ───────────────────────────────────────
+sezione('v3.8.12: festa nel giorno, Cancella in Turni, Condividi il mese');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  const f = await p.evaluate(() => ({ dic8: nomeFestivita('2026-12-08'), pasquetta: nomeFestivita('2026-04-06'), nov1: nomeFestivita('2026-11-01'), feriale: nomeFestivita('2026-10-13') }));
+  ok('nomi delle feste: Immacolata, Lunedì dell\'Angelo (6/4/2026), Ognissanti; niente nei giorni feriali', f.dic8 === 'Immacolata Concezione' && f.pasquetta === "Lunedì dell'Angelo" && f.nov1 === 'Ognissanti' && f.feriale === '', JSON.stringify(f));
+  await p.evaluate(() => { meseCorrente = 10; renderCalendario(); selezionaGiorno('2026-11-01'); });
+  ok('giorno festivo: "· Ognissanti" accanto alla data', await p.evaluate(() => !el('festaGiornoSelezionatoV2').hidden && /Ognissanti/.test(el('festaGiornoSelezionatoV2').textContent)));
+  ok('sotto il calendario non ci sono più "Cancella i turni" e "Prossimi 7 giorni"', await p.evaluate(() => !el('btnCancellaTurniMese').offsetParent && !el('prossimiEventiV2').offsetParent));
+  await p.click('#tabTurni');
+  ok('Turni → "Cancella i turni di un mese" con il mese aperto (Novembre 2026)', await p.evaluate(() => !!el('btnCancellaTurniTurni').offsetParent && /Novembre 2026/.test(el('meseCancellaTurni').textContent)));
+  const img = await p.evaluate(() => { const cv = disegnaImmagineMese(); return { w: cv.width, h: cv.height, png: cv.toDataURL('image/png').length > 10000 }; });
+  ok('Condividi il mese: immagine del mese 1080 px con i turni', img.w === 1080 && img.h > 1000 && img.png, JSON.stringify(img));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');
 {
   const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});
@@ -1125,7 +1142,7 @@ sezione('Agenda (vista del calendario)');
 {
   const { p, errori } = await apri({ turni: turniDiProva(), eventi: { '2026-10-12': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }] } });
   const prima = await p.evaluate(() => ({ nascosta: el('agendaSottoCalendario').hidden, campo: el('campoAgendaSotto').checked, prossimi: !el('prossimiEventiV2').hidden && getComputedStyle(el('prossimiEventiV2')).display !== 'none' }));
-  ok('all\'inizio l\'agenda è spenta e restano "Prossimi 7 giorni"', prima.nascosta && !prima.campo && prima.prossimi, JSON.stringify(prima));
+  ok('all\'inizio l\'agenda è spenta; "Prossimi 7 giorni" non c\'è più sotto il mese (c\'è la vista Agenda)', prima.nascosta && !prima.campo && !prima.prossimi, JSON.stringify(prima));
   ok('in Altro non c\'è più l\'interruttore dell\'agenda (si sceglie dal calendario)', await p.evaluate(() => !el('campoAgendaSotto').offsetParent));
   await p.click('#btnVistaCalendario');
   await p.click('[data-vista-calendario="agenda"]');
@@ -1161,7 +1178,7 @@ sezione('Agenda (vista del calendario)');
   ok('tocco su un evento: si apre la modifica dell\'evento', await p.evaluate(() => !el('overlayEvento').hidden && el('campoEventoTitolo').value === 'Visita medica'));
   await p.evaluate(() => { el('overlayEvento').hidden = true; });
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
-  ok('di nuovo Mese: torna il calendario e "Prossimi 7 giorni"', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none' && getComputedStyle(el('prossimiEventiV2')).display !== 'none'));
+  ok('di nuovo Mese: torna il calendario', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none'));
   // Vista Settimana: una riga per giorno con le ore e il totale; frecce di una settimana.
   await p.evaluate(() => { selezionaGiorno('2026-10-09'); });
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="settimana"]');

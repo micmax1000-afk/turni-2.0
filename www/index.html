@@ -79,10 +79,12 @@
       <button type="button" role="menuitem" data-vista-calendario="settimana"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M9 9v11M15 9v11"/></svg>Settimana</button>
       <button type="button" role="menuitem" data-vista-calendario="mese"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M3 14h18M9 9v11M15 9v11"/></svg>Mese</button>
       <button type="button" role="menuitem" data-vista-calendario="agenda"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Agenda</button>
+      <div class="menu-vista-sep"></div>
+      <button type="button" role="menuitem" id="btnCondividiMese"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>Condividi il mese</button>
     </div>
 
     <div class="riepilogo-giorno-selezionato-box-v2">
-      <p class="giorno-v4-testa"><span class="giorno-v3-data" id="dataGiornoSelezionatoV2"></span><span class="giorno-v4-oggi" id="oggiGiornoSelezionatoV2" hidden> · oggi</span></p>
+      <p class="giorno-v4-testa"><span class="giorno-v3-data" id="dataGiornoSelezionatoV2"></span><span class="giorno-v4-oggi" id="oggiGiornoSelezionatoV2" hidden> · oggi</span><span class="giorno-v4-festa" id="festaGiornoSelezionatoV2" hidden></span></p>
       <button type="button" class="giorno-v4-riga" id="btnModificaGiornoSelezionatoV2" aria-label="Modifica il giorno"><span class="riepilogo-giorno-selezionato-v2" id="riepilogoGiornoSelezionatoV2">Seleziona un giorno</span><span class="giorno-v4-freccia" aria-hidden="true">›</span></button>
       <div class="indennita-giorno-selezionato-v2" id="indennitaGiornoSelezionatoV2" hidden></div>
       <input type="text" id="campoServizioSvolto" class="campo-servizio-svolto" placeholder="📋 Servizio svolto (es. Pattugliamento)" aria-label="Servizio svolto">
@@ -680,6 +682,11 @@
       <button type="button" class="turno-v4 turno-compatto-v4" id="btnRiempiGiorniTurni">
         <span class="sigla-v4 sigla-strumento-v4" style="background:#E6F4EA;color:#1E7A46">🖌️</span>
         <span class="testo-v4"><strong>Riempi più giorni</strong><small>Scegli un turno e tocca i giorni nel calendario</small></span>
+        <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <button type="button" class="turno-v4 turno-compatto-v4" id="btnCancellaTurniTurni">
+        <span class="sigla-v4 sigla-strumento-v4" style="background:#FDECEA;color:#C62828">🗑️</span>
+        <span class="testo-v4"><strong>Cancella i turni di un mese</strong><small id="meseCancellaTurni">Il mese aperto nel calendario</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
       <button type="button" class="turno-v4 turno-compatto-v4" id="btnApriEsportaCalendario">

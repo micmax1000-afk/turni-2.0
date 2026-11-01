@@ -2880,3 +2880,7 @@ body.modo-pennello #calendarioGriglia .giorno-cella:not(.fuori-mese){cursor:cros
 .toast-v20:has(.toast-azione){grid-template-columns:28px 1fr auto auto}
 .toast-v20 .toast-azione{color:var(--acc,#1D4FD7);align-self:center;white-space:nowrap}
 html[data-tema="scuro"] .toast-v20 .toast-azione{color:#9FB4FF}
+/* v3.8.12: niente "Cancella i turni" e "Prossimi 7 giorni" sotto il calendario (ora in Turni e nella vista Agenda) */
+#btnCancellaTurniMese,#prossimiEventiV2{display:none!important}
+.giorno-v4-festa{color:#C62828}
+.menu-vista-sep{height:1px;background:var(--bordo);margin:4px 6px}

@@ -1178,6 +1178,7 @@ function renderVistaSettimana(iso){
 function inizializzaVisteCalendario(){
   const menu = el('menuVistaCalendario');
   if(!menu) return;
+  on('btnCondividiMese', 'click', condividiMese);
   on('btnVistaCalendario', 'click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; el('btnVistaCalendario').setAttribute('aria-expanded', String(!menu.hidden)); });
   document.addEventListener('click', e => {
     if(!menu.hidden && !e.target.closest('#menuVistaCalendario')) menu.hidden = true;
@@ -1275,4 +1276,85 @@ function clicAgenda(e){
   giornoSelezionato = iso;
   renderCalendario();
   apriModaleTurno(iso);
+}
+
+
+// v3.8.12: il nome della festa (come in Google Calendar), per i giorni festivi riconosciuti dall'app.
+const NOMI_FESTE_FISSE = { '01-01': 'Capodanno', '01-06': 'Epifania', '04-25': 'Festa della Liberazione', '05-01': 'Festa del Lavoro', '06-02': 'Festa della Repubblica', '08-15': 'Ferragosto', '11-01': 'Ognissanti', '12-08': 'Immacolata Concezione', '12-25': 'Natale', '12-26': 'Santo Stefano' };
+function nomeFestivita(iso){
+  if(!iso) return '';
+  if(NOMI_FESTE_FISSE[iso.slice(5)]) return NOMI_FESTE_FISSE[iso.slice(5)];
+  const pasqua = calcolaPasqua(Number(iso.slice(0, 4)));
+  if(dataISO(pasqua) === iso) return 'Pasqua';
+  const lun = new Date(pasqua); lun.setDate(pasqua.getDate() + 1);
+  return dataISO(lun) === iso ? "Lunedì dell'Angelo" : '';
+}
+
+// v3.8.12: "Condividi il mese": un'immagine del mese con i turni, da mandare su WhatsApp.
+function etichettaBreveGiorno(t){
+  if(!t) return '';
+  if(t.assenzaTipo){ const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo); return siglaAssenza(v ? v.nome : 'Assenza'); }
+  if(t.riposo) return 'Riposo';
+  const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
+  if(m && typeof NOME_BREVE_CATEGORIA !== 'undefined' && NOME_BREVE_CATEGORIA[m.id]) return NOME_BREVE_CATEGORIA[m.id];
+  const n = m ? m.nome : (t.oraInizio ? 'Turno' : '');
+  return n.length <= 6 ? n : (m && m.sigla ? m.sigla : n.slice(0, 5) + '.');
+}
+function disegnaImmagineMese(){
+  const primo0 = new Date(annoCorrente, meseCorrente, 1), righe = Math.ceil(((primo0.getDay() + 6) % 7 + new Date(annoCorrente, meseCorrente + 1, 0).getDate()) / 7);
+  const W = 1080, cella = W / 7, testa = 190, H = testa + 70 + righe * 150 + 70;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const font = (peso, px) => `${peso} ${px}px "IBM Plex Sans", system-ui, sans-serif`;
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#1B2440'; g.font = font(700, 64); g.textAlign = 'left';
+  g.fillText(`${NOMI_MESI[meseCorrente]} ${annoCorrente}`, 48, 110);
+  g.fillStyle = '#6B7280'; g.font = font(500, 30);
+  g.fillText('I miei turni', 48, 156);
+  const giorni = ['LUN','MAR','MER','GIO','VEN','SAB','DOM'];
+  g.font = font(700, 26); g.textAlign = 'center';
+  giorni.forEach((n, i) => { g.fillStyle = i >= 5 ? '#C62828' : '#4B5563'; g.fillText(n, cella * i + cella / 2, testa + 40); });
+  const primo = new Date(annoCorrente, meseCorrente, 1), offset = (primo.getDay() + 6) % 7;
+  const nGiorni = new Date(annoCorrente, meseCorrente + 1, 0).getDate();
+  for(let gg = 1; gg <= nGiorni; gg++){
+    const pos = offset + gg - 1, r = Math.floor(pos / 7), c = pos % 7;
+    const x = cella * c, y = testa + 70 + r * 150;
+    const iso = dataISO(new Date(annoCorrente, meseCorrente, gg));
+    g.strokeStyle = '#E5E7EB'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + 6, y); g.lineTo(x + cella - 6, y); g.stroke();
+    g.fillStyle = eFestivoOdDomenica(iso) ? '#C62828' : '#1B2440'; g.font = font(700, 40);
+    g.fillText(String(gg), x + cella / 2, y + 52);
+    const t = AppState.turni[iso], et = etichettaBreveGiorno(t);
+    if(et){
+      const col = coloreGiornoVista(t) || '#C9CED6';
+      g.fillStyle = col;
+      const pw = cella - 20, ph = 46, px = x + 10, py = y + 72;
+      g.beginPath(); if(g.roundRect) g.roundRect(px, py, pw, ph, 12); else g.rect(px, py, pw, ph); g.fill();
+      g.fillStyle = testoSuColore(col); g.font = font(700, 26);
+      g.fillText(et, x + cella / 2, py + 32);
+    }
+  }
+  g.fillStyle = '#9CA3AF'; g.font = font(500, 24); g.textAlign = 'right';
+  g.fillText('Turni & Accessorio PS', W - 40, H - 30);
+  return cv;
+}
+async function condividiMese(){
+  el('menuVistaCalendario').hidden = true;
+  const cv = disegnaImmagineMese();
+  const nome = `turni-${annoCorrente}-${String(meseCorrente + 1).padStart(2, '0')}.png`;
+  const dataUrl = cv.toDataURL('image/png');
+  const C = window.Capacitor;
+  if(C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.Filesystem && C.Plugins.Share){
+    try{
+      await C.Plugins.Filesystem.writeFile({ path: nome, data: dataUrl.split(',')[1], directory: 'CACHE' });
+      const ris = await C.Plugins.Filesystem.getUri({ path: nome, directory: 'CACHE' });
+      await C.Plugins.Share.share({ title: `Turni di ${NOMI_MESI[meseCorrente].toLowerCase()}`, url: ris.uri, dialogTitle: 'Condividi il mese' });
+      return;
+    }catch(e){ console.warn('Condivisione nativa non riuscita:', e); }
+  }
+  try{
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], nome, { type: 'image/png' });
+    if(navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title: nome }); return; }
+  }catch(e){}
+  const a = document.createElement('a'); a.href = dataUrl; a.download = nome; a.click();
 }

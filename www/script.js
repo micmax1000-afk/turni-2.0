@@ -725,6 +725,8 @@ function inizializza(){
   on('campoPatternRientroFine','change', aggiornaStraordinarioRientroPatternSempliceV2);
 
   el('btnCancellaTurniMese').addEventListener('click', cancellaTurniMese);
+  // v3.8.12: il pulsante sta nella scheda Turni (non più sotto il calendario): vale per il mese aperto nel calendario.
+  on('btnCancellaTurniTurni', 'click', cancellaTurniMese);
 
   el('btnEsportaBackup').addEventListener('click', esportaBackup);
   el('btnImportaBackup').addEventListener('click', () => el('campoImportaBackup').click());
@@ -3363,11 +3365,15 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   // v3.8.10: la data sta sopra; il turno è una riga da toccare (apre "Modifica il giorno"), come un evento in Google Calendar.
   el('dataGiornoSelezionatoV2').textContent = dataLunga;
   el('oggiGiornoSelezionatoV2').hidden = giornoSelezionato !== dataISO(new Date());
+  const festa = nomeFestivita(giornoSelezionato);
+  el('festaGiornoSelezionatoV2').hidden = !festa;
+  el('festaGiornoSelezionatoV2').textContent = festa ? ` · ${festa}` : '';
   box.innerHTML = `<span class="giorno-v3-barra" style="background:${escapeHtml(colore)}"></span>
     <span class="giorno-v3-testi"><span class="giorno-v3-nome">${escapeHtml(nome)}</span>${orario ? `<span class="giorno-v3-orario">${escapeHtml(orario)}</span>` : ''}</span>
     ${ore ? `<span class="giorno-v3-ore">${escapeHtml(ore)}</span>` : ''}`;
   const linkCancella = el('btnCancellaTurniMese');
   if(linkCancella) linkCancella.textContent = `Cancella i turni di ${NOMI_MESI[meseCorrente].toLowerCase()}…`;
+  const meseCanc = el('meseCancellaTurni'); if(meseCanc) meseCanc.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente} (il mese aperto nel calendario)`;
   renderListaEventiGiornoV2();
   if(!boxIndennita) return;
   if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
