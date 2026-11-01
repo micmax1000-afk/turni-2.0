@@ -1235,6 +1235,9 @@ function inizializzaVisteCalendario(){
   if(el('etichettaMese') && window.MutationObserver){
     new MutationObserver(() => requestAnimationFrame(adattaTitoloCalendario)).observe(el('etichettaMese'), { childList: true, characterData: true, subtree: true });
     window.addEventListener('resize', () => requestAnimationFrame(adattaTitoloCalendario));
+    // anche quando cambia la grandezza dei caratteri con l'app aperta
+    if(window.ResizeObserver){ const testa = el('etichettaMese').closest('.calendario-header-v2'); let w0 = 0; new ResizeObserver(() => { const w = el('etichettaMese').clientWidth; if(w !== w0){ w0 = w; requestAnimationFrame(adattaTitoloCalendario); } }).observe(testa || el('etichettaMese')); }
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(adattaTitoloCalendario));
     requestAnimationFrame(adattaTitoloCalendario);
   }
   on('btnCondividiMese', 'click', condividiMese);

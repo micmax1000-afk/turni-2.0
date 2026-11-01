@@ -53,7 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.13');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.16');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -627,8 +627,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 2 fumetti: detta a voce, Settimana e Agenda', passi.join(' | ') === 'Novità: detta a voce (1 di 2) | Settimana e Agenda più complete (2 di 2)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.13'));
+  ok('chi usava già l\'app vede 2 fumetti: Agenda e Detta a voce', passi.join(' | ') === 'Novità: l\'Agenda (1 di 2) | Detta a voce: anche per eliminare (2 di 2)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.16'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1013,7 +1013,7 @@ sezione('Riposo compensativo, colori delle assenze, cambio turno');
   ok('assenze a 0 / 0: anello grigio pieno', await p.evaluate(() => { const r = [...document.querySelectorAll('#corpoAssenze .card-assenza-compact')].find(x => /Riposo festivo/.test(x.textContent)); const c = r && r.querySelector('.saldo-anello-pieno'); return !!c && c.getAttribute('stroke') === COLORE_ASSENZA_VUOTA && c.getAttribute('stroke-opacity') !== '0'; }));
   await p.evaluate(() => { AppState.turni['2026-10-20'] = { data: '2026-10-20', oraInizio: '07:00', oraFine: '13:00', cambioTurno: true }; salvaTurniStorage(); renderCalendario(); });
   await p.click('#tabReport');
-  ok('Report: cambio turno del mese e dell\'anno con quanto varrà a luglio', await p.evaluate(() => /Cambio turno: 1 a ottobre · nel 2026 1 cambio = 10,00 €, in busta a luglio 2027/.test(document.querySelector('.mese-cambio-v5')?.textContent || '')), await p.evaluate(() => document.querySelector('.mese-cambio-v5')?.textContent));
+  ok('Report: cambio turno del mese e dell\'anno con quanto varrà a luglio', await p.evaluate(() => /Cambio turno: 1 a ottobre, 1 nel 2026 · 10,00 € a luglio 2027/.test(document.querySelector('.mese-cambio-v5')?.textContent || '')), await p.evaluate(() => document.querySelector('.mese-cambio-v5')?.textContent));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

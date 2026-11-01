@@ -3053,3 +3053,12 @@ body.modo-pennello .documento{padding-bottom:200px}
 .agenda-ic{width:13px;height:13px}
 .agenda-vuota{text-align:center;color:var(--testo-tenue);font-size:.9rem;padding:22px 8px}
 .agenda-risultato-servizio .icona-linea{margin-top:3px}
+
+/* v3.8.16: ＋ che si nasconde scorrendo, spazio in fondo, icone degli eventi, casella servizio svolto */
+.fab-giorno{transition:transform .22s ease,opacity .22s ease}
+.fab-giorno.fab-nascosto{transform:translateY(160%);opacity:0;pointer-events:none}
+.agenda-calendario,.vs-lista,#listaEventiGiornoV2{padding-bottom:12px}
+#vistaTurni .scheda-calendario-v2{margin-bottom:84px}
+.riga-evento-giorno-icone{display:inline-flex;gap:6px}
+.riga-evento-giorno-icone .icona-linea{width:15px;height:15px}
+.campo-servizio-svolto{padding-left:36px!important;background:var(--pannello) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231D4FD7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20l4-1 11-11-3-3L5 16z'/%3E%3Cpath d='M14 7l3 3'/%3E%3C/svg%3E") no-repeat 10px center/17px 17px!important}

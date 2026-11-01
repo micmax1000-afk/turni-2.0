@@ -689,7 +689,7 @@ function inizializzaVoce(){
   if(!b) return;
   b.hidden = !voceDisponibile();
   // Senza dettatura (es. alcuni browser) la guida alle novità non ne parla.
-  if(b.hidden && typeof PASSI_NOVITA !== 'undefined' && PASSI_NOVITA[0] && /voce/.test(PASSI_NOVITA[0].titolo)) PASSI_NOVITA.splice(0, 1);
+  if(b.hidden && typeof PASSI_NOVITA !== 'undefined'){ const i = PASSI_NOVITA.findIndex(x => /voce/i.test(x.titolo)); if(i >= 0) PASSI_NOVITA.splice(i, 1); }
   b.addEventListener('click', apriDettaVoce);
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && el('schedaVoce') && !el('schedaVoce').hidden) chiudiVoce(); });
 }

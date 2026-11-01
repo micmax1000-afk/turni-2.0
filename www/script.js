@@ -1709,7 +1709,7 @@ function renderMeseV3(){
       ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span>lordo</span><span>netto</span></div>` : ''}
       ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
       ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><b>${f(totInd)}</b><b class="netto-v3">~${f(round2(totInd * quotaNetta))}</b></div>` : ''}
-      ${cambiAnno ? `<p class="mese-cambio-v5">${iconaIndennita('cambioTurno')}<span>Cambio turno: ${r.turniCambioTurno ? `${r.turniCambioTurno} a ${mese} · ` : ''}nel ${annoCorrente} ${cambiAnno} ${cambiAnno === 1 ? 'cambio' : 'cambi'} = <b>${f(round2(cambiAnno * AppState.tabelle.indennitaCambioTurno))}</b>, in busta a luglio ${annoCorrente + 1}</span></p>` : ''}
+      ${cambiAnno ? `<p class="mese-cambio-v5">${iconaIndennita('cambioTurno')}<span>Cambio turno: ${r.turniCambioTurno ? `${r.turniCambioTurno} a ${mese}, ` : ''}${cambiAnno} nel ${annoCorrente} · <b>${f(round2(cambiAnno * AppState.tabelle.indennitaCambioTurno))}</b> a luglio ${annoCorrente + 1}</span></p>` : ''}
       <div class="mese-piede-v4">
         ${ind.length ? `<details class="mese-info-v4"><summary>In busta a ${pag} · netto stimato <span aria-hidden="true">ⓘ</span></summary><p>${str > 0 ? `Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} lordi → +${f(ns.netto)} netti. ` : ''}Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</p></details>` : '<span></span>'}
         ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi zeri ▴' : 'Voci a zero ▾'}</button>` : ''}
@@ -2247,9 +2247,11 @@ function renderListaEventiGiornoV2(){
 // Una riga dell'elenco eventi: titolo, orario, luogo, 🔔 se ha promemoria, 🔁 se si ripete.
 function rigaEventoHtml(ev, isoOrigine, etichettaGiorno){
   const quando = ev.tuttoIlGiorno ? 'Tutto il giorno'
-    : ev.oraInizio && !ev.oraFine ? `Alle ${ev.oraInizio}` : `${ev.oraInizio || '—'} - ${ev.oraFine || '—'}`;
+    : ev.oraInizio && !ev.oraFine ? `Alle ${ev.oraInizio}` : `${ev.oraInizio || '—'}–${ev.oraFine || '—'}`;
   const dettaglio = [etichettaGiorno, quando, ev.luogo].filter(Boolean).join(' · ');
-  const icone = (promemoriaDiEvento(ev).length ? '🔔' : '') + (ev.ripeti ? '🔁' : '');
+  // v3.8.16: icone a linea (campanella, frecce) come in Agenda
+  const lin = n => typeof svgLinea === 'function' ? svgLinea(n) : '';
+  const icone = (promemoriaDiEvento(ev).length ? lin('campana') : '') + (ev.ripeti ? lin('giro') : '');
   return `<button type="button" class="riga-evento-giorno-v2" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">
       <span class="riga-evento-giorno-pallino" aria-hidden="true" style="color:${coloreEvento(ev)}">●</span>
       <span class="riga-evento-giorno-testo"><strong>${escapeHtml(ev.titolo || 'Senza titolo')}</strong><small>${escapeHtml(dettaglio)}</small></span>
@@ -4158,6 +4160,17 @@ function vaiAOggi(){
 }
 function inizializzaGestiCalendario(){
   on('btnVaiOggi', 'click', vaiAOggi);
+  // v3.8.16: il ＋ si nasconde mentre scorri in giù e torna quando risali (come Google Calendar),
+  // così non copre le ore e le scritte in fondo a destra.
+  let yPrima = window.scrollY;
+  window.addEventListener('scroll', () => {
+    const fab = el('btnFabGiorno'); if(!fab) return;
+    const y = window.scrollY, dy = y - yPrima;
+    if(Math.abs(dy) < 6) return;
+    const menuAperto = el('menuFabGiorno') && !el('menuFabGiorno').hidden;
+    fab.classList.toggle('fab-nascosto', dy > 0 && y > 60 && !menuAperto);
+    yPrima = y;
+  }, { passive: true });
   const n = el('numeroOggiCalendario'); if(n) n.textContent = String(new Date().getDate());
   // Il pennello si apre dalla scheda Turni e lavora sul calendario.
   on('btnRiempiGiorniTurni', 'click', () => { mostraScheda('calendario'); avviaPennello(); window.scrollTo(0, 0); });
@@ -4185,10 +4198,10 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.13';
+const VERSIONE_NOVITA = '3.8.16';
 const PASSI_NOVITA = [
-  { id: 'btnFabGiorno', titolo: 'Novità: detta a voce', testo: 'Tocca ＋ e poi "Detta a voce": "domani notte", "ferie dal 3 al 10 dicembre", "oggi straordinario 2 ore dopo", "giovedì alle 10 dentista".' },
-  { id: 'btnVistaCalendario', titolo: 'Settimana e Agenda più complete', testo: 'Ora mostrano indennità, straordinario a parte (+2:00), servizio svolto ed eventi. Tocca un evento per aprirlo.' }
+  { id: 'btnVistaCalendario', titolo: 'Novità: l\'Agenda', testo: 'Da "Mese ▾" scegli Agenda: giorni prima e dopo, filtro Tutto · Eventi · Turni, la lente per cercare e un ＋ su ogni giorno per aggiungere un evento.' },
+  { id: 'btnFabGiorno', titolo: 'Detta a voce: anche per eliminare', testo: 'Tocca ＋ → "Detta a voce": "elimina lo straordinario di oggi", "giovedì alle 15 dentista con promemoria", "servizio svolto OP Stadio".' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

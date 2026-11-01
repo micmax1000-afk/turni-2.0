@@ -75,7 +75,8 @@ const DISEGNI_LINEA = {
   stella: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   occhio: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
   condividi: '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4M8.2 13.2l7.6 4"/>',
-  avviso: '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.3"/>'
+  avviso: '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.3"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>'
 };
 // Emoji → icona (senza il "selettore di variante" ️)
 const EMOJI_LINEA = {
@@ -90,7 +91,7 @@ const EMOJI_LINEA = {
   '⏭': 'avanti', '⚡': 'fulmine', '🔦': 'torcia', '↩': 'indietro', '🩺': 'salute', '🌓': 'contrasto', '📖': 'libro', '📚': 'libro', '💬': 'fumetto',
   '👋': 'mano', '👆': 'tocco', '🐞': 'insetto', '💡': 'lampadina', '❓': 'domanda', '✉': 'busta', '📧': 'busta', '🏠': 'casa', '⏸': 'pausa', '🔑': 'chiave',
   '🔒': 'lucchetto', '🎓': 'cappello', '🚀': 'razzo', '🌐': 'globo', '🎖': 'medaglia', '🏅': 'medaglia', '🧮': 'calcolatrice', '🗺': 'mappa', '🎁': 'regalo',
-  '🧩': 'pezzo', '⭐': 'stella', '👁': 'occhio', '🔗': 'condividi', '⚠': 'avviso'
+  '🧩': 'pezzo', '⭐': 'stella', '👁': 'occhio', '🔗': 'condividi', '⚠': 'avviso', 'ℹ': 'info'
 };
 function svgLinea(nome, classe){
   const d = DISEGNI_LINEA[nome];
