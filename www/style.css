@@ -2840,3 +2840,14 @@ html[data-tema="scuro"] .fab-giorno{background:#2E3D66;color:#C9D4F5}
 html[data-tema="scuro"] .fab-menu button span{background:#26304A}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .fab-giorno{background:#2E3D66;color:#C9D4F5}html:not([data-tema="chiaro"]) .fab-menu button span{background:#26304A}}
 #btnTemaVeloce{display:none!important}
+
+/* v3.8.11 — "Cosa vuoi aggiungere?" a tutta pagina, sfondo chiaro come il resto */
+#overlaySelettoreModelli{background:var(--pannello)!important;padding:0!important;backdrop-filter:none!important}
+#overlaySelettoreModelli > .modale{position:fixed;inset:0;max-width:none;width:auto;max-height:none;height:100%;margin:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;background:var(--pannello);padding-top:env(safe-area-inset-top)}
+#overlaySelettoreModelli .modale-corpo{flex:1;overflow-y:auto;max-height:none!important;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+#overlaySelettoreModelli .lista-modelli-selettore{background:transparent!important;border:0!important;box-shadow:none!important}
+/* Orari del nuovo evento più larghi: sul telefono l'ora si legge intera anche con la freccina di Android */
+#overlayEvento .orari-evento input{width:5.4em!important;-webkit-appearance:none;appearance:none}
+#overlaySelettoreModelli .lista-modelli-selettore *:not(.badge-pro):not([style*="background"]){background-color:transparent}
+#overlaySelettoreModelli .lista-modelli-selettore > div,#overlaySelettoreModelli .lista-modelli-selettore > details > div{background:var(--pannello)!important}
+#overlaySelettoreModelli .lista-modelli-selettore .attivo,#overlaySelettoreModelli .lista-modelli-selettore [aria-checked="true"],#overlaySelettoreModelli .lista-modelli-selettore .selezionato{background-color:color-mix(in srgb,#155EEF 8%,var(--pannello))!important}

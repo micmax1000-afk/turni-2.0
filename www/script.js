@@ -1107,7 +1107,8 @@ function inizializza(){
   on('btnFabGiorno','click', () => { const aperto = !el('menuFabGiorno').hidden; if(aperto) chiudiFabGiorno(); else { if(!giornoSelezionato) selezionaGiorno(dataISO(new Date())); el('menuFabGiorno').hidden = false; el('veloFabGiorno').hidden = false; el('btnFabGiorno').classList.add('aperto'); el('btnFabGiorno').setAttribute('aria-expanded', 'true'); } });
   on('veloFabGiorno','click', chiudiFabGiorno);
   on('btnAssenzaGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; apriModaleTurno(giornoSelezionato); const b = document.querySelector('[data-tipo-giorno="assenza"]'); if(b) b.click(); });
-  on('btnStraordinarioGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; apriModaleTurno(giornoSelezionato); if(typeof mostraStraordinarioGiorno === 'function') mostraStraordinarioGiorno(true); setTimeout(() => { const c = el('campoStrOre1'); if(c){ c.scrollIntoView({ block: 'center' }); } }, 50); });
+  // Straordinario: la scheda piccola (ore prima o dopo il turno), non tutto "Modifica il giorno".
+  on('btnStraordinarioGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriStraordinarioRapidoV2(); });
   on('btnTurnoGiornoV3','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
   // Toccando i simboli nel riquadro del giorno si apre la legenda (prima c'era la "i" in alto).
@@ -2422,7 +2423,8 @@ function intestaGiornataEvento(iso){
   const breve = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
   el('giornataEventoTitolo').textContent = lungo.charAt(0).toUpperCase() + lungo.slice(1);
   el('giornataEventoNumero').textContent = String(d.getDate());
-  el('dataEventoFoglio').textContent = breve.charAt(0).toUpperCase() + breve.slice(1);
+  // Nella scheda basta "13 ott": il giorno della settimana è già scritto in alto, e gli orari restano interi.
+  el('dataEventoFoglio').textContent = d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }).replace(/\./g, '');
   el('dataEventoFoglioFine').textContent = el('dataEventoFoglio').textContent;
   const t = AppState.turni[iso];
   let sotto;

@@ -566,7 +566,7 @@ sezione('v3.8.10: giorno come Google Calendar (riga del turno e pulsante ＋)');
   ok('＋ → Assenza: "Modifica il giorno" già su Assenza', await p.evaluate(() => !el('pannelloTurno').hidden && el('menuFabGiorno').hidden && document.querySelector('[data-tipo-giorno="assenza"]').classList.contains('attivo')));
   await p.click('#btnChiudiTurno');
   await p.click('#btnFabGiorno'); await p.click('#btnStraordinarioGiornoFab');
-  ok('＋ → Straordinario: "Modifica il giorno" con lo straordinario aperto', await p.evaluate(() => !el('pannelloTurno').hidden && !el('riquadroStraordinarioGiorno').hidden));
+  ok('＋ → Straordinario: si apre la scheda piccola dello straordinario (non tutto il giorno)', await p.evaluate(() => !el('overlayStraordinarioRapido').hidden && el('pannelloTurno').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
