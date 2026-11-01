@@ -2884,3 +2884,16 @@ html[data-tema="scuro"] .toast-v20 .toast-azione{color:#9FB4FF}
 #btnCancellaTurniMese,#prossimiEventiV2{display:none!important}
 .giorno-v4-festa{color:#C62828}
 .menu-vista-sep{height:1px;background:var(--bordo);margin:4px 6px}
+
+/* v3.8.12 — Guida alle novità: buco luminoso sul pulsante e fumetto */
+.guida-novita{position:fixed;inset:0;z-index:2000}
+.guida-novita[hidden]{display:none}
+.guida-novita-buco{position:fixed;border-radius:16px;box-shadow:0 0 0 9999px rgba(15,20,35,.62);outline:2px solid #fff;transition:all .2s ease;pointer-events:none}
+.guida-novita-fumetto{position:fixed;left:16px;right:16px;background:var(--pannello);color:var(--testo);border-radius:18px;padding:14px 16px 10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.guida-novita-fumetto::after{content:'';position:absolute;left:var(--freccia,40px);width:16px;height:16px;background:var(--pannello);transform:rotate(45deg);bottom:-8px}
+.guida-novita-fumetto.sotto::after{bottom:auto;top:-8px}
+.guida-novita-fumetto small{display:block;font-size:.72rem;font-weight:800;color:var(--acc,#1D4FD7);text-transform:uppercase;letter-spacing:.05em}
+.guida-novita-fumetto b{display:block;font-size:1.08rem;margin-top:2px}
+.guida-novita-fumetto p{margin:4px 0 8px;font-size:.92rem;color:var(--testo-tenue);line-height:1.4}
+.guida-novita-azioni{display:flex;justify-content:space-between;align-items:center}
+.guida-novita-azioni .btn-primario{padding:8px 20px;border-radius:999px}

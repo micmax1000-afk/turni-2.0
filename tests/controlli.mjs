@@ -53,6 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.12');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -613,6 +614,21 @@ sezione('v3.8.12: festa nel giorno, Cancella in Turni, Condividi il mese');
   ok('Turni → "Cancella i turni di un mese" con il mese aperto (Novembre 2026)', await p.evaluate(() => !!el('btnCancellaTurniTurni').offsetParent && /Novembre 2026/.test(el('meseCancellaTurni').textContent)));
   const img = await p.evaluate(() => { const cv = disegnaImmagineMese(); return { w: cv.width, h: cv.height, png: cv.toDataURL('image/png').length > 10000 }; });
   ok('Condividi il mese: immagine del mese 1080 px con i turni', img.w === 1080 && img.h > 1000 && img.png, JSON.stringify(img));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.12: guida alle novità');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(900);
+  await p.evaluate(() => { localStorage.removeItem('simCedolino_novitaViste_v1'); avviaNovitaSeServe(); });
+  await p.waitForTimeout(200);
+  const passi = [];
+  for(let i = 0; i < 4; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
+  ok('chi usava già l\'app vede 4 fumetti: ＋, turno, viste, oggi', passi.join(' | ') === 'Il pulsante ＋ (1 di 4) | Tocca il turno (2 di 4) | Giorno, Settimana, Mese (3 di 4) | Torna a oggi (4 di 4)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.12'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

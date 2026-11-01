@@ -560,6 +560,7 @@ function inizializza(){
   });
   inizializzaVisteCalendario();
   inizializzaGestiCalendario();
+  inizializzaNovita();
 
   el('etichettaMese').addEventListener('click', () => {
     el('campoVaiMese').value = meseCorrente;
@@ -3604,6 +3605,7 @@ function renderRiepilogoBenvenuto(){
 }
 function chiudiBenvenuto(){
   TurniPSStorage.setItem(CHIAVE_BENVENUTO, '1');
+  TurniPSStorage.setItem(CHIAVE_NOVITA, VERSIONE_NOVITA); // chi ha appena fatto il primo avvio non ha bisogno delle novità
   el('overlayBenvenuto').hidden = true;
   mostraScheda('calendario');
   renderCalendario();
@@ -4168,4 +4170,58 @@ function inizializzaGestiCalendario(){
     griglia.classList.add(dx < 0 ? 'scorri-sx' : 'scorri-dx');
     el(dx < 0 ? 'btnMeseSucc' : 'btnMesePrec').click();
   }, { passive: true });
+}
+
+// ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
+const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
+const VERSIONE_NOVITA = '3.8.12';
+const PASSI_NOVITA = [
+  { id: 'btnFabGiorno', titolo: 'Il pulsante ＋', testo: 'Aggiungi un evento, un turno o un\'assenza, lo straordinario, oppure modifica il giorno.' },
+  { id: 'btnModificaGiornoSelezionatoV2', titolo: 'Tocca il turno', testo: 'Tocca la riga del turno per aprire e modificare il giorno.' },
+  { id: 'btnVistaCalendario', titolo: 'Giorno, Settimana, Mese', testo: 'Qui scegli la vista, l\'Agenda e "Condividi il mese". Scorri col dito per passare al mese dopo o prima.' },
+  { id: 'btnVaiOggi', titolo: 'Torna a oggi', testo: 'Da qualsiasi mese, un tocco e sei di nuovo a oggi.' }
+];
+let passoNovita = -1;
+function avviaNovitaSeServe(){
+  if(passoNovita >= 0) return; // già aperta
+  let vista = null; try{ vista = TurniPSStorage.getItem(CHIAVE_NOVITA); }catch(e){}
+  if(vista === VERSIONE_NOVITA) return;
+  if(!Object.keys(AppState.turni || {}).length) return; // installazione nuova: c'è il primo avvio guidato
+  if(!el('overlayBenvenuto').hidden) return;
+  if(!giornoSelezionato) selezionaGiorno(dataISO(new Date()));
+  passoNovita = 0; mostraPassoNovita();
+}
+function mostraPassoNovita(){
+  const p = PASSI_NOVITA[passoNovita], bersaglio = p && el(p.id);
+  if(!p){ chiudiNovita(); return; }
+  if(!bersaglio || !bersaglio.getClientRects().length){ passoNovita++; mostraPassoNovita(); return; }
+  bersaglio.scrollIntoView({ block: 'center' });
+  setTimeout(() => {
+    const r = bersaglio.getBoundingClientRect(), m = 6;
+    const box = el('guidaNovita');
+    box.hidden = false;
+    const buco = el('guidaNovitaBuco');
+    Object.assign(buco.style, { left: `${r.left - m}px`, top: `${r.top - m}px`, width: `${r.width + 2 * m}px`, height: `${r.height + 2 * m}px` });
+    el('guidaNovitaTitolo').textContent = p.titolo;
+    el('guidaNovitaTesto').textContent = p.testo;
+    el('guidaNovitaPasso').textContent = `${passoNovita + 1} di ${PASSI_NOVITA.length}`;
+    el('btnNovitaAvanti').textContent = passoNovita === PASSI_NOVITA.length - 1 ? 'Ho capito' : 'Avanti';
+    const fumetto = el('guidaNovitaFumetto');
+    const sotto = r.top < window.innerHeight / 2;
+    fumetto.classList.toggle('sotto', sotto);
+    fumetto.style.top = sotto ? `${r.bottom + 16}px` : '';
+    fumetto.style.bottom = sotto ? '' : `${window.innerHeight - r.top + 16}px`;
+    const freccia = Math.min(window.innerWidth - 40, Math.max(28, r.left + r.width / 2 - 16));
+    fumetto.style.setProperty('--freccia', `${freccia}px`);
+  }, 80);
+}
+function chiudiNovita(){
+  passoNovita = -1;
+  el('guidaNovita').hidden = true;
+  try{ TurniPSStorage.setItem(CHIAVE_NOVITA, VERSIONE_NOVITA); }catch(e){}
+}
+function inizializzaNovita(){
+  on('btnNovitaAvanti', 'click', () => { passoNovita++; mostraPassoNovita(); });
+  on('btnNovitaSalta', 'click', chiudiNovita);
+  setTimeout(avviaNovitaSeServe, 700);
 }
