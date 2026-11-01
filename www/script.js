@@ -560,6 +560,8 @@ function inizializza(){
   });
   inizializzaVisteCalendario();
   if(typeof inizializzaVoce === 'function') inizializzaVoce();
+  // v3.8.14: le sezioni "sempre aperte" (Altro per questo giorno, Altri turni, Non usate) non si chiudono.
+  document.addEventListener('toggle', e => { const d = e.target; if(d && d.classList && d.classList.contains('sempre-aperto') && !d.open) d.open = true; }, true);
   inizializzaGestiCalendario();
   inizializzaNovita();
 
@@ -1891,7 +1893,7 @@ function renderListaModelliTurniV2(){
   const principali = modelli.filter(m => !raro(m)), altri = modelli.filter(raro);
   const conRientro = !!(tGiornoCorrente.secondoAttivo && tGiornoCorrente.secondoOraInizio && tGiornoCorrente.secondoOraFine);
   host.innerHTML = `<div class="elenco-turni-menu">${principali.map(riga).join('')}</div>`
-    + (altri.length ? `<details class="assenze-menu-non-usate"><summary>Altri turni (${altri.length})</summary><div class="elenco-turni-menu">${altri.map(riga).join('')}</div></details>` : '')
+    + (altri.length ? `<details class="assenze-menu-non-usate sempre-aperto" open><summary>Altri turni (${altri.length})</summary><div class="elenco-turni-menu">${altri.map(riga).join('')}</div></details>` : '')
     + `<div class="elenco-turni-menu elenco-turni-menu-extra"><button type="button" class="riga-assenza-giorno${conRientro ? ' attiva' : ''}" id="btnRientroTurniV2"><span>🔁</span><b>Rientro<small>${escapeHtml(rientroSotto.replace(' ✓', ''))}</small></b>${conRientro ? '<i aria-hidden="true">✓</i>' : ''}</button></div>`
     + `<button type="button" class="link-gestisci-turni" id="btnGestisciTurniV2">Gestisci i turni →</button>`;
 }
@@ -1918,7 +1920,7 @@ function renderListaModelliAssenzeV2(){
   const nonUsata = a => { const x = info(a); return x && !x.spettanti && !x.usate && a.id !== scelta; };
   const usate = assenze.filter(a => !nonUsata(a)), ferme = assenze.filter(nonUsata);
   host.innerHTML = `<div class="elenco-assenze-giorno elenco-assenze-menu">${usate.map(riga).join('')}</div>`
-    + (ferme.length ? `<details class="assenze-menu-non-usate"><summary>Non usate (${ferme.length})</summary><div class="elenco-assenze-giorno elenco-assenze-menu">${ferme.map(riga).join('')}</div></details>` : '');
+    + (ferme.length ? `<details class="assenze-menu-non-usate sempre-aperto" open><summary>Non usate (${ferme.length})</summary><div class="elenco-assenze-giorno elenco-assenze-menu">${ferme.map(riga).join('')}</div></details>` : '');
 }
 
 // Le indennità restano fisse (non modificabili, come deciso): qui solo etichetta+chiave del

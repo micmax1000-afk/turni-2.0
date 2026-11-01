@@ -645,6 +645,7 @@ sezione('v3.8.13: detta a voce');
       : r.tipo === 'assenza' ? `${r.giorni[0]}..${r.giorni[r.giorni.length - 1]} ${r.nome} ${r.giorni.length}`
       : r.tipo === 'straordinario' ? `${r.iso} str ${r.da}-${r.al}${r.prima ? ' prima' : ''}`
       : r.tipo === 'evento' ? `${r.iso} ev ${r.ora || 'tutto'} ${r.titolo}`
+      : r.tipo === 'nota' ? `${r.iso} nota ${r.testo}`
       : `${r.iso} ind ${r.chiave}`), avvisi };
   }, [frase, giorno]);
   let r = await capisci('domani notte e domenica riposo');
@@ -671,6 +672,12 @@ sezione('v3.8.13: detta a voce');
   ok('"domani e dopodomani sera con reperibilità"', r.righe.join(' | ') === '2026-10-10 sera | 2026-10-11 sera | 2026-10-10 ind reperibilita | 2026-10-11 ind reperibilita', JSON.stringify(r));
   r = await capisci('venerdì prossimo riposo compensativo');
   ok('"venerdì prossimo riposo compensativo": assenza, non il turno Riposo', r.righe.join(' | ') === '2026-10-16..2026-10-16 Riposo compensativo 1', JSON.stringify(r));
+  r = await capisci('servizio svolto arrivi nord');
+  ok('"servizio svolto arrivi nord" sul giorno aperto', r.righe.join(' | ') === '2026-10-09 nota Arrivi nord', JSON.stringify(r));
+  r = await capisci('domani sera, servizio svolto pattuglia e scorta Termini');
+  ok('"domani sera, servizio svolto pattuglia e scorta Termini": la nota resta intera', r.righe.join(' | ') === '2026-10-10 sera | 2026-10-10 nota Pattuglia e scorta Termini', JSON.stringify(r));
+  r = await capisci('servizio svolto stadio Olimpico domenica');
+  ok('"servizio svolto stadio Olimpico domenica": il giorno detto alla fine', r.righe.join(' | ') === '2026-10-11 nota Stadio Olimpico', JSON.stringify(r));
   r = await capisci('venerdì mattina e poi quello lungo');
   ok('una parte non capita: si dice quale', r.righe.join(' | ') === '2026-10-09 mattina' && r.avvisi.some(a => a.includes('quello lungo')), JSON.stringify(r));
   // La scheda: niente si salva finché non si tocca Salva; poi Annulla rimette tutto com'era.
@@ -683,6 +690,9 @@ sezione('v3.8.13: detta a voce');
   await p.click('.toast-azione');
   await p.waitForTimeout(200);
   ok('Annulla: turno ed evento tornano com\'erano', await p.evaluate(p0 => JSON.stringify(AppState.turni['2026-10-10']) === p0 && !(AppState.eventiGiorno['2026-10-15'] || []).some(e => e.titolo === 'Dentista'), prima));
+  await p.evaluate(() => { giornoSelezionato = '2026-10-09'; mostraRisultatoVoce('servizio svolto arrivi nord'); });
+  await p.click('#schedaVoce [data-voce="salva"]');
+  ok('Salva: il servizio svolto va nel giorno', await p.evaluate(() => AppState.turni['2026-10-09'].servizioSvolto === 'Arrivi nord'));
   ok('nel menu ＋ c\'è "Detta a voce"', await p.evaluate(() => !el('btnDettaVoceFab').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
@@ -1089,7 +1099,7 @@ sezione('Riquadro del giorno e assenze nel menu');
     chiuso: !document.querySelector('#listaModelliAssenze .assenze-menu-non-usate')?.open
   }));
   ok('Assenze nel menu: elenco con quanto resta', m.righe > 3 && m.saldo, JSON.stringify(m));
-  ok('voci a zero in "Non usate", chiuso', /^Non usate \(\d+\)$/.test(m.nonUsate) && m.chiuso, JSON.stringify(m));
+  ok('voci a zero in "Non usate", sempre visibili (v3.8.14)', /^Non usate \(\d+\)$/.test(m.nonUsate) && !m.chiuso, JSON.stringify(m));
   const co = await p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').id);
   await p.click(`#listaModelliAssenze [data-assenza="${co}"]`);
   ok('toccando un\'assenza si applica al giorno', await p.evaluate(id => AppState.turni['2026-10-09'].assenzaTipo === id, co));

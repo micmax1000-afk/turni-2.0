@@ -2983,3 +2983,8 @@ html[data-tema=scuro] .fab-menu .fab-voce span{color:#8FA6FF}
 .voce-avviso .voce-ic{color:#B36B00}
 html[data-tema=scuro] .voce-ic{color:#8FA6FF}
 html[data-tema=scuro] .voce-mic .voce-ic{color:#fff}
+
+/* v3.8.14: sezioni sempre visibili (non si chiudono più) */
+details.sempre-aperto > summary{pointer-events:none;cursor:default}
+details.sempre-aperto > summary > b,details.sempre-aperto > summary::before{display:none!important}
+.assenze-menu-non-usate.sempre-aperto > summary{padding:12px 4px 6px}

@@ -201,7 +201,20 @@ function capisciFraseVoce(testo, rif){
   const frase = preparaFraseVoce(testo);
   const originali = {};
   String(testo || '').split(/\s+/).forEach(w => { const pulita = w.replace(/[^\p{L}\p{N}']/gu, ''); const k = normalizzaVoce(pulita); if(k && !originali[k]) originali[k] = pulita; });
-  const parti = frase.split(/\s*(?:,|;|\be poi\b|\bpoi\b|\be\b|\bed\b)\s*/).map(x => x.trim()).filter(Boolean);
+  // v3.8.14: "servizio svolto arrivi nord" — il testo libero va preso intero (anche con "e" dentro),
+  // fino alla virgola; un giorno detto alla fine ("… arrivi nord domani") torna davanti.
+  const note = [];
+  const GIORNO_FINALE = new RegExp(`\\s+((?:oggi|ieri|domani|dopodomani)|(?:(?:prossimo|prossima) )?(?:${GIORNI_VOCE.join('|')})(?: \\d{1,2})?(?: (?:prossimo|prossima))?|il \\d{1,2}(?: (?:${MESI_VOCE.join('|')}))?)$`);
+  let fraseNote = frase.replace(/\b(?:servizio svolto|nota (?:del |di )?servizio|servizio fatto|ho svolto|ho fatto servizio)\s*(?:a |al |alla |agli |ai |in |di |:\s*)?([^,;]+)/g, (m, testoNota) => {
+    let t = testoNota.trim(), giorno = '';
+    const g = t.match(GIORNO_FINALE);
+    if(g){ giorno = g[1]; t = t.slice(0, g.index).trim(); }
+    if(!t) return m;
+    const bello = t.split(' ').map(w => originali[w] || w).join(' ');
+    note.push(bello.charAt(0).toUpperCase() + bello.slice(1));
+    return `${giorno ? giorno + ' ' : ''}§nota${note.length - 1}§`;
+  });
+  const parti = fraseNote.split(/\s*(?:,|;|\be poi\b|\bpoi\b|\be\b|\bed\b)\s*/).map(x => x.trim()).filter(Boolean);
   const azioni = [], nonCapito = [];
   let ultimeDate = [predefinito], inSospeso = [];
   parti.forEach(parte => {
@@ -217,6 +230,8 @@ function capisciFraseVoce(testo, rif){
     const rd = resto.match(/\b(\d+)min\b/);
     const durata = rd ? Number(rd[1]) : null;
     if(rd) resto = resto.replace(rd[0], ' ');
+    const rn = resto.match(/§nota(\d+)§/);
+    if(rn){ trovate.push({ tipo: 'nota', testo: note[Number(rn[1])] }); resto = resto.replace(rn[0], ' '); }
     // Assenze (prima dei turni: "riposo compensativo" non è il turno "Riposo")
     for(const x of assenze){
       const t = togliParole(resto, x.parole);
@@ -284,13 +299,14 @@ function righeDaAzioniVoce(capito){
       righe.push({ tipo: 'assenza', giorni, assenzaId: a.assenzaId, nome: a.nome, riposiSaltati: a.giorni.length - giorni.length });
     }
   });
-  capito.azioni.filter(a => a.tipo === 'indennita' || a.tipo === 'straordinario').forEach(a => {
+  capito.azioni.filter(a => a.tipo === 'indennita' || a.tipo === 'straordinario' || a.tipo === 'nota').forEach(a => {
     a.giorni.forEach(iso => {
       const t = turnoPrevisto[iso] || AppState.turni[iso];
       if(!t || !t.oraInizio || !t.oraFine || t.riposo || t.assenzaTipo){
-        avvisi.push(`${a.tipo === 'straordinario' ? 'Lo straordinario' : 'L\'indennità'} del ${etichettaDataVoce(iso)} va su un turno: quel giorno non c'è.`);
+        avvisi.push(`${a.tipo === 'straordinario' ? 'Lo straordinario' : a.tipo === 'nota' ? 'Il servizio svolto' : 'L\'indennità'} del ${etichettaDataVoce(iso)} va su un turno: quel giorno non c'è.`);
         return;
       }
+      if(a.tipo === 'nota'){ righe.push({ tipo: 'nota', iso, testo: a.testo }); return; }
       if(a.tipo === 'indennita'){ righe.push({ tipo: 'indennita', iso, chiave: a.chiave, due: a.due, oreMissione: a.oreMissione }); return; }
       let da, al;
       if(a.intervallo){ [da, al] = a.intervallo; }
@@ -342,6 +358,9 @@ function htmlRigaVoce(r, i){
     const voce = ELENCO_INDENNITA.find(x => x.chiave === r.chiave);
     titolo = `${iconaIndennita(r.chiave, 'voce-ic')}${escapeHtml(r.due ? '2 buoni pasto' : voce ? voce.nome : r.chiave)}${r.oreMissione ? ` ${formatOreMinuti(r.oreMissione)}` : ''}`;
     sotto = 'Indennità';
+  } else if(r.tipo === 'nota'){
+    titolo = `${iconaIndennita('servizioSvolto', 'voce-ic')}${escapeHtml(r.testo)}`;
+    sotto = 'Servizio svolto' + (AppState.turni[r.iso] && AppState.turni[r.iso].servizioSvolto ? ` · prima: ${escapeHtml(AppState.turni[r.iso].servizioSvolto)}` : '');
   } else if(r.tipo === 'evento'){
     titolo = `${iconaVoce('evento')}${escapeHtml(r.titolo)}`;
     sotto = r.ora ? `Evento · ${r.ora} – ${hhmm(Math.min(minDa(r.ora) + 60, 1439))}` : 'Evento · tutto il giorno';
@@ -388,7 +407,7 @@ function schedaAscoltoVoce(){
     <button type="button" class="voce-mic in-ascolto" data-voce="fine" aria-label="Ho finito di parlare">${ICONA_MICROFONO}</button>
     <p class="voce-live" id="voceLive"><i>Ti ascolto…</i></p>
     <p class="voce-sotto">Puoi dire per esempio:</p>
-    <div class="voce-esempi"><span>«Domani notte»</span><span>«Lunedì riposo, martedì mattina»</span><span>«Straordinario 2 ore dopo»</span><span>«Ferie dal 3 al 10 dicembre»</span><span>«Giovedì alle 10 dentista»</span></div>
+    <div class="voce-esempi"><span>«Domani notte»</span><span>«Lunedì riposo, martedì mattina»</span><span>«Straordinario 2 ore dopo»</span><span>«Ferie dal 3 al 10 dicembre»</span><span>«Giovedì alle 10 dentista»</span><span>«Servizio svolto arrivi nord»</span></div>
     <p class="voce-privacy">${web ? 'Nel browser la voce passa dal servizio di Google solo per diventare testo. L\'app non salva l\'audio.' : '🔒 La voce è riconosciuta sul telefono. Niente viene salvato o inviato.'}</p>
     <div class="voce-tasti"><button type="button" class="voce-sec" data-voce="chiudi">Annulla</button></div>`);
 }
@@ -515,6 +534,7 @@ function salvaRigheVoce(){
     if(r.chiave === 'buonoPasto' && r.due) t.buoniPastoGiorno = 2;
     if(r.chiave === 'missione' && r.oreMissione) t.durataMissioneOre = r.oreMissione;
   });
+  righe.filter(r => r.tipo === 'nota').forEach(r => { const t = AppState.turni[r.iso]; if(t) t.servizioSvolto = r.testo; });
   righe.filter(r => r.tipo === 'straordinario').forEach(r => {
     const t = AppState.turni[r.iso]; if(!t) return;
     if(r.prima){ t.straordinarioPrimaInizio = r.da; t.straordinarioPrimaFine = r.al; }
