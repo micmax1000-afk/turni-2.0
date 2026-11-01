@@ -560,6 +560,7 @@ function inizializza(){
   });
   inizializzaVisteCalendario();
   if(typeof inizializzaVoce === 'function') inizializzaVoce();
+  if(typeof inizializzaUtilita === 'function') inizializzaUtilita();
   if(typeof avviaIconeLinea === 'function') avviaIconeLinea();
   // v3.8.14: le sezioni "sempre aperte" (Altro per questo giorno, Altri turni, Non usate) non si chiudono.
   document.addEventListener('toggle', e => { const d = e.target; if(d && d.classList && d.classList.contains('sempre-aperto') && !d.open) d.open = true; }, true);
