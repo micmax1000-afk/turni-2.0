@@ -610,6 +610,9 @@ function renderCalendario(){
       else if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
       else if(categoria) cella.style.background = coloreCategoria(categoria);
       else cella.style.background = '';
+      // v3.8.15: su un colore scuro (es. nero, blu notte) numero e sigla diventano chiari, per leggerli.
+      const sfondo = coloreAssenzaScelto || (modelloColoreCustom && modelloColoreCustom.colore) || (categoria ? coloreCategoria(categoria) : '');
+      if(sfondo && typeof testoSuColore === 'function' && testoSuColore(sfondo) === '#FFFFFF') classi += ' cella-scura';
     } else {
       // Non basta "non scrivere nulla": le classi tipo-X hanno ancora la loro regola CSS di
       // sfondo colorato (serve quando i colori sono accesi), quindi senza un bianco scritto qui

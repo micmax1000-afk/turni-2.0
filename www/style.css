@@ -3021,3 +3021,7 @@ html[data-tema=scuro] .voce-riga-togli .voce-testo > div,html[data-tema=scuro] .
 .voce-mic{margin:44px auto 40px}
 .voce-titolo.voce-centro{margin-bottom:0}
 .calendario-header-v2 .etichetta-mese-btn{text-overflow:clip}
+/* v3.8.15: caselle con un colore scuro (es. nero): numero, sigla e orari in chiaro */
+.giorno-cella.cella-scura .giorno-numero,.giorno-cella.cella-scura .giorno-turno-nome,.giorno-cella.cella-scura .giorno-turno-codice,.giorno-cella.cella-scura .giorno-meta,.giorno-cella.cella-scura .giorno-meta *{color:#FFFFFF!important}
+.giorno-cella.cella-scura.festivo .giorno-numero,.giorno-cella.cella-scura.domenica .giorno-numero{color:#FFB4AB!important}
+.giorno-cella.cella-scura .giorno-badge-list{filter:brightness(1.6)}
