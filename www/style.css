@@ -2988,3 +2988,20 @@ html[data-tema=scuro] .voce-mic .voce-ic{color:#fff}
 details.sempre-aperto > summary{pointer-events:none;cursor:default}
 details.sempre-aperto > summary > b,details.sempre-aperto > summary::before{display:none!important}
 .assenze-menu-non-usate.sempre-aperto > summary{padding:12px 4px 6px}
+/* v3.8.14: le sezioni prima chiuse ora hanno lo stesso aspetto delle altre */
+.altro-giorno-v2{padding:4px 14px}
+.altro-giorno-v2 .riga-opzione-seq{justify-content:space-between;flex-direction:row-reverse;padding:12px 0;border-bottom:1px solid var(--bordo);font-size:.95rem;font-weight:600}
+.altro-giorno-v2 .riga-opzione-seq:last-of-type{border-bottom:0}
+.altro-giorno-v2 .riga-opzione-seq span{flex:1;min-width:0;display:flex;flex-direction:column}
+.altro-giorno-v2 .riga-opzione-seq small{font-weight:400;font-size:.78rem}
+.altro-giorno-v2 > div{padding:2px 0 8px}
+.titolo-menu-v2{font-size:.72rem;letter-spacing:.06em;color:var(--testo-tenue,#6B7280);text-transform:uppercase;font-weight:700;margin:16px 4px 8px}
+.titolo-menu-v2:first-child{margin-top:4px}
+#pannelloTurno .riga-opzione-seq:has(#campoCompensaStraordinario){justify-content:space-between;flex-direction:row-reverse}
+#pannelloTurno .riga-opzione-seq:has(#campoCompensaStraordinario) span{flex:1}
+.altro-giorno-v2 .griglia-check{gap:10px}
+.altro-giorno-v2 .griglia-check:not([style*="none"]){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.altro-giorno-v2 .griglia-check input{width:100%;min-width:0;box-sizing:border-box}
+.altro-giorno-v2 .griglia-check .campo-modale{margin:0;font-size:.8rem}
+.altro-giorno-v2 .griglia-check input[type=time]{min-height:44px}
+.altro-giorno-v2 > div{border-bottom:1px solid var(--bordo)}

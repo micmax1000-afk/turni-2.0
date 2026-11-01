@@ -193,7 +193,7 @@ for(const stile of ['classico', 'moderno']){
     await p.evaluate(() => { giornoPerPopupV2 = '2026-10-02'; apriSelettoreModelliV2('indennita'); });
     ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .riga-indennita-menu > span svg').length === 10 && document.querySelector('[data-indennita="missione"]').classList.contains('attiva') && document.querySelector('[data-indennita="missione"] i').textContent === '✓'));
     await p.evaluate(() => apriSelettoreModelliV2('turni'));
-    ok('menu Turni: barra colorata, orario e durata, ✓ sul turno del giorno, rari in "Altri turni", niente matite', await p.evaluate(() => { const r = [...document.querySelectorAll('#listaModelliTurni .riga-turno-menu')]; const att = document.querySelector('#listaModelliTurni .riga-turno-menu.attiva'); return r.length >= 5 && !!att && !!att.querySelector('em') && /\d h/.test(document.querySelector('#listaModelliTurni .riga-turno-menu small').textContent) && /^Altri turni \(\d\)$/.test(document.querySelector('#listaModelliTurni details summary').textContent) && !document.querySelector('#listaModelliTurni [data-modifica-modello]') && !!document.getElementById('btnGestisciTurniV2'); }));
+    ok('menu Turni: barra colorata, orario e durata, ✓ sul turno del giorno, rari in "Altri turni", niente matite', await p.evaluate(() => { const r = [...document.querySelectorAll('#listaModelliTurni .riga-turno-menu')]; const att = document.querySelector('#listaModelliTurni .riga-turno-menu.attiva'); return r.length >= 5 && !!att && !!att.querySelector('em') && /\d h/.test(document.querySelector('#listaModelliTurni .riga-turno-menu small').textContent) && [...document.querySelectorAll('#listaModelliTurni .titolo-menu-v2')].map(x => x.textContent).join('|') === 'I tuoi turni|Altri turni' && !document.querySelector('#listaModelliTurni [data-modifica-modello]') && !!document.getElementById('btnGestisciTurniV2'); }));
     await p.click('#btnGestisciTurniV2');
     ok('"Gestisci i turni →" porta alla scheda Turni', await p.evaluate(() => document.getElementById('overlaySelettoreModelli').hidden && [...document.querySelectorAll('.turno-v4')].some(x => x.offsetParent)));
     await p.click('#tabCalendario');
@@ -1095,11 +1095,11 @@ sezione('Riquadro del giorno e assenze nel menu');
   const m = await p.evaluate(() => ({
     righe: document.querySelectorAll('#listaModelliAssenze .riga-assenza-giorno[data-assenza]').length,
     saldo: !!document.querySelector('#listaModelliAssenze .riga-assenza-giorno em small'),
-    nonUsate: document.querySelector('#listaModelliAssenze .assenze-menu-non-usate summary')?.textContent || '',
-    chiuso: !document.querySelector('#listaModelliAssenze .assenze-menu-non-usate')?.open
+    titoli: [...document.querySelectorAll('#listaModelliAssenze .titolo-menu-v2')].map(x => x.textContent).join('|'),
+    chiuso: !!document.querySelector('#listaModelliAssenze details')
   }));
   ok('Assenze nel menu: elenco con quanto resta', m.righe > 3 && m.saldo, JSON.stringify(m));
-  ok('voci a zero in "Non usate", sempre visibili (v3.8.14)', /^Non usate \(\d+\)$/.test(m.nonUsate) && !m.chiuso, JSON.stringify(m));
+  ok('voci a zero in "Altre assenze", sempre visibili (v3.8.14)', m.titoli === 'Le tue assenze|Altre assenze' && !m.chiuso, JSON.stringify(m));
   const co = await p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').id);
   await p.click(`#listaModelliAssenze [data-assenza="${co}"]`);
   ok('toccando un\'assenza si applica al giorno', await p.evaluate(id => AppState.turni['2026-10-09'].assenzaTipo === id, co));
