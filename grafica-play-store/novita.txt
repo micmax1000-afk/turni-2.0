@@ -1,7 +1,6 @@
 <it-IT>
-• Icone nuove a linea in tutta l'app, anche col tema scuro
-• Detta a voce: ora anche il servizio svolto ("servizio svolto arrivi nord")
-• Rientro, permesso breve e recupero sempre in vista, con interruttori
-• Tutti i turni e tutte le assenze sempre visibili nel menu ＋
-• Settimana e Agenda con indennità, straordinario a parte ed eventi
+• Detta a voce: ora puoi anche eliminare ("elimina lo straordinario di oggi", "giovedì elimina il dentista", "rimuovi la reperibilità di domani")
+• Servizio svolto a voce: "servizio svolto OP Stadio"
+• Colori scuri dei turni (es. nero) ora leggibili nel calendario
+• Il nome del mese si legge sempre intero, anche con i caratteri grandi
 </it-IT>
