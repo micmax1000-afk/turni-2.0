@@ -559,6 +559,8 @@ function inizializza(){
     renderCalendario();
   });
   inizializzaVisteCalendario();
+  inizializzaGestiCalendario();
+  inizializzaNovita();
 
   el('etichettaMese').addEventListener('click', () => {
     el('campoVaiMese').value = meseCorrente;
@@ -724,6 +726,8 @@ function inizializza(){
   on('campoPatternRientroFine','change', aggiornaStraordinarioRientroPatternSempliceV2);
 
   el('btnCancellaTurniMese').addEventListener('click', cancellaTurniMese);
+  // v3.8.12: il pulsante sta nella scheda Turni (non più sotto il calendario): vale per il mese aperto nel calendario.
+  on('btnCancellaTurniTurni', 'click', cancellaTurniMese);
 
   el('btnEsportaBackup').addEventListener('click', esportaBackup);
   el('btnImportaBackup').addEventListener('click', () => el('campoImportaBackup').click());
@@ -1001,6 +1005,7 @@ function inizializza(){
       salvaTurniStorage();
       el('pannelloTurno').hidden = true;
       renderCalendario();
+      mostraToastAnnulla('Giorno salvato');
       if(typeof renderStatistiche==='function' && !el('vistaStatistiche')?.hidden) renderStatistiche();
     };
     if(typeof rilevaSovrapposizioneStraordinario === 'function' && rilevaSovrapposizioneStraordinario(nuovoTurno)){
@@ -1180,6 +1185,7 @@ let modelloInModificaV2 = null; // id del modello aperto nel mini-form di modifi
 // calendario; un secondo tocco sullo stesso giorno apre "Cosa vuoi aggiungere?".
 let ultimoGiornoToccatoV2 = null;
 function gestisciTocchGiornoV2(iso){
+  if(modoPennello){ dipingiGiorno(iso); return; }
   ['overlaySelettoreModelli','overlayStraordinarioRapido','overlayRientroRapido','overlayModificaModello','overlayEvento','overlayEditorPatternV2'].forEach(id => { const o = el(id); if(o) o.hidden = true; });
   // v3.8: un tocco mostra il giorno nel riquadro sotto il calendario; per cambiarlo ci sono i pulsanti Turno e Modifica.
   ultimoGiornoToccatoV2 = iso;
@@ -1949,7 +1955,7 @@ function applicaModelloV2(idModello){
   salvaUltimoModelloUsato('modello', m.id);
   renderCalendario();
   selezionaGiorno(iso);
-  mostraToast(`${m.nome} aggiunto`, 'successo');
+  mostraToastAnnulla(`${m.nome} aggiunto`);
   // Invece di chiudere qui, passiamo subito alla scheda Indennità (resta lo stesso popup aperto):
   // così indennità/straordinario si aggiungono nello stesso momento, senza dover ritoccare il
   // giorno una seconda volta. Non ha senso per "Riposo" (nessun orario a cui agganciarsi).
@@ -1967,7 +1973,7 @@ function applicaAssenzaV2(idAssenza){
   renderCalendario();
   selezionaGiorno(iso);
   const nomeAssenza = (AppState.assenze || []).find(a => a.id === idAssenza);
-  mostraToast(`${nomeAssenza ? nomeAssenza.nome : 'Assenza'} aggiunta`, 'successo');
+  mostraToastAnnulla(`${nomeAssenza ? nomeAssenza.nome : 'Assenza'} aggiunta`);
 }
 
 // Spunta/rimuove un'indennità rapida per il giorno del popup, senza aprire il pannello grande.
@@ -3276,7 +3282,7 @@ function salvaStraordinarioRapidoV2(){
   salvaTurniStorage();
   el('overlayStraordinarioRapido').hidden = true;
   renderCalendario();
-  mostraToast('Straordinario aggiunto', 'successo');
+  mostraToastAnnulla('Straordinario aggiunto');
 }
 
 function apriRientroRapidoV2(){
@@ -3306,7 +3312,7 @@ function salvaRientroRapidoV2(){
   el('overlayRientroRapido').hidden = true;
   renderCalendario();
   renderListaModelliTurniV2();
-  mostraToast('Rientro aggiunto', 'successo');
+  mostraToastAnnulla('Rientro aggiunto');
 }
 function rimuoviRientroRapidoV2(){
   if(!giornoPerPopupV2) return;
@@ -3360,11 +3366,15 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   // v3.8.10: la data sta sopra; il turno è una riga da toccare (apre "Modifica il giorno"), come un evento in Google Calendar.
   el('dataGiornoSelezionatoV2').textContent = dataLunga;
   el('oggiGiornoSelezionatoV2').hidden = giornoSelezionato !== dataISO(new Date());
+  const festa = nomeFestivita(giornoSelezionato);
+  el('festaGiornoSelezionatoV2').hidden = !festa;
+  el('festaGiornoSelezionatoV2').textContent = festa ? ` · ${festa}` : '';
   box.innerHTML = `<span class="giorno-v3-barra" style="background:${escapeHtml(colore)}"></span>
     <span class="giorno-v3-testi"><span class="giorno-v3-nome">${escapeHtml(nome)}</span>${orario ? `<span class="giorno-v3-orario">${escapeHtml(orario)}</span>` : ''}</span>
     ${ore ? `<span class="giorno-v3-ore">${escapeHtml(ore)}</span>` : ''}`;
   const linkCancella = el('btnCancellaTurniMese');
   if(linkCancella) linkCancella.textContent = `Cancella i turni di ${NOMI_MESI[meseCorrente].toLowerCase()}…`;
+  const meseCanc = el('meseCancellaTurni'); if(meseCanc) meseCanc.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente} (il mese aperto nel calendario)`;
   renderListaEventiGiornoV2();
   if(!boxIndennita) return;
   if(!t || !t.oraInizio || !t.oraFine){ boxIndennita.hidden = true; boxIndennita.innerHTML = ''; return; }
@@ -3595,6 +3605,7 @@ function renderRiepilogoBenvenuto(){
 }
 function chiudiBenvenuto(){
   TurniPSStorage.setItem(CHIAVE_BENVENUTO, '1');
+  TurniPSStorage.setItem(CHIAVE_NOVITA, VERSIONE_NOVITA); // chi ha appena fatto il primo avvio non ha bisogno delle novità
   el('overlayBenvenuto').hidden = true;
   mostraScheda('calendario');
   renderCalendario();
@@ -4074,4 +4085,143 @@ function chiudiFabGiorno(){
   const m = el('menuFabGiorno'); if(!m) return;
   m.hidden = true; el('veloFabGiorno').hidden = true;
   el('btnFabGiorno').classList.remove('aperto'); el('btnFabGiorno').setAttribute('aria-expanded', 'false');
+}
+
+// ── v3.8.12: "Annulla" dopo una modifica ai turni ──
+function mostraToastAnnulla(messaggio){
+  const prima = turniPrimaUltimoSalvataggio;
+  mostraToast(messaggio, 'successo', 5000, prima === null ? null : { testo: 'Annulla', fn: () => ripristinaTurni(prima) });
+}
+function ripristinaTurni(json){
+  try{ AppState.turni = JSON.parse(json) || {}; }catch(e){ return; }
+  salvaTurniStorage();
+  renderCalendario();
+  if(giornoSelezionato) selezionaGiorno(giornoSelezionato);
+  mostraToast('Modifica annullata', 'info');
+}
+
+// ── v3.8.12: "Riempi più giorni" (pennello): scegli un turno e tocca i giorni ──
+let modoPennello = null, pennelloInizio = null, pennelloConta = 0;
+function avviaPennello(){
+  chiudiFabGiorno();
+  if(vistaCalendario() !== 'mese') impostaVistaCalendario('mese');
+  pennelloInizio = JSON.stringify(AppState.turni); pennelloConta = 0;
+  const modelli = (AppState.modelliTurno || []);
+  const chip = modelli.map(m => `<button type="button" class="pennello-chip" data-pennello="${escapeHtml(m.id)}" style="--c:${escapeHtml(coloreModelloV2(m))}"><i></i>${escapeHtml(m.nome)}</button>`).join('')
+    + `<button type="button" class="pennello-chip pennello-gomma" data-pennello="__gomma"><i></i>Cancella</button>`;
+  el('chipPennello').innerHTML = chip;
+  modoPennello = (modelli.find(m => !m.riposo) || modelli[0] || {}).id || '__gomma';
+  aggiornaChipPennello();
+  el('barraPennello').hidden = false;
+  document.body.classList.add('modo-pennello');
+}
+function aggiornaChipPennello(){
+  document.querySelectorAll('[data-pennello]').forEach(b => b.classList.toggle('attivo', b.dataset.pennello === modoPennello));
+  const att = document.querySelector('.pennello-chip.attivo'); if(att && att.scrollIntoView) att.scrollIntoView({ block: 'nearest', inline: 'center' });
+  el('contaPennello').textContent = pennelloConta ? `${pennelloConta} ${pennelloConta === 1 ? 'giorno cambiato' : 'giorni cambiati'}` : 'Tocca i giorni da riempire';
+}
+function dipingiGiorno(iso){
+  if(modoPennello === '__gomma') delete AppState.turni[iso];
+  else {
+    const m = (AppState.modelliTurno || []).find(x => x.id === modoPennello);
+    if(!m) return;
+    AppState.turni[iso] = m.riposo ? { data: iso, riposo: true } : { data: iso, oraInizio: m.oraInizio, oraFine: m.oraFine, modelloId: m.id };
+  }
+  salvaTurniStorage();
+  pennelloConta++;
+  renderCalendario();
+  aggiornaChipPennello();
+}
+function chiudiPennello(){
+  const prima = pennelloInizio, n = pennelloConta;
+  modoPennello = null; pennelloInizio = null;
+  el('barraPennello').hidden = true;
+  document.body.classList.remove('modo-pennello');
+  if(n) mostraToast(`${n} ${n === 1 ? 'giorno cambiato' : 'giorni cambiati'}`, 'successo', 5000, { testo: 'Annulla', fn: () => ripristinaTurni(prima) });
+}
+
+// ── v3.8.12: pulsante "Oggi" e scorrimento col dito (mese, settimana, giorno) ──
+function vaiAOggi(){
+  const oggiIso = dataISO(new Date()), d = new Date();
+  meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
+  giornoSelezionato = oggiIso;
+  renderCalendario();
+  selezionaGiorno(oggiIso);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function inizializzaGestiCalendario(){
+  on('btnVaiOggi', 'click', vaiAOggi);
+  const n = el('numeroOggiCalendario'); if(n) n.textContent = String(new Date().getDate());
+  // Il pennello si apre dalla scheda Turni e lavora sul calendario.
+  on('btnRiempiGiorniTurni', 'click', () => { mostraScheda('calendario'); avviaPennello(); window.scrollTo(0, 0); });
+  on('btnFinePennello', 'click', chiudiPennello);
+  on('chipPennello', 'click', e => { const b = e.target.closest('[data-pennello]'); if(b){ modoPennello = b.dataset.pennello; aggiornaChipPennello(); } });
+  const zona = document.querySelector('.scheda-calendario-v2');
+  if(!zona) return;
+  let x0 = null, y0 = null;
+  zona.addEventListener('touchstart', e => { if(e.touches.length !== 1){ x0 = null; return; } x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  zona.addEventListener('touchend', e => {
+    if(x0 === null || vistaCalendario() === 'agenda') return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if(Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
+    const griglia = document.querySelector('.scheda-calendario-v2');
+    griglia.classList.remove('scorri-sx', 'scorri-dx'); void griglia.offsetWidth;
+    griglia.classList.add(dx < 0 ? 'scorri-sx' : 'scorri-dx');
+    el(dx < 0 ? 'btnMeseSucc' : 'btnMesePrec').click();
+  }, { passive: true });
+}
+
+// ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
+const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
+const VERSIONE_NOVITA = '3.8.12';
+const PASSI_NOVITA = [
+  { id: 'btnFabGiorno', titolo: 'Il pulsante ＋', testo: 'Aggiungi un evento, un turno o un\'assenza, lo straordinario, oppure modifica il giorno.' },
+  { id: 'btnModificaGiornoSelezionatoV2', titolo: 'Tocca il turno', testo: 'Tocca la riga del turno per aprire e modificare il giorno.' },
+  { id: 'btnVistaCalendario', titolo: 'Giorno, Settimana, Mese', testo: 'Qui scegli la vista, l\'Agenda e "Condividi il mese". Scorri col dito per passare al mese dopo o prima.' },
+  { id: 'btnVaiOggi', titolo: 'Torna a oggi', testo: 'Da qualsiasi mese, un tocco e sei di nuovo a oggi.' }
+];
+let passoNovita = -1;
+function avviaNovitaSeServe(){
+  if(passoNovita >= 0) return; // già aperta
+  let vista = null; try{ vista = TurniPSStorage.getItem(CHIAVE_NOVITA); }catch(e){}
+  if(vista === VERSIONE_NOVITA) return;
+  if(!Object.keys(AppState.turni || {}).length) return; // installazione nuova: c'è il primo avvio guidato
+  if(!el('overlayBenvenuto').hidden) return;
+  if(!giornoSelezionato) selezionaGiorno(dataISO(new Date()));
+  passoNovita = 0; mostraPassoNovita();
+}
+function mostraPassoNovita(){
+  const p = PASSI_NOVITA[passoNovita], bersaglio = p && el(p.id);
+  if(!p){ chiudiNovita(); return; }
+  if(!bersaglio || !bersaglio.getClientRects().length){ passoNovita++; mostraPassoNovita(); return; }
+  bersaglio.scrollIntoView({ block: 'center' });
+  setTimeout(() => {
+    const r = bersaglio.getBoundingClientRect(), m = 6;
+    const box = el('guidaNovita');
+    box.hidden = false;
+    const buco = el('guidaNovitaBuco');
+    Object.assign(buco.style, { left: `${r.left - m}px`, top: `${r.top - m}px`, width: `${r.width + 2 * m}px`, height: `${r.height + 2 * m}px` });
+    el('guidaNovitaTitolo').textContent = p.titolo;
+    el('guidaNovitaTesto').textContent = p.testo;
+    el('guidaNovitaPasso').textContent = `${passoNovita + 1} di ${PASSI_NOVITA.length}`;
+    el('btnNovitaAvanti').textContent = passoNovita === PASSI_NOVITA.length - 1 ? 'Ho capito' : 'Avanti';
+    const fumetto = el('guidaNovitaFumetto');
+    const sotto = r.top < window.innerHeight / 2;
+    fumetto.classList.toggle('sotto', sotto);
+    fumetto.style.top = sotto ? `${r.bottom + 16}px` : '';
+    fumetto.style.bottom = sotto ? '' : `${window.innerHeight - r.top + 16}px`;
+    const freccia = Math.min(window.innerWidth - 40, Math.max(28, r.left + r.width / 2 - 16));
+    fumetto.style.setProperty('--freccia', `${freccia}px`);
+  }, 80);
+}
+function chiudiNovita(){
+  passoNovita = -1;
+  el('guidaNovita').hidden = true;
+  try{ TurniPSStorage.setItem(CHIAVE_NOVITA, VERSIONE_NOVITA); }catch(e){}
+}
+function inizializzaNovita(){
+  on('btnNovitaAvanti', 'click', () => { passoNovita++; mostraPassoNovita(); });
+  on('btnNovitaSalta', 'click', chiudiNovita);
+  setTimeout(avviaNovitaSeServe, 700);
 }

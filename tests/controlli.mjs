@@ -53,6 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.12');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -567,6 +568,67 @@ sezione('v3.8.10: giorno come Google Calendar (riga del turno e pulsante ＋)');
   await p.click('#btnChiudiTurno');
   await p.click('#btnFabGiorno'); await p.click('#btnStraordinarioGiornoFab');
   ok('＋ → Straordinario: si apre la scheda piccola dello straordinario (non tutto il giorno)', await p.evaluate(() => !el('overlayStraordinarioRapido').hidden && el('pannelloTurno').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.12: pennello, scorrimento, Oggi, Annulla');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  ok('pulsante Oggi con il numero del giorno (9)', await p.evaluate(() => el('numeroOggiCalendario').textContent === '9'));
+  await p.click('#btnMeseSucc');
+  await p.click('#btnVaiOggi');
+  ok('Oggi: torna a ottobre con il 9 selezionato', await p.evaluate(() => meseCorrente === 9 && giornoSelezionato === '2026-10-09'));
+  await p.evaluate(() => { const z = document.querySelector('.scheda-calendario-v2'); const t = (x) => new Touch({ identifier: 1, target: z, clientX: x, clientY: 300 });
+    z.dispatchEvent(new TouchEvent('touchstart', { touches: [t(300)], changedTouches: [t(300)] })); z.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [t(120)] })); });
+  ok('scorrendo col dito verso sinistra: mese dopo (novembre)', await p.evaluate(() => meseCorrente === 10));
+  await p.click('#btnVaiOggi');
+  await p.click('#tabTurni'); await p.click('#btnRiempiGiorniTurni');
+  ok('Turni → Riempi più giorni: si torna al calendario con la barra dei turni e "Fine", ＋ nascosto', await p.evaluate(() => !el('barraPennello').hidden && document.querySelectorAll('[data-pennello]').length >= 6 && getComputedStyle(el('btnFabGiorno')).display === 'none'));
+  await p.click('[data-pennello="notte"]');
+  await p.click('.giorno-cella[data-data="2026-10-20"]');
+  await p.click('.giorno-cella[data-data="2026-10-21"]');
+  await p.click('[data-pennello="__gomma"]');
+  await p.click('.giorno-cella[data-data="2026-10-22"]');
+  const pen = await p.evaluate(() => ({ a: AppState.turni['2026-10-20']?.modelloId, b: AppState.turni['2026-10-21']?.modelloId, c: AppState.turni['2026-10-22'] || null, conta: el('contaPennello').textContent }));
+  ok('pennello: 20 e 21 diventano Notte, il 22 si cancella, "3 giorni cambiati"', pen.a === 'notte' && pen.b === 'notte' && pen.c === null && /3 giorni cambiati/.test(pen.conta), JSON.stringify(pen));
+  await p.click('#btnFinePennello');
+  ok('Fine: messaggio con "Annulla"', await p.evaluate(() => /3 giorni cambiati/.test(document.querySelector('.toast-v20:last-child')?.textContent || '') && !!document.querySelector('.toast-v20:last-child .toast-azione')));
+  await p.click('.toast-v20:last-child .toast-azione');
+  ok('Annulla: i tre giorni tornano com\'erano', await p.evaluate(() => AppState.turni['2026-10-20'].modelloId !== 'notte' && !!AppState.turni['2026-10-22'] && el('barraPennello').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.12: festa nel giorno, Cancella in Turni, Condividi il mese');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  const f = await p.evaluate(() => ({ dic8: nomeFestivita('2026-12-08'), pasquetta: nomeFestivita('2026-04-06'), nov1: nomeFestivita('2026-11-01'), feriale: nomeFestivita('2026-10-13') }));
+  ok('nomi delle feste: Immacolata, Lunedì dell\'Angelo (6/4/2026), Ognissanti; niente nei giorni feriali', f.dic8 === 'Immacolata Concezione' && f.pasquetta === "Lunedì dell'Angelo" && f.nov1 === 'Ognissanti' && f.feriale === '', JSON.stringify(f));
+  await p.evaluate(() => { meseCorrente = 10; renderCalendario(); selezionaGiorno('2026-11-01'); });
+  ok('giorno festivo: "· Ognissanti" accanto alla data', await p.evaluate(() => !el('festaGiornoSelezionatoV2').hidden && /Ognissanti/.test(el('festaGiornoSelezionatoV2').textContent)));
+  ok('sotto il calendario non ci sono più "Cancella i turni" e "Prossimi 7 giorni"', await p.evaluate(() => !el('btnCancellaTurniMese').offsetParent && !el('prossimiEventiV2').offsetParent));
+  await p.click('#tabTurni');
+  ok('Turni → "Cancella i turni di un mese" con il mese aperto (Novembre 2026)', await p.evaluate(() => !!el('btnCancellaTurniTurni').offsetParent && /Novembre 2026/.test(el('meseCancellaTurni').textContent)));
+  const img = await p.evaluate(() => { const cv = disegnaImmagineMese(); return { w: cv.width, h: cv.height, png: cv.toDataURL('image/png').length > 10000 }; });
+  ok('Condividi il mese: immagine del mese 1080 px con i turni', img.w === 1080 && img.h > 1000 && img.png, JSON.stringify(img));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.12: guida alle novità');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(900);
+  await p.evaluate(() => { localStorage.removeItem('simCedolino_novitaViste_v1'); avviaNovitaSeServe(); });
+  await p.waitForTimeout(200);
+  const passi = [];
+  for(let i = 0; i < 4; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
+  ok('chi usava già l\'app vede 4 fumetti: ＋, turno, viste, oggi', passi.join(' | ') === 'Il pulsante ＋ (1 di 4) | Tocca il turno (2 di 4) | Giorno, Settimana, Mese (3 di 4) | Torna a oggi (4 di 4)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.12'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1096,7 +1158,7 @@ sezione('Agenda (vista del calendario)');
 {
   const { p, errori } = await apri({ turni: turniDiProva(), eventi: { '2026-10-12': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }] } });
   const prima = await p.evaluate(() => ({ nascosta: el('agendaSottoCalendario').hidden, campo: el('campoAgendaSotto').checked, prossimi: !el('prossimiEventiV2').hidden && getComputedStyle(el('prossimiEventiV2')).display !== 'none' }));
-  ok('all\'inizio l\'agenda è spenta e restano "Prossimi 7 giorni"', prima.nascosta && !prima.campo && prima.prossimi, JSON.stringify(prima));
+  ok('all\'inizio l\'agenda è spenta; "Prossimi 7 giorni" non c\'è più sotto il mese (c\'è la vista Agenda)', prima.nascosta && !prima.campo && !prima.prossimi, JSON.stringify(prima));
   ok('in Altro non c\'è più l\'interruttore dell\'agenda (si sceglie dal calendario)', await p.evaluate(() => !el('campoAgendaSotto').offsetParent));
   await p.click('#btnVistaCalendario');
   await p.click('[data-vista-calendario="agenda"]');
@@ -1132,7 +1194,7 @@ sezione('Agenda (vista del calendario)');
   ok('tocco su un evento: si apre la modifica dell\'evento', await p.evaluate(() => !el('overlayEvento').hidden && el('campoEventoTitolo').value === 'Visita medica'));
   await p.evaluate(() => { el('overlayEvento').hidden = true; });
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
-  ok('di nuovo Mese: torna il calendario e "Prossimi 7 giorni"', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none' && getComputedStyle(el('prossimiEventiV2')).display !== 'none'));
+  ok('di nuovo Mese: torna il calendario', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none'));
   // Vista Settimana: una riga per giorno con le ore e il totale; frecce di una settimana.
   await p.evaluate(() => { selezionaGiorno('2026-10-09'); });
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="settimana"]');

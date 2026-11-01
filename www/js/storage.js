@@ -325,4 +325,11 @@ function caricaTurni(){
   try{ return JSON.parse(TurniPSStorage.getItem(CHIAVE_TURNI)) || {}; }catch{ return {}; }
 }
 
-function salvaTurniStorage(){ TurniPSStorage.setItem(CHIAVE_TURNI, JSON.stringify(AppState.turni)); }
+// v3.8.12: si tiene la versione di prima dell'ultimo salvataggio, per il pulsante "Annulla".
+let turniPrimaUltimoSalvataggio = null, turniUltimoSalvataggio = null;
+function salvaTurniStorage(){
+  const nuovo = JSON.stringify(AppState.turni);
+  const prima = turniUltimoSalvataggio !== null ? turniUltimoSalvataggio : TurniPSStorage.getItem(CHIAVE_TURNI);
+  if(prima !== nuovo){ turniPrimaUltimoSalvataggio = prima; turniUltimoSalvataggio = nuovo; }
+  TurniPSStorage.setItem(CHIAVE_TURNI, nuovo);
+}
