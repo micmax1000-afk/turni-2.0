@@ -614,7 +614,6 @@ function inizializza(){
   on('settingsColori','click', () => {
     const p = el('pannelloColoriTurni');
     if(p && p.hidden) apriPannelloColori();
-    else p?.scrollIntoView({behavior:'smooth',block:'start'});
   });
   on('tabAssenze','click', () => mostraScheda('assenze'));
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
@@ -805,19 +804,28 @@ function inizializza(){
   });
   renderStorico();
 
+  // v3.8.16: "Stile calendario" è una scheda dal basso, con l'anteprima dei due stili.
   function chiudiPannelloColori(){
     const p = el('pannelloColoriTurni');
     if(p) p.hidden = true;
+    if(el('veloStileCalendario')) el('veloStileCalendario').hidden = true;
+  }
+  function spiegaCalendarioAColori(){
+    const s = el('spiegaCalendarioAColori');
+    if(s) s.textContent = calendarioAColoriAttivo() ? 'Acceso: ogni turno con il suo colore' : 'Spento: caselle bianche, turni in nero';
+    document.querySelectorAll('.stile-anteprima').forEach(x => x.classList.toggle('senza-colori', !calendarioAColoriAttivo()));
   }
   function apriPannelloColori(){
     const p = el('pannelloColoriTurni');
     if(!p) return;
     p.hidden = false;
+    if(el('veloStileCalendario')) el('veloStileCalendario').hidden = false;
     renderColoriTurni();
     el('toggleCalendarioAColori').checked = calendarioAColoriAttivo();
     aggiornaAspettoBlocCoCloriPersonalizzati();
-    p.scrollIntoView({behavior:'smooth', block:'nearest'});
+    spiegaCalendarioAColori();
   }
+  on('veloStileCalendario', 'click', chiudiPannelloColori);
   // Il blocco di personalizzazione resta visibile e utilizzabile anche a calendario spento
   // (puoi comunque prepararlo in anticipo), solo visivamente attenuato per far capire che non
   // sta avendo effetto finché non riaccendi l'interruttore sopra.
@@ -830,6 +838,7 @@ function inizializza(){
     TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, acceso ? '1' : '0'); aggiornaStatoStrumentiTurni();
     aggiornaClasseCalendarioColori();
     aggiornaAspettoBlocCoCloriPersonalizzati();
+    spiegaCalendarioAColori();
     renderCalendario();
   });
   document.querySelectorAll('[data-stile-calendario]').forEach(b => b.addEventListener('click', () => {
