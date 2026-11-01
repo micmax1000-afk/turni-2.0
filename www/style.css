@@ -3091,3 +3091,15 @@ body.modo-pennello .documento{padding-bottom:200px}
 html[data-tema=scuro] .icona-indennita{color:#8FA6FF}
 html[data-tema=scuro] .griglia-indennita-giorno button:not(.attivo) .icona-indennita,html[data-tema=scuro] .giorno-cella .icona-indennita{color:inherit}
 .stile-anteprima:not(.stile-anteprima-moderno):not(.senza-colori) .sa-cella b,.stile-anteprima:not(.stile-anteprima-moderno):not(.senza-colori) .sa-cella i{color:#1E2129}
+
+/* v3.8.16: calendario classico più compatto: caselle meno alte, lettera al centro, numero più leggibile,
+   così sotto il mese resta in vista il giorno selezionato */
+body:not(.calendario-moderno) .scheda-calendario-v2 .calendario-griglia .giorno-cella{min-height:54px;aspect-ratio:auto;padding:4px 3px 5px;gap:0;justify-content:space-between}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella .giorno-topline{justify-content:flex-start}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella .giorno-numero{font-size:.8rem;font-weight:800}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella .giorno-turno-badge{justify-content:center;align-self:stretch;text-align:center}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella [data-sigla-singola]{line-height:1}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella .giorno-turno-badge{min-height:0;height:auto;padding:0;margin:0}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella .giorno-topline{min-height:0;height:auto;line-height:1.1}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella .giorno-turno-badge{width:100%}
+body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella .giorno-turno-nome{width:100%;text-align:center!important;margin:0 auto}
