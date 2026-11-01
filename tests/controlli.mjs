@@ -733,6 +733,29 @@ sezione('v3.8.13: detta a voce');
 }
 
 // ───────────────────────────────────────
+sezione('v3.8.16: barra del pennello');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(900);
+  await p.evaluate(() => { mostraScheda('turni'); });
+  await p.click('#btnRiempiGiorniTurni');
+  const r = await p.evaluate(() => {
+    const chip = [...document.querySelectorAll('#chipPennello .pennello-chip')];
+    const barra = el('barraPennello').getBoundingClientRect();
+    const tuttiVisibili = chip.every(c => { const b = c.getBoundingClientRect(); return b.left >= barra.left && b.right <= barra.right; });
+    const mese = meseCorrente;
+    const tocco = (tipo, x, bersaglio) => { const t = new Touch({ identifier: 1, target: bersaglio, clientX: x, clientY: 600 }); bersaglio.dispatchEvent(new TouchEvent(tipo, { bubbles: true, touches: tipo === 'touchend' ? [] : [t], changedTouches: [t] })); };
+    const c0 = chip[chip.length - 1];
+    tocco('touchstart', 300, c0); tocco('touchend', 60, c0);
+    return { primo: chip[0].dataset.pennello, tuttiVisibili, meseUguale: meseCorrente === mese };
+  });
+  ok('"Cancella" per primo e tutti i turni in vista, senza scorrere', r.primo === '__gomma' && r.tuttiVisibili, JSON.stringify(r));
+  ok('scorrere il dito sulla barra non cambia il mese', r.meseUguale, JSON.stringify(r));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');
 {
   const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});

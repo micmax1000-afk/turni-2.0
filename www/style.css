@@ -3025,3 +3025,8 @@ html[data-tema=scuro] .voce-riga-togli .voce-testo > div,html[data-tema=scuro] .
 .giorno-cella.cella-scura .giorno-numero,.giorno-cella.cella-scura .giorno-turno-nome,.giorno-cella.cella-scura .giorno-turno-codice,.giorno-cella.cella-scura .giorno-meta,.giorno-cella.cella-scura .giorno-meta *{color:#FFFFFF!important}
 .giorno-cella.cella-scura.festivo .giorno-numero,.giorno-cella.cella-scura.domenica .giorno-numero{color:#FFB4AB!important}
 .giorno-cella.cella-scura .giorno-badge-list{filter:brightness(1.6)}
+/* v3.8.16: barra del pennello: tutti i turni su più righe, nessuno scorrimento */
+.barra-pennello .chip-pennello{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;max-height:40vh;overflow-y:auto}
+.barra-pennello .pennello-chip{padding:6px 10px;font-size:.78rem}
+.pennello-gomma{border-style:dashed}
+body.modo-pennello .documento{padding-bottom:200px}

@@ -4111,8 +4111,9 @@ function avviaPennello(){
   if(vistaCalendario() !== 'mese') impostaVistaCalendario('mese');
   pennelloInizio = JSON.stringify(AppState.turni); pennelloConta = 0;
   const modelli = (AppState.modelliTurno || []);
-  const chip = modelli.map(m => `<button type="button" class="pennello-chip" data-pennello="${escapeHtml(m.id)}" style="--c:${escapeHtml(coloreModelloV2(m))}"><i></i>${escapeHtml(m.nome)}</button>`).join('')
-    + `<button type="button" class="pennello-chip pennello-gomma" data-pennello="__gomma"><i></i>Cancella</button>`;
+  // v3.8.16: tutti i turni in vista su più righe (niente fila da scorrere); "Cancella" sempre per primo
+  const chip = `<button type="button" class="pennello-chip pennello-gomma" data-pennello="__gomma"><i></i>Cancella</button>`
+    + modelli.map(m => `<button type="button" class="pennello-chip" data-pennello="${escapeHtml(m.id)}" style="--c:${escapeHtml(coloreModelloV2(m))}"><i></i>${escapeHtml(m.nome)}</button>`).join('');
   el('chipPennello').innerHTML = chip;
   modoPennello = (modelli.find(m => !m.riposo) || modelli[0] || {}).id || '__gomma';
   aggiornaChipPennello();
@@ -4163,7 +4164,11 @@ function inizializzaGestiCalendario(){
   const zona = document.querySelector('.scheda-calendario-v2');
   if(!zona) return;
   let x0 = null, y0 = null;
-  zona.addEventListener('touchstart', e => { if(e.touches.length !== 1){ x0 = null; return; } x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  // v3.8.16: niente cambio di mese quando il dito parte dalla barra del pennello, dal menu ＋ o da una fila che scorre
+  zona.addEventListener('touchstart', e => {
+    if(e.touches.length !== 1 || (e.target.closest && e.target.closest('#barraPennello, .fab-menu, .voce-scheda, .chip-pennello'))){ x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
   zona.addEventListener('touchend', e => {
     if(x0 === null || vistaCalendario() === 'agenda') return;
     const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
