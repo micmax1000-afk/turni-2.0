@@ -592,6 +592,7 @@ function renderCardAssenzaItem(a){
         ${automatica
           ? `<span class="valore-automatico" title="Calcolato automaticamente">${valoreEffettivo} ${unitaEffettiva} · auto</span>`
           : `<label>Spettanti <input type="number" data-campo="valore" value="${a.valore}" step="1" min="0"></label>`}
+        <div class="riga-colore-assenza"><span>Colore nel calendario</span><span class="colore-assenza-scelta"><input type="color" data-campo="coloreCalendario" value="${a.coloreCalendario || coloreCategoria('assenza')}" aria-label="Colore nel calendario"><button type="button" class="btn-secondario${a.coloreCalendario ? '' : ' attivo'}" data-colore-assenza-auto>Automatico</button></span></div>
         <label>Unità <select data-campo="unita" ${eRiposoCompensativo ? 'disabled' : ''}>
           <option value="gg" ${unitaEffettiva === 'gg' ? 'selected' : ''}>giorni</option>
           <option value="h" ${unitaEffettiva === 'h' ? 'selected' : ''}>ore</option>
@@ -653,6 +654,10 @@ function wireEventiCardAssenza(box){
           if(titoloCompatto) titoloCompatto.textContent = voce.nome || 'Nuova voce';
         }
         renderDashboardAssenze();
+        if(campo.dataset.campo === 'coloreCalendario'){
+          const auto = riga.querySelector('[data-colore-assenza-auto]'); if(auto) auto.classList.remove('attivo');
+          if(typeof renderCalendario === 'function') renderCalendario();
+        }
         const indicatore = riga.querySelector('.indicatore-salvato');
         if(indicatore){
           indicatore.classList.add('visibile');
@@ -780,6 +785,12 @@ function salvaSaldiPartenzaDaForm(){
 }
 function inizializzaSaldiPartenza(){
   document.addEventListener('click', e => {
+    const autoCol = e.target.closest('[data-colore-assenza-auto]');
+    if(autoCol){
+      const card = autoCol.closest('.card-assenza'); const v = card && AppState.assenze.find(x => x.id === card.dataset.id);
+      if(v){ delete v.coloreCalendario; salvaAssenzeStorage(); autoCol.classList.add('attivo'); const inp = card.querySelector('[data-campo="coloreCalendario"]'); if(inp) inp.value = coloreCategoria('assenza'); if(typeof renderCalendario === 'function') renderCalendario(); }
+      return;
+    }
     const sett = e.target.closest('[data-settimana-congedo]');
     if(sett){ impostaSettimanaCongedo(sett.dataset.settimanaCongedo); return; }
     if(e.target.closest('[data-congedo-auto]')){

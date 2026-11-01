@@ -595,7 +595,10 @@ function renderCalendario(){
     // Stile moderno: la casella resta chiara (il colore va solo nell'etichetta del turno, sotto).
     const moderno = typeof calendarioModernoAttivo === 'function' && calendarioModernoAttivo();
     let coloreTurno = '';
-    if(calendarioAColoriAttivo()){
+    // v3.8.10: ogni assenza può avere il suo colore (scelto nella sua scheda in Assenze); senza, il grigio.
+    const coloreAssenzaScelto = t && t.assenzaTipo ? ((AppState.assenze || []).find(a => a.id === t.assenzaTipo) || {}).coloreCalendario || '' : '';
+    if(calendarioAColoriAttivo() && coloreAssenzaScelto) coloreTurno = coloreAssenzaScelto;
+    else if(calendarioAColoriAttivo()){
       const modelloColoreCustomM = (t && t.riposo) ? (AppState.modelliTurno || []).find(m => m.riposo) : (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
       coloreTurno = modelloColoreCustomM && modelloColoreCustomM.colore ? modelloColoreCustomM.colore : (categoria ? coloreCategoria(categoria) : '');
     }
@@ -603,7 +606,8 @@ function renderCalendario(){
       cella.style.background = '';
     } else if(calendarioAColoriAttivo()){
       const modelloColoreCustom = (t && t.riposo) ? (AppState.modelliTurno || []).find(m => m.riposo) : (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
-      if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
+      if(coloreAssenzaScelto) cella.style.background = coloreAssenzaScelto;
+      else if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
       else if(categoria) cella.style.background = coloreCategoria(categoria);
       else cella.style.background = '';
     } else {
@@ -773,18 +777,24 @@ function renderCalendario(){
     return cella;
   };
 
-  // Giorni del mese prima e del mese dopo: si vede come continua la turnazione, ma sono solo da guardare.
+  // Giorni del mese prima e del mese dopo: sbiaditi; v3.8.10: toccandoli si va a quel mese con il giorno
+  // già selezionato, così si possono vedere e modificare come gli altri.
   const cellaFuoriMese = (d) => {
     const cella = costruisciCella(d);
-    const copia = cella.cloneNode(true); // la copia non porta con sé il tocco: non si possono aprire
+    const copia = cella.cloneNode(true); // la copia non porta con sé il tocco: lo aggiungiamo sotto
+    const iso = dataISO(d);
     copia.classList.add('fuori-mese');
     copia.classList.remove('oggi', 'selezionata');
     delete copia.dataset.data;
     delete copia.dataset.filtro;
-    copia.removeAttribute('title');
-    copia.setAttribute('aria-hidden', 'true');
-    copia.tabIndex = -1;
-    if(copia.tagName === 'BUTTON') copia.disabled = true;
+    copia.dataset.vaiGiorno = iso;
+    copia.setAttribute('aria-label', `Vai a ${d.getDate()} ${NOMI_MESI[d.getMonth()]} ${d.getFullYear()}`);
+    copia.title = `Vai a ${NOMI_MESI[d.getMonth()].toLowerCase()}`;
+    copia.addEventListener('click', () => {
+      meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
+      renderCalendario();
+      gestisciTocchGiornoV2(iso);
+    });
     return copia;
   };
   for(let i = offset; i > 0; i--) griglia.appendChild(cellaFuoriMese(new Date(annoCorrente, meseCorrente, 1 - i)));
@@ -1053,6 +1063,133 @@ function aggiornaVistaCalendario(){
   const campo = el('campoAgendaSotto');
   if(campo) campo.checked = attiva;
   if(attiva) renderAgenda();
+  applicaVistaCalendario();
+}
+
+// ── v3.8.10: viste del calendario (Giorno · Settimana · Mese · Agenda), scelte dal pulsantino in alto ──
+const CHIAVE_VISTA_CALENDARIO = 'simCedolino_vistaCalendario_v1';
+const NOMI_VISTA_CALENDARIO = { giorno: 'Giorno', settimana: 'Settimana', mese: 'Mese', agenda: 'Agenda' };
+function vistaCalendario(){
+  if(agendaSottoAttiva()) return 'agenda';
+  let v = null; try{ v = TurniPSStorage.getItem(CHIAVE_VISTA_CALENDARIO); }catch(e){}
+  return v === 'giorno' || v === 'settimana' ? v : 'mese';
+}
+function impostaVistaCalendario(v){
+  try{ TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, v === 'agenda' ? 'mese' : v); }catch(e){}
+  if(!giornoSelezionato) giornoSelezionato = dataISO(new Date());
+  if(v !== 'agenda'){ const d = dataDaIso(giornoSelezionato); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); }
+  el('menuVistaCalendario').hidden = true;
+  impostaAgendaSotto(v === 'agenda'); // ridisegna anche la vista
+  renderCalendario();
+  window.scrollTo(0, 0);
+}
+function lunediDi(iso){ const d = dataDaIso(iso); return new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7, 12); }
+function giornoPiu(iso, n){ const d = dataDaIso(iso); return dataISO(new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12)); }
+// Frecce ‹ ›: nella vista Giorno si va di un giorno, nella Settimana di una settimana.
+function spostaVistaCalendario(dir){
+  const v = vistaCalendario();
+  if(v !== 'giorno' && v !== 'settimana') return false;
+  giornoSelezionato = giornoPiu(giornoSelezionato || dataISO(new Date()), dir * (v === 'giorno' ? 1 : 7));
+  const d = dataDaIso(giornoSelezionato); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
+  renderCalendario();
+  return true;
+}
+function coloreGiornoVista(t){
+  if(!t) return '';
+  if(t.assenzaTipo){ const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo); return (v && v.coloreCalendario) || coloreCategoria('assenza'); }
+  const m = t.riposo ? (AppState.modelliTurno || []).find(x => x.riposo) : (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
+  return (m && m.colore) || coloreCategoria(t.riposo ? 'riposo' : (t.oraInizio && t.oraFine ? categoriaTurno(t.oraInizio, t.oraFine, t.data) : 'mattina'));
+}
+function nomeGiornoVista(t){
+  if(!t) return '';
+  if(t.assenzaTipo){ const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo); return v ? v.nome : 'Assenza'; }
+  if(t.riposo) return 'Riposo';
+  const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
+  return m ? m.nome : (t.oraInizio ? 'Turno' : '');
+}
+function applicaVistaCalendario(){
+  const v = vistaCalendario();
+  const sez = document.querySelector('.scheda-calendario-v2');
+  if(!sez || !el('vistaGiornoCal')) return;
+  sez.dataset.vista = v;
+  el('etichettaVistaCalendario').textContent = NOMI_VISTA_CALENDARIO[v];
+  document.querySelectorAll('[data-vista-calendario]').forEach(b => b.classList.toggle('attivo', b.dataset.vistaCalendario === v));
+  el('vistaGiornoCal').hidden = v !== 'giorno';
+  el('vistaSettimanaCal').hidden = v !== 'settimana';
+  const iso = giornoSelezionato || dataISO(new Date());
+  const d = dataDaIso(iso);
+  if(v === 'giorno'){
+    el('etichettaMese').textContent = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+    renderVistaGiorno(iso);
+  } else if(v === 'settimana'){
+    const lun = lunediDi(iso), dom = dataDaIso(giornoPiu(dataISO(lun), 6));
+    const mm = x => x.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
+    el('etichettaMese').textContent = lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${mm(dom)}` : `${lun.getDate()} ${mm(lun)} – ${dom.getDate()} ${mm(dom)}`;
+    renderVistaSettimana(iso);
+  } else if(v === 'agenda'){
+    el('etichettaMese').textContent = 'Agenda';
+  }
+}
+const ALTEZZA_ORA_VISTA = 30;
+function renderVistaGiorno(iso){
+  const host = el('vistaGiornoCal');
+  const H = ALTEZZA_ORA_VISTA, lun = lunediDi(iso), oggiIso = dataISO(new Date());
+  const nomi = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+  const striscia = nomi.map((n, i) => { const g = giornoPiu(dataISO(lun), i); const dd = dataDaIso(g);
+    return `<button type="button" class="vg-giorno${g === iso ? ' attivo' : ''}${g === oggiIso ? ' oggi' : ''}" data-vista-giorno="${g}">${n}<b>${dd.getDate()}</b></button>`; }).join('');
+  const blocchi = (typeof turniNellaGiornata === 'function' ? turniNellaGiornata(iso) : []).map(b => {
+    const top = b.da / 60 * H, alto = Math.max(22, (Math.min(b.a, 1440) - b.da) / 60 * H - 3);
+    return `<button type="button" class="vg-blocco vg-turno" data-vista-turno="${b.daIeri ? giornoPiu(iso, -1) : iso}" style="top:${top}px;height:${alto}px;background:${escapeHtml(b.colore || '#C9CED6')}"><b>${escapeHtml(b.nome || 'Turno')}</b><small>${escapeHtml(b.orario || '')}</small></button>`; }).join('');
+  const t = AppState.turni[iso];
+  const tutto = [];
+  if(t && (t.riposo || t.assenzaTipo)) tutto.push(`<span style="background:${coloreGiornoVista(t)}">${escapeHtml(nomeGiornoVista(t))}</span>`);
+  let eventi = '';
+  (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : []).forEach(({ ev, isoOrigine }) => {
+    if(ev.tuttoIlGiorno || !ev.oraInizio){ tutto.push(`<span class="vg-ev-tutto" style="background:${coloreEvento(ev)}">${escapeHtml(ev.titolo || 'Evento')}</span>`); return; }
+    const r = intervalloOrari(ev.oraInizio, ev.oraFine || ev.oraInizio) || { da: minutiDaOrario(ev.oraInizio), a: minutiDaOrario(ev.oraInizio) + 60 };
+    const fine = r.a > r.da ? r.a : r.da + 60;
+    eventi += `<button type="button" class="vg-blocco vg-evento" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine || iso)}" style="top:${r.da / 60 * H}px;height:${Math.max(22, (Math.min(fine, 1440) - r.da) / 60 * H - 3)}px;background:${coloreEvento(ev)}"><b>${escapeHtml(ev.titolo || 'Evento')}</b><small>${escapeHtml(ev.oraInizio)}</small></button>`;
+  });
+  const ore = [...Array(24)].map((_, h) => `<div class="vg-ora" style="top:${h * H}px"><span>${String(h).padStart(2, '0')}:00</span></div>`).join('');
+  const adesso = new Date();
+  const linea = iso === oggiIso ? `<div class="vg-adesso" style="top:${(adesso.getHours() * 60 + adesso.getMinutes()) / 60 * H}px"></div>` : '';
+  host.innerHTML = `<div class="vg-striscia">${striscia}</div>${tutto.length ? `<div class="vg-tutto">${tutto.join('')}</div>` : ''}<div class="vg-scorri" id="vgScorri"><div class="vg-ore" style="height:${24 * H}px">${ore}${blocchi}${eventi}${linea}</div></div>`;
+  // Si parte dal turno (o dalle 7), un'ora prima.
+  const primo = (typeof turniNellaGiornata === 'function' ? turniNellaGiornata(iso) : []).filter(b => !b.daIeri)[0];
+  el('vgScorri').scrollTop = Math.max(0, ((primo ? primo.da : 7 * 60) / 60 - 1) * H);
+}
+function renderVistaSettimana(iso){
+  const host = el('vistaSettimanaCal');
+  const lun = lunediDi(iso), oggiIso = dataISO(new Date());
+  const nomi = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+  let tot = 0;
+  const righe = nomi.map((n, i) => {
+    const g = giornoPiu(dataISO(lun), i), dd = dataDaIso(g), t = AppState.turni[g];
+    const ore = typeof oreServizioGiorno === 'function' ? oreServizioGiorno(t) : 0; tot += ore;
+    const nome = nomeGiornoVista(t);
+    const ev = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(g) : []).map(({ ev }) => `<span class="vs-ev"><i style="background:${coloreEvento(ev)}"></i>${ev.tuttoIlGiorno ? '' : escapeHtml(ev.oraInizio || '') + ' '}${escapeHtml(ev.titolo || 'Evento')}</span>`).join('');
+    return `<button type="button" class="vs-riga${g === iso ? ' attivo' : ''}${g === oggiIso ? ' oggi' : ''}${typeof eFestivoOdDomenica === 'function' && eFestivoOdDomenica(g) ? ' festivo' : ''}" data-vista-giorno="${g}">`
+      + `<span class="vs-data"><small>${n}</small><b>${dd.getDate()}</b></span>`
+      + `<span class="vs-corpo">${nome ? `<b style="background:${coloreGiornoVista(t)};color:${testoSuColore(coloreGiornoVista(t))}">${escapeHtml(nome)}</b>` : '<em>—</em>'}${t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? `<span class="vs-orario">${escapeHtml(t.oraInizio)}–${escapeHtml(t.oraFine)}</span>` : ''}${ev}</span>`
+      + `<span class="vs-ore">${ore ? formatOreMinuti(ore) : ''}</span></button>`;
+  }).join('');
+  host.innerHTML = `<div class="vs-lista">${righe}</div><div class="vs-totale"><span>Ore della settimana</span><b>${formatOreMinuti(tot)}</b></div>`;
+}
+function inizializzaVisteCalendario(){
+  const menu = el('menuVistaCalendario');
+  if(!menu) return;
+  on('btnVistaCalendario', 'click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; el('btnVistaCalendario').setAttribute('aria-expanded', String(!menu.hidden)); });
+  document.addEventListener('click', e => {
+    if(!menu.hidden && !e.target.closest('#menuVistaCalendario')) menu.hidden = true;
+    const scelta = e.target.closest('[data-vista-calendario]');
+    if(scelta){ impostaVistaCalendario(scelta.dataset.vistaCalendario); return; }
+    const g = e.target.closest('[data-vista-giorno]');
+    if(g){ selezionaGiorno(g.dataset.vistaGiorno); const d = dataDaIso(g.dataset.vistaGiorno); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); applicaVistaCalendario(); return; }
+    const tu = e.target.closest('[data-vista-turno]');
+    if(tu){ apriModaleTurno(tu.dataset.vistaTurno); return; }
+    const ev = e.target.closest('.vg-evento[data-evento-id]');
+    if(ev && typeof apriModificaEventoV2 === 'function') apriModificaEventoV2(ev.dataset.eventoId, ev.dataset.eventoIso);
+  });
 }
 // Ore e minuti (6:35), come nel riquadro del giorno: "6,58 h" si leggerebbe come 6 ore e 58 minuti.
 function oreAgenda(n){ return formatOreMinuti(n); }

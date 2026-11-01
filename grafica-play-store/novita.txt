@@ -1,9 +1,9 @@
 <it-IT>
-• Backup su Google Drive ora gratuito per tutti
-• Nuovo evento come in Google Calendar, con "Suona anche in silenzioso"
-• Ore scritte in ore e minuti (7 h 35 min)
-• Calendario più pulito: oggi nel cerchio, eventi a pallino
-• Statistiche dell'anno e scheda Turni rinnovate
-• Un tocco sul giorno lo mostra; Turno e Modifica per cambiarlo
-• Report: spiegati i due netti
+• Viste del calendario: Giorno, Settimana, Mese e Agenda
+• Pulsante ＋ per evento, cambio turno, assenza e straordinario
+• Tocca il turno del giorno per modificarlo
+• Colori: si cambiano su ogni turno, e ogni assenza può avere il suo
+• Congedo ordinario calcolato dagli anni di servizio
+• Permesso breve a 36 ore, recupero festivo automatico
+• Backup su Google Drive gratuito
 </it-IT>
