@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V247 (v3.8.14 — icone a linea, sezioni sempre aperte, servizio svolto a voce) */
+/* Turni & Accessorio PS — Service Worker V248 (v3.8.15 — elimina a voce, titolo del mese adattato, colori scuri leggibili) */
 'use strict';
-const CACHE='turni-ps-v247';
+const CACHE='turni-ps-v248';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/data/tabelle-2026.js',

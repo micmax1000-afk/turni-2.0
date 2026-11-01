@@ -646,6 +646,12 @@ sezione('v3.8.13: detta a voce');
       : r.tipo === 'straordinario' ? `${r.iso} str ${r.da}-${r.al}${r.prima ? ' prima' : ''}`
       : r.tipo === 'evento' ? `${r.iso} ev ${r.ora || 'tutto'} ${r.titolo}`
       : r.tipo === 'nota' ? `${r.iso} nota ${r.testo}`
+      : r.tipo === 'cancella' ? `${r.iso} cancella`
+      : r.tipo === 'togliStr' ? `${r.iso} togli str ${r.quale}`
+      : r.tipo === 'togliInd' ? `${r.iso} togli ${r.chiave}`
+      : r.tipo === 'togliNota' ? `${r.iso} togli nota`
+      : r.tipo === 'togliEvento' ? `${r.iso} togli ev ${r.titolo}`
+      : r.tipo === 'togliAssenza' ? `${r.giorni[0]}..${r.giorni[r.giorni.length - 1]} togli ${r.nome} ${r.giorni.length}`
       : `${r.iso} ind ${r.chiave}`), avvisi };
   }, [frase, giorno]);
   let r = await capisci('domani notte e domenica riposo');
@@ -678,6 +684,34 @@ sezione('v3.8.13: detta a voce');
   ok('"domani sera, servizio svolto pattuglia e scorta Termini": la nota resta intera', r.righe.join(' | ') === '2026-10-10 sera | 2026-10-10 nota Pattuglia e scorta Termini', JSON.stringify(r));
   r = await capisci('servizio svolto stadio Olimpico domenica');
   ok('"servizio svolto stadio Olimpico domenica": il giorno detto alla fine', r.righe.join(' | ') === '2026-10-11 nota Stadio Olimpico', JSON.stringify(r));
+  // v3.8.15: togliere a voce
+  await p.evaluate(() => { const T = AppState.turni; Object.assign(T['2026-10-10'], { straordinarioDopoInizio: '19:00', straordinarioDopoFine: '21:00', straordinarioPrimaInizio: '12:00', straordinarioPrimaFine: '13:00', reperibilita: true, servizioSvolto: 'OP Stadio' }); AppState.eventiGiorno['2026-10-15'] = [{ id: 'ev_t1', titolo: 'Dentista', oraInizio: '10:00' }, { id: 'ev_t2', titolo: 'Palestra', oraInizio: '18:00' }]; });
+  r = await capisci('togli lo straordinario e la reperibilità di domani');
+  ok('"togli lo straordinario e la reperibilità di domani"', r.righe.join(' | ') === '2026-10-10 togli str prima | 2026-10-10 togli str dopo | 2026-10-10 togli reperibilita', JSON.stringify(r));
+  r = await capisci('domani togli lo straordinario dopo');
+  ok('"domani togli lo straordinario dopo": solo quello dopo', r.righe.join(' | ') === '2026-10-10 togli str dopo', JSON.stringify(r));
+  r = await capisci('cancella il servizio svolto di domani');
+  ok('"cancella il servizio svolto di domani"', r.righe.join(' | ') === '2026-10-10 togli nota', JSON.stringify(r));
+  r = await capisci('domani cancella il servizio svolto e metti servizio svolto Pattuglia');
+  ok('"cancella il servizio svolto e metti servizio svolto Pattuglia" (il 10 è riposo: lo dice)', r.righe.join(' | ') === '2026-10-10 togli nota' && r.avvisi.length === 1 && /servizio svolto del sab 10/.test(r.avvisi[0]), JSON.stringify(r));
+  r = await capisci('cancella il servizio svolto e metti servizio svolto Pattuglia', '2026-10-13');
+  ok('…e su un giorno di turno: toglie e mette "Pattuglia"', r.righe.join(' | ') === '2026-10-13 nota Pattuglia' && r.avvisi.length === 1, JSON.stringify(r));
+  r = await capisci('cancella il servizio svolto, martedì elimina il turno', '2026-10-13');
+  ok('frasi separate da virgola: ognuna col suo giorno', r.righe.join(' | ') === '2026-10-13 cancella' && r.avvisi.length === 1 && /mar 13 ott non c'è il servizio svolto da rimuovere/.test(r.avvisi[0]), JSON.stringify(r));
+  r = await capisci('giovedì togli il dentista');
+  ok('"giovedì togli il dentista": solo quell\'evento', r.righe.join(' | ') === '2026-10-15 togli ev Dentista', JSON.stringify(r));
+  r = await capisci('cancella il turno di domani');
+  ok('"cancella il turno di domani"', r.righe.join(' | ') === '2026-10-10 cancella', JSON.stringify(r));
+  r = await capisci('oggi niente buono pasto');
+  ok('"oggi niente buono pasto": c\'era? se no lo dice', r.righe.length === 0 && r.avvisi.length === 1, JSON.stringify(r));
+  r = await capisci('togli la reperibilità di domani e metti servizio esterno');
+  ok('"togli … e metti …": la seconda parte aggiunge (sullo stesso giorno)', r.righe.join(' | ') === '2026-10-10 togli reperibilita' && r.avvisi.length === 1 && /sab 10/.test(r.avvisi[0]), JSON.stringify(r));
+  await p.evaluate(() => { giornoSelezionato = '2026-10-09'; mostraRisultatoVoce('togli lo straordinario e la reperibilità di domani, giovedì togli il dentista'); });
+  await p.click('#schedaVoce [data-voce="salva"]');
+  ok('Salva: straordinario, reperibilità ed evento tolti', await p.evaluate(() => { const t = AppState.turni['2026-10-10']; return !t.straordinarioDopoInizio && !t.straordinarioPrimaInizio && !t.reperibilita && !(AppState.eventiGiorno['2026-10-15'] || []).some(e => e.id === 'ev_t1') && (AppState.eventiGiorno['2026-10-15'] || []).some(e => e.id === 'ev_t2'); }));
+  await p.click('.toast-azione'); await p.waitForTimeout(200);
+  ok('Annulla: tutto torna com\'era', await p.evaluate(() => { const t = AppState.turni['2026-10-10']; return t.straordinarioDopoInizio === '19:00' && t.reperibilita && (AppState.eventiGiorno['2026-10-15'] || []).some(e => e.id === 'ev_t1'); }));
+  await p.evaluate(() => { delete AppState.eventiGiorno['2026-10-15']; salvaEventiGiornoStorage(); });
   r = await capisci('venerdì mattina e poi quello lungo');
   ok('una parte non capita: si dice quale', r.righe.join(' | ') === '2026-10-09 mattina' && r.avvisi.some(a => a.includes('quello lungo')), JSON.stringify(r));
   // La scheda: niente si salva finché non si tocca Salva; poi Annulla rimette tutto com'era.

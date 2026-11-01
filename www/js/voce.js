@@ -8,6 +8,7 @@
 const ICONA_MICROFONO = '<svg class="voce-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
 const ICONE_VOCE = {
   evento: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  togli: '<path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 13h11l1-13M9 7V4h6v3"/>',
   assenza: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',
   domanda: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4M12 16.6v.4"/>'
@@ -204,9 +205,10 @@ function capisciFraseVoce(testo, rif){
   // v3.8.14: "servizio svolto arrivi nord" — il testo libero va preso intero (anche con "e" dentro),
   // fino alla virgola; un giorno detto alla fine ("… arrivi nord domani") torna davanti.
   const note = [];
-  const GIORNO_FINALE = new RegExp(`\\s+((?:oggi|ieri|domani|dopodomani)|(?:(?:prossimo|prossima) )?(?:${GIORNI_VOCE.join('|')})(?: \\d{1,2})?(?: (?:prossimo|prossima))?|il \\d{1,2}(?: (?:${MESI_VOCE.join('|')}))?)$`);
-  let fraseNote = frase.replace(/\b(?:servizio svolto|nota (?:del |di )?servizio|servizio fatto|ho svolto|ho fatto servizio)\s*(?:a |al |alla |agli |ai |in |di |:\s*)?([^,;]+)/g, (m, testoNota) => {
+  const GIORNO_FINALE = new RegExp(`(?:^|\\s+)((?:oggi|ieri|domani|dopodomani)|(?:(?:prossimo|prossima) )?(?:${GIORNI_VOCE.join('|')})(?: \\d{1,2})?(?: (?:prossimo|prossima))?|il \\d{1,2}(?: (?:${MESI_VOCE.join('|')}))?)$`);
+  let fraseNote = frase.replace(/\b(?:servizio svolto|nota (?:del |di )?servizio|servizio fatto|ho svolto|ho fatto servizio)\s*(?:a |al |alla |agli |ai |in |di |:\s*)?([^,;]+?)(?=\s+(?:(?:e|ed) )?(?:poi|metti|mettimi|aggiungi|togli|toglimi|cancella|elimina|rimuovi|segna|segnami)\b|\s*[,;]|\s*$)/g, (m, testoNota) => {
     let t = testoNota.trim(), giorno = '';
+    if(/^(e|ed|poi)$/.test(t)) return m;
     const g = t.match(GIORNO_FINALE);
     if(g){ giorno = g[1]; t = t.slice(0, g.index).trim(); }
     if(!t) return m;
@@ -214,13 +216,22 @@ function capisciFraseVoce(testo, rif){
     note.push(bello.charAt(0).toUpperCase() + bello.slice(1));
     return `${giorno ? giorno + ' ' : ''}§nota${note.length - 1}§`;
   });
-  const parti = fraseNote.split(/\s*(?:,|;|\be poi\b|\bpoi\b|\be\b|\bed\b)\s*/).map(x => x.trim()).filter(Boolean);
+  // Le frasi separate da virgola (o "poi") sono a sé; dentro una frase le parti unite da "e"
+  // possono prendere il giorno detto dopo ("togli lo straordinario e la reperibilità di domani").
+  const parti = [], gruppoDi = [];
+  fraseNote.split(/\s*(?:[,;]|\be poi\b|\bpoi\b)\s*/).forEach((g, gi) => g.split(/\s+(?:e|ed)\s+/).map(x => x.trim()).filter(Boolean).forEach(x => { parti.push(x); gruppoDi.push(gi); }));
   const azioni = [], nonCapito = [];
-  let ultimeDate = [predefinito], inSospeso = [];
-  parti.forEach(parte => {
-    const { date, resto: r0 } = estraiDateVoce(parte, oggi);
+  let ultimeDate = null, inSospeso = [], negativo = false;
+  // v3.8.15: le date di ogni parte, per "togli lo straordinario e la reperibilità di domani"
+  // (la prima parte senza giorno prende quello detto dopo).
+  const pezzi = parti.map(parte => estraiDateVoce(parte, oggi));
+  const RE_TOGLI = /\b(togli|toglimi|togliere|toglila|toglilo|rimuovi|cancella|cancellami|elimina|leva|levami|niente|senza|annulla|non)\b/;
+  const RE_METTI = /\b(metti|mettimi|aggiungi|segna|segnami|inserisci)\b/;
+  pezzi.forEach(({ date, resto: r0 }, indice) => {
     let resto = ' ' + r0 + ' ';
     const trovate = [];
+    if(RE_TOGLI.test(resto)){ negativo = true; resto = resto.replace(new RegExp(RE_TOGLI.source, 'g'), ' '); }
+    else if(RE_METTI.test(resto)) negativo = false;
     // Orari: "dalle 7 alle 13" (turno o straordinario), "alle 10" (evento)
     let intervallo = null, ora = null;
     const ri = resto.match(/\b(?:dalle|da) (\d{1,2}(?::\d{2})?) (?:alle|a) (\d{1,2}(?::\d{2})?)\b/);
@@ -232,6 +243,7 @@ function capisciFraseVoce(testo, rif){
     if(rd) resto = resto.replace(rd[0], ' ');
     const rn = resto.match(/§nota(\d+)§/);
     if(rn){ trovate.push({ tipo: 'nota', testo: note[Number(rn[1])] }); resto = resto.replace(rn[0], ' '); }
+    else if(negativo && /\b(servizio svolto|nota del servizio|nota)\b/.test(resto)){ trovate.push({ tipo: 'nota', testo: '' }); resto = resto.replace(/\b(servizio svolto|nota del servizio|nota)\b/, ' '); }
     // Assenze (prima dei turni: "riposo compensativo" non è il turno "Riposo")
     for(const x of assenze){
       const t = togliParole(resto, x.parole);
@@ -240,9 +252,9 @@ function capisciFraseVoce(testo, rif){
     // Straordinario
     const rs = resto.match(/\bstraordinari[oi]\b/);
     if(rs){
-      const prima = /\bprima\b/.test(resto);
+      const prima = /\bprima\b/.test(resto), detto = /\b(prima|dopo)\b/.test(resto);
       resto = resto.replace(/\bstraordinari[oi]\b/, ' ').replace(/\b(prima|dopo)( del turno| il turno)?\b/, ' ');
-      trovate.push({ tipo: 'straordinario', minuti: durata, intervallo, quando: prima ? 'prima' : 'dopo' });
+      trovate.push({ tipo: 'straordinario', minuti: durata, intervallo, quando: prima ? 'prima' : 'dopo', detto });
       intervallo = null;
     }
     // Indennità
@@ -264,16 +276,21 @@ function capisciFraseVoce(testo, rif){
     if(intervallo && !trovate.some(x => x.tipo === 'turno')){ trovate.push({ tipo: 'turno', modelloId: null, intervallo }); intervallo = null; }
     // Evento: un'ora sola, oppure parole rimaste con un giorno detto
     const avanzo = resto.replace(PAROLE_VUOTE, ' ').replace(/\s+/g, ' ').trim();
-    if(ora || /\b(evento|appuntamento|promemoria)\b/.test(resto) || (avanzo && date.length && !trovate.length)){
+    if(negativo && !trovate.length){
+      // "cancella il turno di domani" / "togli l'evento dentista" / "togli dentista giovedì"
+      if(avanzo) trovate.push({ tipo: 'evento', titolo: avanzo, ora });
+      else if(/\b(turno|giorno|giornata|tutto|evento|eventi|appuntamento)\b/.test(resto)) trovate.push({ tipo: /\b(evento|eventi|appuntamento)\b/.test(resto) ? 'evento' : 'cancella', titolo: '' });
+    } else if(ora || /\b(evento|appuntamento|promemoria)\b/.test(resto) || (avanzo && date.length && !trovate.length)){
       const titolo = titoloEvento(resto.replace(/\s+/g, ' ').trim(), originali);
       trovate.push({ tipo: 'evento', titolo: titolo || 'Evento', ora });
     } else if(avanzo && !trovate.length){
       nonCapito.push(avanzo);
     }
     if(!trovate.length){ if(date.length) inSospeso = inSospeso.concat(date); return; }
-    const giorni = date.length ? inSospeso.concat(date) : (inSospeso.length ? inSospeso : ultimeDate);
+    const dopo = pezzi.slice(indice + 1).find((x, k) => gruppoDi[indice + 1 + k] === gruppoDi[indice] && x.date.length);
+    const giorni = date.length ? inSospeso.concat(date) : (inSospeso.length ? inSospeso : (ultimeDate || (dopo ? dopo.date : [predefinito])));
     inSospeso = []; ultimeDate = giorni;
-    trovate.forEach(x => azioni.push({ ...x, giorni: [...giorni] }));
+    trovate.forEach(x => azioni.push({ ...x, togli: negativo, giorni: [...giorni] }));
   });
   return { azioni, nonCapito, frase: testo };
 }
@@ -283,6 +300,8 @@ function modelloDaId(id){ return (AppState.modelliTurno || []).find(m => m.id ==
 function righeDaAzioniVoce(capito){
   const righe = [], turnoPrevisto = {};
   const avvisi = capito.nonCapito.map(p => `«${escapeHtml(p)}»: non l'ho capito.`);
+  capito.azioni.filter(a => a.togli).forEach(a => righeDaTogliereVoce(a, righe, avvisi));
+  capito.azioni = capito.azioni.filter(a => !a.togli);
   capito.azioni.filter(a => a.tipo === 'turno' || a.tipo === 'assenza').forEach(a => {
     if(a.tipo === 'turno'){
       const m = a.modelloId ? modelloDaId(a.modelloId) : null;
@@ -322,12 +341,50 @@ function righeDaAzioniVoce(capito){
   capito.azioni.filter(a => a.tipo === 'evento').forEach(a => a.giorni.forEach(iso => righe.push({ tipo: 'evento', iso, titolo: a.titolo, ora: a.ora })));
   return { righe, avvisi };
 }
+// v3.8.15: "togli …": si trova cosa c'è davvero da togliere in quei giorni.
+function righeDaTogliereVoce(a, righe, avvisi){
+  const NOMI = { straordinario: 'lo straordinario', nota: 'il servizio svolto', evento: 'l\'evento', cancella: 'il turno', turno: 'il turno', assenza: a.nome || 'l\'assenza' };
+  // Come nell'app: si eliminano le cose intere (turno, evento, assenza), si rimuovono i pezzi del giorno.
+  const verbo = ['evento', 'cancella', 'turno', 'assenza'].includes(a.tipo) ? 'eliminare' : 'rimuovere';
+  const manca = iso => avvisi.push(`Il ${etichettaDataVoce(iso)} non c'è ${a.tipo === 'indennita' ? (ELENCO_INDENNITA.find(x => x.chiave === a.chiave) || {}).nome || 'l\'indennità' : NOMI[a.tipo]} da ${verbo}.`);
+  if(a.tipo === 'assenza'){
+    const giorni = a.giorni.filter(iso => AppState.turni[iso] && AppState.turni[iso].assenzaTipo === a.assenzaId);
+    if(giorni.length) righe.push({ tipo: 'togliAssenza', giorni, assenzaId: a.assenzaId, nome: a.nome });
+    else manca(a.giorni[0]);
+    return;
+  }
+  a.giorni.forEach(iso => {
+    const t = AppState.turni[iso];
+    if(a.tipo === 'cancella' || a.tipo === 'turno'){
+      if(t && (t.oraInizio || t.riposo || t.assenzaTipo)) righe.push({ tipo: 'cancella', iso, prima: { ...t } }); else manca(iso);
+    } else if(a.tipo === 'straordinario'){
+      const haPrima = !!(t && t.straordinarioPrimaInizio && t.straordinarioPrimaFine), haDopo = !!(t && t.straordinarioDopoInizio && t.straordinarioDopoFine);
+      const quali = a.detto ? (a.quando === 'prima' ? [haPrima && 'prima'] : [haDopo && 'dopo']) : [haPrima && 'prima', haDopo && 'dopo'];
+      const ok = quali.filter(Boolean);
+      if(!ok.length) manca(iso);
+      ok.forEach(q => righe.push({ tipo: 'togliStr', iso, quale: q, da: t[q === 'prima' ? 'straordinarioPrimaInizio' : 'straordinarioDopoInizio'], al: t[q === 'prima' ? 'straordinarioPrimaFine' : 'straordinarioDopoFine'] }));
+    } else if(a.tipo === 'indennita'){
+      if(t && t[a.chiave]) righe.push({ tipo: 'togliInd', iso, chiave: a.chiave }); else manca(iso);
+    } else if(a.tipo === 'nota'){
+      if(t && t.servizioSvolto) righe.push({ tipo: 'togliNota', iso, testo: t.servizioSvolto }); else manca(iso);
+    } else if(a.tipo === 'evento'){
+      const parole = normalizzaVoce(a.titolo || '').split(' ').filter(w => w.length > 2);
+      const trovati = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : []).filter(({ ev }) => {
+        if(a.ora && ev.oraInizio && ev.oraInizio !== a.ora) return false;
+        const t2 = normalizzaVoce(ev.titolo || '');
+        return !parole.length || parole.some(w => t2.includes(w));
+      });
+      if(!trovati.length) manca(iso);
+      trovati.forEach(({ ev, isoOrigine }) => righe.push({ tipo: 'togliEvento', iso, id: ev.id, isoOrigine: isoOrigine || iso, titolo: ev.titolo || 'Evento', ora: ev.tuttoIlGiorno ? '' : ev.oraInizio, ripetuto: !!ev.ripeti }));
+    }
+  });
+}
 function etichettaDataVoce(iso){
   const d = dataDaIso(iso);
   return `${GIORNI_SETTIMANA_BREVI[d.getDay()]} ${d.getDate()} ${NOMI_MESI[d.getMonth()].slice(0, 3).toLowerCase()}`;
 }
 function dataRigaVoce(r){
-  if(r.tipo === 'assenza' && r.giorni.length > 1){
+  if((r.tipo === 'assenza' || r.tipo === 'togliAssenza') && r.giorni.length > 1){
     const a = dataDaIso(r.giorni[0]), b = dataDaIso(r.giorni[r.giorni.length - 1]);
     const mm = d => NOMI_MESI[d.getMonth()].slice(0, 3).toLowerCase();
     return `<small>${a.getDate()}${a.getMonth() !== b.getMonth() ? ' ' + mm(a) : ''}–${b.getDate()}</small><b>${mm(b)}</b>`;
@@ -358,6 +415,25 @@ function htmlRigaVoce(r, i){
     const voce = ELENCO_INDENNITA.find(x => x.chiave === r.chiave);
     titolo = `${iconaIndennita(r.chiave, 'voce-ic')}${escapeHtml(r.due ? '2 buoni pasto' : voce ? voce.nome : r.chiave)}${r.oreMissione ? ` ${formatOreMinuti(r.oreMissione)}` : ''}`;
     sotto = 'Indennità';
+  } else if(r.tipo === 'cancella'){
+    titolo = `${iconaVoce('togli')}Elimina ${chipVoce(r.prima)}`;
+    sotto = r.prima.oraInizio && !r.prima.assenzaTipo ? `Il giorno resta vuoto · era ${escapeHtml(r.prima.oraInizio)} – ${escapeHtml(r.prima.oraFine)}` : 'Il giorno resta vuoto';
+  } else if(r.tipo === 'togliAssenza'){
+    titolo = `${iconaVoce('togli')}Elimina ${chipVoce({ assenzaTipo: r.assenzaId })}`;
+    sotto = r.giorni.length > 1 ? `${r.giorni.length} giorni · restano vuoti` : 'Il giorno resta vuoto';
+  } else if(r.tipo === 'togliStr'){
+    titolo = `${iconaVoce('togli')}Rimuovi straordinario`;
+    sotto = `${r.quale === 'prima' ? 'Prima del turno' : 'Dopo il turno'} · ${escapeHtml(r.da)} → ${escapeHtml(r.al)}`;
+  } else if(r.tipo === 'togliInd'){
+    const voce = ELENCO_INDENNITA.find(x => x.chiave === r.chiave);
+    titolo = `${iconaVoce('togli')}Rimuovi ${escapeHtml(voce ? voce.nome : r.chiave)}`;
+    sotto = 'Indennità';
+  } else if(r.tipo === 'togliNota'){
+    titolo = `${iconaVoce('togli')}Rimuovi servizio svolto`;
+    sotto = `«${escapeHtml(r.testo)}»`;
+  } else if(r.tipo === 'togliEvento'){
+    titolo = `${iconaVoce('togli')}Elimina ${escapeHtml(r.titolo)}`;
+    sotto = `Evento${r.ora ? ' · ' + escapeHtml(r.ora) : ''}${r.ripetuto ? ' · solo questo giorno' : ''}`;
   } else if(r.tipo === 'nota'){
     titolo = `${iconaIndennita('servizioSvolto', 'voce-ic')}${escapeHtml(r.testo)}`;
     sotto = 'Servizio svolto' + (AppState.turni[r.iso] && AppState.turni[r.iso].servizioSvolto ? ` · prima: ${escapeHtml(AppState.turni[r.iso].servizioSvolto)}` : '');
@@ -365,8 +441,8 @@ function htmlRigaVoce(r, i){
     titolo = `${iconaVoce('evento')}${escapeHtml(r.titolo)}`;
     sotto = r.ora ? `Evento · ${r.ora} – ${hhmm(Math.min(minDa(r.ora) + 60, 1439))}` : 'Evento · tutto il giorno';
   }
-  return `<div class="voce-riga"><div class="voce-data">${dataRigaVoce(r)}</div><div class="voce-testo"><div>${titolo}</div><small>${sotto}</small></div>`
-    + `<button type="button" class="voce-togli" data-voce-togli="${i}" aria-label="Togli questa riga">✕</button></div>`;
+  return `<div class="voce-riga${/^(cancella|togli)/.test(r.tipo) ? ' voce-riga-togli' : ''}"><div class="voce-data">${dataRigaVoce(r)}</div><div class="voce-testo"><div>${titolo}</div><small>${sotto}</small></div>`
+    + `<button type="button" class="voce-togli" data-voce-togli="${i}" aria-label="Non salvare questa riga">✕</button></div>`;
 }
 function notaSaldoVoce(righe){
   const r = righe.find(x => x.tipo === 'assenza' && x.giorni.length);
@@ -407,7 +483,7 @@ function schedaAscoltoVoce(){
     <button type="button" class="voce-mic in-ascolto" data-voce="fine" aria-label="Ho finito di parlare">${ICONA_MICROFONO}</button>
     <p class="voce-live" id="voceLive"><i>Ti ascolto…</i></p>
     <p class="voce-sotto">Puoi dire per esempio:</p>
-    <div class="voce-esempi"><span>«Domani notte»</span><span>«Lunedì riposo, martedì mattina»</span><span>«Straordinario 2 ore dopo»</span><span>«Ferie dal 3 al 10 dicembre»</span><span>«Giovedì alle 10 dentista»</span><span>«Servizio svolto arrivi nord»</span></div>
+    <div class="voce-esempi"><span>«Domani notte»</span><span>«Lunedì riposo, martedì mattina»</span><span>«Straordinario 2 ore dopo»</span><span>«Ferie dal 3 al 10 dicembre»</span><span>«Giovedì alle 10 dentista»</span><span>«Servizio svolto OP Stadio»</span><span>«Elimina lo straordinario di oggi»</span></div>
     <p class="voce-privacy">${web ? 'Nel browser la voce passa dal servizio di Google solo per diventare testo. L\'app non salva l\'audio.' : '🔒 La voce è riconosciuta sul telefono. Niente viene salvato o inviato.'}</p>
     <div class="voce-tasti"><button type="button" class="voce-sec" data-voce="chiudi">Annulla</button></div>`);
 }
@@ -426,7 +502,7 @@ function schedaRisultatoVoce(){
   const soloTurni = n && righe.every(r => r.tipo === 'turno');
   const etichetta = !n ? 'Salva' : soloTurni ? `Salva ${giorniTurni} ${giorniTurni === 1 ? 'giorno' : 'giorni'}` : n === 1 ? 'Salva' : 'Salva tutto';
   const titolo = !n ? 'Non ho capito' : avvisi.length ? 'Non ho capito tutto' : 'Ho capito così';
-  const sotto = !n ? 'Riprova con frasi brevi, come negli esempi.' : avvisi.length ? 'Controlla: una parte non l\'ho capita.' : 'Controlla e salva. Tocca ✕ per togliere una riga.';
+  const sotto = !n ? 'Riprova con frasi brevi, come negli esempi.' : avvisi.length ? 'Controlla: una parte non l\'ho capita.' : 'Controlla e salva. Tocca ✕ sulle righe da non salvare.';
   const nomiTurni = (AppState.modelliTurno || []).map(m => m.nome).join(', ');
   schedaVoce(`<p class="voce-titolo">${titolo}</p><p class="voce-sotto">${sotto}</p>
     <div class="voce-frase">${ICONA_MICROFONO}<span>«${escapeHtml(frase)}»</span></div>
@@ -524,6 +600,36 @@ function salvaRigheVoce(){
   const righe = statoVoce.righe;
   if(!righe.length) return;
   const turniPrima = JSON.stringify(AppState.turni), eventiPrima = JSON.stringify(AppState.eventiGiorno || {});
+  const eventiToccati = [];
+  righe.forEach(r => {
+    const t = r.iso ? AppState.turni[r.iso] : null;
+    if(r.tipo === 'cancella') delete AppState.turni[r.iso];
+    else if(r.tipo === 'togliAssenza') r.giorni.forEach(iso => { if(AppState.turni[iso] && AppState.turni[iso].assenzaTipo === r.assenzaId) delete AppState.turni[iso]; });
+    else if(r.tipo === 'togliStr' && t){
+      if(r.quale === 'prima'){ delete t.straordinarioPrimaInizio; delete t.straordinarioPrimaFine; }
+      else { delete t.straordinarioDopoInizio; delete t.straordinarioDopoFine; }
+    }
+    else if(r.tipo === 'togliInd' && t){
+      t[r.chiave] = false;
+      if(r.chiave === 'buonoPasto') delete t.buoniPastoGiorno;
+      if(r.chiave === 'missione') delete t.durataMissioneOre;
+    }
+    else if(r.tipo === 'togliNota' && t) t.servizioSvolto = '';
+    else if(r.tipo === 'togliEvento'){
+      const lista = AppState.eventiGiorno[r.isoOrigine] || [];
+      const ev = lista.find(e => e.id === r.id);
+      if(!ev) return;
+      eventiToccati.push({ iso: r.isoOrigine, id: r.id });
+      if(r.ripetuto || r.isoOrigine !== r.iso){
+        ev.eccezioni = [...new Set([...(ev.eccezioni || []), r.iso])];
+        if(typeof schedulaPromemoriaEvento === 'function') schedulaPromemoriaEvento(r.isoOrigine, ev, { silenzioso: true });
+      } else {
+        if(typeof annullaPromemoriaEvento === 'function') annullaPromemoriaEvento(r.id);
+        AppState.eventiGiorno[r.isoOrigine] = lista.filter(e => e.id !== r.id);
+        if(!AppState.eventiGiorno[r.isoOrigine].length) delete AppState.eventiGiorno[r.isoOrigine];
+      }
+    }
+  });
   righe.filter(r => r.tipo === 'turno').forEach(r => { AppState.turni[r.iso] = { ...r.nuovo }; });
   righe.filter(r => r.tipo === 'assenza').forEach(r => r.giorni.forEach(iso => {
     AppState.turni[iso] = segnaQuandoNuovo({ data: iso, assenzaTipo: r.assenzaId }, AppState.turni[iso]);
@@ -548,14 +654,18 @@ function salvaRigheVoce(){
       promemoria: [], oraPromemoria: '08:00', ricordami: false, anticipoMinuti: 0, avvisoSecondi: 0, avvisoModo: 'suono_vibra', ripeti: '', ripetiFino: '', eccezioni: [] });
   });
   salvaTurniStorage();
-  if(eventi) salvaEventiGiornoStorage();
+  if(eventi || eventiToccati.length) salvaEventiGiornoStorage();
   chiudiVoce();
   const primo = righe[0].iso || (righe[0].giorni && righe[0].giorni[0]);
   if(primo){ const d = dataDaIso(primo); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); }
   renderCalendario();
   if(primo) selezionaGiorno(primo);
   mostraToast(righe.length === 1 ? 'Salvato' : `Salvate ${righe.length} modifiche`, 'successo', 6000, { testo: 'Annulla', fn: () => {
-    try{ AppState.eventiGiorno = JSON.parse(eventiPrima) || {}; salvaEventiGiornoStorage(); }catch(e){}
+    try{
+      AppState.eventiGiorno = JSON.parse(eventiPrima) || {}; salvaEventiGiornoStorage();
+      // i promemoria degli eventi tolti tornano come prima
+      eventiToccati.forEach(x => { const ev = (AppState.eventiGiorno[x.iso] || []).find(e => e.id === x.id); if(ev && typeof schedulaPromemoriaEvento === 'function') schedulaPromemoriaEvento(x.iso, ev, { silenzioso: true }); });
+    }catch(e){}
     ripristinaTurni(turniPrima);
   } });
 }
