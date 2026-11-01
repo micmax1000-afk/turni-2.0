@@ -53,7 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.16');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.17');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -267,7 +267,7 @@ sezione('Altro: due gruppi, pagina Backup, Tabelle');
   const { p, ctx, errori } = await apri({ turni: turniDiProva() });
   await p.click('#tabAltro');
   const a = await p.evaluate(() => ({ titoli: [...document.querySelectorAll('#sezioneAltro .strumenti-turni-titolo')].map(x => x.textContent).join(','), backupVisibile: !!el('impostazioniBackupContainer').offsetParent, promemoria: el('campoPromemoriaTurno').checked }));
-  ok('Altro: gruppi Impostazioni e Dati e aiuto, backup non più in fondo alla pagina, promemoria spento', a.titoli === 'Impostazioni,Dati e aiuto' && !a.backupVisibile && !a.promemoria, JSON.stringify(a));
+  ok('Altro: gruppi Impostazioni, Utilità e Dati e aiuto, backup non più in fondo alla pagina, promemoria spento', a.titoli === 'Impostazioni,Utilità,Dati e aiuto' && !a.backupVisibile && !a.promemoria, JSON.stringify(a));
   await p.click('#settingsBackupV4');
   ok('"Backup" apre la sua pagina con telefono e Google Drive, il resto di Altro sparisce', await p.evaluate(() => !!el('btnEsportaBackup').offsetParent && !!el('sezioneBackupDrive').offsetParent && !el('settingsTabelle').offsetParent));
   ok('v3.8.7: backup su Google Drive gratuito, nessun pulsante di acquisto', await p.evaluate(() => !!el('btnSalvaDrive') && !el('btnAcquistaBackupDrive') && !/1,99/.test(el('sezioneBackupDrive').textContent)));
@@ -627,8 +627,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 2 fumetti: Agenda e Detta a voce', passi.join(' | ') === 'Novità: l\'Agenda (1 di 2) | Detta a voce: anche per eliminare (2 di 2)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.16'));
+  ok('chi usava già l\'app vede 2 fumetti: Utilità e il giorno', passi.join(' | ') === 'Novità: le Utilità (1 di 2) | Anche nel giorno (2 di 2)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.17'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -786,6 +786,60 @@ sezione('v3.8.16: Agenda come una vera agenda');
   await p.click('[data-agenda-cerca]');
   await p.click('.agenda-piu[data-agenda-nuovo="2026-10-14"]');
   ok('＋ sul 14: si apre "Nuovo evento" su quel giorno', await p.evaluate(() => !el('overlayEvento').hidden && giornoSelezionato === '2026-10-14'));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.9: Utilità (scadenze, note, cambi, veicolo)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(900);
+  await p.evaluate(() => mostraScheda('altro'));
+  ok('in Altro c\'è «Utilità» con 4 voci', await p.evaluate(() => ['utilScadenze', 'utilNote', 'utilScambi', 'utilVeicolo'].every(id => el(id) && el(id).offsetParent)));
+  // Scadenze
+  await p.click('#utilScadenze');
+  await p.click('[data-ut="nuova-scadenza"]');
+  await p.click('[data-ut="tipo-scadenza"][data-id="tiro"]');
+  await p.fill('#editorUt [data-campo="data"]', '2026-10-20');
+  await p.click('[data-ut="salva-scadenza"]');
+  ok('nuova scadenza «Tiro annuale» tra 11 giorni, che si ripete ogni anno', await p.evaluate(() => U.scadenze.length === 1 && U.scadenze[0].nome === 'Tiro annuale' && U.scadenze[0].ripeti === '1' && /tra 11 giorni/.test(el('paginaUt').textContent)));
+  await p.click('#paginaUt [data-ut="chiudi"]');
+  await p.evaluate(() => { mostraScheda('calendario'); renderCalendario(); });
+  ok('striscia in cima al calendario: «Tiro annuale tra 11 giorni»', await p.evaluate(() => /Tiro annuale tra 11 giorni/.test(el('bannerScadenze')?.textContent || '')));
+  // Note
+  await p.evaluate(() => apriUtilita('note'));
+  await p.click('[data-ut="nuova-nota"]');
+  await p.fill('#editorUt [data-campo="titolo"]', 'Consegne');
+  await p.fill('#editorUt [data-campo="testo"]', 'Chiavi al capo turno');
+  await p.fill('#editorUt [data-campo="giorno"]', '2026-10-13');
+  await p.click('[data-ut="salva-nota"]');
+  await p.fill('#utCercaNote', 'chiavi');
+  ok('nota salvata, legata al 13 ottobre, e la ricerca la trova', await p.evaluate(() => U.note.length === 1 && U.note[0].giorno === '2026-10-13' && /Consegne/.test(el('paginaUt').textContent)));
+  await p.click('#paginaUt [data-ut="chiudi"]');
+  // Nel giorno: scambio e uscita del veicolo
+  await p.evaluate(() => apriModaleTurno('2026-10-13'));
+  ok('in Modifica il giorno: Veicolo, Scambio con un collega e la nota del giorno', await p.evaluate(() => /Registra l'uscita del veicolo/.test(el('utilitaGiorno').textContent) && /Segna uno scambio/.test(el('utilitaGiorno').textContent) && /Consegne/.test(el('utilitaGiorno').textContent)));
+  await p.click('[data-ut-giorno="nuovo-scambio"]');
+  await p.fill('#editorUt [data-campo="collega"]', 'Rossi');
+  await p.click('[data-ut="salva-scambio"]');
+  ok('scambio: «Devi un turno a Rossi», segno ⇄ sul 13', await p.evaluate(() => U.scambi.length === 1 && U.scambi[0].verso === 'devo' && saldoScambi().devo === 1 && !!document.querySelector('.giorno-cella[data-data="2026-10-13"] .ut-segno-scambio')));
+  await p.click('[data-ut-giorno="nuova-uscita"]');
+  await p.fill('#editorUt [data-campo-mezzo="sigla"]', 'Volante 12');
+  await p.fill('#editorUt [data-campo-mezzo="targa"]', 'polizia m1234');
+  await p.fill('#editorUt [data-campo="kmInizio"]', '128456');
+  await p.fill('#editorUt [data-campo="kmFine"]', '128598');
+  ok('km percorsi calcolati subito: 142 km', await p.evaluate(() => el('utKmPercorsi').textContent === '142 km'));
+  await p.click('#editorUt [data-ut="carburante"][data-campo-carb="carbInizio"][data-id="3"]');
+  await p.click('#editorUt [data-ut="carburante"][data-campo-carb="carbFine"][data-id="2"]');
+  await p.click('[data-ut="salva-uscita"]');
+  ok('uscita salvata con il mezzo nuovo (targa in maiuscolo) e carburante ¾ → ½', await p.evaluate(() => U.mezzi[0].targa === 'POLIZIA M1234' && U.uscite[0].kmFine === '128598' && U.uscite[0].carbInizio === 3 && /142 km · carburante ¾ → ½/.test(el('utilitaGiorno').textContent)));
+  await p.evaluate(() => { document.querySelectorAll('.overlay').forEach(o => o.hidden = true); el('pannelloTurno').hidden = true; apriUtilita('veicolo'); utStato.meseVeicolo = '2026-10'; renderPaginaUt(); });
+  ok('Gestione veicolo: mese con 142 km e 1 uscita', await p.evaluate(() => /142\s*km/.test(el('paginaUt').querySelector('.ut-mese').textContent) && /1\s*uscita/.test(el('paginaUt').querySelector('.ut-mese').textContent)));
+  await p.click('[data-ut="nuova-uscita"]');
+  ok('nuova uscita: km di partenza = ultimi km del mezzo', await p.evaluate(() => el('editorUt').querySelector('[data-campo="kmInizio"]').value === '128598'));
+  await p.click('#editorUt [data-ut="chiudi"]');
+  ok('il backup contiene le Utilità', await p.evaluate(() => { const d = costruisciDatiBackup(); return d.utilita && d.utilita.scadenze.length === 1 && d.utilita.uscite.length === 1 && d.utilita.note.length === 1; }));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
