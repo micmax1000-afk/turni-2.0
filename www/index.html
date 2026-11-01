@@ -50,6 +50,7 @@
       <span class="mese-e-simboli">
         <button class="etichetta-mese-btn" id="etichettaMese" type="button" title="Vai a un mese specifico">—</button>
         <button class="btn-tema-veloce" id="btnTemaVeloce" type="button" aria-label="Passa al tema scuro" title="Passa al tema scuro" hidden>🌙</button>
+        <button class="btn-oggi-calendario" id="btnVaiOggi" type="button" aria-label="Vai a oggi" title="Oggi"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9h17M8 2.8v3.4M16 2.8v3.4"/></svg><b id="numeroOggiCalendario"></b></button>
         <button class="btn-vista-calendario" id="btnVistaCalendario" type="button" aria-haspopup="true" aria-expanded="false"><span id="etichettaVistaCalendario">Mese</span> ▾</button>
       </span>
       <button class="btn-freccia" id="btnMeseSucc" type="button" aria-label="Mese successivo">›</button>
@@ -67,6 +68,11 @@
       <button type="button" role="menuitem" id="btnTurnoGiornoV3"><span aria-hidden="true">🔄</span>Turno o assenza</button>
       <button type="button" role="menuitem" id="btnStraordinarioGiornoFab"><span aria-hidden="true">⏱️</span>Straordinario</button>
       <button type="button" role="menuitem" id="btnModificaGiornoFab"><span aria-hidden="true">✏️</span>Modifica giorno</button>
+      <button type="button" role="menuitem" id="btnRiempiGiorniFab"><span aria-hidden="true">🖌️</span>Riempi più giorni</button>
+    </div>
+    <div class="barra-pennello" id="barraPennello" hidden>
+      <div class="barra-pennello-testa"><span id="contaPennello">Tocca i giorni da riempire</span><button type="button" class="btn-primario" id="btnFinePennello">Fine</button></div>
+      <div class="chip-pennello" id="chipPennello"></div>
     </div>
     <button type="button" class="fab-giorno" id="btnFabGiorno" aria-label="Aggiungi" aria-haspopup="true" aria-expanded="false">＋</button>
     <div class="menu-vista-calendario" id="menuVistaCalendario" role="menu" hidden>

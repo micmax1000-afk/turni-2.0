@@ -572,6 +572,35 @@ sezione('v3.8.10: giorno come Google Calendar (riga del turno e pulsante ＋)');
 }
 
 // ───────────────────────────────────────
+sezione('v3.8.12: pennello, scorrimento, Oggi, Annulla');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
+  ok('pulsante Oggi con il numero del giorno (9)', await p.evaluate(() => el('numeroOggiCalendario').textContent === '9'));
+  await p.click('#btnMeseSucc');
+  await p.click('#btnVaiOggi');
+  ok('Oggi: torna a ottobre con il 9 selezionato', await p.evaluate(() => meseCorrente === 9 && giornoSelezionato === '2026-10-09'));
+  await p.evaluate(() => { const z = document.querySelector('.scheda-calendario-v2'); const t = (x) => new Touch({ identifier: 1, target: z, clientX: x, clientY: 300 });
+    z.dispatchEvent(new TouchEvent('touchstart', { touches: [t(300)], changedTouches: [t(300)] })); z.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [t(120)] })); });
+  ok('scorrendo col dito verso sinistra: mese dopo (novembre)', await p.evaluate(() => meseCorrente === 10));
+  await p.click('#btnVaiOggi');
+  await p.click('#btnFabGiorno'); await p.click('#btnRiempiGiorniFab');
+  ok('＋ → Riempi più giorni: barra con i turni e "Fine", ＋ nascosto', await p.evaluate(() => !el('barraPennello').hidden && document.querySelectorAll('[data-pennello]').length >= 6 && getComputedStyle(el('btnFabGiorno')).display === 'none'));
+  await p.click('[data-pennello="notte"]');
+  await p.click('.giorno-cella[data-data="2026-10-20"]');
+  await p.click('.giorno-cella[data-data="2026-10-21"]');
+  await p.click('[data-pennello="__gomma"]');
+  await p.click('.giorno-cella[data-data="2026-10-22"]');
+  const pen = await p.evaluate(() => ({ a: AppState.turni['2026-10-20']?.modelloId, b: AppState.turni['2026-10-21']?.modelloId, c: AppState.turni['2026-10-22'] || null, conta: el('contaPennello').textContent }));
+  ok('pennello: 20 e 21 diventano Notte, il 22 si cancella, "3 giorni cambiati"', pen.a === 'notte' && pen.b === 'notte' && pen.c === null && /3 giorni cambiati/.test(pen.conta), JSON.stringify(pen));
+  await p.click('#btnFinePennello');
+  ok('Fine: messaggio con "Annulla"', await p.evaluate(() => /3 giorni cambiati/.test(document.querySelector('.toast-v20:last-child')?.textContent || '') && !!document.querySelector('.toast-v20:last-child .toast-azione')));
+  await p.click('.toast-v20:last-child .toast-azione');
+  ok('Annulla: i tre giorni tornano com\'erano', await p.evaluate(() => AppState.turni['2026-10-20'].modelloId !== 'notte' && !!AppState.turni['2026-10-22'] && el('barraPennello').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');
 {
   const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});

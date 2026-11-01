@@ -2855,3 +2855,28 @@ html[data-tema="scuro"] .fab-menu button span{background:#26304A}
 #overlaySelettoreModelli .switch-turno-assenza{background:var(--pannello);border:1px solid var(--bordo)}
 #overlaySelettoreModelli .switch-turno-assenza-btn.attivo{background:var(--acc,#1D4FD7)!important;color:#fff!important}
 #overlaySelettoreModelli .modale-header{background:var(--pannello)}
+
+/* v3.8.12 — Oggi, Annulla, pennello, scorrimento */
+.btn-oggi-calendario{position:relative;flex:none;width:34px;height:34px;border:0;background:none;color:var(--testo);padding:0;cursor:pointer;display:grid;place-items:center}
+.btn-oggi-calendario svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.btn-oggi-calendario b{position:absolute;left:0;right:0;top:12px;font:800 .66rem var(--font-corpo);text-align:center}
+.toast-azione{border:0;background:none;color:var(--acc,#1D4FD7);font:800 .9rem var(--font-corpo);padding:6px 8px;cursor:pointer;text-transform:uppercase;letter-spacing:.03em}
+
+.barra-pennello{position:fixed;left:10px;right:10px;bottom:calc(98px + env(safe-area-inset-bottom));z-index:72;background:var(--pannello);border:1px solid var(--bordo);border-radius:18px;box-shadow:0 8px 24px rgba(20,25,40,.22);padding:10px 12px}
+.barra-pennello[hidden]{display:none}
+.barra-pennello-testa{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-size:.86rem;font-weight:700;color:var(--testo)}
+.barra-pennello-testa .btn-primario{padding:7px 16px;border-radius:999px}
+.chip-pennello{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.pennello-chip{flex:none;display:flex;align-items:center;gap:6px;border:1.5px solid var(--bordo);background:var(--pannello);border-radius:999px;padding:6px 11px;font:700 .8rem var(--font-corpo);color:var(--testo);cursor:pointer}
+.pennello-chip i{width:12px;height:12px;border-radius:50%;background:var(--c,#C9CED6)}
+.pennello-gomma i{background:none;border:1.5px dashed var(--testo-tenue)}
+.pennello-chip.attivo{border-color:var(--acc,#1D4FD7);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc,#1D4FD7) 25%,transparent)}
+body.modo-pennello .fab-giorno{display:none}
+body.modo-pennello #calendarioGriglia .giorno-cella:not(.fuori-mese){cursor:crosshair}
+.scheda-calendario-v2.scorri-sx #calendarioGriglia,.scheda-calendario-v2.scorri-sx .vista-settimana-cal,.scheda-calendario-v2.scorri-sx .vista-giorno-cal{animation:scorriSx .22s ease-out}
+.scheda-calendario-v2.scorri-dx #calendarioGriglia,.scheda-calendario-v2.scorri-dx .vista-settimana-cal,.scheda-calendario-v2.scorri-dx .vista-giorno-cal{animation:scorriDx .22s ease-out}
+@keyframes scorriSx{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes scorriDx{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
+.toast-v20:has(.toast-azione){grid-template-columns:28px 1fr auto auto}
+.toast-v20 .toast-azione{color:var(--acc,#1D4FD7);align-self:center;white-space:nowrap}
+html[data-tema="scuro"] .toast-v20 .toast-azione{color:#9FB4FF}

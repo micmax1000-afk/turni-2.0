@@ -128,7 +128,7 @@ function mostraScheda(nome){
 
 /* V20 — Notifiche non invasive */
 let _toastTimer = null;
-function mostraToast(messaggio, tipo='successo', durata=3200){
+function mostraToast(messaggio, tipo='successo', durata=3200, azione){
   const box = el('toastContainer');
   if(!box) return;
   const icone = {successo:'✓', errore:'!', avviso:'⚠', info:'i'};
@@ -138,6 +138,12 @@ function mostraToast(messaggio, tipo='successo', durata=3200){
   toast.innerHTML = `<span class="toast-icon">${icone[tipo] || 'i'}</span><span class="toast-text"></span><button type="button" class="toast-close" aria-label="Chiudi">×</button>`;
   toast.querySelector('.toast-text').textContent = messaggio;
   toast.querySelector('.toast-close').onclick = () => toast.remove();
+  // v3.8.12: pulsante dentro il messaggio (es. "Annulla"), come in Google Calendar.
+  if(azione && azione.testo){
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'toast-azione'; b.textContent = azione.testo;
+    b.onclick = () => { toast.remove(); azione.fn(); };
+    toast.insertBefore(b, toast.querySelector('.toast-close'));
+  }
   box.appendChild(toast);
   requestAnimationFrame(()=>toast.classList.add('visibile'));
   window.setTimeout(()=>{ toast.classList.remove('visibile'); window.setTimeout(()=>toast.remove(),220); }, durata);
