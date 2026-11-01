@@ -1106,7 +1106,6 @@ function inizializza(){
   // v3.8.10: pulsante ＋ (Evento, Cambia turno, Assenza, Straordinario).
   on('btnFabGiorno','click', () => { const aperto = !el('menuFabGiorno').hidden; if(aperto) chiudiFabGiorno(); else { if(!giornoSelezionato) selezionaGiorno(dataISO(new Date())); el('menuFabGiorno').hidden = false; el('veloFabGiorno').hidden = false; el('btnFabGiorno').classList.add('aperto'); el('btnFabGiorno').setAttribute('aria-expanded', 'true'); } });
   on('veloFabGiorno','click', chiudiFabGiorno);
-  on('btnAssenzaGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; apriModaleTurno(giornoSelezionato); const b = document.querySelector('[data-tipo-giorno="assenza"]'); if(b) b.click(); });
   // Straordinario: la scheda piccola (ore prima o dopo il turno), non tutto "Modifica il giorno".
   on('btnModificaGiornoFab','click', () => { chiudiFabGiorno(); if(giornoSelezionato) apriModaleTurno(giornoSelezionato); });
   on('btnStraordinarioGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriStraordinarioRapidoV2(); });
