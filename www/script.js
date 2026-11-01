@@ -1102,8 +1102,13 @@ function inizializza(){
   });
   on('btnEliminaModello','click', eliminaModelloV2);
   on('btnOrarioBaseModello','click', orarioBaseModelloV2);
-  on('btnNuovoEventoGiornoV2','click', () => apriModificaEventoV2(null));
-  on('btnTurnoGiornoV3','click', () => { if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
+  on('btnNuovoEventoGiornoV2','click', () => { chiudiFabGiorno(); apriModificaEventoV2(null); });
+  // v3.8.10: pulsante ＋ (Evento, Cambia turno, Assenza, Straordinario).
+  on('btnFabGiorno','click', () => { const aperto = !el('menuFabGiorno').hidden; if(aperto) chiudiFabGiorno(); else { if(!giornoSelezionato) selezionaGiorno(dataISO(new Date())); el('menuFabGiorno').hidden = false; el('veloFabGiorno').hidden = false; el('btnFabGiorno').classList.add('aperto'); el('btnFabGiorno').setAttribute('aria-expanded', 'true'); } });
+  on('veloFabGiorno','click', chiudiFabGiorno);
+  on('btnAssenzaGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; apriModaleTurno(giornoSelezionato); const b = document.querySelector('[data-tipo-giorno="assenza"]'); if(b) b.click(); });
+  on('btnStraordinarioGiornoFab','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; apriModaleTurno(giornoSelezionato); if(typeof mostraStraordinarioGiorno === 'function') mostraStraordinarioGiorno(true); setTimeout(() => { const c = el('campoStrOre1'); if(c){ c.scrollIntoView({ block: 'center' }); } }, 50); });
+  on('btnTurnoGiornoV3','click', () => { chiudiFabGiorno(); if(!giornoSelezionato) return; giornoPerPopupV2 = giornoSelezionato; apriSelettoreModelliV2('turni'); });
   on('btnChiudiEvento','click', () => { el('overlayEvento').hidden = true; });
   // Toccando i simboli nel riquadro del giorno si apre la legenda (prima c'era la "i" in alto).
   on('btnChiudiScegliBackupDrive','click', () => { el('overlayScegliBackupDrive').hidden = true; });
@@ -3350,9 +3355,11 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
       if(tot > 0) ore = formatOreMinuti(tot);
     }
   } else if(t) nome = 'Turno incompleto';
+  // v3.8.10: la data sta sopra; il turno è una riga da toccare (apre "Modifica il giorno"), come un evento in Google Calendar.
+  el('dataGiornoSelezionatoV2').textContent = dataLunga;
+  el('oggiGiornoSelezionatoV2').hidden = giornoSelezionato !== dataISO(new Date());
   box.innerHTML = `<span class="giorno-v3-barra" style="background:${escapeHtml(colore)}"></span>
-    <span class="giorno-v3-testi"><span class="giorno-v3-data">${escapeHtml(dataLunga)}</span>
-    <span class="giorno-v3-nome">${escapeHtml(nome)}</span>${orario ? `<span class="giorno-v3-orario">${escapeHtml(orario)}</span>` : ''}</span>
+    <span class="giorno-v3-testi"><span class="giorno-v3-nome">${escapeHtml(nome)}</span>${orario ? `<span class="giorno-v3-orario">${escapeHtml(orario)}</span>` : ''}</span>
     ${ore ? `<span class="giorno-v3-ore">${escapeHtml(ore)}</span>` : ''}`;
   const linkCancella = el('btnCancellaTurniMese');
   if(linkCancella) linkCancella.textContent = `Cancella i turni di ${NOMI_MESI[meseCorrente].toLowerCase()}…`;
@@ -4059,4 +4066,10 @@ function inizializzaSegnalaEAccento(){
     window.location.href = linkEmailSegnalazione();
     el('overlaySegnala').hidden = true;
   });
+}
+
+function chiudiFabGiorno(){
+  const m = el('menuFabGiorno'); if(!m) return;
+  m.hidden = true; el('veloFabGiorno').hidden = true;
+  el('btnFabGiorno').classList.remove('aperto'); el('btnFabGiorno').setAttribute('aria-expanded', 'false');
 }

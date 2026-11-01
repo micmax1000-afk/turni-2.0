@@ -2816,3 +2816,27 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 .vs-totale b{color:var(--testo)}
 .calendario-header-v2 .etichetta-mese-btn{white-space:nowrap;font-size:clamp(.98rem,4.8vw,1.22rem);padding-left:4px;padding-right:4px}
 .calendario-header-v2 .mese-e-simboli{gap:6px;flex-wrap:nowrap;min-width:0}
+
+/* v3.8.10 — Giorno come in Google Calendar: pagina dello stesso colore, turno da toccare, pulsante ＋ */
+.riepilogo-giorno-selezionato-box-v2{background:transparent!important;border:0!important;border-top:1px solid var(--bordo)!important;border-radius:0!important;padding:12px 2px 4px!important;margin-top:8px!important}
+.giorno-v4-testa{margin:0 0 8px;font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--testo-tenue)}
+.giorno-v4-testa .giorno-v3-data{font-size:inherit}
+.giorno-v4-oggi{color:#155EEF}
+.giorno-v4-riga{display:flex;align-items:center;gap:6px;width:100%;border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--testo);cursor:pointer}
+.giorno-v4-riga .riepilogo-giorno-selezionato-v2{flex:1;min-width:0}
+.giorno-v4-freccia{color:var(--testo-tenue);font-size:1.4rem;line-height:1}
+#indennitaGiornoSelezionatoV2{margin-top:8px}
+#indennitaGiornoSelezionatoV2 .indennita-giorno-badge{background:transparent!important;border:1px solid var(--bordo)!important}
+.campo-servizio-svolto{background:transparent!important;border:0!important;border-bottom:1px solid var(--bordo)!important;border-radius:0!important;padding:8px 2px!important}
+.riga-evento-giorno-v2{background:transparent!important;border:0!important;border-top:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)!important;border-radius:0!important}
+.fab-giorno{position:fixed;right:18px;bottom:calc(104px + env(safe-area-inset-bottom));z-index:70;width:58px;height:58px;border-radius:18px;border:0;background:#D8E3FF;color:#1D4FD7;font-size:2rem;line-height:1;box-shadow:0 4px 12px rgba(20,25,40,.25);display:grid;place-items:center;cursor:pointer}
+.fab-giorno.aperto{background:#1D4FD7;color:#fff;transform:rotate(45deg)}
+.fab-menu{position:fixed;right:18px;bottom:calc(174px + env(safe-area-inset-bottom));z-index:71;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.fab-menu[hidden],.fab-velo[hidden]{display:none}
+.fab-menu button{display:flex;align-items:center;gap:10px;border:0;border-radius:14px;background:var(--pannello);box-shadow:0 3px 10px rgba(20,25,40,.2);padding:10px 14px;font:600 .95rem var(--font-corpo);color:var(--testo);cursor:pointer}
+.fab-menu button span{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:#E8EEFF;font-size:1rem}
+.fab-velo{position:fixed;inset:0;z-index:69;background:rgba(20,25,40,.35)}
+html[data-tema="scuro"] .fab-giorno{background:#2E3D66;color:#C9D4F5}
+html[data-tema="scuro"] .fab-menu button span{background:#26304A}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .fab-giorno{background:#2E3D66;color:#C9D4F5}html:not([data-tema="chiaro"]) .fab-menu button span{background:#26304A}}
+#btnTemaVeloce{display:none!important}

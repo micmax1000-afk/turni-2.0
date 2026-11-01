@@ -179,8 +179,8 @@ for(const stile of ['classico', 'moderno']){
     await p.click('.giorno-cella[data-data="2026-10-20"]');
     ok('secondo tocco sullo stesso giorno: non si apre nessun menu (si usa Turno o Modifica)', await p.evaluate(() => document.getElementById('overlaySelettoreModelli').hidden && giornoSelezionato === '2026-10-20'));
     await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; });
-    await p.click('#btnTurnoGiornoV3');
-    ok('pulsante "🔄 Turno" nel riquadro: apre "Cosa vuoi aggiungere?"', await p.evaluate(() => !document.getElementById('overlaySelettoreModelli').hidden));
+    await p.click('#btnFabGiorno'); await p.click('#btnTurnoGiornoV3');
+    ok('＋ → "Cambia turno": apre "Cosa vuoi aggiungere?"', await p.evaluate(() => !document.getElementById('overlaySelettoreModelli').hidden));
     await p.evaluate(() => { document.getElementById('overlaySelettoreModelli').hidden = true; });
     await p.evaluate(() => { AppState.turni['2026-10-03'] = Object.assign({}, AppState.turni['2026-10-03'], { data: '2026-10-03', oraInizio: '07:00', oraFine: '13:00', ordinePubblico: true }); selezionaGiorno('2026-10-03'); });
     ok('riquadro del giorno: le indennità scritte per esteso, senza legenda dei simboli', await p.evaluate(() => /Ordine pubblico/.test(document.getElementById('indennitaGiornoSelezionatoV2').textContent) && !document.getElementById('overlaySimboli')));
@@ -208,7 +208,7 @@ sezione('Eventi (ripetizioni, elimina un giorno o tutta la serie)');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); });
-  await p.click('#btnNuovoEventoGiornoV2');
+  await p.click('#btnFabGiorno'); await p.click('#btnNuovoEventoGiornoV2');
   await p.waitForTimeout(150);
   ok('modulo evento aperto, riquadro "notifiche disattivate" nascosto', await p.evaluate(() => !document.getElementById('overlayEvento').hidden && !document.getElementById('avvisoPermessiEvento').offsetParent));
   ok('nuovo evento: scheda compatta, titolo pronto, opzioni nascoste', await p.evaluate(() => el('overlayEvento').classList.contains('compatto') && document.activeElement === el('campoEventoTitolo') && !el('sceltaColoreEvento').offsetParent && !!el('btnSalvaEvento').offsetParent));
@@ -385,7 +385,7 @@ sezione('Evento: giornata a ore e scheda dal basso');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno', eventi: { '2026-10-17': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', oraFine: '11:00', colore: '#2E9E5B' }] } });
   // 17/10: Pomeriggio 13–19; il 16 c'è la Sera 19–01 che finisce dopo mezzanotte.
   await p.evaluate(() => { giornoSelezionato = '2026-10-17'; renderCalendario(); });
-  await p.click('#btnNuovoEventoGiornoV2');
+  await p.click('#btnFabGiorno'); await p.click('#btnNuovoEventoGiornoV2');
   const g = await p.evaluate(() => ({
     ore: document.querySelectorAll('#giornataEventoOre .giornata-ora').length,
     turni: [...document.querySelectorAll('.giornata-turno b')].map(b => b.textContent).join(' | '),
@@ -432,7 +432,7 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), nativo: true, eventi: { '2026-10-16': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }] } });
   await p.evaluate(() => { giornoSelezionato = '2026-10-20'; renderCalendario(); });
-  await p.click('#btnNuovoEventoGiornoV2');
+  await p.click('#btnFabGiorno'); await p.click('#btnNuovoEventoGiornoV2');
   await p.waitForTimeout(150);
   const r = await p.evaluate(() => ({ riepilogo: document.querySelector('.foglio-evento-riepilogo').textContent.replace(/\s+/g, ' ').trim(), pallino: getComputedStyle(el('pallinoColoreEvento')).backgroundColor }));
   ok('scheda compatta: riepilogo "Blu · Non si ripete · 10 minuti prima"', /Blu/.test(r.riepilogo) && /Non si ripete/.test(r.riepilogo) && /10 minuti prima/.test(r.riepilogo) && r.pallino === 'rgb(46, 125, 215)', JSON.stringify(r));
@@ -547,6 +547,26 @@ sezione('v3.8.10: colori solo sui turni, "Stile calendario" senza tavolozza');
     return { prima, dopo };
   });
   ok('assenza: grigio di partenza, poi il colore scelto nella sua scheda (C.O. verde)', ass.prima === 'rgb(216, 218, 224)' && ass.dopo === 'rgb(168, 224, 176)', JSON.stringify(ass));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.10: giorno come Google Calendar (riga del turno e pulsante ＋)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.evaluate(() => selezionaGiorno('2026-10-09'));
+  ok('data sopra con "· oggi", niente pulsanti Turno/Evento/Modifica nel riquadro', await p.evaluate(() => el('dataGiornoSelezionatoV2').textContent === 'Venerdì 9 ottobre' && !el('oggiGiornoSelezionatoV2').hidden && !document.querySelector('.azioni-giorno-v3') && !el('btnNuovoEventoGiornoV2').offsetParent));
+  await p.click('#btnModificaGiornoSelezionatoV2');
+  ok('tocco sulla riga del turno: si apre "Modifica il giorno"', await p.evaluate(() => !el('pannelloTurno').hidden));
+  await p.click('#btnChiudiTurno');
+  await p.click('#btnFabGiorno');
+  ok('＋ apre Evento, Cambia turno, Assenza, Straordinario', await p.evaluate(() => !el('menuFabGiorno').hidden && ['Evento','Cambia turno','Assenza','Straordinario'].every(x => el('menuFabGiorno').innerText.includes(x))));
+  await p.click('#btnAssenzaGiornoFab');
+  ok('＋ → Assenza: "Modifica il giorno" già su Assenza', await p.evaluate(() => !el('pannelloTurno').hidden && el('menuFabGiorno').hidden && document.querySelector('[data-tipo-giorno="assenza"]').classList.contains('attivo')));
+  await p.click('#btnChiudiTurno');
+  await p.click('#btnFabGiorno'); await p.click('#btnStraordinarioGiornoFab');
+  ok('＋ → Straordinario: "Modifica il giorno" con lo straordinario aperto', await p.evaluate(() => !el('pannelloTurno').hidden && !el('riquadroStraordinarioGiorno').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -893,11 +913,7 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   await p.click('.scelta-tema [data-tema="nero"]');
   ok('"Nero": sfondo quasi nero', await sfondo() === 'rgb(10, 12, 16)');
   await p.click('#tabCalendario');
-  ok('nel calendario c\'è il pulsante ☀️ al posto della "i"', await p.evaluate(() => !document.getElementById('btnSimboliCalendario') && document.getElementById('btnTemaVeloce').textContent === '☀️'));
-  await p.click('#btnTemaVeloce');
-  ok('☀️ passa al chiaro e diventa 🌙', await sfondo() !== 'rgb(10, 12, 16)' && await p.evaluate(() => temaScelto() === 'chiaro' && document.getElementById('btnTemaVeloce').textContent === '🌙'));
-  await p.click('#btnTemaVeloce');
-  ok('🌙 torna allo scuro scelto prima (Nero)', await sfondo() === 'rgb(10, 12, 16)');
+  ok('v3.8.10: nel calendario non c\'è più il pulsante del tema (si cambia in Altro)', await p.evaluate(() => !document.getElementById('btnTemaVeloce').offsetParent));
   ok('alba e tramonto a Roma il 9 ottobre: circa 7:15 e 18:40', await p.evaluate(() => { const { alba, tramonto } = albaTramonto(new Date('2026-10-09T12:00:00+02:00')); const m = d => d.getUTCHours() * 60 + d.getUTCMinutes() + 120; return Math.abs(m(alba) - 435) < 15 && Math.abs(m(tramonto) - 1120) < 15; }));
   await p.click('#tabAltro');
   await p.click('.scelta-tema [data-tema="luce"]');

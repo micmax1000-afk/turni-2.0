@@ -49,7 +49,7 @@
       <button class="btn-freccia" id="btnMesePrec" type="button" aria-label="Mese precedente">‹</button>
       <span class="mese-e-simboli">
         <button class="etichetta-mese-btn" id="etichettaMese" type="button" title="Vai a un mese specifico">—</button>
-        <button class="btn-tema-veloce" id="btnTemaVeloce" type="button" aria-label="Passa al tema scuro" title="Passa al tema scuro">🌙</button>
+        <button class="btn-tema-veloce" id="btnTemaVeloce" type="button" aria-label="Passa al tema scuro" title="Passa al tema scuro" hidden>🌙</button>
         <button class="btn-vista-calendario" id="btnVistaCalendario" type="button" aria-haspopup="true" aria-expanded="false"><span id="etichettaVistaCalendario">Mese</span> ▾</button>
       </span>
       <button class="btn-freccia" id="btnMeseSucc" type="button" aria-label="Mese successivo">›</button>
@@ -60,6 +60,15 @@
     <div class="calendario-griglia" id="calendarioGriglia"></div>
     <div class="vista-giorno-cal" id="vistaGiornoCal" hidden></div>
     <div class="vista-settimana-cal" id="vistaSettimanaCal" hidden></div>
+    <!-- v3.8.10: pulsante ＋ in basso a destra, come Google Calendar -->
+    <div class="fab-velo" id="veloFabGiorno" hidden></div>
+    <div class="fab-menu" id="menuFabGiorno" role="menu" hidden>
+      <button type="button" role="menuitem" id="btnNuovoEventoGiornoV2"><span aria-hidden="true">📅</span>Evento</button>
+      <button type="button" role="menuitem" id="btnTurnoGiornoV3"><span aria-hidden="true">🔄</span>Cambia turno</button>
+      <button type="button" role="menuitem" id="btnAssenzaGiornoFab"><span aria-hidden="true">🌴</span>Assenza</button>
+      <button type="button" role="menuitem" id="btnStraordinarioGiornoFab"><span aria-hidden="true">⏱️</span>Straordinario</button>
+    </div>
+    <button type="button" class="fab-giorno" id="btnFabGiorno" aria-label="Aggiungi" aria-haspopup="true" aria-expanded="false">＋</button>
     <div class="menu-vista-calendario" id="menuVistaCalendario" role="menu" hidden>
       <button type="button" role="menuitem" data-vista-calendario="giorno"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9h16"/></svg>Giorno</button>
       <button type="button" role="menuitem" data-vista-calendario="settimana"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M9 9v11M15 9v11"/></svg>Settimana</button>
@@ -68,14 +77,11 @@
     </div>
 
     <div class="riepilogo-giorno-selezionato-box-v2">
-      <div class="riepilogo-giorno-selezionato-v2" id="riepilogoGiornoSelezionatoV2">Seleziona un giorno</div>
+      <p class="giorno-v4-testa"><span class="giorno-v3-data" id="dataGiornoSelezionatoV2"></span><span class="giorno-v4-oggi" id="oggiGiornoSelezionatoV2" hidden> · oggi</span></p>
+      <button type="button" class="giorno-v4-riga" id="btnModificaGiornoSelezionatoV2" aria-label="Modifica il giorno"><span class="riepilogo-giorno-selezionato-v2" id="riepilogoGiornoSelezionatoV2">Seleziona un giorno</span><span class="giorno-v4-freccia" aria-hidden="true">›</span></button>
       <div class="indennita-giorno-selezionato-v2" id="indennitaGiornoSelezionatoV2" hidden></div>
       <input type="text" id="campoServizioSvolto" class="campo-servizio-svolto" placeholder="📋 Servizio svolto (es. Pattugliamento)" aria-label="Servizio svolto">
-      <div class="azioni-giorno-v3">
-        <button class="btn-secondario" id="btnTurnoGiornoV3" type="button"><span aria-hidden="true">🔄</span>Turno</button>
-        <button class="btn-secondario" id="btnNuovoEventoGiornoV2" type="button"><span aria-hidden="true">＋</span>Evento</button>
-        <button class="btn-primario" id="btnModificaGiornoSelezionatoV2" type="button"><span aria-hidden="true">✏️</span>Modifica</button>
-      </div>
+
       <div class="lista-eventi-giorno-v2" id="listaEventiGiornoV2"></div>
     </div>
     <button class="link-cancella-anagrafica" id="btnCancellaTurniMese" type="button">Cancella i turni del mese…</button>
