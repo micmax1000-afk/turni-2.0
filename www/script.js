@@ -614,7 +614,6 @@ function inizializza(){
   on('settingsColori','click', () => {
     const p = el('pannelloColoriTurni');
     if(p && p.hidden) apriPannelloColori();
-    else p?.scrollIntoView({behavior:'smooth',block:'start'});
   });
   on('tabAssenze','click', () => mostraScheda('assenze'));
   on('settingsBackup','click', () => mostraImpostazioniBackup('sezioneBackup'));
@@ -674,6 +673,7 @@ function inizializza(){
   on('btnModificaGiornoSelezionatoV2','click', () => { if(giornoSelezionato) apriModaleTurno(giornoSelezionato); });
   on('campoAgendaSotto','change', e => impostaAgendaSotto(e.target.checked));
   on('agendaCalendario','click', clicAgenda);
+  if(typeof inizializzaCercaAgenda === 'function') inizializzaCercaAgenda();
 
   on('settingsSequenza','click', () => mostraScheda('sequenza'));
   on('btnChiudiSequenza','click', () => mostraScheda('turni'));
@@ -804,19 +804,28 @@ function inizializza(){
   });
   renderStorico();
 
+  // v3.8.16: "Stile calendario" è una scheda dal basso, con l'anteprima dei due stili.
   function chiudiPannelloColori(){
     const p = el('pannelloColoriTurni');
     if(p) p.hidden = true;
+    if(el('veloStileCalendario')) el('veloStileCalendario').hidden = true;
+  }
+  function spiegaCalendarioAColori(){
+    const s = el('spiegaCalendarioAColori');
+    if(s) s.textContent = calendarioAColoriAttivo() ? 'Acceso: ogni turno con il suo colore' : 'Spento: caselle bianche, turni in nero';
+    document.querySelectorAll('.stile-anteprima').forEach(x => x.classList.toggle('senza-colori', !calendarioAColoriAttivo()));
   }
   function apriPannelloColori(){
     const p = el('pannelloColoriTurni');
     if(!p) return;
     p.hidden = false;
+    if(el('veloStileCalendario')) el('veloStileCalendario').hidden = false;
     renderColoriTurni();
     el('toggleCalendarioAColori').checked = calendarioAColoriAttivo();
     aggiornaAspettoBlocCoCloriPersonalizzati();
-    p.scrollIntoView({behavior:'smooth', block:'nearest'});
+    spiegaCalendarioAColori();
   }
+  on('veloStileCalendario', 'click', chiudiPannelloColori);
   // Il blocco di personalizzazione resta visibile e utilizzabile anche a calendario spento
   // (puoi comunque prepararlo in anticipo), solo visivamente attenuato per far capire che non
   // sta avendo effetto finché non riaccendi l'interruttore sopra.
@@ -829,6 +838,7 @@ function inizializza(){
     TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, acceso ? '1' : '0'); aggiornaStatoStrumentiTurni();
     aggiornaClasseCalendarioColori();
     aggiornaAspettoBlocCoCloriPersonalizzati();
+    spiegaCalendarioAColori();
     renderCalendario();
   });
   document.querySelectorAll('[data-stile-calendario]').forEach(b => b.addEventListener('click', () => {
@@ -1708,7 +1718,7 @@ function renderMeseV3(){
       ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span>lordo</span><span>netto</span></div>` : ''}
       ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
       ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><b>${f(totInd)}</b><b class="netto-v3">~${f(round2(totInd * quotaNetta))}</b></div>` : ''}
-      ${cambiAnno ? `<p class="mese-cambio-v5">${iconaIndennita('cambioTurno')}<span>Cambio turno: ${r.turniCambioTurno ? `${r.turniCambioTurno} a ${mese} · ` : ''}nel ${annoCorrente} ${cambiAnno} ${cambiAnno === 1 ? 'cambio' : 'cambi'} = <b>${f(round2(cambiAnno * AppState.tabelle.indennitaCambioTurno))}</b>, in busta a luglio ${annoCorrente + 1}</span></p>` : ''}
+      ${cambiAnno ? `<p class="mese-cambio-v5">${iconaIndennita('cambioTurno')}<span>Cambio turno: ${r.turniCambioTurno ? `${r.turniCambioTurno} a ${mese}, ` : ''}${cambiAnno} nel ${annoCorrente} · <b>${f(round2(cambiAnno * AppState.tabelle.indennitaCambioTurno))}</b> a luglio ${annoCorrente + 1}</span></p>` : ''}
       <div class="mese-piede-v4">
         ${ind.length ? `<details class="mese-info-v4"><summary>In busta a ${pag} · netto stimato <span aria-hidden="true">ⓘ</span></summary><p>${str > 0 ? `Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} lordi → +${f(ns.netto)} netti. ` : ''}Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</p></details>` : '<span></span>'}
         ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi zeri ▴' : 'Voci a zero ▾'}</button>` : ''}
@@ -2246,9 +2256,11 @@ function renderListaEventiGiornoV2(){
 // Una riga dell'elenco eventi: titolo, orario, luogo, 🔔 se ha promemoria, 🔁 se si ripete.
 function rigaEventoHtml(ev, isoOrigine, etichettaGiorno){
   const quando = ev.tuttoIlGiorno ? 'Tutto il giorno'
-    : ev.oraInizio && !ev.oraFine ? `Alle ${ev.oraInizio}` : `${ev.oraInizio || '—'} - ${ev.oraFine || '—'}`;
+    : ev.oraInizio && !ev.oraFine ? `Alle ${ev.oraInizio}` : `${ev.oraInizio || '—'}–${ev.oraFine || '—'}`;
   const dettaglio = [etichettaGiorno, quando, ev.luogo].filter(Boolean).join(' · ');
-  const icone = (promemoriaDiEvento(ev).length ? '🔔' : '') + (ev.ripeti ? '🔁' : '');
+  // v3.8.16: icone a linea (campanella, frecce) come in Agenda
+  const lin = n => typeof svgLinea === 'function' ? svgLinea(n) : '';
+  const icone = (promemoriaDiEvento(ev).length ? lin('campana') : '') + (ev.ripeti ? lin('giro') : '');
   return `<button type="button" class="riga-evento-giorno-v2" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">
       <span class="riga-evento-giorno-pallino" aria-hidden="true" style="color:${coloreEvento(ev)}">●</span>
       <span class="riga-evento-giorno-testo"><strong>${escapeHtml(ev.titolo || 'Senza titolo')}</strong><small>${escapeHtml(dettaglio)}</small></span>
@@ -4111,8 +4123,9 @@ function avviaPennello(){
   if(vistaCalendario() !== 'mese') impostaVistaCalendario('mese');
   pennelloInizio = JSON.stringify(AppState.turni); pennelloConta = 0;
   const modelli = (AppState.modelliTurno || []);
-  const chip = modelli.map(m => `<button type="button" class="pennello-chip" data-pennello="${escapeHtml(m.id)}" style="--c:${escapeHtml(coloreModelloV2(m))}"><i></i>${escapeHtml(m.nome)}</button>`).join('')
-    + `<button type="button" class="pennello-chip pennello-gomma" data-pennello="__gomma"><i></i>Cancella</button>`;
+  // v3.8.16: tutti i turni in vista su più righe (niente fila da scorrere); "Cancella" sempre per primo
+  const chip = `<button type="button" class="pennello-chip pennello-gomma" data-pennello="__gomma"><i></i>Cancella</button>`
+    + modelli.map(m => `<button type="button" class="pennello-chip" data-pennello="${escapeHtml(m.id)}" style="--c:${escapeHtml(coloreModelloV2(m))}"><i></i>${escapeHtml(m.nome)}</button>`).join('');
   el('chipPennello').innerHTML = chip;
   modoPennello = (modelli.find(m => !m.riposo) || modelli[0] || {}).id || '__gomma';
   aggiornaChipPennello();
@@ -4147,6 +4160,7 @@ function chiudiPennello(){
 // ── v3.8.12: pulsante "Oggi" e scorrimento col dito (mese, settimana, giorno) ──
 function vaiAOggi(){
   const oggiIso = dataISO(new Date()), d = new Date();
+  if(typeof riportaAgendaAOggi === 'function' && vistaCalendario() === 'agenda') riportaAgendaAOggi();
   meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
   giornoSelezionato = oggiIso;
   renderCalendario();
@@ -4155,6 +4169,17 @@ function vaiAOggi(){
 }
 function inizializzaGestiCalendario(){
   on('btnVaiOggi', 'click', vaiAOggi);
+  // v3.8.16: il ＋ si nasconde mentre scorri in giù e torna quando risali (come Google Calendar),
+  // così non copre le ore e le scritte in fondo a destra.
+  let yPrima = window.scrollY;
+  window.addEventListener('scroll', () => {
+    const fab = el('btnFabGiorno'); if(!fab) return;
+    const y = window.scrollY, dy = y - yPrima;
+    if(Math.abs(dy) < 6) return;
+    const menuAperto = el('menuFabGiorno') && !el('menuFabGiorno').hidden;
+    fab.classList.toggle('fab-nascosto', dy > 0 && y > 60 && !menuAperto);
+    yPrima = y;
+  }, { passive: true });
   const n = el('numeroOggiCalendario'); if(n) n.textContent = String(new Date().getDate());
   // Il pennello si apre dalla scheda Turni e lavora sul calendario.
   on('btnRiempiGiorniTurni', 'click', () => { mostraScheda('calendario'); avviaPennello(); window.scrollTo(0, 0); });
@@ -4163,7 +4188,11 @@ function inizializzaGestiCalendario(){
   const zona = document.querySelector('.scheda-calendario-v2');
   if(!zona) return;
   let x0 = null, y0 = null;
-  zona.addEventListener('touchstart', e => { if(e.touches.length !== 1){ x0 = null; return; } x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  // v3.8.16: niente cambio di mese quando il dito parte dalla barra del pennello, dal menu ＋ o da una fila che scorre
+  zona.addEventListener('touchstart', e => {
+    if(e.touches.length !== 1 || (e.target.closest && e.target.closest('#barraPennello, .fab-menu, .voce-scheda, .chip-pennello'))){ x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
   zona.addEventListener('touchend', e => {
     if(x0 === null || vistaCalendario() === 'agenda') return;
     const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
@@ -4178,10 +4207,10 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.13';
+const VERSIONE_NOVITA = '3.8.16';
 const PASSI_NOVITA = [
-  { id: 'btnFabGiorno', titolo: 'Novità: detta a voce', testo: 'Tocca ＋ e poi "Detta a voce": "domani notte", "ferie dal 3 al 10 dicembre", "oggi straordinario 2 ore dopo", "giovedì alle 10 dentista".' },
-  { id: 'btnVistaCalendario', titolo: 'Settimana e Agenda più complete', testo: 'Ora mostrano indennità, straordinario a parte (+2:00), servizio svolto ed eventi. Tocca un evento per aprirlo.' }
+  { id: 'btnVistaCalendario', titolo: 'Novità: l\'Agenda', testo: 'Da "Mese ▾" scegli Agenda: giorni prima e dopo, filtro Tutto · Eventi · Turni, la lente per cercare e un ＋ su ogni giorno per aggiungere un evento.' },
+  { id: 'btnFabGiorno', titolo: 'Detta a voce: anche per eliminare', testo: 'Tocca ＋ → "Detta a voce": "elimina lo straordinario di oggi", "giovedì alle 15 dentista con promemoria", "servizio svolto OP Stadio".' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

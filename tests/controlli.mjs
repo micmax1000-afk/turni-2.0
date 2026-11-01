@@ -53,7 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.13');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.16');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -627,8 +627,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 2 fumetti: detta a voce, Settimana e Agenda', passi.join(' | ') === 'Novità: detta a voce (1 di 2) | Settimana e Agenda più complete (2 di 2)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.13'));
+  ok('chi usava già l\'app vede 2 fumetti: Agenda e Detta a voce', passi.join(' | ') === 'Novità: l\'Agenda (1 di 2) | Detta a voce: anche per eliminare (2 di 2)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.16'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -644,7 +644,7 @@ sezione('v3.8.13: detta a voce');
     return { righe: righe.map(r => r.tipo === 'turno' ? `${r.iso} ${r.nuovo.riposo ? 'riposo' : r.nuovo.modelloId || (r.nuovo.oraInizio + '-' + r.nuovo.oraFine)}`
       : r.tipo === 'assenza' ? `${r.giorni[0]}..${r.giorni[r.giorni.length - 1]} ${r.nome} ${r.giorni.length}`
       : r.tipo === 'straordinario' ? `${r.iso} str ${r.da}-${r.al}${r.prima ? ' prima' : ''}`
-      : r.tipo === 'evento' ? `${r.iso} ev ${r.ora || 'tutto'} ${r.titolo}`
+      : r.tipo === 'evento' ? `${r.iso} ev ${r.ora || 'tutto'} ${r.titolo}${r.promemoria !== null && r.promemoria !== undefined ? ' pr' + r.promemoria : ''}`
       : r.tipo === 'nota' ? `${r.iso} nota ${r.testo}`
       : r.tipo === 'cancella' ? `${r.iso} cancella`
       : r.tipo === 'togliStr' ? `${r.iso} togli str ${r.quale}`
@@ -670,6 +670,12 @@ sezione('v3.8.13: detta a voce');
   ok('"giovedì alle 10 dentista": evento', r.righe.join(' | ') === '2026-10-15 ev 10:00 Dentista', JSON.stringify(r));
   r = await capisci('giovedì 22 alle 10 e mezza dentista');
   ok('"giovedì 22 alle 10 e mezza dentista": conta il 22', r.righe.join(' | ') === '2026-10-22 ev 10:30 Dentista', JSON.stringify(r));
+  r = await capisci('Aggiungi dentista alle ore 15.00');
+  ok('"Aggiungi dentista alle ore 15.00": evento alle 15, senza "Aggiungi" nel titolo', r.righe.join(' | ') === '2026-10-09 ev 15:00 Dentista', JSON.stringify(r));
+  r = await capisci('lunedì ore 9 e 30 visita medica con promemoria');
+  ok('"lunedì ore 9 e 30 visita medica con promemoria": 30 minuti prima', r.righe.join(' | ') === '2026-10-12 ev 09:30 Visita medica pr30', JSON.stringify(r));
+  r = await capisci('domani alle 18 palestra avvisami un\'ora prima');
+  ok('"domani alle 18 palestra avvisami un\'ora prima": un\'ora prima', r.righe.join(' | ') === '2026-10-10 ev 18:00 Palestra pr60', JSON.stringify(r));
   r = await capisci('sabato compleanno di Marco');
   ok('"sabato compleanno di Marco": evento di tutto il giorno', r.righe.join(' | ') === '2026-10-10 ev tutto Compleanno di Marco', JSON.stringify(r));
   r = await capisci('il 20 dalle 8 alle 14');
@@ -728,6 +734,58 @@ sezione('v3.8.13: detta a voce');
   await p.click('#schedaVoce [data-voce="salva"]');
   ok('Salva: il servizio svolto va nel giorno', await p.evaluate(() => AppState.turni['2026-10-09'].servizioSvolto === 'Arrivi nord'));
   ok('nel menu ＋ c\'è "Detta a voce"', await p.evaluate(() => !el('btnDettaVoceFab').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.16: barra del pennello');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(900);
+  await p.evaluate(() => { mostraScheda('turni'); });
+  await p.click('#btnRiempiGiorniTurni');
+  const r = await p.evaluate(() => {
+    const chip = [...document.querySelectorAll('#chipPennello .pennello-chip')];
+    const barra = el('barraPennello').getBoundingClientRect();
+    const tuttiVisibili = chip.every(c => { const b = c.getBoundingClientRect(); return b.left >= barra.left && b.right <= barra.right; });
+    const mese = meseCorrente;
+    const tocco = (tipo, x, bersaglio) => { const t = new Touch({ identifier: 1, target: bersaglio, clientX: x, clientY: 600 }); bersaglio.dispatchEvent(new TouchEvent(tipo, { bubbles: true, touches: tipo === 'touchend' ? [] : [t], changedTouches: [t] })); };
+    const c0 = chip[chip.length - 1];
+    tocco('touchstart', 300, c0); tocco('touchend', 60, c0);
+    return { primo: chip[0].dataset.pennello, tuttiVisibili, meseUguale: meseCorrente === mese };
+  });
+  ok('"Cancella" per primo e tutti i turni in vista, senza scorrere', r.primo === '__gomma' && r.tuttiVisibili, JSON.stringify(r));
+  ok('scorrere il dito sulla barra non cambia il mese', r.meseUguale, JSON.stringify(r));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.16: Agenda come una vera agenda');
+{
+  const eventi = { '2026-10-12': [{ id: 'ev_a1', titolo: 'Dentista', oraInizio: '10:00', oraFine: '11:00', luogo: 'Via Roma 3', promemoria: [{ min: 30 }], ricordami: true }], '2026-10-03': [{ id: 'ev_a2', titolo: 'Corso tiro', oraInizio: '09:00' }] };
+  const t = turniDiProva(); t['2026-10-05'].servizioSvolto = 'OP Stadio Olimpico';
+  const { p, ctx, errori } = await apri({ turni: t, eventi });
+  await p.waitForTimeout(900);
+  await p.evaluate(() => impostaVistaCalendario('agenda'));
+  await p.waitForTimeout(200);
+  const a = await p.evaluate(() => ({ filtri: [...document.querySelectorAll('[data-filtro-agenda]')].map(b => b.textContent).join('|'), piu: document.querySelectorAll('.agenda-piu').length, dett: document.querySelector('[data-evento-id="ev_a1"]')?.textContent || '' }));
+  ok('filtri Tutto · Eventi · Turni e un ＋ su ogni giorno', a.filtri === 'Tutto|Eventi|Turni' && a.piu >= 14, JSON.stringify(a));
+  ok('evento con ora di fine e luogo', /10:00–11:00/.test(a.dett) && /Via Roma 3/.test(a.dett), a.dett);
+  await p.click('[data-filtro-agenda="eventi"]');
+  ok('"Eventi": solo i giorni con eventi, senza turni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length >= 1 && !document.querySelector('#agendaElenco .agenda-corpo') && [...document.querySelectorAll('.agenda-giorno')].every(g => g.querySelector('.agenda-evento'))));
+  await p.click('[data-filtro-agenda="tutto"]');
+  await p.click('#btnAgendaPrecedenti');
+  ok('"Mostra i giorni prima": si vede anche il 3 ottobre (passato)', await p.evaluate(() => !!document.querySelector('.agenda-giorno.passato[data-agenda-giorno="2026-10-03"]')));
+  await p.click('[data-agenda-cerca]');
+  await p.fill('#campoCercaAgenda', 'stadio');
+  ok('Cerca "stadio": trova il servizio svolto del 5 ottobre', await p.evaluate(() => /OP Stadio Olimpico/.test(el('agendaElenco').textContent) && /Passati/.test(el('agendaElenco').textContent)));
+  await p.fill('#campoCercaAgenda', 'dentista');
+  ok('Cerca "dentista": trova l\'evento', await p.evaluate(() => !!document.querySelector('#agendaElenco [data-evento-id="ev_a1"]')));
+  await p.click('[data-agenda-cerca]');
+  await p.click('.agenda-piu[data-agenda-nuovo="2026-10-14"]');
+  ok('＋ sul 14: si apre "Nuovo evento" su quel giorno', await p.evaluate(() => !el('overlayEvento').hidden && giornoSelezionato === '2026-10-14'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -955,7 +1013,7 @@ sezione('Riposo compensativo, colori delle assenze, cambio turno');
   ok('assenze a 0 / 0: anello grigio pieno', await p.evaluate(() => { const r = [...document.querySelectorAll('#corpoAssenze .card-assenza-compact')].find(x => /Riposo festivo/.test(x.textContent)); const c = r && r.querySelector('.saldo-anello-pieno'); return !!c && c.getAttribute('stroke') === COLORE_ASSENZA_VUOTA && c.getAttribute('stroke-opacity') !== '0'; }));
   await p.evaluate(() => { AppState.turni['2026-10-20'] = { data: '2026-10-20', oraInizio: '07:00', oraFine: '13:00', cambioTurno: true }; salvaTurniStorage(); renderCalendario(); });
   await p.click('#tabReport');
-  ok('Report: cambio turno del mese e dell\'anno con quanto varrà a luglio', await p.evaluate(() => /Cambio turno: 1 a ottobre · nel 2026 1 cambio = 10,00 €, in busta a luglio 2027/.test(document.querySelector('.mese-cambio-v5')?.textContent || '')), await p.evaluate(() => document.querySelector('.mese-cambio-v5')?.textContent));
+  ok('Report: cambio turno del mese e dell\'anno con quanto varrà a luglio', await p.evaluate(() => /Cambio turno: 1 a ottobre, 1 nel 2026 · 10,00 € a luglio 2027/.test(document.querySelector('.mese-cambio-v5')?.textContent || '')), await p.evaluate(() => document.querySelector('.mese-cambio-v5')?.textContent));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1281,9 +1339,9 @@ sezione('Agenda (vista del calendario)');
   ok('Agenda: il totale della settimana è la somma dei giorni (5 × 6:35 + 5:35 = 38:30)', /38:30 ore di servizio/.test(tot), tot);
   ok('Agenda: eventi sotto il giorno, "Prossimi 7 giorni" nascosto', /10:00/.test(a.evento) && /Visita medica/.test(a.evento) && a.prossimi === 'none', JSON.stringify(a));
   await p.click('#btnAgendaAltri');
-  ok('"Mostra altri" aggiunge altri 14 giorni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length === 28));
+  ok('"Mostra altri" aggiunge altri 14 giorni (v3.8.16: e arrivano da soli scorrendo)', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length >= 28));
   await p.reload(); await p.waitForFunction(() => document.querySelector('.giorno-cella'));
-  ok('dopo la riapertura resta la vista Agenda', await p.evaluate(() => !el('agendaSottoCalendario').hidden && vistaCalendario() === 'agenda' && document.querySelectorAll('.agenda-giorno').length === 14));
+  ok('dopo la riapertura resta la vista Agenda', await p.evaluate(() => !el('agendaSottoCalendario').hidden && vistaCalendario() === 'agenda' && document.querySelectorAll('.agenda-giorno').length >= 14 && document.querySelector('.agenda-giorno.oggi')));
   ok('la scelta finisce nel backup', await p.evaluate(() => JSON.stringify(costruisciDatiBackup()).includes('"agendaSottoCalendario":true')));
   await p.click('[data-agenda-giorno="2026-10-13"] .agenda-corpo');
   const g = await p.evaluate(() => ({ t: el('titoloModaleTurno').textContent, iso: giornoSelezionato }));

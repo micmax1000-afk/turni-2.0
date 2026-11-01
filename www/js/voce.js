@@ -90,6 +90,9 @@ function preparaFraseVoce(testo){
   s = s.replace(/\b(un|una|uno) (or[ae]|minuti)\b/g, '1 $2').replace(/\b(il|al|dal) primo\b/g, '$1 1');
   s = s.replace(/\bl'(\d)/g, 'il $1').replace(/\bdall'(\d)/g, 'dal $1').replace(/\ball'(\d)/g, 'al $1').replace(/\bdell'(\d)/g, 'del $1');
   s = s.replace(/\b(\d{1,2})[.:](\d{2})\b/g, '$1:$2');
+  // v3.8.16: "alle ore 15", "dalle ore 7 alle ore 13", "ore 15:30" → "alle 15"
+  s = s.replace(/\b(alle|dalle|le|verso le|per le|fino alle)\s+ore\s+(?=\d)/g, '$1 ');
+  s = s.replace(/(?<!\d )\bore (\d{1,2})(?=[:\s]|$)/g, 'alle $1');
   s = s.replace(/\b(\d+) or[ae] e mezz[ao]\b/g, (m, h) => `${h * 60 + 30}min`);
   s = s.replace(/\b(\d+) or[ae] e (\d{1,2})(?: minuti)?\b/g, (m, h, mm) => `${h * 60 + Number(mm)}min`);
   s = s.replace(/\b(\d+) or[ae]\b/g, (m, h) => `${h * 60}min`);
@@ -226,12 +229,17 @@ function capisciFraseVoce(testo, rif){
   // (la prima parte senza giorno prende quello detto dopo).
   const pezzi = parti.map(parte => estraiDateVoce(parte, oggi));
   const RE_TOGLI = /\b(togli|toglimi|togliere|toglila|toglilo|rimuovi|cancella|cancellami|elimina|leva|levami|niente|senza|annulla|non)\b/;
-  const RE_METTI = /\b(metti|mettimi|aggiungi|segna|segnami|inserisci)\b/;
+  const RE_METTI = /\b(metti|mettimi|aggiungi|aggiungimi|segna|segnami|inserisci|crea|fissa|fissami|ho)\b/;
   pezzi.forEach(({ date, resto: r0 }, indice) => {
     let resto = ' ' + r0 + ' ';
     const trovate = [];
     if(RE_TOGLI.test(resto)){ negativo = true; resto = resto.replace(new RegExp(RE_TOGLI.source, 'g'), ' '); }
     else if(RE_METTI.test(resto)) negativo = false;
+    resto = resto.replace(new RegExp(RE_METTI.source, 'g'), ' ');
+    // "con promemoria", "avvisami 10 minuti prima", "ricordamelo"
+    const RE_PROMEMORIA = /\b(con (?:il )?promemoria|promemoria|ricordami|ricordamelo|ricordalo|avvisami|avvisarmi|con avviso)\b/;
+    const conPromemoria = RE_PROMEMORIA.test(resto);
+    if(conPromemoria) resto = resto.replace(new RegExp(RE_PROMEMORIA.source, 'g'), ' ').replace(/\b(prima|di|un|una)\b(?=\s|$)/g, ' ');
     // Orari: "dalle 7 alle 13" (turno o straordinario), "alle 10" (evento)
     let intervallo = null, ora = null;
     const ri = resto.match(/\b(?:dalle|da) (\d{1,2}(?::\d{2})?) (?:alle|a) (\d{1,2}(?::\d{2})?)\b/);
@@ -282,7 +290,7 @@ function capisciFraseVoce(testo, rif){
       else if(/\b(turno|giorno|giornata|tutto|evento|eventi|appuntamento)\b/.test(resto)) trovate.push({ tipo: /\b(evento|eventi|appuntamento)\b/.test(resto) ? 'evento' : 'cancella', titolo: '' });
     } else if(ora || /\b(evento|appuntamento|promemoria)\b/.test(resto) || (avanzo && date.length && !trovate.length)){
       const titolo = titoloEvento(resto.replace(/\s+/g, ' ').trim(), originali);
-      trovate.push({ tipo: 'evento', titolo: titolo || 'Evento', ora });
+      trovate.push({ tipo: 'evento', titolo: titolo || 'Evento', ora, promemoria: conPromemoria ? (durata && !rs ? durata : (ora ? 30 : 0)) : null });
     } else if(avanzo && !trovate.length){
       nonCapito.push(avanzo);
     }
@@ -338,7 +346,7 @@ function righeDaAzioniVoce(capito){
       righe.push({ tipo: 'straordinario', iso, da, al, prima, minuti: ((minDa(al) - minDa(da)) + 1440) % 1440 || 1440 });
     });
   });
-  capito.azioni.filter(a => a.tipo === 'evento').forEach(a => a.giorni.forEach(iso => righe.push({ tipo: 'evento', iso, titolo: a.titolo, ora: a.ora })));
+  capito.azioni.filter(a => a.tipo === 'evento').forEach(a => a.giorni.forEach(iso => righe.push({ tipo: 'evento', iso, titolo: a.titolo, ora: a.ora, promemoria: a.promemoria })));
   return { righe, avvisi };
 }
 // v3.8.15: "togli …": si trova cosa c'è davvero da togliere in quei giorni.
@@ -440,6 +448,7 @@ function htmlRigaVoce(r, i){
   } else if(r.tipo === 'evento'){
     titolo = `${iconaVoce('evento')}${escapeHtml(r.titolo)}`;
     sotto = r.ora ? `Evento · ${r.ora} – ${hhmm(Math.min(minDa(r.ora) + 60, 1439))}` : 'Evento · tutto il giorno';
+    if(r.promemoria !== null && r.promemoria !== undefined) sotto += r.ora ? ` · promemoria ${r.promemoria >= 60 && r.promemoria % 60 === 0 ? (r.promemoria / 60) + (r.promemoria === 60 ? ' ora' : ' ore') : r.promemoria + ' min'} prima` : ' · promemoria alle 08:00';
   }
   return `<div class="voce-riga${/^(cancella|togli)/.test(r.tipo) ? ' voce-riga-togli' : ''}"><div class="voce-data">${dataRigaVoce(r)}</div><div class="voce-testo"><div>${titolo}</div><small>${sotto}</small></div>`
     + `<button type="button" class="voce-togli" data-voce-togli="${i}" aria-label="Non salvare questa riga">✕</button></div>`;
@@ -647,14 +656,19 @@ function salvaRigheVoce(){
     else { t.straordinarioDopoInizio = r.da; t.straordinarioDopoFine = r.al; }
   });
   let eventi = 0;
+  const eventiConPromemoria = [];
   righe.filter(r => r.tipo === 'evento').forEach(r => {
     if(!AppState.eventiGiorno[r.iso]) AppState.eventiGiorno[r.iso] = [];
-    AppState.eventiGiorno[r.iso].push({ id: 'evento_' + Date.now() + '_' + (eventi++), titolo: r.titolo, tuttoIlGiorno: !r.ora,
+    const nuovoEv = ({ id: 'evento_' + Date.now() + '_' + (eventi++), titolo: r.titolo, tuttoIlGiorno: !r.ora,
       oraInizio: r.ora || '', oraFine: r.ora ? hhmm(Math.min(minDa(r.ora) + 60, 1439)) : '', colore: COLORI_EVENTO[0], luogo: '', note: '',
-      promemoria: [], oraPromemoria: '08:00', ricordami: false, anticipoMinuti: 0, avvisoSecondi: 0, avvisoModo: 'suono_vibra', ripeti: '', ripetiFino: '', eccezioni: [] });
+      promemoria: r.promemoria !== null && r.promemoria !== undefined ? [{ min: r.promemoria }] : [], oraPromemoria: '08:00',
+      ricordami: r.promemoria !== null && r.promemoria !== undefined, anticipoMinuti: r.promemoria || 0, avvisoSecondi: 0, avvisoModo: 'suono_vibra', ripeti: '', ripetiFino: '', eccezioni: [] });
+    AppState.eventiGiorno[r.iso].push(nuovoEv);
+    if(nuovoEv.ricordami) eventiConPromemoria.push([r.iso, nuovoEv]);
   });
   salvaTurniStorage();
   if(eventi || eventiToccati.length) salvaEventiGiornoStorage();
+  eventiConPromemoria.forEach(([iso, ev]) => { if(typeof schedulaPromemoriaEvento === 'function') schedulaPromemoriaEvento(iso, ev); });
   chiudiVoce();
   const primo = righe[0].iso || (righe[0].giorni && righe[0].giorni[0]);
   if(primo){ const d = dataDaIso(primo); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); }
@@ -675,7 +689,7 @@ function inizializzaVoce(){
   if(!b) return;
   b.hidden = !voceDisponibile();
   // Senza dettatura (es. alcuni browser) la guida alle novità non ne parla.
-  if(b.hidden && typeof PASSI_NOVITA !== 'undefined' && PASSI_NOVITA[0] && /voce/.test(PASSI_NOVITA[0].titolo)) PASSI_NOVITA.splice(0, 1);
+  if(b.hidden && typeof PASSI_NOVITA !== 'undefined'){ const i = PASSI_NOVITA.findIndex(x => /voce/i.test(x.titolo)); if(i >= 0) PASSI_NOVITA.splice(i, 1); }
   b.addEventListener('click', apriDettaVoce);
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && el('schedaVoce') && !el('schedaVoce').hidden) chiudiVoce(); });
 }

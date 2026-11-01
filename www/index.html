@@ -98,7 +98,7 @@
       <p class="giorno-v4-testa"><span class="giorno-v3-data" id="dataGiornoSelezionatoV2"></span><span class="giorno-v4-oggi" id="oggiGiornoSelezionatoV2" hidden> · oggi</span><span class="giorno-v4-festa" id="festaGiornoSelezionatoV2" hidden></span></p>
       <button type="button" class="giorno-v4-riga" id="btnModificaGiornoSelezionatoV2" aria-label="Modifica il giorno"><span class="riepilogo-giorno-selezionato-v2" id="riepilogoGiornoSelezionatoV2">Seleziona un giorno</span><span class="giorno-v4-freccia" aria-hidden="true">›</span></button>
       <div class="indennita-giorno-selezionato-v2" id="indennitaGiornoSelezionatoV2" hidden></div>
-      <input type="text" id="campoServizioSvolto" class="campo-servizio-svolto" placeholder="📋 Servizio svolto (es. Pattugliamento)" aria-label="Servizio svolto">
+      <input type="text" id="campoServizioSvolto" class="campo-servizio-svolto" placeholder="Servizio svolto (es. Pattugliamento)" aria-label="Servizio svolto">
 
       <div class="lista-eventi-giorno-v2" id="listaEventiGiornoV2"></div>
     </div>
@@ -677,7 +677,6 @@
     </button>
     <p class="strumenti-turni-titolo">I tuoi turni</p>
     <div class="lista-modelli-v4" id="listaModelliTabTurni"></div>
-    <button type="button" class="btn-testo-evento btn-colori-predefiniti" id="btnRipristinaColoriTurni">↺ Colori predefiniti dei turni</button>
 
     <div class="legenda-colori" id="legendaColoriTurni">
     </div>
@@ -704,36 +703,38 @@
         <span class="testo-v4"><strong>Stile calendario</strong><small id="statoColoriTurni">Classico · a colori</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
+      <button type="button" class="turno-v4 turno-compatto-v4" id="btnRipristinaColoriTurni">
+        <span class="sigla-v4 sigla-strumento-v4" style="background:#FFF4E0;color:#B36B00">🔄</span>
+        <span class="testo-v4"><strong>Colori predefiniti dei turni</strong><small>Rimette i colori di partenza a tutti i turni</small></span>
+        <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
     </div>
 
     
-    <div id="pannelloColoriTurni" class="pannello-colori-turni" hidden>
-      <div class="pannello-colori-header">
-        <div>
-          <strong class="pannello-colori-titolo">Stile calendario</strong>
-          <p class="sotto-titolo" style="margin:4px 0 0;">Il colore di ogni turno si cambia nella scheda Turni, toccando il turno.</p>
-        </div>
-        <button type="button" class="btn-icona" id="btnChiudiColoriTurni" aria-label="Chiudi tavolozza" title="Chiudi">✕</button>
+    <div id="veloStileCalendario" class="voce-velo" hidden></div>
+    <div id="pannelloColoriTurni" class="pannello-colori-turni foglio-stile" role="dialog" aria-modal="true" aria-labelledby="titoloStileCalendario" hidden>
+      <div class="voce-maniglia"></div>
+      <div class="foglio-stile-testa">
+        <strong class="pannello-colori-titolo" id="titoloStileCalendario">Stile calendario</strong>
+        <button type="button" class="btn-icona" id="btnChiudiColoriTurni" aria-label="Chiudi" title="Chiudi">✕</button>
       </div>
-      <div class="stile-calendario-scelta">
-        <strong>Stile del calendario</strong>
-        <div class="stile-calendario-pulsanti">
-          <button type="button" data-stile-calendario="classico" aria-pressed="true">
-            <span class="stile-mini" aria-hidden="true"><i style="background:#F5A0C0"></i><i style="background:#FFAB76"></i><i style="background:#FFD98A"></i></span>Classico
-          </button>
-          <button type="button" data-stile-calendario="moderno" aria-pressed="false">
-            <span class="stile-mini stile-mini-moderno" aria-hidden="true"><i style="--c:#C2489A"></i><i style="--c:#E8803A"></i><i style="--c:#7E5BD6"></i></span>Moderno
-          </button>
-        </div>
-        <small>Classico: casella tutta colorata con la lettera del turno. Moderno: etichetta colorata con il nome, eventi sotto.</small>
+      <p class="titolo-menu-v2">Aspetto delle caselle</p>
+      <div class="stile-calendario-pulsanti">
+        <button type="button" data-stile-calendario="classico" aria-pressed="true">
+          <span class="stile-anteprima" aria-hidden="true"><span class="sa-cella" style="background:#F5A0C0"><b>12</b><i>S</i></span><span class="sa-cella" style="background:#FFAB76"><b>13</b><i>P</i></span><span class="sa-cella" style="background:#FFD98A"><b>14</b><i>M</i></span><span class="sa-cella" style="background:#B9A6F0"><b>15</b><i>N</i></span><span class="sa-cella" style="background:#8FD5C7"><b>16</b><i>R</i></span><span class="sa-cella" style="background:#F5A0C0"><b>17</b><i>S</i></span></span>
+          <b>Classico</b><small>Casella colorata con la lettera del turno</small>
+        </button>
+        <button type="button" data-stile-calendario="moderno" aria-pressed="false">
+          <span class="stile-anteprima stile-anteprima-moderno" aria-hidden="true"><span class="sa-cella"><b>12</b><i style="--c:#F5A0C0">Sera</i></span><span class="sa-cella"><b>13</b><i style="--c:#FFAB76">Pom.</i></span><span class="sa-cella"><b>14</b><i style="--c:#FFD98A">Matt.</i></span><span class="sa-cella"><b>15</b><i style="--c:#B9A6F0">Notte</i></span><span class="sa-cella"><b>16</b><i style="--c:#8FD5C7">Rip.</i></span><span class="sa-cella"><b>17</b><i style="--c:#F5A0C0">Sera</i></span></span>
+          <b>Moderno</b><small>Etichetta col nome, eventi sotto</small>
+        </button>
       </div>
-      <label class="switch-avanzate-v17" style="margin-bottom:12px;">
-        <input type="checkbox" class="interruttore" id="toggleCalendarioAColori">
-        <span class="switch-avanzate-v17-testo"><strong>Calendario a colori</strong><small>Spento: caselle bianche.</small></span>
-      </label>
-      <div class="pannello-colori-azioni">
-        <button class="btn-primario" id="btnChiudiColoriTurni2" type="button">Fatto</button>
+      <p class="titolo-menu-v2">Colori</p>
+      <div class="riquadro-giorno altro-giorno-v2">
+        <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="toggleCalendarioAColori"><span>Calendario a colori<small id="spiegaCalendarioAColori">Ogni turno con il suo colore</small></span></label>
       </div>
+      <p class="nota-stile">✏️ Il colore di un turno si cambia in <b>Turni</b>, toccando il turno.</p>
+      <button class="btn-primario foglio-stile-fatto" id="btnChiudiColoriTurni2" type="button">Fatto</button>
     </div>
 
   </section>
