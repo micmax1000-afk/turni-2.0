@@ -5,7 +5,10 @@ Turni, indennità e cedolino per la Polizia di Stato. Dati solo sul telefono.
 Turni & Accessorio PS calcola automaticamente i tuoi turni di lavoro, le indennità accessorie e una simulazione del cedolino, pensata per il personale della Polizia di Stato.
 
 COSA FA L'APP
-- Calendario turni a colori, con generazione automatica dei cicli (turno in quinta, settimana corta/lunga e sequenze personalizzate) e anteprima della settimana
+- Calendario turni a colori con vista giorno, settimana, mese o agenda e scorrimento col dito
+- Generazione automatica dei cicli (turno in quinta, settimana corta/lunga e sequenze personalizzate) oppure "Riempi più giorni": scegli il turno e tocca i giorni
+- Eventi e promemoria personali, nomi delle festività e tasto Annulla per le modifiche
+- Condividi il mese come immagine
 - Riconoscimento automatico di ore ordinarie, serali, notturne, festive e domenicali
 - Straordinario, rientri, missioni, ordine pubblico, servizio esterno, controllo territorio e reperibilità, con simboli nel calendario
 - Assenze (congedo ordinario, permessi, recupero riposo/festivo e altro), con quanto ti resta calcolato in automatico
