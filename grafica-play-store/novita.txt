@@ -1,6 +1,7 @@
 <it-IT>
-• Detta a voce: ora puoi anche eliminare ("elimina lo straordinario di oggi", "giovedì elimina il dentista", "rimuovi la reperibilità di domani")
-• Servizio svolto a voce: "servizio svolto OP Stadio"
-• Colori scuri dei turni (es. nero) ora leggibili nel calendario
-• Il nome del mese si legge sempre intero, anche con i caratteri grandi
+• Agenda come una vera agenda: giorni prima e dopo, filtro Tutto · Eventi · Turni, ricerca e un ＋ su ogni giorno
+• Detta a voce: "alle ore 15", promemoria a voce ("con promemoria", "avvisami un'ora prima")
+• Calendario classico più compatto e nuovo pannello Stile calendario
+• Il ＋ si nasconde mentre scorri; icone tutte dello stesso colore
+• Riempi più giorni: tutti i turni in vista, Cancella per primo
 </it-IT>
