@@ -4144,7 +4144,8 @@ function vaiAOggi(){
 function inizializzaGestiCalendario(){
   on('btnVaiOggi', 'click', vaiAOggi);
   const n = el('numeroOggiCalendario'); if(n) n.textContent = String(new Date().getDate());
-  on('btnRiempiGiorniFab', 'click', avviaPennello);
+  // Il pennello si apre dalla scheda Turni e lavora sul calendario.
+  on('btnRiempiGiorniTurni', 'click', () => { mostraScheda('calendario'); avviaPennello(); window.scrollTo(0, 0); });
   on('btnFinePennello', 'click', chiudiPennello);
   on('chipPennello', 'click', e => { const b = e.target.closest('[data-pennello]'); if(b){ modoPennello = b.dataset.pennello; aggiornaChipPennello(); } });
   const zona = document.querySelector('.scheda-calendario-v2');
