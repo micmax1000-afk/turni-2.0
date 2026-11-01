@@ -193,7 +193,7 @@ for(const stile of ['classico', 'moderno']){
     await p.evaluate(() => { giornoPerPopupV2 = '2026-10-02'; apriSelettoreModelliV2('indennita'); });
     ok('menu "Cosa vuoi aggiungere?": icone al posto delle sigle, ✓ su quelle attive', await p.evaluate(() => document.querySelectorAll('#listaModelliIndennita .riga-indennita-menu > span svg').length === 10 && document.querySelector('[data-indennita="missione"]').classList.contains('attiva') && document.querySelector('[data-indennita="missione"] i').textContent === '✓'));
     await p.evaluate(() => apriSelettoreModelliV2('turni'));
-    ok('menu Turni: barra colorata, orario e durata, ✓ sul turno del giorno, rari in "Altri turni", niente matite', await p.evaluate(() => { const r = [...document.querySelectorAll('#listaModelliTurni .riga-turno-menu')]; const att = document.querySelector('#listaModelliTurni .riga-turno-menu.attiva'); return r.length >= 5 && !!att && !!att.querySelector('em') && /\d h/.test(document.querySelector('#listaModelliTurni .riga-turno-menu small').textContent) && /^Altri turni \(\d\)$/.test(document.querySelector('#listaModelliTurni details summary').textContent) && !document.querySelector('#listaModelliTurni [data-modifica-modello]') && !!document.getElementById('btnGestisciTurniV2'); }));
+    ok('menu Turni: barra colorata, orario e durata, ✓ sul turno del giorno, rari in "Altri turni", niente matite', await p.evaluate(() => { const r = [...document.querySelectorAll('#listaModelliTurni .riga-turno-menu')]; const att = document.querySelector('#listaModelliTurni .riga-turno-menu.attiva'); return r.length >= 5 && !!att && !!att.querySelector('em') && /\d h/.test(document.querySelector('#listaModelliTurni .riga-turno-menu small').textContent) && [...document.querySelectorAll('#listaModelliTurni .titolo-menu-v2')].map(x => x.textContent).join('|') === 'I tuoi turni|Altri turni' && !document.querySelector('#listaModelliTurni [data-modifica-modello]') && !!document.getElementById('btnGestisciTurniV2'); }));
     await p.click('#btnGestisciTurniV2');
     ok('"Gestisci i turni →" porta alla scheda Turni', await p.evaluate(() => document.getElementById('overlaySelettoreModelli').hidden && [...document.querySelectorAll('.turno-v4')].some(x => x.offsetParent)));
     await p.click('#tabCalendario');
@@ -645,6 +645,7 @@ sezione('v3.8.13: detta a voce');
       : r.tipo === 'assenza' ? `${r.giorni[0]}..${r.giorni[r.giorni.length - 1]} ${r.nome} ${r.giorni.length}`
       : r.tipo === 'straordinario' ? `${r.iso} str ${r.da}-${r.al}${r.prima ? ' prima' : ''}`
       : r.tipo === 'evento' ? `${r.iso} ev ${r.ora || 'tutto'} ${r.titolo}`
+      : r.tipo === 'nota' ? `${r.iso} nota ${r.testo}`
       : `${r.iso} ind ${r.chiave}`), avvisi };
   }, [frase, giorno]);
   let r = await capisci('domani notte e domenica riposo');
@@ -671,6 +672,12 @@ sezione('v3.8.13: detta a voce');
   ok('"domani e dopodomani sera con reperibilità"', r.righe.join(' | ') === '2026-10-10 sera | 2026-10-11 sera | 2026-10-10 ind reperibilita | 2026-10-11 ind reperibilita', JSON.stringify(r));
   r = await capisci('venerdì prossimo riposo compensativo');
   ok('"venerdì prossimo riposo compensativo": assenza, non il turno Riposo', r.righe.join(' | ') === '2026-10-16..2026-10-16 Riposo compensativo 1', JSON.stringify(r));
+  r = await capisci('servizio svolto arrivi nord');
+  ok('"servizio svolto arrivi nord" sul giorno aperto', r.righe.join(' | ') === '2026-10-09 nota Arrivi nord', JSON.stringify(r));
+  r = await capisci('domani sera, servizio svolto pattuglia e scorta Termini');
+  ok('"domani sera, servizio svolto pattuglia e scorta Termini": la nota resta intera', r.righe.join(' | ') === '2026-10-10 sera | 2026-10-10 nota Pattuglia e scorta Termini', JSON.stringify(r));
+  r = await capisci('servizio svolto stadio Olimpico domenica');
+  ok('"servizio svolto stadio Olimpico domenica": il giorno detto alla fine', r.righe.join(' | ') === '2026-10-11 nota Stadio Olimpico', JSON.stringify(r));
   r = await capisci('venerdì mattina e poi quello lungo');
   ok('una parte non capita: si dice quale', r.righe.join(' | ') === '2026-10-09 mattina' && r.avvisi.some(a => a.includes('quello lungo')), JSON.stringify(r));
   // La scheda: niente si salva finché non si tocca Salva; poi Annulla rimette tutto com'era.
@@ -683,6 +690,9 @@ sezione('v3.8.13: detta a voce');
   await p.click('.toast-azione');
   await p.waitForTimeout(200);
   ok('Annulla: turno ed evento tornano com\'erano', await p.evaluate(p0 => JSON.stringify(AppState.turni['2026-10-10']) === p0 && !(AppState.eventiGiorno['2026-10-15'] || []).some(e => e.titolo === 'Dentista'), prima));
+  await p.evaluate(() => { giornoSelezionato = '2026-10-09'; mostraRisultatoVoce('servizio svolto arrivi nord'); });
+  await p.click('#schedaVoce [data-voce="salva"]');
+  ok('Salva: il servizio svolto va nel giorno', await p.evaluate(() => AppState.turni['2026-10-09'].servizioSvolto === 'Arrivi nord'));
   ok('nel menu ＋ c\'è "Detta a voce"', await p.evaluate(() => !el('btnDettaVoceFab').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
@@ -1085,11 +1095,11 @@ sezione('Riquadro del giorno e assenze nel menu');
   const m = await p.evaluate(() => ({
     righe: document.querySelectorAll('#listaModelliAssenze .riga-assenza-giorno[data-assenza]').length,
     saldo: !!document.querySelector('#listaModelliAssenze .riga-assenza-giorno em small'),
-    nonUsate: document.querySelector('#listaModelliAssenze .assenze-menu-non-usate summary')?.textContent || '',
-    chiuso: !document.querySelector('#listaModelliAssenze .assenze-menu-non-usate')?.open
+    titoli: [...document.querySelectorAll('#listaModelliAssenze .titolo-menu-v2')].map(x => x.textContent).join('|'),
+    chiuso: !!document.querySelector('#listaModelliAssenze details')
   }));
   ok('Assenze nel menu: elenco con quanto resta', m.righe > 3 && m.saldo, JSON.stringify(m));
-  ok('voci a zero in "Non usate", chiuso', /^Non usate \(\d+\)$/.test(m.nonUsate) && m.chiuso, JSON.stringify(m));
+  ok('voci a zero in "Altre assenze", sempre visibili (v3.8.14)', m.titoli === 'Le tue assenze|Altre assenze' && !m.chiuso, JSON.stringify(m));
   const co = await p.evaluate(() => AppState.assenze.find(a => a.nome === 'Congedo ordinario').id);
   await p.click(`#listaModelliAssenze [data-assenza="${co}"]`);
   ok('toccando un\'assenza si applica al giorno', await p.evaluate(id => AppState.turni['2026-10-09'].assenzaTipo === id, co));

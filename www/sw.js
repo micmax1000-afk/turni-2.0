@@ -1,9 +1,9 @@
-/* Turni & Accessorio PS — Service Worker V246 (v3.8.13 — detta a voce, Settimana e Agenda con indennità e servizio svolto) */
+/* Turni & Accessorio PS — Service Worker V247 (v3.8.14 — icone a linea, sezioni sempre aperte, servizio svolto a voce) */
 'use strict';
-const CACHE='turni-ps-v246';
+const CACHE='turni-ps-v247';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
- './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/voce.js','./js/data/tabelle-2026.js',
+ './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/data/tabelle-2026.js',
  './icons/icon-48.png','./icons/icon-72.png','./icons/icon-96.png','./icons/icon-128.png','./icons/icon-144.png','./icons/icon-152.png','./icons/icon-192.png','./icons/icon-384.png','./icons/icon-512.png'
 ];
 // v2.99: nell'app Android (https://localhost, senza porta) i file sono già dentro l'app, quindi il

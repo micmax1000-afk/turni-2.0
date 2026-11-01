@@ -438,37 +438,31 @@
             <button type="button" class="link-aggiungi-straordinario" id="btnAggiungiSecondoStraordinario">＋ Un altro straordinario</button>
           </div>
 
-          <details class="riquadro-giorno altro-giorno">
-            <summary><span class="ic" aria-hidden="true">🧩</span><i><strong>Altro per questo giorno</strong><small>Rientro, permesso breve, recupero</small></i><b aria-hidden="true">⌄</b></summary>
-            <label class="campo-modale campo-riga">
-              <input type="checkbox" id="campoSecondoAttivo"> Rientro / turno spezzato con pausa
-            </label>
+          <p class="titolo-sezione-giorno">Altro per questo giorno</p>
+          <div class="riquadro-giorno altro-giorno-v2">
+            <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoSecondoAttivo"><span>Rientro<small>Turno spezzato, con una pausa</small></span></label>
             <div id="campiSecondoSegmento" class="griglia-check" style="display:none;">
-              <label class="campo-modale">Ora inizio (dopo la pausa)<input type="time" id="campoSecondoOraInizio"></label>
-              <label class="campo-modale">Ora fine<input type="time" id="campoSecondoOraFine"></label>
+              <label class="campo-modale">Riprende alle<input type="time" id="campoSecondoOraInizio"></label>
+              <label class="campo-modale">Finisce alle<input type="time" id="campoSecondoOraFine"></label>
             </div>
-          <label class="campo-modale campo-riga">
-            <input type="checkbox" id="campoPermessoBreveAttivo"> Permesso breve durante questo turno
-          </label>
+          <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoPermessoBreveAttivo"><span>Permesso breve<small>Ore di permesso durante questo turno</small></span></label>
           <div id="campiPermessoBreve" style="display:none;">
             <div class="griglia-check">
-              <label class="campo-modale">Permesso breve — dalle<input type="time" id="campoPermessoBreveInizio"></label>
+              <label class="campo-modale">Dalle<input type="time" id="campoPermessoBreveInizio"></label>
               <label class="campo-modale">alle<input type="time" id="campoPermessoBreveFine"></label>
             </div>
             <p class="sotto-titolo" id="anteprimaPermessoBreve" style="margin:-4px 0 6px;">Le ore di permesso breve si tolgono dalle ore lavorative del turno (es. turno 13:00–19:00 con permesso 18:00–19:00 = 5h lavorate, 1h di permesso) e scalano per sempre il saldo di Permesso breve in Assenze — recuperarle in seguito non fa tornare su il saldo, serve solo a non perdere la retribuzione di quell'ora.</p>
           </div>
 
-          <label class="campo-modale campo-riga">
-            <input type="checkbox" id="campoRecuperoPermessoBreveAttivo"> Recupero permesso breve durante questo turno
-          </label>
+          <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="campoRecuperoPermessoBreveAttivo"><span>Recupero permesso breve<small>Ore recuperate durante questo turno</small></span></label>
           <div id="campiRecuperoPermessoBreve" style="display:none;">
             <div class="griglia-check">
-              <label class="campo-modale">Recupero — dalle<input type="time" id="campoRecuperoPermessoBreveInizio"></label>
+              <label class="campo-modale">Dalle<input type="time" id="campoRecuperoPermessoBreveInizio"></label>
               <label class="campo-modale">alle<input type="time" id="campoRecuperoPermessoBreveFine"></label>
             </div>
             <p class="sotto-titolo" id="anteprimaRecuperoPermessoBreve" style="margin:-4px 0 6px;">Queste ore, a differenza del permesso breve, entrano nel calcolo della paga (ore retribuite in più), ma non si sommano al totale ore del turno né toccano il saldo rimanente di Permesso breve: scalano solo il debito di "ore da recuperare".</p>
           </div>
-          </details>
+          </div>
         </div>
       </div>
       <div class="pannello-turno-footer">
@@ -1324,6 +1318,7 @@
 
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="js/icone.js"></script>
 <script src="js/voce.js"></script>
 <script src="script.js"></script>
 </body>

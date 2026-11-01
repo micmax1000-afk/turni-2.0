@@ -1,6 +1,7 @@
 <it-IT>
-• Detta a voce: tocca ＋ e di' "domani notte", "ferie dal 3 al 10 dicembre", "giovedì alle 10 dentista". La voce è riconosciuta sul telefono, senza internet
-• Settimana e Agenda con indennità, straordinario a parte (+2:00), servizio svolto ed eventi
-• Vista Giorno con le indennità in alto
-• Tocca un evento nella Settimana per aprirlo
+• Icone nuove a linea in tutta l'app, anche col tema scuro
+• Detta a voce: ora anche il servizio svolto ("servizio svolto arrivi nord")
+• Rientro, permesso breve e recupero sempre in vista, con interruttori
+• Tutti i turni e tutte le assenze sempre visibili nel menu ＋
+• Settimana e Agenda con indennità, straordinario a parte ed eventi
 </it-IT>
