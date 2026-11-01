@@ -696,6 +696,8 @@ sezione('v3.8.13: detta a voce');
   ok('"cancella il servizio svolto e metti servizio svolto Pattuglia" (il 10 è riposo: lo dice)', r.righe.join(' | ') === '2026-10-10 togli nota' && r.avvisi.length === 1 && /servizio svolto del sab 10/.test(r.avvisi[0]), JSON.stringify(r));
   r = await capisci('cancella il servizio svolto e metti servizio svolto Pattuglia', '2026-10-13');
   ok('…e su un giorno di turno: toglie e mette "Pattuglia"', r.righe.join(' | ') === '2026-10-13 nota Pattuglia' && r.avvisi.length === 1, JSON.stringify(r));
+  r = await capisci('cancella il servizio svolto, martedì elimina il turno', '2026-10-13');
+  ok('frasi separate da virgola: ognuna col suo giorno', r.righe.join(' | ') === '2026-10-13 cancella' && r.avvisi.length === 1 && /mar 13 ott non c'è il servizio svolto da rimuovere/.test(r.avvisi[0]), JSON.stringify(r));
   r = await capisci('giovedì togli il dentista');
   ok('"giovedì togli il dentista": solo quell\'evento', r.righe.join(' | ') === '2026-10-15 togli ev Dentista', JSON.stringify(r));
   r = await capisci('cancella il turno di domani');

@@ -216,7 +216,10 @@ function capisciFraseVoce(testo, rif){
     note.push(bello.charAt(0).toUpperCase() + bello.slice(1));
     return `${giorno ? giorno + ' ' : ''}§nota${note.length - 1}§`;
   });
-  const parti = fraseNote.split(/\s*(?:,|;|\be poi\b|\bpoi\b|\be\b|\bed\b)\s*/).map(x => x.trim()).filter(Boolean);
+  // Le frasi separate da virgola (o "poi") sono a sé; dentro una frase le parti unite da "e"
+  // possono prendere il giorno detto dopo ("togli lo straordinario e la reperibilità di domani").
+  const parti = [], gruppoDi = [];
+  fraseNote.split(/\s*(?:[,;]|\be poi\b|\bpoi\b)\s*/).forEach((g, gi) => g.split(/\s+(?:e|ed)\s+/).map(x => x.trim()).filter(Boolean).forEach(x => { parti.push(x); gruppoDi.push(gi); }));
   const azioni = [], nonCapito = [];
   let ultimeDate = null, inSospeso = [], negativo = false;
   // v3.8.15: le date di ogni parte, per "togli lo straordinario e la reperibilità di domani"
@@ -284,7 +287,7 @@ function capisciFraseVoce(testo, rif){
       nonCapito.push(avanzo);
     }
     if(!trovate.length){ if(date.length) inSospeso = inSospeso.concat(date); return; }
-    const dopo = pezzi.slice(indice + 1).find(x => x.date.length);
+    const dopo = pezzi.slice(indice + 1).find((x, k) => gruppoDi[indice + 1 + k] === gruppoDi[indice] && x.date.length);
     const giorni = date.length ? inSospeso.concat(date) : (inSospeso.length ? inSospeso : (ultimeDate || (dopo ? dopo.date : [predefinito])));
     inSospeso = []; ultimeDate = giorni;
     trovate.forEach(x => azioni.push({ ...x, togli: negativo, giorni: [...giorni] }));
@@ -341,7 +344,9 @@ function righeDaAzioniVoce(capito){
 // v3.8.15: "togli …": si trova cosa c'è davvero da togliere in quei giorni.
 function righeDaTogliereVoce(a, righe, avvisi){
   const NOMI = { straordinario: 'lo straordinario', nota: 'il servizio svolto', evento: 'l\'evento', cancella: 'il turno', turno: 'il turno', assenza: a.nome || 'l\'assenza' };
-  const manca = iso => avvisi.push(`Il ${etichettaDataVoce(iso)} non c'è ${a.tipo === 'indennita' ? (ELENCO_INDENNITA.find(x => x.chiave === a.chiave) || {}).nome || 'l\'indennità' : NOMI[a.tipo]} da togliere.`);
+  // Come nell'app: si eliminano le cose intere (turno, evento, assenza), si rimuovono i pezzi del giorno.
+  const verbo = ['evento', 'cancella', 'turno', 'assenza'].includes(a.tipo) ? 'eliminare' : 'rimuovere';
+  const manca = iso => avvisi.push(`Il ${etichettaDataVoce(iso)} non c'è ${a.tipo === 'indennita' ? (ELENCO_INDENNITA.find(x => x.chiave === a.chiave) || {}).nome || 'l\'indennità' : NOMI[a.tipo]} da ${verbo}.`);
   if(a.tipo === 'assenza'){
     const giorni = a.giorni.filter(iso => AppState.turni[iso] && AppState.turni[iso].assenzaTipo === a.assenzaId);
     if(giorni.length) righe.push({ tipo: 'togliAssenza', giorni, assenzaId: a.assenzaId, nome: a.nome });
@@ -411,23 +416,23 @@ function htmlRigaVoce(r, i){
     titolo = `${iconaIndennita(r.chiave, 'voce-ic')}${escapeHtml(r.due ? '2 buoni pasto' : voce ? voce.nome : r.chiave)}${r.oreMissione ? ` ${formatOreMinuti(r.oreMissione)}` : ''}`;
     sotto = 'Indennità';
   } else if(r.tipo === 'cancella'){
-    titolo = `${iconaVoce('togli')}Togli ${chipVoce(r.prima)}`;
+    titolo = `${iconaVoce('togli')}Elimina ${chipVoce(r.prima)}`;
     sotto = r.prima.oraInizio && !r.prima.assenzaTipo ? `Il giorno resta vuoto · era ${escapeHtml(r.prima.oraInizio)} – ${escapeHtml(r.prima.oraFine)}` : 'Il giorno resta vuoto';
   } else if(r.tipo === 'togliAssenza'){
-    titolo = `${iconaVoce('togli')}Togli ${chipVoce({ assenzaTipo: r.assenzaId })}`;
+    titolo = `${iconaVoce('togli')}Elimina ${chipVoce({ assenzaTipo: r.assenzaId })}`;
     sotto = r.giorni.length > 1 ? `${r.giorni.length} giorni · restano vuoti` : 'Il giorno resta vuoto';
   } else if(r.tipo === 'togliStr'){
-    titolo = `${iconaVoce('togli')}Togli lo straordinario`;
+    titolo = `${iconaVoce('togli')}Rimuovi straordinario`;
     sotto = `${r.quale === 'prima' ? 'Prima del turno' : 'Dopo il turno'} · ${escapeHtml(r.da)} → ${escapeHtml(r.al)}`;
   } else if(r.tipo === 'togliInd'){
     const voce = ELENCO_INDENNITA.find(x => x.chiave === r.chiave);
-    titolo = `${iconaVoce('togli')}Togli ${escapeHtml(voce ? voce.nome : r.chiave)}`;
+    titolo = `${iconaVoce('togli')}Rimuovi ${escapeHtml(voce ? voce.nome : r.chiave)}`;
     sotto = 'Indennità';
   } else if(r.tipo === 'togliNota'){
-    titolo = `${iconaVoce('togli')}Togli il servizio svolto`;
+    titolo = `${iconaVoce('togli')}Rimuovi servizio svolto`;
     sotto = `«${escapeHtml(r.testo)}»`;
   } else if(r.tipo === 'togliEvento'){
-    titolo = `${iconaVoce('togli')}Togli ${escapeHtml(r.titolo)}`;
+    titolo = `${iconaVoce('togli')}Elimina ${escapeHtml(r.titolo)}`;
     sotto = `Evento${r.ora ? ' · ' + escapeHtml(r.ora) : ''}${r.ripetuto ? ' · solo questo giorno' : ''}`;
   } else if(r.tipo === 'nota'){
     titolo = `${iconaIndennita('servizioSvolto', 'voce-ic')}${escapeHtml(r.testo)}`;
@@ -437,7 +442,7 @@ function htmlRigaVoce(r, i){
     sotto = r.ora ? `Evento · ${r.ora} – ${hhmm(Math.min(minDa(r.ora) + 60, 1439))}` : 'Evento · tutto il giorno';
   }
   return `<div class="voce-riga${/^(cancella|togli)/.test(r.tipo) ? ' voce-riga-togli' : ''}"><div class="voce-data">${dataRigaVoce(r)}</div><div class="voce-testo"><div>${titolo}</div><small>${sotto}</small></div>`
-    + `<button type="button" class="voce-togli" data-voce-togli="${i}" aria-label="Togli questa riga">✕</button></div>`;
+    + `<button type="button" class="voce-togli" data-voce-togli="${i}" aria-label="Non salvare questa riga">✕</button></div>`;
 }
 function notaSaldoVoce(righe){
   const r = righe.find(x => x.tipo === 'assenza' && x.giorni.length);
@@ -478,7 +483,7 @@ function schedaAscoltoVoce(){
     <button type="button" class="voce-mic in-ascolto" data-voce="fine" aria-label="Ho finito di parlare">${ICONA_MICROFONO}</button>
     <p class="voce-live" id="voceLive"><i>Ti ascolto…</i></p>
     <p class="voce-sotto">Puoi dire per esempio:</p>
-    <div class="voce-esempi"><span>«Domani notte»</span><span>«Lunedì riposo, martedì mattina»</span><span>«Straordinario 2 ore dopo»</span><span>«Ferie dal 3 al 10 dicembre»</span><span>«Giovedì alle 10 dentista»</span><span>«Servizio svolto OP Stadio»</span><span>«Togli lo straordinario di oggi»</span></div>
+    <div class="voce-esempi"><span>«Domani notte»</span><span>«Lunedì riposo, martedì mattina»</span><span>«Straordinario 2 ore dopo»</span><span>«Ferie dal 3 al 10 dicembre»</span><span>«Giovedì alle 10 dentista»</span><span>«Servizio svolto OP Stadio»</span><span>«Elimina lo straordinario di oggi»</span></div>
     <p class="voce-privacy">${web ? 'Nel browser la voce passa dal servizio di Google solo per diventare testo. L\'app non salva l\'audio.' : '🔒 La voce è riconosciuta sul telefono. Niente viene salvato o inviato.'}</p>
     <div class="voce-tasti"><button type="button" class="voce-sec" data-voce="chiudi">Annulla</button></div>`);
 }
@@ -497,7 +502,7 @@ function schedaRisultatoVoce(){
   const soloTurni = n && righe.every(r => r.tipo === 'turno');
   const etichetta = !n ? 'Salva' : soloTurni ? `Salva ${giorniTurni} ${giorniTurni === 1 ? 'giorno' : 'giorni'}` : n === 1 ? 'Salva' : 'Salva tutto';
   const titolo = !n ? 'Non ho capito' : avvisi.length ? 'Non ho capito tutto' : 'Ho capito così';
-  const sotto = !n ? 'Riprova con frasi brevi, come negli esempi.' : avvisi.length ? 'Controlla: una parte non l\'ho capita.' : 'Controlla e salva. Tocca ✕ per togliere una riga.';
+  const sotto = !n ? 'Riprova con frasi brevi, come negli esempi.' : avvisi.length ? 'Controlla: una parte non l\'ho capita.' : 'Controlla e salva. Tocca ✕ sulle righe da non salvare.';
   const nomiTurni = (AppState.modelliTurno || []).map(m => m.nome).join(', ');
   schedaVoce(`<p class="voce-titolo">${titolo}</p><p class="voce-sotto">${sotto}</p>
     <div class="voce-frase">${ICONA_MICROFONO}<span>«${escapeHtml(frase)}»</span></div>
