@@ -2938,3 +2938,48 @@ html[data-tema=scuro] .ore-str{color:#8FA6FF}
 .vg-dett{display:flex;flex-direction:column;gap:5px;padding:6px 4px 8px;border-bottom:1px solid var(--bordo)}
 .agenda-chip-giorno b{padding:3px 9px;border-radius:7px;font-size:.82rem}
 .vs-ev{cursor:pointer}
+
+/* v3.8.13: Detta a voce */
+.fab-menu .fab-voce span{color:var(--acc,#1D4FD7)}
+html[data-tema=scuro] .fab-menu .fab-voce span{color:#8FA6FF}
+.voce-velo{position:fixed;inset:0;background:rgba(15,20,35,.45);z-index:300}
+.voce-scheda{position:fixed;left:0;right:0;bottom:0;z-index:301;max-height:88vh;overflow-y:auto;background:var(--pannello,#fff);color:var(--testo);border-radius:24px 24px 0 0;padding:10px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -6px 30px rgba(0,0,0,.2);font-family:var(--font-corpo)}
+.voce-velo[hidden],.voce-scheda[hidden]{display:none}
+@media (min-width:640px){.voce-scheda{left:50%;right:auto;width:560px;transform:translateX(-50%)}}
+.voce-maniglia{width:40px;height:4px;border-radius:2px;background:var(--bordo);margin:0 auto 12px}
+.voce-titolo{font:700 1.2rem var(--font-corpo);margin:2px 0 4px}
+.voce-centro{text-align:center}
+.voce-sotto{color:var(--testo-tenue);font-size:.86rem;margin:0 0 10px}
+.voce-ic{width:19px;height:19px;flex:none;color:var(--acc,#1D4FD7);vertical-align:-4px}
+.voce-mic{display:grid;place-items:center;width:92px;height:92px;border-radius:50%;border:0;margin:16px auto 12px;background:var(--acc,#1D4FD7);color:#fff;cursor:pointer;box-shadow:0 0 0 14px color-mix(in srgb,var(--acc,#1D4FD7) 15%,transparent),0 0 0 30px color-mix(in srgb,var(--acc,#1D4FD7) 7%,transparent)}
+.voce-mic .voce-ic{width:40px;height:40px;color:#fff}
+.voce-mic.in-ascolto{animation:voceRespiro 1.6s ease-in-out infinite}
+@keyframes voceRespiro{50%{box-shadow:0 0 0 20px color-mix(in srgb,var(--acc,#1D4FD7) 18%,transparent),0 0 0 40px color-mix(in srgb,var(--acc,#1D4FD7) 6%,transparent)}}
+@media (prefers-reduced-motion:reduce){.voce-mic.in-ascolto{animation:none}}
+.voce-live{text-align:center;font-size:1.12rem;min-height:2.6em;margin:6px 4px}
+.voce-live i{color:var(--testo-tenue);font-style:normal}
+.voce-esempi{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.voce-esempi span{background:color-mix(in srgb,var(--acc,#1D4FD7) 8%,var(--pannello,#fff));border-radius:999px;padding:6px 11px;font-size:.8rem}
+.voce-privacy{font-size:.74rem;color:var(--testo-tenue);text-align:center;margin:4px 0 12px}
+.voce-tasti{display:flex;gap:10px;margin-top:14px}
+.voce-tasti button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;padding:13px;font:700 1rem var(--font-corpo);cursor:pointer}
+.voce-sec{background:color-mix(in srgb,var(--testo) 8%,var(--pannello,#fff));color:var(--testo)}
+.voce-pri{background:var(--acc,#1D4FD7);color:#fff}
+.voce-link{display:block;margin:14px auto 0;border:0;background:none;color:var(--acc,#1D4FD7);font:600 .92rem var(--font-corpo);cursor:pointer}
+.voce-frase{display:flex;gap:8px;align-items:flex-start;background:color-mix(in srgb,var(--testo) 5%,var(--pannello,#fff));border-radius:14px;padding:10px 12px;font-size:.92rem;margin:2px 0 8px}
+.voce-passi{flex-direction:column;gap:6px}
+.voce-riga{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--bordo)}
+.voce-data{width:48px;flex:none;text-align:center;line-height:1.05}
+.voce-data small{display:block;font-size:.66rem;color:var(--testo-tenue);text-transform:uppercase;font-weight:700}
+.voce-data b{font-size:1.12rem}
+.voce-testo{flex:1;min-width:0}
+.voce-testo div{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-weight:600;font-size:.95rem}
+.voce-testo small{color:var(--testo-tenue);font-size:.78rem}
+.voce-chip{border-radius:6px;padding:2px 8px;font-size:.8rem;font-weight:700}
+.voce-togli{width:32px;height:32px;flex:none;border-radius:50%;border:0;background:color-mix(in srgb,var(--testo) 7%,var(--pannello,#fff));color:var(--testo-tenue);cursor:pointer}
+.voce-nota{display:flex;gap:8px;align-items:flex-start;background:color-mix(in srgb,#2E9E5B 12%,var(--pannello,#fff));border-radius:12px;padding:9px 12px;font-size:.84rem;margin:12px 0 0}
+.voce-nota .voce-ic{color:#2E9E5B}
+.voce-avviso{background:color-mix(in srgb,#E08A00 14%,var(--pannello,#fff))}
+.voce-avviso .voce-ic{color:#B36B00}
+html[data-tema=scuro] .voce-ic{color:#8FA6FF}
+html[data-tema=scuro] .voce-mic .voce-ic{color:#fff}

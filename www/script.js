@@ -559,6 +559,7 @@ function inizializza(){
     renderCalendario();
   });
   inizializzaVisteCalendario();
+  if(typeof inizializzaVoce === 'function') inizializzaVoce();
   inizializzaGestiCalendario();
   inizializzaNovita();
 
@@ -4174,12 +4175,10 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.12';
+const VERSIONE_NOVITA = '3.8.13';
 const PASSI_NOVITA = [
-  { id: 'btnFabGiorno', titolo: 'Il pulsante ＋', testo: 'Aggiungi un evento, un turno o un\'assenza, lo straordinario, oppure modifica il giorno.' },
-  { id: 'btnModificaGiornoSelezionatoV2', titolo: 'Tocca il turno', testo: 'Tocca la riga del turno per aprire e modificare il giorno.' },
-  { id: 'btnVistaCalendario', titolo: 'Giorno, Settimana, Mese', testo: 'Qui scegli la vista, l\'Agenda e "Condividi il mese". Scorri col dito per passare al mese dopo o prima.' },
-  { id: 'btnVaiOggi', titolo: 'Torna a oggi', testo: 'Da qualsiasi mese, un tocco e sei di nuovo a oggi.' }
+  { id: 'btnFabGiorno', titolo: 'Novità: detta a voce', testo: 'Tocca ＋ e poi "Detta a voce": "domani notte", "ferie dal 3 al 10 dicembre", "oggi straordinario 2 ore dopo", "giovedì alle 10 dentista".' },
+  { id: 'btnVistaCalendario', titolo: 'Settimana e Agenda più complete', testo: 'Ora mostrano indennità, straordinario a parte (+2:00), servizio svolto ed eventi. Tocca un evento per aprirlo.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

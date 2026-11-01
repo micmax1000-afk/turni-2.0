@@ -53,7 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.12');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.13');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -619,16 +619,71 @@ sezione('v3.8.12: festa nel giorno, Cancella in Turni, Condividi il mese');
 }
 
 // ───────────────────────────────────────
-sezione('v3.8.12: guida alle novità');
+sezione('v3.8.13: guida alle novità');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva() });
   await p.waitForTimeout(900);
   await p.evaluate(() => { localStorage.removeItem('simCedolino_novitaViste_v1'); avviaNovitaSeServe(); });
   await p.waitForTimeout(200);
   const passi = [];
-  for(let i = 0; i < 4; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 4 fumetti: ＋, turno, viste, oggi', passi.join(' | ') === 'Il pulsante ＋ (1 di 4) | Tocca il turno (2 di 4) | Giorno, Settimana, Mese (3 di 4) | Torna a oggi (4 di 4)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.12'));
+  for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
+  ok('chi usava già l\'app vede 2 fumetti: detta a voce, Settimana e Agenda', passi.join(' | ') === 'Novità: detta a voce (1 di 2) | Settimana e Agenda più complete (2 di 2)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.13'));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.13: detta a voce');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(900);
+  const capisci = (frase, giorno) => p.evaluate(([f, g]) => {
+    const c = capisciFraseVoce(f, { oggi: '2026-10-09', giorno: g || '2026-10-09' });
+    const { righe, avvisi } = righeDaAzioniVoce(c);
+    return { righe: righe.map(r => r.tipo === 'turno' ? `${r.iso} ${r.nuovo.riposo ? 'riposo' : r.nuovo.modelloId || (r.nuovo.oraInizio + '-' + r.nuovo.oraFine)}`
+      : r.tipo === 'assenza' ? `${r.giorni[0]}..${r.giorni[r.giorni.length - 1]} ${r.nome} ${r.giorni.length}`
+      : r.tipo === 'straordinario' ? `${r.iso} str ${r.da}-${r.al}${r.prima ? ' prima' : ''}`
+      : r.tipo === 'evento' ? `${r.iso} ev ${r.ora || 'tutto'} ${r.titolo}`
+      : `${r.iso} ind ${r.chiave}`), avvisi };
+  }, [frase, giorno]);
+  let r = await capisci('domani notte e domenica riposo');
+  ok('"domani notte e domenica riposo"', r.righe.join(' | ') === '2026-10-10 notte | 2026-10-11 riposo', JSON.stringify(r));
+  r = await capisci('Lunedì riposo, martedì mattina');
+  ok('"lunedì riposo, martedì mattina" (i prossimi)', r.righe.join(' | ') === '2026-10-12 riposo | 2026-10-13 mattina', JSON.stringify(r));
+  r = await capisci('ferie dal 12 al 18 ottobre');
+  ok('"ferie dal 12 al 18 ottobre": congedo per 6 giorni, il riposo del 15 resta riposo', r.righe.join(' | ') === '2026-10-12..2026-10-18 Congedo ordinario 6', JSON.stringify(r));
+  r = await capisci('ferie dal 3 al 10 dicembre');
+  ok('"ferie dal 3 al 10 dicembre"', r.righe.join(' | ') === '2026-12-03..2026-12-10 Congedo ordinario 8', JSON.stringify(r));
+  r = await capisci('oggi straordinario due ore dopo');
+  ok('"oggi straordinario due ore dopo" (Notte 01-07 → 07-09)', r.righe.join(' | ') === '2026-10-09 str 07:00-09:00', JSON.stringify(r));
+  r = await capisci('straordinario un\'ora e mezza prima', '2026-10-13');
+  ok('"straordinario un\'ora e mezza prima" sul giorno aperto', r.righe.join(' | ') === '2026-10-13 str 05:30-07:00 prima', JSON.stringify(r));
+  r = await capisci('giovedì alle 10 dentista');
+  ok('"giovedì alle 10 dentista": evento', r.righe.join(' | ') === '2026-10-15 ev 10:00 Dentista', JSON.stringify(r));
+  r = await capisci('giovedì 22 alle 10 e mezza dentista');
+  ok('"giovedì 22 alle 10 e mezza dentista": conta il 22', r.righe.join(' | ') === '2026-10-22 ev 10:30 Dentista', JSON.stringify(r));
+  r = await capisci('sabato compleanno di Marco');
+  ok('"sabato compleanno di Marco": evento di tutto il giorno', r.righe.join(' | ') === '2026-10-10 ev tutto Compleanno di Marco', JSON.stringify(r));
+  r = await capisci('il 20 dalle 8 alle 14');
+  ok('"il 20 dalle 8 alle 14": turno con orario', r.righe.join(' | ') === '2026-10-20 08:00-14:00', JSON.stringify(r));
+  r = await capisci('domani e dopodomani sera con reperibilità');
+  ok('"domani e dopodomani sera con reperibilità"', r.righe.join(' | ') === '2026-10-10 sera | 2026-10-11 sera | 2026-10-10 ind reperibilita | 2026-10-11 ind reperibilita', JSON.stringify(r));
+  r = await capisci('venerdì prossimo riposo compensativo');
+  ok('"venerdì prossimo riposo compensativo": assenza, non il turno Riposo', r.righe.join(' | ') === '2026-10-16..2026-10-16 Riposo compensativo 1', JSON.stringify(r));
+  r = await capisci('venerdì mattina e poi quello lungo');
+  ok('una parte non capita: si dice quale', r.righe.join(' | ') === '2026-10-09 mattina' && r.avvisi.some(a => a.includes('quello lungo')), JSON.stringify(r));
+  // La scheda: niente si salva finché non si tocca Salva; poi Annulla rimette tutto com'era.
+  const prima = await p.evaluate(() => JSON.stringify(AppState.turni['2026-10-10']));
+  await p.evaluate(() => mostraRisultatoVoce('domani notte e giovedì alle 10 dentista'));
+  ok('scheda "Ho capito così" con 2 righe, nulla ancora salvato', await p.evaluate(() => el('schedaVoce') && !el('schedaVoce').hidden && document.querySelectorAll('.voce-riga').length === 2) && prima === await p.evaluate(() => JSON.stringify(AppState.turni['2026-10-10'])));
+  await p.click('#schedaVoce [data-voce="salva"]');
+  await p.waitForTimeout(200);
+  ok('Salva: turno ed evento salvati', await p.evaluate(() => AppState.turni['2026-10-10'].modelloId === 'notte' && (AppState.eventiGiorno['2026-10-15'] || []).some(e => e.titolo === 'Dentista' && e.oraInizio === '10:00')));
+  await p.click('.toast-azione');
+  await p.waitForTimeout(200);
+  ok('Annulla: turno ed evento tornano com\'erano', await p.evaluate(p0 => JSON.stringify(AppState.turni['2026-10-10']) === p0 && !(AppState.eventiGiorno['2026-10-15'] || []).some(e => e.titolo === 'Dentista'), prima));
+  ok('nel menu ＋ c\'è "Detta a voce"', await p.evaluate(() => !el('btnDettaVoceFab').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

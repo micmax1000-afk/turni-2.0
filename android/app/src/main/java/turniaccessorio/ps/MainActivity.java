@@ -9,6 +9,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // Il plugin dell'avviso evento (suono/vibrazione brevi) fa parte dell'app: va registrato qui.
         registerPlugin(AvvisoEventoPlugin.class);
+        // "Detta a voce": la voce diventa testo con il riconoscimento di Android.
+        registerPlugin(VocePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
