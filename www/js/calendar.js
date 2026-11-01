@@ -1112,7 +1112,7 @@ function applicaVistaCalendario(){
   const sez = document.querySelector('.scheda-calendario-v2');
   if(!sez || !el('vistaGiornoCal')) return;
   sez.dataset.vista = v;
-  el('etichettaVistaCalendario').textContent = NOMI_VISTA_CALENDARIO[v];
+  el('etichettaVistaCalendario').textContent = v === 'settimana' ? 'Sett.' : NOMI_VISTA_CALENDARIO[v];
   document.querySelectorAll('[data-vista-calendario]').forEach(b => b.classList.toggle('attivo', b.dataset.vistaCalendario === v));
   el('vistaGiornoCal').hidden = v !== 'giorno';
   el('vistaSettimanaCal').hidden = v !== 'settimana';
@@ -1124,7 +1124,7 @@ function applicaVistaCalendario(){
   } else if(v === 'settimana'){
     const lun = lunediDi(iso), dom = dataDaIso(giornoPiu(dataISO(lun), 6));
     const mm = x => x.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
-    el('etichettaMese').textContent = lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${mm(dom)}` : `${lun.getDate()} ${mm(lun)} – ${dom.getDate()} ${mm(dom)}`;
+    el('etichettaMese').textContent = lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${mm(dom)}` : `${lun.getDate()} ${mm(lun)}–${dom.getDate()} ${mm(dom)}`;
     renderVistaSettimana(iso);
   } else if(v === 'agenda'){
     el('etichettaMese').textContent = 'Agenda';
@@ -1153,27 +1153,68 @@ function renderVistaGiorno(iso){
   const ore = [...Array(24)].map((_, h) => `<div class="vg-ora" style="top:${h * H}px"><span>${String(h).padStart(2, '0')}:00</span></div>`).join('');
   const adesso = new Date();
   const linea = iso === oggiIso ? `<div class="vg-adesso" style="top:${(adesso.getHours() * 60 + adesso.getMinutes()) / 60 * H}px"></div>` : '';
-  host.innerHTML = `<div class="vg-striscia">${striscia}</div>${tutto.length ? `<div class="vg-tutto">${tutto.join('')}</div>` : ''}<div class="vg-scorri" id="vgScorri"><div class="vg-ore" style="height:${24 * H}px">${ore}${blocchi}${eventi}${linea}</div></div>`;
+  const chipG = chipDettagliGiorno(t).join(''), notaG = notaServizioHtml(t);
+  const dett = chipG || notaG ? `<div class="vg-dett">${chipG ? `<span class="vs-chip">${chipG}</span>` : ''}${notaG}</div>` : '';
+  host.innerHTML = `<div class="vg-striscia">${striscia}</div>${dett}${tutto.length ? `<div class="vg-tutto">${tutto.join('')}</div>` : ''}<div class="vg-scorri" id="vgScorri"><div class="vg-ore" style="height:${24 * H}px">${ore}${blocchi}${eventi}${linea}</div></div>`;
   // Si parte dal turno (o dalle 7), un'ora prima.
   const primo = (typeof turniNellaGiornata === 'function' ? turniNellaGiornata(iso) : []).filter(b => !b.daIeri)[0];
   el('vgScorri').scrollTop = Math.max(0, ((primo ? primo.da : 7 * 60) / 60 - 1) * H);
+}
+// v3.8.13: i dettagli di un giorno di servizio (indennità, straordinario con le ore, nota del servizio),
+// uguali in Settimana e in Agenda. Icone a linea, come nel riquadro del giorno.
+function chipDettagliGiorno(t){
+  if(!t || !t.oraInizio || !t.oraFine || t.riposo || t.assenzaTipo) return [];
+  const pezzi = [];
+  if(typeof classificaTurno === 'function' && typeof totaleStraordinario === 'function'){
+    const oreStr = totaleStraordinario(classificaTurno(t));
+    if(oreStr > 0) pezzi.push(`<span class="chip-dett chip-dett-str">${iconaIndennita('straordinario')}Straord. ${formatOreMinuti(oreStr)}</span>`);
+  }
+  const festivo = typeof lavoratoInFestivo === 'function' ? lavoratoInFestivo(t) : !!t.recuperoFestivoLavorato;
+  ELENCO_INDENNITA.forEach(x => {
+    if(x.chiave === 'straordinario' || x.chiave === 'servizioSvolto') return;
+    const attiva = x.chiave === 'recuperoFestivoLavorato' ? festivo : !!t[x.chiave];
+    if(attiva) pezzi.push(`<span class="chip-dett">${iconaIndennita(x.chiave)}${escapeHtml(x.chiave === 'buonoPasto' && numeroBuoniPasto(t) === 2 ? '2 buoni pasto' : x.nome)}</span>`);
+  });
+  return pezzi;
+}
+function straordinarioGiorno(t){
+  if(!t || !t.oraInizio || !t.oraFine || t.riposo || t.assenzaTipo || typeof classificaTurno !== 'function') return 0;
+  return Number(totaleStraordinario(classificaTurno(t)) || 0);
+}
+// "6:00" oppure "6:00" con sotto "+2:00" quando c'è straordinario (le ore totali lo comprendono).
+function oreConStraordinarioHtml(t, classe){
+  const tot = oreServizioGiorno(t);
+  if(!tot) return '';
+  const str = straordinarioGiorno(t);
+  return str > 0 ? `<span class="${classe}">${formatOreMinuti(tot - str)}<small class="ore-str">+${formatOreMinuti(str)}</small></span>` : `<span class="${classe}">${formatOreMinuti(tot)}</span>`;
+}
+function totaleSettimanaHtml(tot, str){
+  return `<b>${formatOreMinuti(tot)}</b>${str > 0 ? `<small class="ore-str"> · di cui straord. ${formatOreMinuti(str)}</small>` : ''}`;
+}
+function notaServizioHtml(t){
+  const testo = t && !t.riposo && !t.assenzaTipo && String(t.servizioSvolto || '').trim();
+  return testo ? `<span class="nota-servizio-dett">${iconaIndennita('servizioSvolto')}${escapeHtml(testo)}</span>` : '';
 }
 function renderVistaSettimana(iso){
   const host = el('vistaSettimanaCal');
   const lun = lunediDi(iso), oggiIso = dataISO(new Date());
   const nomi = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
-  let tot = 0;
+  let tot = 0, totStr = 0;
   const righe = nomi.map((n, i) => {
     const g = giornoPiu(dataISO(lun), i), dd = dataDaIso(g), t = AppState.turni[g];
-    const ore = typeof oreServizioGiorno === 'function' ? oreServizioGiorno(t) : 0; tot += ore;
+    tot += oreServizioGiorno(t); totStr += straordinarioGiorno(t);
     const nome = nomeGiornoVista(t);
-    const ev = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(g) : []).map(({ ev }) => `<span class="vs-ev"><i style="background:${coloreEvento(ev)}"></i>${ev.tuttoIlGiorno ? '' : escapeHtml(ev.oraInizio || '') + ' '}${escapeHtml(ev.titolo || 'Evento')}</span>`).join('');
+    const festa = typeof nomeFestivita === 'function' ? nomeFestivita(g) : '';
+    const chip = chipDettagliGiorno(t).join('');
+    const nota = notaServizioHtml(t);
+    const ev = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(g) : []).map(({ ev, isoOrigine }) => `<span class="vs-ev" data-evento-giorno="${g}" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine || g)}"><i style="background:${coloreEvento(ev)}"></i>${ev.tuttoIlGiorno ? '' : escapeHtml(ev.oraInizio || '') + ' '}${escapeHtml(ev.titolo || 'Evento')}</span>`).join('');
     return `<button type="button" class="vs-riga${g === iso ? ' attivo' : ''}${g === oggiIso ? ' oggi' : ''}${typeof eFestivoOdDomenica === 'function' && eFestivoOdDomenica(g) ? ' festivo' : ''}" data-vista-giorno="${g}">`
       + `<span class="vs-data"><small>${n}</small><b>${dd.getDate()}</b></span>`
-      + `<span class="vs-corpo">${nome ? `<b style="background:${coloreGiornoVista(t)};color:${testoSuColore(coloreGiornoVista(t))}">${escapeHtml(nome)}</b>` : '<em>—</em>'}${t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? `<span class="vs-orario">${escapeHtml(t.oraInizio)}–${escapeHtml(t.oraFine)}</span>` : ''}${ev}</span>`
-      + `<span class="vs-ore">${ore ? formatOreMinuti(ore) : ''}</span></button>`;
+      + `<span class="vs-corpo"><span class="vs-testa">${nome ? `<b style="background:${coloreGiornoVista(t)};color:${testoSuColore(coloreGiornoVista(t))}">${escapeHtml(nome)}</b>` : '<em>—</em>'}${t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? `<span class="vs-orario">${escapeHtml(t.oraInizio)}–${escapeHtml(t.oraFine)}</span>` : ''}${festa ? `<span class="vs-festa">${escapeHtml(festa)}</span>` : ''}</span>`
+      + `${chip ? `<span class="vs-chip">${chip}</span>` : ''}${nota}${ev}</span>`
+      + `${oreConStraordinarioHtml(t, 'vs-ore') || '<span class="vs-ore"></span>'}</button>`;
   }).join('');
-  host.innerHTML = `<div class="vs-lista">${righe}</div><div class="vs-totale"><span>Ore della settimana</span><b>${formatOreMinuti(tot)}</b></div>`;
+  host.innerHTML = `<div class="vs-lista">${righe}</div><div class="vs-totale"><span>Ore della settimana</span><span>${totaleSettimanaHtml(tot, totStr)}</span></div>`;
 }
 function inizializzaVisteCalendario(){
   const menu = el('menuVistaCalendario');
@@ -1184,6 +1225,8 @@ function inizializzaVisteCalendario(){
     if(!menu.hidden && !e.target.closest('#menuVistaCalendario')) menu.hidden = true;
     const scelta = e.target.closest('[data-vista-calendario]');
     if(scelta){ impostaVistaCalendario(scelta.dataset.vistaCalendario); return; }
+    const evS = e.target.closest('.vs-ev[data-evento-id]');
+    if(evS && typeof apriEventoDaProssimi === 'function'){ apriEventoDaProssimi(evS); return; }
     const g = e.target.closest('[data-vista-giorno]');
     if(g){ selezionaGiorno(g.dataset.vistaGiorno); const d = dataDaIso(g.dataset.vistaGiorno); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); applicaVistaCalendario(); return; }
     const tu = e.target.closest('[data-vista-turno]');
@@ -1202,20 +1245,21 @@ function intestazioneSettimanaAgenda(lun, questa){
   const dom = new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + 6, 12);
   // Si sommano i minuti di ogni giorno (come sono scritti sotto), non le ore con i decimali
   // arrotondati: sei turni da 6:35 devono fare 39:30, non 39:29.
-  let minuti = 0;
-  for(let k = 0; k < 7; k++) minuti += Math.round(oreServizioGiorno(AppState.turni[dataISO(new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + k, 12))]) * 60);
+  let minuti = 0, minStr = 0;
+  for(let k = 0; k < 7; k++){ const tk = AppState.turni[dataISO(new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + k, 12))]; minuti += Math.round(oreServizioGiorno(tk) * 60); minStr += Math.round(straordinarioGiorno(tk) * 60); }
   const ore = minuti / 60;
   const periodo = questa ? 'Questa settimana'
     : lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${meseBreveAgenda(dom)}`
     : `${lun.getDate()} ${meseBreveAgenda(lun)} – ${dom.getDate()} ${meseBreveAgenda(dom)}`;
-  return `<div class="agenda-settimana"><span>${periodo}</span>${ore > 0 ? `<b>${oreAgenda(ore)} ore di servizio</b>` : ''}</div>`;
+  return `<div class="agenda-settimana"><span>${periodo}</span>${ore > 0 ? `<b>${oreAgenda(ore)} ore${minStr ? ` <small class="ore-str">· straord. ${oreAgenda(minStr / 60)}</small>` : ' di servizio'}</b>` : ''}</div>`;
 }
 function corpoGiornoAgenda(iso, t){
-  if(t && t.riposo) return '<span class="agenda-semplice">💤 Riposo</span>';
-  if(t && t.assenzaTipo){
-    const voce = AppState.assenze.find(a => a.id === t.assenzaTipo);
-    const nome = voce ? voce.nome : 'Assenza';
-    return `<span class="agenda-assenza"><span aria-hidden="true">${iconaAssenza(nome)}</span>${escapeHtml(nome)}</span>`;
+  // v3.8.13: riposo e assenze come nella Settimana: il nome nel suo colore, senza emoji.
+  if(t && (t.riposo || t.assenzaTipo)){
+    const col = coloreGiornoVista(t);
+    let nome = nomeGiornoVista(t);
+    if(t.assenzaTipo){ const voce = AppState.assenze.find(a => a.id === t.assenzaTipo); if(voce) nome = voce.nome; }
+    return `<span class="agenda-semplice agenda-chip-giorno"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nome)}</b></span>`;
   }
   if(!(t && t.oraInizio && t.oraFine)) return '<span class="agenda-semplice agenda-libero">Nessun turno</span>';
   const categoria = categoriaTurno(t.oraInizio, t.oraFine, iso);
@@ -1224,18 +1268,12 @@ function corpoGiornoAgenda(iso, t){
   const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
   const colore = (modello && modello.colore) || coloreCategoria(categoriaColore);
   const nome = modello ? modello.nome : (INIZIALE_CATEGORIA[categoria] || 'Turno');
-  const presenti = {
-    straordinario: !!((t.straordinarioPrimaInizio && t.straordinarioPrimaFine) || (t.straordinarioDopoInizio && t.straordinarioDopoFine) || (t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine)),
-    missione: !!t.missione, servizioEsterno: !!t.servizioEsterno, ordinePubblico: !!t.ordinePubblico, reperibilita: !!t.reperibilita,
-    controlloTerritorio: !!t.controlloTerritorio, buonoPasto: !!t.buonoPasto, cambioTurno: !!t.cambioTurno,
-    compensazioneRiposo: !!t.compensazioneRiposo, recuperoFestivoLavorato: typeof lavoratoInFestivo === 'function' ? lavoratoInFestivo(t) : !!t.recuperoFestivoLavorato, servizioSvolto: !!t.servizioSvolto
-  };
-  const chip = ELENCO_INDENNITA.filter(x => presenti[x.chiave])
-    .map(x => `<span>${iconaIndennita(x.chiave)}${escapeHtml(x.chiave === 'buonoPasto' && numeroBuoniPasto(t) === 2 ? '2 buoni pasto' : x.nome)}</span>`).join('');
-  return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">${svgIconaMomento(categoria)}`
+  const chip = chipDettagliGiorno(t).join('');
+  const nota = notaServizioHtml(t);
+  return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">`
     + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>`
-    + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}</span>`
-    + `<span class="agenda-ore">${oreAgenda(oreServizioGiorno(t))}</span></span>`;
+    + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}${nota}</span>`
+    + `${oreConStraordinarioHtml(t, 'agenda-ore')}</span>`;
 }
 function renderAgenda(){
   const host = el('agendaCalendario');
@@ -1254,7 +1292,9 @@ function renderAgenda(){
       `<button type="button" class="agenda-evento" data-evento-giorno="${iso}" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine)}">`
       + `<i style="background:${coloreEvento(ev)}" aria-hidden="true"></i><em>${ev.tuttoIlGiorno ? 'Tutto il giorno' : escapeHtml(ev.oraInizio || '')}</em>`
       + `<span>${escapeHtml(ev.titolo || 'Senza titolo')}</span></button>`).join('');
-    const quando = i === 0 ? '<span class="agenda-quando">Oggi</span>' : i === 1 ? '<span class="agenda-quando">Domani</span>' : '';
+    const festa = typeof nomeFestivita === 'function' ? nomeFestivita(iso) : '';
+    const parole = [i === 0 ? 'Oggi' : i === 1 ? 'Domani' : '', festa ? `<em>${escapeHtml(festa)}</em>` : ''].filter(Boolean).join(' · ');
+    const quando = parole ? `<span class="agenda-quando">${parole}</span>` : '';
     const classi = 'agenda-giorno' + (i === 0 ? ' oggi' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
     html += `<div class="${classi}" data-agenda-giorno="${iso}">`
       + `<div class="agenda-data" aria-hidden="true"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b></div>`
