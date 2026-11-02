@@ -1,4 +1,5 @@
 <it-IT>
-• Utilità: «Elimina» ora funziona in Scadenze, Note di servizio, Cambi con i colleghi e Gestione veicolo
-• Nuove Utilità in Altro: scadenze con avvisi, note di servizio, cambi con i colleghi, gestione veicolo (km a mano o a voce)
+• Utilità: «Elimina» ora funziona in tutte le schede
+• Veicolo, note di servizio e scambi si vedono anche sotto il giorno, in Settimana e in Agenda
+• La ricerca dell'Agenda trova anche note e veicoli (mezzo, targa, anomalie)
 </it-IT>

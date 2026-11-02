@@ -839,6 +839,17 @@ sezione('v3.9: Utilità (scadenze, note, cambi, veicolo)');
   await p.click('[data-ut="nuova-uscita"]');
   ok('nuova uscita: km di partenza = ultimi km del mezzo', await p.evaluate(() => el('editorUt').querySelector('[data-campo="kmInizio"]').value === '128598'));
   await p.click('#editorUt [data-ut="chiudi"]');
+  // v3.8.18: le Utilità si vedono nel riquadro del giorno, in Settimana, in Agenda e nella ricerca
+  await p.evaluate(() => { chiudiPaginaUt(2); chiudiPaginaUt(1); document.querySelectorAll('.overlay').forEach(o => o.hidden = true); el('pannelloTurno').hidden = true; mostraScheda('calendario'); selezionaGiorno('2026-10-13'); });
+  ok('riquadro del giorno: «Volante 12 · 142 km», la nota e lo scambio', await p.evaluate(() => { const t = el('utilitaRiquadroGiorno').textContent; return /Volante 12 · 142 km/.test(t) && /Consegne/.test(t) && /Rossi ti ha sostituito/.test(t); }));
+  await p.evaluate(() => { impostaVistaCalendario('settimana'); selezionaGiorno('2026-10-13'); applicaVistaCalendario(); });
+  ok('Settimana: la riga del veicolo sotto il 13', await p.evaluate(() => /Volante 12 · 142 km/.test(document.querySelector('.vs-riga[data-vista-giorno="2026-10-13"]').textContent)));
+  await p.evaluate(() => impostaVistaCalendario('agenda'));
+  await p.click('[data-agenda-cerca]'); await p.fill('#campoCercaAgenda', 'volante');
+  ok('Cerca «volante» in Agenda: trova l\'uscita', await p.evaluate(() => !!document.querySelector('#agendaElenco [data-ut-apri="uscita"]')));
+  await p.click('#agendaElenco [data-ut-apri="uscita"]');
+  ok('toccandola si apre la scheda dell\'uscita', await p.evaluate(() => !el('editorUt').hidden && /Uscita del veicolo/.test(el('editorUt').textContent)));
+  await p.evaluate(() => { chiudiPaginaUt(2); el('campoCercaAgenda').value = ''; cercaAgenda = ''; impostaVistaCalendario('mese'); });
   // v3.8.18: «Elimina» in tutte e quattro: la conferma deve stare sopra la pagina e funzionare
   const elimina = async (pagina, apri, bottone) => {
     await p.evaluate(pg => { chiudiPaginaUt(2); apriUtilita(pg); if(pg === 'veicolo'){ utStato.meseVeicolo = '2026-10'; renderPaginaUt(); } }, pagina);

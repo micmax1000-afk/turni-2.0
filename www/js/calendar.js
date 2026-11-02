@@ -1215,7 +1215,7 @@ function renderVistaSettimana(iso){
     return `<button type="button" class="vs-riga${g === iso ? ' attivo' : ''}${g === oggiIso ? ' oggi' : ''}${typeof eFestivoOdDomenica === 'function' && eFestivoOdDomenica(g) ? ' festivo' : ''}" data-vista-giorno="${g}">`
       + `<span class="vs-data"><small>${n}</small><b>${dd.getDate()}</b></span>`
       + `<span class="vs-corpo"><span class="vs-testa">${nome ? `<b style="background:${coloreGiornoVista(t)};color:${testoSuColore(coloreGiornoVista(t))}">${escapeHtml(nome)}</b>` : '<em>—</em>'}${t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? `<span class="vs-orario">${escapeHtml(t.oraInizio)}–${escapeHtml(t.oraFine)}</span>` : ''}${festa ? `<span class="vs-festa">${escapeHtml(festa)}</span>` : ''}</span>`
-      + `${chip ? `<span class="vs-chip">${chip}</span>` : ''}${nota}${ev}</span>`
+      + `${chip ? `<span class="vs-chip">${chip}</span>` : ''}${nota}${typeof righeUtilitaGiorno === 'function' ? righeUtilitaGiorno(g) : ''}${ev}</span>`
       + `${oreConStraordinarioHtml(t, 'vs-ore') || '<span class="vs-ore"></span>'}</button>`;
   }).join('');
   host.innerHTML = `<div class="vs-lista">${righe}</div><div class="vs-totale"><span>Ore della settimana</span><span>${totaleSettimanaHtml(tot, totStr)}</span></div>`;
@@ -1319,7 +1319,7 @@ function barraAgendaHtml(){
   return `<div class="agenda-barra"><div class="agenda-filtri" role="tablist" aria-label="Cosa mostrare">`
     + ['tutto', 'eventi', 'turni'].map(f => `<button type="button" role="tab" data-filtro-agenda="${f}">${f === 'tutto' ? 'Tutto' : f === 'eventi' ? 'Eventi' : 'Turni'}</button>`).join('')
     + `</div><button type="button" class="agenda-cerca-btn" data-agenda-cerca aria-label="Cerca">${lente}</button></div>`
-    + `<div class="agenda-cerca" id="boxCercaAgenda" hidden><input type="search" id="campoCercaAgenda" placeholder="Cerca eventi e servizi svolti" autocomplete="off" enterkeyhint="search"></div>`
+    + `<div class="agenda-cerca" id="boxCercaAgenda" hidden><input type="search" id="campoCercaAgenda" placeholder="Cerca eventi, servizi, note e veicoli" autocomplete="off" enterkeyhint="search"></div>`
     + `<div id="agendaElenco"></div>`;
 }
 function risultatiCercaAgenda(q){
@@ -1334,11 +1334,12 @@ function risultatiCercaAgenda(q){
     const t = AppState.turni[iso];
     if(t && t.servizioSvolto && va(t.servizioSvolto)) trovati.push({ iso, html: `<button type="button" class="agenda-evento agenda-risultato-servizio" data-agenda-giorno="${iso}">${iconaLineaAgenda('matita')}<em>${escapeHtml(nomeGiornoVista(t) || 'Turno')}</em><span class="agenda-ev-testo"><b>${escapeHtml(t.servizioSvolto)}</b><small>Servizio svolto</small></span></button>` });
   });
+  if(typeof risultatiUtilitaPerCerca === 'function') trovati.push(...risultatiUtilitaPerCerca(va));
   const oggiIso = dataISO(new Date());
   const futuri = trovati.filter(x => x.iso >= oggiIso).sort((a, b) => a.iso.localeCompare(b.iso));
   const passati = trovati.filter(x => x.iso < oggiIso).sort((a, b) => b.iso.localeCompare(a.iso));
   const riga = x => { const d = dataDaIso(x.iso); return `<div class="agenda-giorno${eFestivoOdDomenica(x.iso) ? ' festivo' : ''}"><div class="agenda-data"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b><small>${meseBreveAgenda(d)}${d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''}</small></div><div class="agenda-righe">${x.html}</div></div>`; };
-  if(!trovati.length) return `<p class="agenda-vuota">Nessun evento o servizio svolto con «${escapeHtml(q)}».</p>`;
+  if(!trovati.length) return `<p class="agenda-vuota">Nessun evento, servizio svolto o nota con «${escapeHtml(q)}».</p>`;
   return (futuri.length ? `<div class="agenda-settimana"><span>In arrivo</span><b>${futuri.length}</b></div>${futuri.map(riga).join('')}` : '')
     + (passati.length ? `<div class="agenda-settimana"><span>Passati</span><b>${passati.length}</b></div>${passati.map(riga).join('')}` : '');
 }
@@ -1359,7 +1360,7 @@ function renderAgenda(){
     const t = AppState.turni[iso];
     const eventi = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : [])
       .slice().sort((a, b) => (a.ev.tuttoIlGiorno ? '' : a.ev.oraInizio || '').localeCompare(b.ev.tuttoIlGiorno ? '' : b.ev.oraInizio || ''));
-    if(filtroAgenda === 'eventi' && !eventi.length) continue;
+    if(filtroAgenda === 'eventi' && !eventi.length && !(typeof righeUtilitaGiorno === 'function' && righeUtilitaGiorno(iso))) continue;
     const lun = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7, 12);
     if(dataISO(lun) !== lunedi){ lunedi = dataISO(lun); html += intestazioneSettimanaAgenda(lun, iso <= oggiIso && oggiIso <= giornoPiu(lunedi, 6)); }
     const righeEventi = filtroAgenda === 'turni' ? '' : eventi.map(({ ev, isoOrigine }) => rigaEventoAgenda(iso, ev, isoOrigine)).join('');
@@ -1371,7 +1372,7 @@ function renderAgenda(){
     html += `<div class="${classi}" data-agenda-giorno="${iso}">`
       + `<div class="agenda-data"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b>`
       + `<button type="button" class="agenda-piu" data-agenda-nuovo="${iso}" aria-label="Nuovo evento il ${d.getDate()} ${NOMI_MESI[d.getMonth()]}">＋</button></div>`
-      + `<div class="agenda-righe">${quando}${corpo}${righeEventi}</div></div>`;
+      + `<div class="agenda-righe">${quando}${corpo}${filtroAgenda === 'turni' || typeof righeUtilitaGiorno !== 'function' ? '' : righeUtilitaGiorno(iso)}${righeEventi}</div></div>`;
     mostrati++;
   }
   if(!mostrati) html += `<p class="agenda-vuota">Nessun evento in questi giorni.</p>`;

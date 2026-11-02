@@ -3210,3 +3210,13 @@ html[data-tema=scuro] .ut-verde,html[data-tema=scuro] .ut-saldo-mideve,html[data
 html[data-tema=scuro] .ut-banner .icona-linea{color:#FFD38A}
 /* v3.8.18: la conferma ("Eliminare…?") e gli avvisi in basso stanno sopra le pagine delle Utilità */
 #overlayAvviso{z-index:400}
+/* v3.8.18: righe brevi delle Utilità (veicolo, nota, scambio) nel giorno, in Settimana e in Agenda */
+.ut-mini-lista{display:flex;flex-direction:column;gap:3px;margin:4px 0 2px}
+.ut-mini{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--testo);cursor:pointer;min-width:0}
+.ut-mini > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-mini em{font-style:normal;color:#B36B00}
+.ut-mini .icona-linea{width:15px;height:15px;flex:none}
+#utilitaRiquadroGiorno .ut-mini-lista{margin:6px 2px 8px;gap:8px}
+#utilitaRiquadroGiorno .ut-mini{font-size:.9rem;padding:6px 0;border-bottom:1px solid var(--bordo)}
+.agenda-righe .ut-mini-lista{margin:2px 2px 0}
+.agenda-evento > .icona-linea{width:16px;height:16px;flex:none;margin-top:2px}
