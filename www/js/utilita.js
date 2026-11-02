@@ -12,18 +12,18 @@ const TIPI_SCADENZA = [
   { id: 'corso', nome: 'Corso', icona: 'cappello', ripeti: '1' },
   { id: 'altro', nome: 'Altro', icona: 'calendario', ripeti: '' }
 ];
-let U = { scadenze: [], note: [], scambi: [], mezzi: [], uscite: [] };
+let U = { scadenze: [], note: [], scambi: [], mezzi: [], uscite: [], link: [] };
 let utStato = { pagina: null, cerca: '', meseVeicolo: null, editor: null };
 
 function caricaUtilita(){
-  try{ const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_UTILITA) || 'null'); if(v && typeof v === 'object') U = Object.assign({ scadenze: [], note: [], scambi: [], mezzi: [], uscite: [] }, v); }catch(e){}
+  try{ const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_UTILITA) || 'null'); if(v && typeof v === 'object') U = Object.assign({ scadenze: [], note: [], scambi: [], mezzi: [], uscite: [], link: [] }, v); }catch(e){}
 }
 function salvaUtilita(){ try{ TurniPSStorage.setItem(CHIAVE_UTILITA, JSON.stringify(U)); }catch(e){} aggiornaRigheUtilita(); aggiornaBannerScadenze(); try{ renderUtilitaRiquadroGiorno(); if(typeof applicaVistaCalendario === 'function' && typeof vistaCalendario === 'function' && vistaCalendario() !== 'mese'){ if(vistaCalendario() === 'agenda') renderAgenda(); else applicaVistaCalendario(); } }catch(e){} }
 function datiUtilitaPerBackup(){ return JSON.parse(JSON.stringify(U)); }
 function ripristinaUtilitaDaBackup(d){
   if(!d || typeof d !== 'object') return;
   (U.scadenze || []).forEach(s => annullaAvvisiScadenza(s));
-  U = Object.assign({ scadenze: [], note: [], scambi: [], mezzi: [], uscite: [] }, d);
+  U = Object.assign({ scadenze: [], note: [], scambi: [], mezzi: [], uscite: [], link: [] }, d);
   salvaUtilita();
   U.scadenze.forEach(s => programmaAvvisiScadenza(s, true));
 }
@@ -55,7 +55,7 @@ function apriUtilita(pagina){
   if(pagina === 'veicolo' && !utStato.meseVeicolo) utStato.meseVeicolo = oggiUt().slice(0, 7);
   renderPaginaUt();
 }
-function chiudiPaginaUt(livello){
+function chiudiPaginaUt(livello, _forzato){
   const p = el(livello === 2 ? 'editorUt' : 'paginaUt');
   if(p){ p.hidden = true; p.innerHTML = ''; }
   if(livello === 2) utStato.editor = null; else utStato.pagina = null;
@@ -63,7 +63,7 @@ function chiudiPaginaUt(livello){
 function renderPaginaUt(){
   if(!utStato.pagina) return;
   const p = paginaUt(1); p.hidden = false;
-  const f = { scadenze: htmlScadenze, note: htmlNote, scambi: htmlScambi, veicolo: htmlVeicolo }[utStato.pagina];
+  const f = { scadenze: htmlScadenze, note: htmlNote, scambi: htmlScambi, veicolo: htmlVeicolo, link: htmlLink }[utStato.pagina];
   const cercaFocus = document.activeElement && document.activeElement.id === 'utCercaNote';
   p.innerHTML = f ? f() : '';
   if(cercaFocus){ const c = el('utCercaNote'); if(c){ c.focus(); c.setSelectionRange(c.value.length, c.value.length); } }
@@ -101,7 +101,7 @@ function htmlScadenze(){
 function apriEditorScadenza(id){
   const s = id ? U.scadenze.find(x => x.id === id) : { id: null, tipo: 'visita', nome: 'Visita medica periodica', data: giornoPiu(oggiUt(), 30), ripeti: '2', avvisi: [30, 7, 0], note: '' };
   if(!s) return;
-  utStato.editor = { tipo: 'scadenza', bozza: JSON.parse(JSON.stringify(s)) };
+  utStato.editor = { tipo: 'scadenza', bozza: JSON.parse(JSON.stringify(s)), originale: JSON.stringify(s) };
   renderEditorScadenza();
 }
 function renderEditorScadenza(){
@@ -161,7 +161,7 @@ function htmlNote(){
 function apriEditorNota(id, giorno){
   const n = id ? U.note.find(x => x.id === id) : { id: null, titolo: '', testo: '', giorno: giorno || '', fissata: false };
   if(!n) return;
-  utStato.editor = { tipo: 'nota', bozza: JSON.parse(JSON.stringify(n)) };
+  utStato.editor = { tipo: 'nota', bozza: JSON.parse(JSON.stringify(n)), originale: JSON.stringify(n) };
   renderEditorNota();
 }
 function renderEditorNota(){
@@ -197,7 +197,7 @@ function htmlScambi(){
 function apriEditorScambio(id, giorno){
   const s = id ? U.scambi.find(x => x.id === id) : { id: null, giorno: giorno || giornoSelezionato || oggiUt(), collega: '', verso: 'devo', turno: '', restituito: null };
   if(!s) return;
-  utStato.editor = { tipo: 'scambio', bozza: JSON.parse(JSON.stringify(s)) };
+  utStato.editor = { tipo: 'scambio', bozza: JSON.parse(JSON.stringify(s)), originale: JSON.stringify(s) };
   renderEditorScambio();
 }
 function renderEditorScambio(){
@@ -243,7 +243,7 @@ function apriEditorUscita(id, giorno){
     const ultimaStesso = [...U.uscite].filter(x => x.mezzoId === mezzoId).sort((x, y) => y.giorno.localeCompare(x.giorno))[0];
     u = { id: null, giorno: g, mezzoId, presa: t.oraInizio || '', riconsegna: t.oraFine || '', kmInizio: ultimaStesso && ultimaStesso.kmFine ? ultimaStesso.kmFine : '', kmFine: '', carbInizio: '', carbFine: '', litri: '', collega: '', anomalie: '', appunti: '' };
   }
-  utStato.editor = { tipo: 'uscita', bozza: JSON.parse(JSON.stringify(u)), nuovoMezzo: !U.mezzi.length ? { sigla: '', targa: '' } : null };
+  utStato.editor = { tipo: 'uscita', bozza: JSON.parse(JSON.stringify(u)), originale: JSON.stringify(u), nuovoMezzo: !U.mezzi.length ? { sigla: '', targa: '' } : null };
   renderEditorUscita();
 }
 function campoKm(nome, valore){
@@ -277,7 +277,7 @@ function renderEditorUscita(){
 function apriEditorMezzo(id){
   const m = id ? mezzoDi(id) : { id: null, sigla: '', targa: '' };
   if(!m) return;
-  utStato.editor = { tipo: 'mezzo', bozza: JSON.parse(JSON.stringify(m)) };
+  utStato.editor = { tipo: 'mezzo', bozza: JSON.parse(JSON.stringify(m)), originale: JSON.stringify(m) };
   const p = paginaUt(2); p.hidden = false;
   p.innerHTML = testaUt(m.id ? 'Mezzo' : 'Nuovo mezzo', '', `<button type="button" class="ut-pri" data-ut="salva-mezzo">Salva</button>`)
     + `<div class="ut-corpo"><div class="ut-box"><label class="ut-campo">Sigla<input data-campo="sigla" value="${escapeHtml(m.sigla)}" placeholder="es. Volante 12" maxlength="30"></label>`
@@ -325,10 +325,11 @@ async function dettaInCampo(nome, soloNumero, bottone){
 function clicUt(e){
   const b = e.target.closest('[data-ut]');
   if(!b) return;
+  if(clicLinkUt(b)) return;
   const a = b.dataset.ut, id = b.dataset.id, ed = utStato.editor;
   const livello = b.closest('#editorUt') ? 2 : 1;
   switch(a){
-    case 'chiudi': chiudiPaginaUt(livello); if(livello === 1) aggiornaUtilitaGiorno(); return;
+    case 'chiudi': if(livello === 2) chiudiEditorConControllo(); else { chiudiPaginaUt(1); aggiornaUtilitaGiorno(); } return;
     case 'nuova-scadenza': apriEditorScadenza(null); return;
     case 'apri-scadenza': apriEditorScadenza(id); return;
     case 'tipo-scadenza': { const t = TIPI_SCADENZA.find(x => x.id === id); const s = ed.bozza; const eraPredefinito = !s.nome || TIPI_SCADENZA.some(x => s.nome.startsWith(x.nome)); s.tipo = id; if(eraPredefinito) s.nome = id === 'visita' ? 'Visita medica periodica' : id === 'tiro' ? 'Tiro annuale' : id === 'tesserino' ? 'Rinnovo tesserino' : id === 'altro' ? '' : t.nome; s.ripeti = t.ripeti; renderEditorScadenza(); return; }
@@ -439,7 +440,8 @@ function segnaScambiNelCalendario(){
 
 function inizializzaUtilita(){
   caricaUtilita();
-  ['Scadenze', 'Note', 'Scambi', 'Veicolo'].forEach(k => on('util' + k, 'click', () => apriUtilita({ Scadenze: 'scadenze', Note: 'note', Scambi: 'scambi', Veicolo: 'veicolo' }[k])));
+  ['Scadenze', 'Note', 'Scambi', 'Veicolo', 'Link'].forEach(k => on('util' + k, 'click', () => apriUtilita({ Scadenze: 'scadenze', Note: 'note', Scambi: 'scambi', Veicolo: 'veicolo', Link: 'link' }[k])));
+  inizializzaIndietro();
   aggiornaRigheUtilita();
   aggiornaBannerScadenze();
   // Nel giorno: la sezione sta in "Modifica il giorno", sotto "Altro per questo giorno"
@@ -497,3 +499,125 @@ document.addEventListener('click', e => {
   const id = x.dataset.id, t = x.dataset.utApri;
   if(t === 'uscita') apriEditorUscita(id); else if(t === 'nota') apriEditorNota(id); else if(t === 'scambio') apriEditorScambio(id);
 }, true);
+
+// ── v3.8.19: Link utili (Altro → Link utili): pagine ufficiali, con la fonte sotto ──
+const GRUPPI_LINK = [
+  { titolo: 'Controlli sul veicolo', targa: true, link: [
+    { titolo: 'Veicolo rubato', testo: 'Per targa o numero di telaio', fonte: 'Ministero dell’Interno – Crimnet', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'auto' },
+    { titolo: 'Assicurazione e ultima revisione', testo: 'Verifica copertura RCA e revisione', fonte: 'Ministero delle Infrastrutture e dei Trasporti – Portale dell’Automobilista', url: 'https://www.ilportaledellautomobilista.it/', icona: 'scudo' },
+    { titolo: 'Bollo auto', testo: 'Calcolo del bollo', fonte: 'ACI', url: 'https://online.aci.it/acinet/calcolobollo/', icona: 'euro' }
+  ] },
+  { titolo: 'Per i cittadini', link: [
+    { titolo: 'Documenti rubati o smarriti', testo: 'Controllo di un documento', fonte: 'Ministero dell’Interno – Crimnet', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'tessera' },
+    { titolo: 'Denuncia via web', testo: 'Furti e smarrimenti, da confermare in ufficio', fonte: 'Polizia di Stato', url: 'https://www.denunceviaweb.poliziadistato.it/', icona: 'ricevuta' }
+  ] },
+  { titolo: 'Norme e lavoro', link: [
+    { titolo: 'Normattiva', testo: 'Leggi e codici in vigore', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.normattiva.it/', icona: 'libro' },
+    { titolo: 'Gazzetta Ufficiale', testo: 'Leggi e decreti appena pubblicati', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.gazzettaufficiale.it/', icona: 'lista' },
+    { titolo: 'NoiPA', testo: 'Cedolino, CU e dati stipendiali', fonte: 'Ministero dell’Economia e delle Finanze', url: 'https://noipa.mef.gov.it/', icona: 'ricevuta' },
+    { titolo: 'Polizia di Stato', testo: 'Sito ufficiale', fonte: 'Polizia di Stato', url: 'https://www.poliziadistato.it/', icona: 'scudo' },
+    { titolo: 'Ministero dell’Interno', testo: 'Sito ufficiale', fonte: 'Ministero dell’Interno', url: 'https://www.interno.gov.it/', icona: 'edificio' }
+  ] }
+];
+function urlSicuro(u){ const t = String(u || '').trim(); if(!t) return ''; const c = /^https?:\/\//i.test(t) ? t : 'https://' + t; try{ const x = new URL(c); return /^https?:$/.test(x.protocol) ? x.href : ''; }catch(e){ return ''; } }
+function rigaLink(l, personale){
+  return `<a class="ut-riga ut-link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer"><span class="ut-ic">${ic(l.icona || 'globo')}</span><span class="ut-t"><b>${escapeHtml(l.titolo)}</b>${l.testo ? `<small>${escapeHtml(l.testo)}</small>` : ''}<small class="ut-fonte">${personale ? escapeHtml(new URL(l.url).hostname) : 'Fonte: ' + escapeHtml(l.fonte)}</small></span>${personale ? `<button type="button" class="ut-link-mod" data-ut="apri-link" data-id="${l.id}" aria-label="Modifica">${ic('matita')}</button>` : `<i aria-hidden="true">↗</i>`}</a>`;
+}
+function htmlLink(){
+  const miei = U.link || [];
+  return testaUt('Link utili', 'Pagine ufficiali: si aprono nel browser', '')
+    + `<div class="ut-corpo">`
+    + GRUPPI_LINK.map(g => `<p class="ut-tit">${g.titolo}</p>`
+      + (g.targa ? `<div class="ut-box ut-targa-box"><label class="ut-campo">Targa o telaio<input id="utTargaCopia" autocapitalize="characters" autocomplete="off" placeholder="es. AB123CD" maxlength="17"></label><button type="button" class="ut-chip" data-ut="copia-targa">${ic('lista')} Copia</button><small class="ut-tenue">Copiala qui, poi incollala nella pagina ufficiale. L'app non la salva.</small></div>` : '')
+      + `<div class="ut-lista">${g.link.map(l => rigaLink(l)).join('')}</div>`).join('')
+    + `<p class="ut-tit ut-tit-azione">I tuoi link <button type="button" data-ut="nuovo-link">＋ Link</button></p>`
+    + (miei.length ? `<div class="ut-lista">${miei.map(l => rigaLink(l, true)).join('')}</div>` : `<p class="ut-vuoto">Aggiungi i siti che usi di più: il tuo sindacato, l'ufficio, la mensa…</p>`)
+    + `<p class="ut-nota">I controlli li fanno i siti ufficiali, con i loro dati aggiornati. I risultati di Crimnet non hanno valore legale e possono arrivare con qualche giorno di ritardo rispetto alla denuncia.</p></div>`;
+}
+function apriEditorLink(id){
+  const l = id ? (U.link || []).find(x => x.id === id) : { id: null, titolo: '', url: '' };
+  if(!l) return;
+  utStato.editor = { tipo: 'link', bozza: JSON.parse(JSON.stringify(l)), originale: JSON.stringify(l) };
+  const p = paginaUt(2); p.hidden = false;
+  p.innerHTML = testaUt(l.id ? 'Link' : 'Nuovo link', '', `<button type="button" class="ut-pri" data-ut="salva-link">Salva</button>`)
+    + `<div class="ut-corpo"><div class="ut-box"><label class="ut-campo">Nome<input data-campo="titolo" value="${escapeHtml(l.titolo)}" placeholder="es. Sindacato" maxlength="40"></label>`
+    + `<label class="ut-campo">Indirizzo<input data-campo="url" value="${escapeHtml(l.url)}" placeholder="es. www.sito.it" inputmode="url" autocapitalize="off"></label></div>`
+    + (l.id ? `<button type="button" class="ut-elimina" data-ut="elimina-link">${ic('cestino')} Elimina link</button>` : '') + `</div>`;
+}
+function clicLinkUt(b){
+  const a = b.dataset.ut, ed = utStato.editor;
+  if(a === 'nuovo-link'){ apriEditorLink(null); return true; }
+  if(a === 'apri-link'){ apriEditorLink(b.dataset.id); return true; }
+  if(a === 'copia-targa'){
+    const v = (el('utTargaCopia').value || '').replace(/\s+/g, '').toUpperCase();
+    if(!v){ mostraToast('Scrivi prima la targa o il telaio.', 'avviso'); return true; }
+    const fatto = () => mostraToast(`«${v}» copiata: incollala nella pagina ufficiale.`, 'successo');
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(fatto, () => { el('utTargaCopia').select(); document.execCommand('copy'); fatto(); });
+    else { el('utTargaCopia').select(); document.execCommand('copy'); fatto(); }
+    return true;
+  }
+  if(a === 'salva-link'){
+    const l = ed.bozza, url = urlSicuro(l.url);
+    if(!l.titolo.trim()){ mostraToast('Dai un nome al link.', 'avviso'); return true; }
+    if(!url){ mostraToast('Indirizzo non valido.', 'avviso'); return true; }
+    l.url = url; l.titolo = l.titolo.trim();
+    U.link = U.link || [];
+    if(!l.id){ l.id = idUt('lk'); U.link.push(l); } else Object.assign(U.link.find(x => x.id === l.id), l);
+    salvaUtilita(); chiudiPaginaUt(2, true); renderPaginaUt(); return true;
+  }
+  if(a === 'elimina-link'){ mostraConferma('Eliminare questo link?', () => { U.link = (U.link || []).filter(x => x.id !== ed.bozza.id); salvaUtilita(); chiudiPaginaUt(2, true); renderPaginaUt(); }); return true; }
+  return false;
+}
+
+// ── v3.8.19: chiudere un editor: le note si salvano da sole, il resto chiede se ci sono modifiche ──
+function editorModificato(){
+  const ed = utStato.editor; if(!ed) return false;
+  if(ed.tipo === 'uscita' && ed.nuovoMezzo && (ed.nuovoMezzo.sigla || ed.nuovoMezzo.targa)) return true;
+  return ed.originale !== undefined && ed.originale !== JSON.stringify(ed.bozza);
+}
+function chiudiEditorConControllo(){
+  const ed = utStato.editor;
+  if(!ed){ chiudiPaginaUt(2, true); return; }
+  if(ed.tipo === 'nota'){
+    const n = ed.bozza;
+    if(editorModificato() && (n.titolo.trim() || n.testo.trim())){
+      n.modificata = Date.now();
+      if(!n.id){ n.id = idUt('nt'); U.note.push(n); } else Object.assign(U.note.find(x => x.id === n.id), n);
+      salvaUtilita(); mostraToast('Nota salvata', 'successo');
+    }
+    chiudiPaginaUt(2, true); renderPaginaUt(); aggiornaUtilitaGiorno(); return;
+  }
+  if(editorModificato()){ mostraConferma('Hai fatto delle modifiche. Uscire senza salvare?', () => chiudiPaginaUt(2, true), 'Uscire senza salvare?'); return; }
+  chiudiPaginaUt(2, true);
+}
+
+// ── v3.8.19: tasto «indietro» di Android: chiude quello che è aperto in cima, non l'app ──
+let indietroPronto = false;
+function chiudiInCima(){
+  const vis = id => el(id) && !el(id).hidden;
+  if(vis('overlayAvviso')){ const a = el('btnAnnullaAvviso'); if(a && !a.hidden) a.click(); else el('overlayAvviso').hidden = true; return true; }
+  if(vis('editorUt')){ chiudiEditorConControllo(); return true; }
+  if(vis('paginaUt')){ chiudiPaginaUt(1); aggiornaUtilitaGiorno(); return true; }
+  if(vis('schedaVoce') && typeof chiudiVoce === 'function'){ chiudiVoce(); return true; }
+  if(vis('guidaNovita') && typeof chiudiNovita === 'function'){ chiudiNovita(); return true; }
+  if(vis('overlayEvento')){ el('overlayEvento').hidden = true; return true; }
+  if(vis('pannelloColoriTurni')){ const c = el('btnChiudiColoriTurni'); if(c) c.click(); return true; }
+  if(vis('overlaySelettoreModelli')){ el('overlaySelettoreModelli').hidden = true; return true; }
+  const altri = [...document.querySelectorAll('.overlay')].filter(o => !o.hidden && o.id !== 'overlayBenvenuto');
+  if(altri.length){ const o = altri[altri.length - 1]; const x = o.querySelector('.btn-icona, [id^="btnChiudi"]'); if(x) x.click(); else o.hidden = true; return true; }
+  if(vis('pannelloTurno')){ const c = el('btnChiudiTurno'); if(c) c.click(); else el('pannelloTurno').hidden = true; return true; }
+  if(vis('menuFabGiorno') && typeof chiudiFabGiorno === 'function'){ chiudiFabGiorno(); return true; }
+  if(vis('barraPennello') && typeof chiudiPennello === 'function'){ chiudiPennello(); return true; }
+  const schedaAperta = document.querySelector('.scheda-nav.attiva, .scheda-nav[aria-current="page"]');
+  if(schedaAperta && schedaAperta.id !== 'tabCalendario' && typeof mostraScheda === 'function'){ mostraScheda('calendario'); window.scrollTo(0, 0); return true; }
+  return false;
+}
+function inizializzaIndietro(){
+  if(indietroPronto || !window.history || !history.pushState) return;
+  indietroPronto = true;
+  try{ history.replaceState({ turni: 'base' }, ''); history.pushState({ turni: 'app' }, ''); }catch(e){ return; }
+  window.addEventListener('popstate', () => {
+    if(chiudiInCima()){ try{ history.pushState({ turni: 'app' }, ''); }catch(e){} }
+    else { mostraToast('Premi ancora «indietro» per uscire', 'info', 2000); } // niente di aperto: al prossimo «indietro» Android chiude l'app
+  });
+}
