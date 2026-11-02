@@ -44,7 +44,7 @@ function paginaUt(livello){
     p.setAttribute('role', 'dialog'); p.setAttribute('aria-modal', 'true');
     document.body.appendChild(p);
     p.addEventListener('click', clicUt); p.addEventListener('input', inputUt); p.addEventListener('change', inputUt);
-    p.addEventListener('submit', e => { if(e.target.id === 'utFormLeggi'){ e.preventDefault(); cercaNelleLeggi(1); } });
+    p.addEventListener('submit', e => { if(e.target.id === 'utFormLeggi'){ e.preventDefault(); cercaNelleLeggi(1, true); } });
   }
   return p;
 }
@@ -52,7 +52,7 @@ function testaUt(titolo, sotto, azione){
   return `<div class="ut-testa"><button type="button" class="ut-x" data-ut="chiudi" aria-label="Chiudi">✕</button><b>${titolo}${sotto ? `<small>${sotto}</small>` : ''}</b>${azione || ''}</div>`;
 }
 function apriUtilita(pagina){
-  utStato.pagina = pagina; utStato.cerca = '';
+  utStato.pagina = pagina; utStato.cerca = ''; utStato.leggi = null;
   if(pagina === 'veicolo' && !utStato.meseVeicolo) utStato.meseVeicolo = oggiUt().slice(0, 7);
   renderPaginaUt();
 }
@@ -544,6 +544,8 @@ function clicLinkUt(b){
   const a = b.dataset.ut, ed = utStato.editor;
   if(a === 'nuovo-link'){ apriEditorLink(null); return true; }
   if(a === 'leggi-altri'){ cercaNelleLeggi((utStato.leggi.pagina || 1) + 1); return true; }
+  if(a === 'leggi-ordine' || a === 'leggi-tipo'){ const st = statoLeggi(); if(a === 'leggi-ordine') st.ordine = b.dataset.v; else st.tipo = b.dataset.v; cercaNelleLeggi(1); return true; }
+  if(a === 'leggi-chiudi'){ utStato.leggi = null; const i = el('utCercaLeggi'); if(i) i.value = ''; disegnaLeggi(); return true; }
   if(a === 'stella-norma'){ const id = b.dataset.id; const p = new Set(U.preferitiNorme || []); if(p.has(id)) p.delete(id); else p.add(id); U.preferitiNorme = [...p]; salvaUtilita(); const l = el('utListaNorme'); if(l) l.innerHTML = righeNorme(); return true; }
   if(a === 'apri-link'){ apriEditorLink(b.dataset.id); return true; }
   if(a === 'salva-link'){
@@ -638,7 +640,7 @@ function htmlNormativa(){
 // Solo l'elenco degli atti trovati; il testo si apre sempre sul sito ufficiale. Nulla viene salvato.
 const API_NORMATTIVA = 'https://api.normattiva.it/t/normattiva.api/bff-opendata/v1/api/v1/ricerca/semplice';
 const LEGGI_PER_PAGINA = 10;
-function statoLeggi(){ return utStato.leggi || (utStato.leggi = { testo: '', pagina: 0, atti: [], totale: 0, stato: '', richiesta: 0 }); }
+function statoLeggi(){ return utStato.leggi || (utStato.leggi = { testo: '', pagina: 0, atti: [], totale: 0, stato: '', richiesta: 0, ordine: 'recente', tipo: '', tipi: [], tutti: 0 }); }
 function maiuscolaIniziale(t){ t = String(t || '').toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); }
 function attoDaApi(a){
   const titolo = String(a.titoloAtto || '').replace(/^\[|\]$/g, '').replace(/\s*\(\w{8,}\)\s*\]?\s*$/, '').replace(/\s+/g, ' ').trim();
@@ -647,19 +649,23 @@ function attoDaApi(a){
   const url = ok ? `https://www.normattiva.it/atto/caricaDettaglioAtto?atto.dataPubblicazioneGazzetta=${a.dataGU}&atto.codiceRedazionale=${a.codiceRedazionale}` : 'https://www.normattiva.it/';
   return { url, titolo: nome, testo: titolo, icona: 'libro', fonte: 'Normattiva' };
 }
-async function cercaNelleLeggi(pagina){
+// Nomi brevi dei tipi di atto che Normattiva restituisce nei filtri
+const TIPI_LEGGI = { PLE: 'Leggi', PLL: 'D.Lgs.', PDL: 'D.L.', PPR: 'D.P.R.', PRD: 'R.D.', PRL: 'R.D.L.', PLC: 'Leggi cost.', COS: 'Costituzione' };
+async function cercaNelleLeggi(pagina, nuova){
   const st = statoLeggi(), inp = el('utCercaLeggi');
-  const testo = pagina === 1 ? (inp ? inp.value : '').trim() : st.testo;
-  if(testo.length < 3){ st.stato = 'corto'; st.atti = []; disegnaLeggi(); return; }
+  const testo = nuova ? (inp ? inp.value : '').trim() : st.testo;
+  if(testo.length < 3){ Object.assign(st, { stato: 'corto', atti: [], totale: 0, tipi: [] }); disegnaLeggi(); return; }
   if(inp) inp.blur();
   const id = ++st.richiesta;
+  if(nuova) Object.assign(st, { tipo: '', tipi: [], tutti: 0 });
   Object.assign(st, { testo, stato: 'carica' }); if(pagina === 1){ st.atti = []; st.totale = 0; }
   disegnaLeggi();
   try{
     const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
     const t = setTimeout(() => ctrl && ctrl.abort(), 20000);
-    const r = await fetch(API_NORMATTIVA, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl ? ctrl.signal : undefined,
-      body: JSON.stringify({ testoRicerca: testo, orderType: 'recente', paginazione: { paginaCorrente: pagina, numeroElementiPerPagina: LEGGI_PER_PAGINA } }) });
+    const corpo = { testoRicerca: testo, orderType: st.ordine, paginazione: { paginaCorrente: pagina, numeroElementiPerPagina: LEGGI_PER_PAGINA } };
+    if(st.tipo) corpo.filtriMap = { codice_tipo_provvedimento: st.tipo };
+    const r = await fetch(API_NORMATTIVA, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl ? ctrl.signal : undefined, body: JSON.stringify(corpo) });
     clearTimeout(t);
     if(id !== st.richiesta) return;
     if(r.status === 204){ Object.assign(st, { stato: 'ok', totale: 0, pagina: 1 }); disegnaLeggi(); return; }
@@ -668,6 +674,11 @@ async function cercaNelleLeggi(pagina){
     if(id !== st.richiesta) return;
     st.atti = st.atti.concat((d.listaAtti || []).map(attoDaApi));
     Object.assign(st, { stato: 'ok', totale: d.numeroAttiTrovati || st.atti.length, pagina });
+    if(!st.tipo && pagina === 1){ // i filtri per tipo si prendono dalla ricerca senza filtro, così restano tutti visibili
+      st.tutti = st.totale;
+      st.tipi = ((d.facetMap && d.facetMap.codice_tipo_provvedimento) || []).filter(f => f && f.codice && f.valore > 0)
+        .map(f => ({ codice: String(f.codice), nome: TIPI_LEGGI[f.codice] || maiuscolaIniziale(f.descrizione), n: f.valore }));
+    }
   }catch(e){ if(id === st.richiesta) st.stato = navigator.onLine === false ? 'offline' : 'errore'; }
   disegnaLeggi();
 }
@@ -676,11 +687,16 @@ function righeLeggi(){
   if(st.stato === 'corto') return `<p class="ut-vuoto">Scrivi almeno 3 lettere.</p>`;
   if(st.stato === 'offline') return `<p class="ut-vuoto">Serve internet per cercare su Normattiva.</p>`;
   if(st.stato === 'errore') return `<p class="ut-vuoto">Normattiva non risponde in questo momento. Riprova più tardi.</p>`;
-  if(st.stato === 'ok' && !st.atti.length) return `<p class="ut-vuoto">Nessuna legge trovata con «${escapeHtml(st.testo)}».</p>`;
-  let h = '';
-  if(st.atti.length) h += `<p class="ut-leggi-conta">${numeroIt0(st.totale)} ${st.totale === 1 ? 'atto trovato' : 'atti trovati'} · dai più recenti</p><div class="ut-lista">${st.atti.map(a => rigaLink(a)).join('')}</div>`;
-  if(st.stato === 'carica') h += `<p class="ut-vuoto">Cerco su Normattiva…</p>`;
+  if(!st.stato) return '';
+  const chip = (azione, v, testo, attivo) => `<button type="button" class="ut-chip${attivo ? ' attivo' : ''}" data-ut="${azione}" data-v="${escapeHtml(v)}" aria-pressed="${attivo}">${testo}</button>`;
+  let h = `<div class="ut-leggi-testa"><span>${st.stato === 'carica' && !st.atti.length ? 'Cerco su Normattiva…' : `${numeroIt0(st.totale)} ${st.totale === 1 ? 'atto trovato' : 'atti trovati'}`}</span><button type="button" class="ut-leggi-chiudi" data-ut="leggi-chiudi">✕ Chiudi</button></div>`;
+  h += `<div class="ut-leggi-filtri">${chip('leggi-ordine', 'recente', 'Più recenti', st.ordine === 'recente')}${chip('leggi-ordine', 'vecchio', 'Più vecchie', st.ordine === 'vecchio')}</div>`;
+  if(st.tipi.length > 1) h += `<div class="ut-leggi-filtri">${chip('leggi-tipo', '', `Tutti <b>${numeroIt0(st.tutti)}</b>`, !st.tipo)}${st.tipi.map(t => chip('leggi-tipo', t.codice, `${escapeHtml(t.nome)} <b>${numeroIt0(t.n)}</b>`, st.tipo === t.codice)).join('')}</div>`;
+  if(st.stato === 'ok' && !st.atti.length) return h + `<p class="ut-vuoto">Nessuna legge trovata con «${escapeHtml(st.testo)}».</p>`;
+  if(st.atti.length) h += `<div class="ut-lista">${st.atti.map(a => rigaLink(a)).join('')}</div>`;
+  if(st.stato === 'carica' && st.atti.length) h += `<p class="ut-vuoto">Cerco su Normattiva…</p>`;
   else if(st.atti.length < st.totale) h += `<button type="button" class="ut-chip ut-leggi-altri" data-ut="leggi-altri">Mostra altri ${Math.min(LEGGI_PER_PAGINA, st.totale - st.atti.length)}</button>`;
+  if(st.atti.length > 3) h += `<button type="button" class="ut-leggi-chiudi ut-leggi-chiudi-fondo" data-ut="leggi-chiudi">✕ Chiudi i risultati</button>`;
   return h;
 }
 function disegnaLeggi(){ const b = el('utRisultatiLeggi'); if(b) b.innerHTML = righeLeggi(); }
