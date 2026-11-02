@@ -509,12 +509,17 @@ const GRUPPI_LINK = [
   ] },
   { titolo: 'Per i cittadini', link: [
     { titolo: 'Documenti rubati o smarriti', testo: 'Controllo di un documento', fonte: 'Ministero dell’Interno – Crimnet', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'tessera' },
+    { titolo: 'Banche dati della Polizia di Stato', testo: 'Veicoli rubati, documenti rubati o smarriti, banconote false, oggetti rubati', fonte: 'Polizia di Stato', url: 'https://www.poliziadistato.it/articolo/10582', icona: 'occhio' },
     { titolo: 'Denuncia via web', testo: 'Furti e smarrimenti, da confermare in ufficio', fonte: 'Polizia di Stato', url: 'https://www.denunceviaweb.poliziadistato.it/', icona: 'ricevuta' }
   ] },
-  { titolo: 'Norme e lavoro', link: [
+  { titolo: 'Stipendio e tasse', link: [
+    { titolo: 'NoiPA', testo: 'Cedolino, CU e dati stipendiali', fonte: 'Ministero dell’Economia e delle Finanze', url: 'https://noipa.mef.gov.it/', icona: 'ricevuta' },
+    { titolo: 'Addizionale regionale IRPEF', testo: 'Aliquote di ogni regione, anno per anno', fonte: 'MEF – Dipartimento delle Finanze', url: 'https://www.finanze.gov.it/it/fiscalita-regionale-e-locale/addizionale-regionale-allirpef/', icona: 'euro' },
+    { titolo: 'Addizionale comunale IRPEF', testo: 'Aliquota del tuo Comune (es. 0,8%)', fonte: 'MEF – Dipartimento delle Finanze', url: 'https://www.finanze.gov.it/it/fiscalita-regionale-e-locale/addizionale-comunale-allirpef/', icona: 'euro' }
+  ] },
+  { titolo: 'Norme e istituzioni', link: [
     { titolo: 'Normattiva', testo: 'Leggi e codici in vigore', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.normattiva.it/', icona: 'libro' },
     { titolo: 'Gazzetta Ufficiale', testo: 'Leggi e decreti appena pubblicati', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.gazzettaufficiale.it/', icona: 'lista' },
-    { titolo: 'NoiPA', testo: 'Cedolino, CU e dati stipendiali', fonte: 'Ministero dell’Economia e delle Finanze', url: 'https://noipa.mef.gov.it/', icona: 'ricevuta' },
     { titolo: 'Polizia di Stato', testo: 'Sito ufficiale', fonte: 'Polizia di Stato', url: 'https://www.poliziadistato.it/', icona: 'scudo' },
     { titolo: 'Ministero dell’Interno', testo: 'Sito ufficiale', fonte: 'Ministero dell’Interno', url: 'https://www.interno.gov.it/', icona: 'edificio' }
   ] }
