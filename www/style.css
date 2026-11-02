@@ -3243,3 +3243,6 @@ html[data-tema=scuro] .ut-sotto-arancio,html[data-tema=scuro] .ut-uscita .k smal
 .ut-stella{width:52px;flex:none;border:0;background:none;font-size:1.35rem;color:var(--testo-tenue);cursor:pointer}
 .ut-norma.preferita .ut-stella{color:#E0A100}
 .ut-norma.preferita{background:color-mix(in srgb,#E0A100 7%,var(--pannello))}
+
+/* v3.8.20: «Apri una legge» (link URN Normattiva) */
+#utAttoEsito .ut-lista{margin-top:8px}
