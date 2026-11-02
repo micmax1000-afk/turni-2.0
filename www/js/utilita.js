@@ -152,7 +152,7 @@ function htmlNote(){
   const gruppi = {};
   altre.forEach(n => { const d = new Date(n.modificata); const k = `${NOMI_MESI[d.getMonth()]} ${d.getFullYear()}`; (gruppi[k] = gruppi[k] || []).push(n); });
   return testaUt('Note di servizio', 'Appunti veloci, solo sul telefono', `<button type="button" class="ut-pri" data-ut="nuova-nota">＋ Nuova</button>`)
-    + `<div class="ut-corpo"><label class="ut-cerca">${ic('occhio')}<input type="search" id="utCercaNote" placeholder="Cerca nelle note" value="${escapeHtml(utStato.cerca)}"></label>`
+    + `<div class="ut-corpo"><label class="ut-cerca">${ic('cerca')}<input type="search" id="utCercaNote" placeholder="Cerca nelle note" value="${escapeHtml(utStato.cerca)}"></label>`
     + (!U.note.length ? `<p class="ut-vuoto">Nessuna nota. Tocca «＋ Nuova» per scrivere il primo appunto.</p>` : !note.length ? `<p class="ut-vuoto">Nessuna nota con «${escapeHtml(utStato.cerca)}».</p>` : '')
     + (fissate.length ? `<p class="ut-tit">Fissate</p>${fissate.map(card).join('')}` : '')
     + Object.keys(gruppi).map(k => `<p class="ut-tit">${k}</p>${gruppi[k].map(card).join('')}`).join('')
@@ -374,6 +374,8 @@ function clicUt(e){
 function inputUt(e){
   const t = e.target;
   if(t.id === 'utCercaNote'){ utStato.cerca = t.value; renderPaginaUt(); return; }
+  if(t.id === 'utCercaNorme'){ utStato.cercaNorme = t.value; const l = el('utListaNorme'); if(l) l.innerHTML = righeNorme(); return; }
+  if(t.id === 'utAttoTipo' || t.id === 'utAttoNum' || t.id === 'utAttoData'){ const a = statoAtto(); a[{ utAttoTipo: 'tipo', utAttoNum: 'num', utAttoData: 'data' }[t.id]] = t.value; const e = el('utAttoEsito'); if(e) e.innerHTML = esitoAtto(); return; }
   const ed = utStato.editor; if(!ed) return;
   if(t.dataset.campoMezzo){ ed.nuovoMezzo[t.dataset.campoMezzo] = t.value; return; }
   const c = t.dataset.campo; if(!c) return;
@@ -506,9 +508,6 @@ const GRUPPI_LINK = [
     { titolo: 'Crimnet – banche dati', testo: 'Veicoli rubati (targa o telaio), documenti rubati o smarriti', fonte: 'Ministero dell\u2019Interno', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'occhio' },
     { titolo: 'PRADO – documenti originali', testo: 'Modelli dei documenti d\'identità e di viaggio europei, per riconoscere i falsi', fonte: 'Consiglio dell\'Unione europea', url: 'https://www.consilium.europa.eu/prado/it/prado-start-page.html', icona: 'tessera' }
   ] },
-  { titolo: 'Leggi', link: [
-    { titolo: 'Normattiva', testo: 'Codice penale, procedura penale, Codice della strada, TULPS e tutte le leggi in vigore', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.normattiva.it/', icona: 'libro' }
-  ] },
   { titolo: 'Stipendio e contratto', link: [
     { titolo: 'Addizionali regionali e comunali IRPEF', testo: 'Aliquote di ogni Regione e di ogni Comune', fonte: 'MEF – Dipartimento delle Finanze', url: 'https://www.finanze.gov.it/it/fiscalita/fiscalita-regionale-e-locale/', icona: 'euro' },
     { titolo: 'Contratto di lavoro – SIULP', testo: 'Testi del contratto e della contrattazione', fonte: 'SIULP', url: 'https://siulp.it/category/contrattazione/contratto/', icona: 'lista' },
@@ -526,7 +525,7 @@ function htmlLink(){
   const miei = U.link || [];
   return testaUt('Link utili', 'Pagine ufficiali: si aprono nel browser', '')
     + `<div class="ut-corpo">`
-    + GRUPPI_LINK.map(g => `<p class="ut-tit">${g.titolo}</p>`
+    + GRUPPI_LINK.map((g, gi) => (gi === 1 ? htmlNormativa() : '') + `<p class="ut-tit">${g.titolo}</p>`
       + (g.targa ? `<div class="ut-box ut-targa-box"><label class="ut-campo">Targa o telaio<input id="utTargaCopia" autocapitalize="characters" autocomplete="off" placeholder="es. AB123CD" maxlength="17"></label><button type="button" class="ut-chip" data-ut="copia-targa">${ic('lista')} Copia</button><small class="ut-tenue">Copiala qui, poi incollala nella pagina ufficiale. L'app non la salva.</small></div>` : '')
       + `<div class="ut-lista">${g.link.map(l => rigaLink(l)).join('')}</div>`).join('')
     + `<p class="ut-tit ut-tit-azione">I tuoi link <button type="button" data-ut="nuovo-link">＋ Link</button></p>`
@@ -546,6 +545,7 @@ function apriEditorLink(id){
 function clicLinkUt(b){
   const a = b.dataset.ut, ed = utStato.editor;
   if(a === 'nuovo-link'){ apriEditorLink(null); return true; }
+  if(a === 'stella-norma'){ const id = b.dataset.id; const p = new Set(U.preferitiNorme || []); if(p.has(id)) p.delete(id); else p.add(id); U.preferitiNorme = [...p]; salvaUtilita(); const l = el('utListaNorme'); if(l) l.innerHTML = righeNorme(); return true; }
   if(a === 'apri-link'){ apriEditorLink(b.dataset.id); return true; }
   if(a === 'copia-targa'){
     const v = (el('utTargaCopia').value || '').replace(/\s+/g, '').toUpperCase();
@@ -619,4 +619,85 @@ function inizializzaIndietro(){
     if(chiudiInCima()){ try{ history.pushState({ turni: 'app' }, ''); }catch(e){} }
     else { mostraToast('Premi ancora «indietro» per uscire', 'info', 2000); } // niente di aperto: al prossimo «indietro» Android chiude l'app
   });
+}
+
+// ── v3.8.20: Normativa in Link utili: collegamenti diretti ai testi ufficiali, ricerca e preferiti ──
+// Nessun testo copiato: ogni voce apre il testo (vigente su Normattiva, o il PDF indicato).
+const NORME = [
+  { id: 'cp', titolo: 'Codice penale', testo: 'R.D. 19 ottobre 1930, n. 1398 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/eli/id/1930/10/26/030U1398/CONSOLIDATED', parole: 'reati pene' },
+  { id: 'cpp', titolo: 'Codice di procedura penale', testo: 'D.P.R. 22 settembre 1988, n. 447 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/eli/id/1988/10/24/088G0492/CONSOLIDATED', parole: 'arresto fermo perquisizione' },
+  { id: 'tulps', titolo: 'TULPS', testo: 'Testo unico delle leggi di pubblica sicurezza – R.D. 18 giugno 1931, n. 773', fonte: 'Normattiva', url: 'https://www.normattiva.it/eli/id/1931/06/26/031U0773/CONSOLIDATED', parole: 'pubblica sicurezza licenze armi' },
+  { id: 'regtulps', titolo: 'Regolamento del TULPS', testo: 'R.D. 6 maggio 1940, n. 635 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/eli/id/1940/06/26/040U0635/CONSOLIDATED', parole: 'regolamento esecuzione pubblica sicurezza' },
+  { id: 'cds', titolo: 'Codice della strada', testo: 'D.Lgs. 30 aprile 1992, n. 285 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/eli/id/1992/05/18/092G0306/CONSOLIDATED', parole: 'circolazione sanzioni veicoli patente' },
+  { id: 'l121', titolo: 'Legge 121/1981', testo: 'Nuovo ordinamento dell\u2019Amministrazione della pubblica sicurezza – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:1981-04-01;121', parole: 'ordinamento polizia di stato riforma' },
+  { id: 'dpr782', titolo: 'Regolamento di servizio – D.P.R. 782/1985', testo: 'Regolamento di servizio dell\u2019Amministrazione della pubblica sicurezza – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:presidente.repubblica:decreto:1985;782', parole: 'regolamento servizio doveri' },
+  { id: 'normattiva', titolo: 'Normattiva – tutte le leggi', testo: 'Cerca qualsiasi legge in vigore', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.normattiva.it/', parole: 'leggi decreti' }
+];
+function righeNorme(){
+  const pref = new Set(U.preferitiNorme || []);
+  const norm = t => typeof normalizzaVoce === 'function' ? normalizzaVoce(t) : String(t).toLowerCase();
+  const q = norm(utStato.cercaNorme || '').trim();
+  const lista = NORME.filter(n => !q || q.split(' ').every(w => norm(`${n.titolo} ${n.testo} ${n.parole}`).includes(w)))
+    .sort((a, b) => (pref.has(b.id) ? 1 : 0) - (pref.has(a.id) ? 1 : 0));
+  const diretto = attoDaTesto(utStato.cercaNorme || '');
+  const rigaDiretta = diretto ? `<div class="ut-riga ut-norma"><a class="ut-norma-link" href="${escapeHtml(diretto.url)}" target="_blank" rel="noopener noreferrer"><span class="ut-ic">${ic('libro')}</span><span class="ut-t"><b>${escapeHtml(diretto.nome)}</b><small>Testo vigente</small><small class="ut-fonte">Fonte: Normattiva</small></span></a></div>` : '';
+  if(!lista.length) return rigaDiretta || `<p class="ut-vuoto">Nessuna norma con «${escapeHtml(utStato.cercaNorme)}». Usa «Apri una legge» qui sotto, oppure scrivi ad es. «legge 104/1992».</p>`;
+  return rigaDiretta + lista.map(n => `<div class="ut-riga ut-norma${pref.has(n.id) ? ' preferita' : ''}"><a class="ut-norma-link" href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer"><span class="ut-ic">${ic(/pdf/i.test(n.titolo) || /\.pdf$/i.test(n.url) ? 'ricevuta' : 'libro')}</span><span class="ut-t"><b>${escapeHtml(n.titolo)}</b><small>${escapeHtml(n.testo)}</small><small class="ut-fonte">Fonte: ${escapeHtml(n.fonte)}</small></span></a>`
+    + `<button type="button" class="ut-stella" data-ut="stella-norma" data-id="${n.id}" aria-pressed="${pref.has(n.id)}" aria-label="${pref.has(n.id) ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}">${pref.has(n.id) ? '★' : '☆'}</button></div>`).join('');
+}
+function htmlNormativa(){
+  return `<p class="ut-tit">Normativa</p><label class="ut-cerca">${ic('cerca')}<input type="search" id="utCercaNorme" placeholder="Cerca una norma (es. TULPS, arresto)" value="${escapeHtml(utStato.cercaNorme || '')}"></label>`
+    + `<div class="ut-lista" id="utListaNorme">${righeNorme()}</div>${htmlApriLegge()}<p class="ut-nota">Ogni voce apre il testo ufficiale: l'app non copia le norme. Tocca ☆ per mettere una norma in cima.</p>`;
+}
+
+// ── «Apri una legge»: tipo + numero + data (o solo anno) → link URN ufficiale di Normattiva (testo vigente) ──
+const TIPI_ATTO = [
+  { id: 'legge', nome: 'Legge', breve: 'Legge', urn: 'stato:legge' },
+  { id: 'dl', nome: 'Decreto-legge', breve: 'D.L.', urn: 'stato:decreto.legge' },
+  { id: 'dlgs', nome: 'Decreto legislativo', breve: 'D.Lgs.', urn: 'stato:decreto.legislativo' },
+  { id: 'dpr', nome: 'D.P.R.', breve: 'D.P.R.', urn: 'presidente.repubblica:decreto' },
+  { id: 'rd', nome: 'Regio decreto', breve: 'R.D.', urn: 'stato:regio.decreto' }
+];
+const MESI_ATTO = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+function statoAtto(){ return utStato.atto || (utStato.atto = { tipo: 'legge', num: '', data: '' }); }
+// «1981» → solo anno; «1/4/1981», «01-04-1981», «1.4.1981» → data completa. null se non valida.
+function leggiDataAtto(s){
+  s = String(s || '').trim();
+  let m = s.match(/^(\d{4})$/);
+  if(m){ const a = +m[1]; return a >= 1861 && a <= 2100 ? { anno: a, iso: null } : null; }
+  m = s.match(/^(\d{1,2})[\/.\-\s](\d{1,2})[\/.\-\s](\d{4})$/);
+  if(!m) return null;
+  const g = +m[1], me = +m[2], a = +m[3], d = new Date(a, me - 1, g);
+  if(a < 1861 || a > 2100 || d.getFullYear() !== a || d.getMonth() !== me - 1 || d.getDate() !== g) return null;
+  return { anno: a, iso: `${a}-${String(me).padStart(2, '0')}-${String(g).padStart(2, '0')}`, g, me };
+}
+function costruisciAtto(tipoId, num, dataTesto){
+  const tipo = TIPI_ATTO.find(t => t.id === tipoId); const n = String(num || '').trim().replace(/^n\.?\s*/i, '');
+  const d = leggiDataAtto(dataTesto);
+  if(!tipo || !/^\d{1,5}(-?bis|-?ter)?$/i.test(n) || !d) return null;
+  const nome = d.iso ? `${tipo.breve} ${d.g} ${MESI_ATTO[d.me - 1]} ${d.anno}, n. ${n}` : `${tipo.breve} n. ${n}/${d.anno}`;
+  return { nome, url: `https://www.normattiva.it/uri-res/N2Ls?urn:nir:${tipo.urn}:${d.iso || d.anno};${n.toLowerCase()}` };
+}
+// Riconosce nella ricerca frasi come «legge 104/1992», «dlgs 81 2008», «d.p.r. 309/1990», «dl 18 del 2020»
+function attoDaTesto(s){
+  const t = String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const m = t.match(/^(legge|l\.?|decreto[ -]legge|d\.? ?l\.?|decreto legislativo|d\.? ?lgs\.?|dlgs|dpr|d\.? ?p\.? ?r\.?|regio decreto|r\.? ?d\.?) ?(?:n\.? ?)?(\d{1,5}) ?(?:\/|del|,|-)? ?(\d{4})$/);
+  if(!m) return null;
+  const k = m[1].replace(/[\s.]/g, '');
+  const tipo = /^(legge|l)$/.test(k) ? 'legge' : /^(decreto-?legge|dl)$/.test(k) ? 'dl' : /^(decretolegislativo|dlgs)$/.test(k) ? 'dlgs' : /^dpr$/.test(k) ? 'dpr' : 'rd';
+  return costruisciAtto(tipo, m[2], m[3]);
+}
+function esitoAtto(){
+  const a = statoAtto(), x = costruisciAtto(a.tipo, a.num, a.data);
+  if(x) return `<div class="ut-lista">${rigaLink({ url: x.url, icona: 'libro', titolo: x.nome, testo: 'Testo vigente', fonte: 'Normattiva' })}</div>`;
+  if(a.data && !leggiDataAtto(a.data)) return `<p class="ut-vuoto">Data non valida: scrivi ad es. 01/04/1981 oppure solo 1981.</p>`;
+  return '';
+}
+function htmlApriLegge(){
+  const a = statoAtto();
+  return `<p class="ut-tit">Apri una legge</p><div class="ut-box ut-targa-box ut-atto">`
+    + `<label class="ut-campo">Tipo<select id="utAttoTipo">${TIPI_ATTO.map(t => `<option value="${t.id}"${t.id === a.tipo ? ' selected' : ''}>${t.nome}</option>`).join('')}</select></label>`
+    + `<label class="ut-campo">Numero<input id="utAttoNum" inputmode="numeric" autocomplete="off" placeholder="es. 121" maxlength="9" value="${escapeHtml(a.num)}"></label>`
+    + `<label class="ut-campo">Data o anno<input id="utAttoData" inputmode="numeric" autocomplete="off" placeholder="es. 01/04/1981" maxlength="10" value="${escapeHtml(a.data)}"></label>`
+    + `<small class="ut-tenue">Scrivi numero e data: qui sotto compare il link. Con la data completa è più preciso.</small></div><div id="utAttoEsito">${esitoAtto()}</div>`;
 }

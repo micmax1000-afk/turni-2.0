@@ -1,6 +1,5 @@
 <it-IT>
-• Link utili in Altro: Crimnet, PRADO, Normattiva, addizionali MEF, contratto SIULP e SAP, Viaggiare Sicuri, più i tuoi link
-• Il tasto «indietro» di Android chiude la scheda aperta invece dell'app
-• Le note di servizio si salvano da sole; nelle altre schede l'app chiede prima di perdere le modifiche
-• Utilità più leggibili col tema scuro
+• Normativa in Link utili: codici, TULPS, Legge 121/1981 e Regolamento di servizio (D.P.R. 782/1985) su Normattiva
+• Cerca una norma e metti ☆ alle più usate
+• «Apri una legge»: scrivi tipo, numero e data e apri qualsiasi legge in vigore su Normattiva
 </it-IT>

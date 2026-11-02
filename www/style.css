@@ -3237,3 +3237,12 @@ html[data-tema=scuro] .ut-btn-r,html[data-tema=scuro] .ut-tit-azione button,html
 html[data-tema=scuro] .ut-ic,html[data-tema=scuro] .ut-giorno,html[data-tema=scuro] .ut-chip.on{background:color-mix(in srgb,#8FA6FF 14%,transparent)}
 html[data-tema=scuro] .ut-sotto-arancio,html[data-tema=scuro] .ut-uscita .k small,html[data-tema=scuro] .ut-mini em{color:#FFC27A!important}
 @media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .ut-btn-r,html:not([data-tema="chiaro"]) .ut-tit-azione button,html:not([data-tema="chiaro"]) .ut-ic,html:not([data-tema="chiaro"]) .ut-fonte,html:not([data-tema="chiaro"]) .ut-mic{color:#8FA6FF!important}html:not([data-tema="chiaro"]) .ut-sotto-arancio{color:#FFC27A!important}}
+/* v3.8.20: Normativa (Link utili) */
+.ut-norma{padding:0;align-items:stretch}
+.ut-norma-link{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:12px 4px 12px 14px;color:inherit;text-decoration:none}
+.ut-stella{width:52px;flex:none;border:0;background:none;font-size:1.35rem;color:var(--testo-tenue);cursor:pointer}
+.ut-norma.preferita .ut-stella{color:#E0A100}
+.ut-norma.preferita{background:color-mix(in srgb,#E0A100 7%,var(--pannello))}
+
+/* v3.8.20: «Apri una legge» (link URN Normattiva) */
+#utAttoEsito .ut-lista{margin-top:8px}

@@ -53,7 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.19');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.20');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -626,9 +626,9 @@ sezione('v3.8.13: guida alle novità');
   await p.evaluate(() => { localStorage.removeItem('simCedolino_novitaViste_v1'); avviaNovitaSeServe(); });
   await p.waitForTimeout(200);
   const passi = [];
-  for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 2 fumetti: Link utili e tasto indietro', passi.join(' | ') === 'Novità: Link utili (1 di 2) | Tasto «indietro» (2 di 2)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.19'));
+  for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
+  ok('chi usava già l\'app vede 1 fumetto: Normativa', passi.join(' | ') === 'Novità: Normativa (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.20'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -882,7 +882,23 @@ sezione('v3.8.19: Link utili, tasto indietro, note che si salvano da sole');
   await p.evaluate(() => { mostraScheda('altro'); });
   await p.click('#utilLink');
   const l = await p.evaluate(() => ({ link: document.querySelectorAll('#paginaUt a.ut-link[target="_blank"]').length, fonti: [...document.querySelectorAll('#paginaUt .ut-fonte')].every(x => /^Fonte: /.test(x.textContent)), crimnet: !!document.querySelector('#paginaUt a[href^="https://crimnet.dcpc.interno.gov.it"]') }));
-  ok('Link utili: pagine ufficiali che si aprono fuori, ognuna con «Fonte: …»', l.link === 7 && l.fonti && l.crimnet, JSON.stringify(l));
+  ok('Link utili: pagine ufficiali che si aprono fuori, ognuna con «Fonte: …»', l.link >= 6 && l.fonti && l.crimnet, JSON.stringify(l));
+  await p.fill('#utCercaNorme', 'tulps');
+  ok('Normativa: cerca «tulps» → TULPS e il suo regolamento', await p.evaluate(() => [...document.querySelectorAll('#utListaNorme .ut-norma b')].map(x => x.textContent).join('|') === 'TULPS|Regolamento del TULPS'));
+  await p.fill('#utCercaNorme', '');
+  await p.click('[data-ut="stella-norma"][data-id="cds"]');
+  ok('stella sul Codice della strada: va in cima ed è salvata', await p.evaluate(() => document.querySelector('#utListaNorme .ut-norma b').textContent === 'Codice della strada' && U.preferitiNorme.includes('cds')));
+  await p.fill('#utAttoNum', '121'); await p.fill('#utAttoData', '01/04/1981');
+  ok('Apri una legge: Legge 121 del 1/4/1981 → link URN di Normattiva', await p.evaluate(() => { const a = document.querySelector('#utAttoEsito a'); return !!a && a.href === 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:1981-04-01;121' && a.target === '_blank'; }));
+  await p.selectOption('#utAttoTipo', 'dpr'); await p.fill('#utAttoNum', '782'); await p.fill('#utAttoData', '1985');
+  ok('Apri una legge: D.P.R. 782 con il solo anno', await p.evaluate(() => document.querySelector('#utAttoEsito a').href === 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:presidente.repubblica:decreto:1985;782'));
+  await p.fill('#utAttoData', '31/02/1985');
+  ok('Apri una legge: data inesistente → avviso, niente link', await p.evaluate(() => !document.querySelector('#utAttoEsito a') && /Data non valida/.test(el('utAttoEsito').textContent)));
+  await p.fill('#utCercaNorme', 'dlgs 81/2008');
+  ok('ricerca «dlgs 81/2008» → riga diretta a Normattiva', await p.evaluate(() => document.querySelector('#utListaNorme a').href === 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2008;81'));
+  await p.fill('#utCercaNorme', '');
+  ok('i dati di «Apri una legge» non vengono salvati', await p.evaluate(() => !JSON.stringify(U).includes('782') && !localStorage.getItem('simCedolino_utilita_v1').includes('1985')));
+  ok('nessun link con «utm_source»', await p.evaluate(() => !document.querySelector('#paginaUt a[href*="utm_"]')));
   await p.click('[data-ut="nuovo-link"]');
   await p.fill('#editorUt [data-campo="titolo"]', 'Sindacato'); await p.fill('#editorUt [data-campo="url"]', 'www.siulp.it');
   await p.click('[data-ut="salva-link"]');

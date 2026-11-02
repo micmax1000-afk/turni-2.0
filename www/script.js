@@ -4208,10 +4208,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.19';
+const VERSIONE_NOVITA = '3.8.20';
 const PASSI_NOVITA = [
-  { id: 'tabAltro', titolo: 'Novità: Link utili', testo: 'In Altro → Link utili: Crimnet, PRADO, Normattiva, addizionali MEF, contratto SIULP e SAP, Viaggiare Sicuri. E puoi aggiungere i tuoi.' },
-  { id: 'tabCalendario', titolo: 'Tasto «indietro»', testo: 'Ora il tasto indietro di Android chiude la scheda aperta invece dell\'app. Le note di servizio si salvano da sole.' }
+  { id: 'tabAltro', titolo: 'Novità: Normativa', testo: 'In Altro → Link utili: codici, TULPS, Legge 121 e Regolamento di servizio su Normattiva, con ricerca e ☆ preferiti. Con «Apri una legge» scrivi tipo, numero e data e apri qualsiasi legge in vigore.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){
