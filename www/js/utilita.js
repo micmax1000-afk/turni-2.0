@@ -18,7 +18,7 @@ let utStato = { pagina: null, cerca: '', meseVeicolo: null, editor: null };
 function caricaUtilita(){
   try{ const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_UTILITA) || 'null'); if(v && typeof v === 'object') U = Object.assign({ scadenze: [], note: [], scambi: [], mezzi: [], uscite: [] }, v); }catch(e){}
 }
-function salvaUtilita(){ try{ TurniPSStorage.setItem(CHIAVE_UTILITA, JSON.stringify(U)); }catch(e){} aggiornaRigheUtilita(); aggiornaBannerScadenze(); }
+function salvaUtilita(){ try{ TurniPSStorage.setItem(CHIAVE_UTILITA, JSON.stringify(U)); }catch(e){} aggiornaRigheUtilita(); aggiornaBannerScadenze(); try{ renderUtilitaRiquadroGiorno(); if(typeof applicaVistaCalendario === 'function' && typeof vistaCalendario === 'function' && vistaCalendario() !== 'mese'){ if(vistaCalendario() === 'agenda') renderAgenda(); else applicaVistaCalendario(); } }catch(e){} }
 function datiUtilitaPerBackup(){ return JSON.parse(JSON.stringify(U)); }
 function ripristinaUtilitaDaBackup(d){
   if(!d || typeof d !== 'object') return;
@@ -450,6 +450,11 @@ function inizializzaUtilita(){
     window.apriModaleTurno = function(){ const r = orig.apply(this, arguments); try{ aggiornaUtilitaGiorno(); }catch(e){} return r; };
     window.apriModaleTurno.__ut = true;
   }
+  if(typeof window.renderListaEventiGiornoV2 === 'function' && !window.renderListaEventiGiornoV2.__ut){
+    const origE = window.renderListaEventiGiornoV2;
+    window.renderListaEventiGiornoV2 = function(){ const r = origE.apply(this, arguments); try{ renderUtilitaRiquadroGiorno(); }catch(e){} return r; };
+    window.renderListaEventiGiornoV2.__ut = true;
+  }
   if(typeof window.renderCalendario === 'function' && !window.renderCalendario.__ut){
     const origR = window.renderCalendario;
     window.renderCalendario = function(){ const r = origR.apply(this, arguments); try{ segnaScambiNelCalendario(); aggiornaBannerScadenze(); }catch(e){} return r; };
@@ -459,3 +464,36 @@ function inizializzaUtilita(){
   // All'apertura gli avvisi delle scadenze future si rimettono in coda (in silenzio)
   setTimeout(() => U.scadenze.filter(s => giorniDa(s.data) >= 0).forEach(s => programmaAvvisiScadenza(s, true)), 4000);
 }
+
+// ── v3.8.18: le Utilità del giorno dove le guardi già (riquadro del giorno, Settimana, Agenda, Cerca) ──
+function righeUtilitaGiorno(iso){
+  if(!iso) return '';
+  const out = [];
+  U.uscite.filter(u => u.giorno === iso).forEach(u => {
+    const mz = mezzoDi(u.mezzoId), k = kmPercorsi(u);
+    out.push(`<span class="ut-mini" role="button" tabindex="0" data-ut-apri="uscita" data-id="${u.id}">${ic('auto')}<span>${escapeHtml(mz ? mz.sigla : 'Mezzo')}${k !== null ? ` · ${numeroIt0(k)} km` : ''}${u.anomalie ? ` · <em>${escapeHtml(u.anomalie)}</em>` : ''}</span></span>`);
+  });
+  U.note.filter(n => n.giorno === iso).forEach(n => out.push(`<span class="ut-mini" role="button" tabindex="0" data-ut-apri="nota" data-id="${n.id}">${ic('lista')}<span>${escapeHtml(n.titolo || (n.testo || 'Nota').slice(0, 40))}</span></span>`));
+  U.scambi.filter(s => s.giorno === iso).forEach(s => out.push(`<span class="ut-mini" role="button" tabindex="0" data-ut-apri="scambio" data-id="${s.id}">${ic('giro')}<span>${s.verso === 'devo' ? `${escapeHtml(s.collega)} ti ha sostituito` : `Hai sostituito ${escapeHtml(s.collega)}`}${s.restituito ? ' · pari' : ''}</span></span>`));
+  return out.length ? `<span class="ut-mini-lista">${out.join('')}</span>` : '';
+}
+function renderUtilitaRiquadroGiorno(){
+  const lista = el('listaEventiGiornoV2'); if(!lista) return;
+  let box = el('utilitaRiquadroGiorno');
+  if(!box){ box = document.createElement('div'); box.id = 'utilitaRiquadroGiorno'; lista.after(box); }
+  box.innerHTML = righeUtilitaGiorno(giornoSelezionato);
+}
+// Ricerca dell'Agenda: anche note di servizio e uscite del veicolo
+function risultatiUtilitaPerCerca(va){
+  const r = [];
+  U.note.forEach(n => { if(va(`${n.titolo} ${n.testo}`)) r.push({ iso: n.giorno || dataISO(new Date(n.modificata)), html: `<button type="button" class="agenda-evento" data-ut-apri="nota" data-id="${n.id}">${ic('lista')}<em>Nota</em><span class="agenda-ev-testo"><b>${escapeHtml(n.titolo || 'Nota')}</b>${n.testo ? `<small>${escapeHtml(n.testo.slice(0, 70))}</small>` : ''}</span></button>` }); });
+  U.uscite.forEach(u => { const mz = mezzoDi(u.mezzoId); if(va(`${mz ? mz.sigla + ' ' + mz.targa : ''} ${u.anomalie || ''} ${u.appunti || ''} ${u.collega || ''}`)) r.push({ iso: u.giorno, html: `<button type="button" class="agenda-evento" data-ut-apri="uscita" data-id="${u.id}">${ic('auto')}<em>${escapeHtml(mz ? mz.sigla : 'Mezzo')}</em><span class="agenda-ev-testo"><b>${kmPercorsi(u) !== null ? numeroIt0(kmPercorsi(u)) + ' km' : 'Uscita'}${u.anomalie ? ' · ' + escapeHtml(u.anomalie) : ''}</b>${u.appunti ? `<small>${escapeHtml(u.appunti.slice(0, 70))}</small>` : ''}</span></button>` }); });
+  return r;
+}
+document.addEventListener('click', e => {
+  const x = e.target.closest && e.target.closest('[data-ut-apri]');
+  if(!x || x.closest('#paginaUt, #editorUt')) return;
+  e.stopPropagation(); e.preventDefault();
+  const id = x.dataset.id, t = x.dataset.utApri;
+  if(t === 'uscita') apriEditorUscita(id); else if(t === 'nota') apriEditorNota(id); else if(t === 'scambio') apriEditorScambio(id);
+}, true);
