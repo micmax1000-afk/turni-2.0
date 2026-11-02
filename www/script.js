@@ -4208,9 +4208,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.21';
+const VERSIONE_NOVITA = '3.8.22';
 const PASSI_NOVITA = [
-  { id: 'tabAltro', titolo: 'Novità: Cerca nelle leggi', testo: 'In Altro → Link utili: scrivi una parola e trovi le leggi su Normattiva che ne parlano (serve internet). Ci sono anche la Normativa con ☆ preferiti e «Apri una legge».' }
+  { id: 'tabAltro', titolo: 'Novità: Cerca nelle leggi', testo: 'In Altro → Link utili: scrivi una parola e trovi le leggi su Normattiva che ne parlano (serve internet). Sopra trovi la Normativa: codici, TULPS e Regolamento di servizio, con ☆ per i preferiti.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

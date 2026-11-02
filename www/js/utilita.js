@@ -375,8 +375,6 @@ function clicUt(e){
 function inputUt(e){
   const t = e.target;
   if(t.id === 'utCercaNote'){ utStato.cerca = t.value; renderPaginaUt(); return; }
-  if(t.id === 'utCercaNorme'){ utStato.cercaNorme = t.value; const l = el('utListaNorme'); if(l) l.innerHTML = righeNorme(); return; }
-  if(t.id === 'utAttoTipo' || t.id === 'utAttoNum' || t.id === 'utAttoData'){ const a = statoAtto(); a[{ utAttoTipo: 'tipo', utAttoNum: 'num', utAttoData: 'data' }[t.id]] = t.value; const e = el('utAttoEsito'); if(e) e.innerHTML = esitoAtto(); return; }
   const ed = utStato.editor; if(!ed) return;
   if(t.dataset.campoMezzo){ ed.nuovoMezzo[t.dataset.campoMezzo] = t.value; return; }
   const c = t.dataset.campo; if(!c) return;
@@ -628,71 +626,12 @@ const NORME = [
 ];
 function righeNorme(){
   const pref = new Set(U.preferitiNorme || []);
-  const norm = t => typeof normalizzaVoce === 'function' ? normalizzaVoce(t) : String(t).toLowerCase();
-  const q = norm(utStato.cercaNorme || '').trim();
-  const lista = NORME.filter(n => !q || q.split(' ').every(w => norm(`${n.titolo} ${n.testo} ${n.parole}`).includes(w)))
-    .sort((a, b) => (pref.has(b.id) ? 1 : 0) - (pref.has(a.id) ? 1 : 0));
-  const diretto = attoDaTesto(utStato.cercaNorme || '');
-  const rigaDiretta = diretto ? `<div class="ut-riga ut-norma"><a class="ut-norma-link" href="${escapeHtml(diretto.url)}" target="_blank" rel="noopener noreferrer"><span class="ut-ic">${ic('libro')}</span><span class="ut-t"><b>${escapeHtml(diretto.nome)}</b><small>Testo vigente</small><small class="ut-fonte">Fonte: Normattiva</small></span></a></div>` : '';
-  if(!lista.length) return rigaDiretta || `<p class="ut-vuoto">Nessuna norma con «${escapeHtml(utStato.cercaNorme)}». Usa «Apri una legge» qui sotto, oppure scrivi ad es. «legge 104/1992».</p>`;
-  return rigaDiretta + lista.map(n => `<div class="ut-riga ut-norma${pref.has(n.id) ? ' preferita' : ''}"><a class="ut-norma-link" href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer"><span class="ut-ic">${ic(/pdf/i.test(n.titolo) || /\.pdf$/i.test(n.url) ? 'ricevuta' : 'libro')}</span><span class="ut-t"><b>${escapeHtml(n.titolo)}</b><small>${escapeHtml(n.testo)}</small><small class="ut-fonte">Fonte: ${escapeHtml(n.fonte)}</small></span></a>`
+  const lista = NORME.slice().sort((a, b) => (pref.has(b.id) ? 1 : 0) - (pref.has(a.id) ? 1 : 0));
+  return lista.map(n => `<div class="ut-riga ut-norma${pref.has(n.id) ? ' preferita' : ''}"><a class="ut-norma-link" href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer"><span class="ut-ic">${ic('libro')}</span><span class="ut-t"><b>${escapeHtml(n.titolo)}</b><small>${escapeHtml(n.testo)}</small><small class="ut-fonte">Fonte: ${escapeHtml(n.fonte)}</small></span></a>`
     + `<button type="button" class="ut-stella" data-ut="stella-norma" data-id="${n.id}" aria-pressed="${pref.has(n.id)}" aria-label="${pref.has(n.id) ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}">${pref.has(n.id) ? '★' : '☆'}</button></div>`).join('');
 }
 function htmlNormativa(){
-  return `<p class="ut-tit">Normativa</p><label class="ut-cerca">${ic('cerca')}<input type="search" id="utCercaNorme" placeholder="Cerca una norma (es. TULPS, arresto)" value="${escapeHtml(utStato.cercaNorme || '')}"></label>`
-    + `<div class="ut-lista" id="utListaNorme">${righeNorme()}</div>${htmlApriLegge()}${htmlCercaLeggi()}<p class="ut-nota">Ogni voce apre il testo ufficiale: l'app non copia le norme. Tocca ☆ per mettere una norma in cima.</p>`;
-}
-
-// ── «Apri una legge»: tipo + numero + data (o solo anno) → link URN ufficiale di Normattiva (testo vigente) ──
-const TIPI_ATTO = [
-  { id: 'legge', nome: 'Legge', breve: 'Legge', urn: 'stato:legge' },
-  { id: 'dl', nome: 'Decreto-legge', breve: 'D.L.', urn: 'stato:decreto.legge' },
-  { id: 'dlgs', nome: 'Decreto legislativo', breve: 'D.Lgs.', urn: 'stato:decreto.legislativo' },
-  { id: 'dpr', nome: 'D.P.R.', breve: 'D.P.R.', urn: 'presidente.repubblica:decreto' },
-  { id: 'rd', nome: 'Regio decreto', breve: 'R.D.', urn: 'stato:regio.decreto' }
-];
-const MESI_ATTO = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-function statoAtto(){ return utStato.atto || (utStato.atto = { tipo: 'legge', num: '', data: '' }); }
-// «1981» → solo anno; «1/4/1981», «01-04-1981», «1.4.1981» → data completa. null se non valida.
-function leggiDataAtto(s){
-  s = String(s || '').trim();
-  let m = s.match(/^(\d{4})$/);
-  if(m){ const a = +m[1]; return a >= 1861 && a <= 2100 ? { anno: a, iso: null } : null; }
-  m = s.match(/^(\d{1,2})[\/.\-\s](\d{1,2})[\/.\-\s](\d{4})$/);
-  if(!m) return null;
-  const g = +m[1], me = +m[2], a = +m[3], d = new Date(a, me - 1, g);
-  if(a < 1861 || a > 2100 || d.getFullYear() !== a || d.getMonth() !== me - 1 || d.getDate() !== g) return null;
-  return { anno: a, iso: `${a}-${String(me).padStart(2, '0')}-${String(g).padStart(2, '0')}`, g, me };
-}
-function costruisciAtto(tipoId, num, dataTesto){
-  const tipo = TIPI_ATTO.find(t => t.id === tipoId); const n = String(num || '').trim().replace(/^n\.?\s*/i, '');
-  const d = leggiDataAtto(dataTesto);
-  if(!tipo || !/^\d{1,5}(-?bis|-?ter)?$/i.test(n) || !d) return null;
-  const nome = d.iso ? `${tipo.breve} ${d.g} ${MESI_ATTO[d.me - 1]} ${d.anno}, n. ${n}` : `${tipo.breve} n. ${n}/${d.anno}`;
-  return { nome, url: `https://www.normattiva.it/uri-res/N2Ls?urn:nir:${tipo.urn}:${d.iso || d.anno};${n.toLowerCase()}` };
-}
-// Riconosce nella ricerca frasi come «legge 104/1992», «dlgs 81 2008», «d.p.r. 309/1990», «dl 18 del 2020»
-function attoDaTesto(s){
-  const t = String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
-  const m = t.match(/^(legge|l\.?|decreto[ -]legge|d\.? ?l\.?|decreto legislativo|d\.? ?lgs\.?|dlgs|dpr|d\.? ?p\.? ?r\.?|regio decreto|r\.? ?d\.?) ?(?:n\.? ?)?(\d{1,5}) ?(?:\/|del|,|-)? ?(\d{4})$/);
-  if(!m) return null;
-  const k = m[1].replace(/[\s.]/g, '');
-  const tipo = /^(legge|l)$/.test(k) ? 'legge' : /^(decreto-?legge|dl)$/.test(k) ? 'dl' : /^(decretolegislativo|dlgs)$/.test(k) ? 'dlgs' : /^dpr$/.test(k) ? 'dpr' : 'rd';
-  return costruisciAtto(tipo, m[2], m[3]);
-}
-function esitoAtto(){
-  const a = statoAtto(), x = costruisciAtto(a.tipo, a.num, a.data);
-  if(x) return `<div class="ut-lista">${rigaLink({ url: x.url, icona: 'libro', titolo: x.nome, testo: 'Testo vigente', fonte: 'Normattiva' })}</div>`;
-  if(a.data && !leggiDataAtto(a.data)) return `<p class="ut-vuoto">Data non valida: scrivi ad es. 01/04/1981 oppure solo 1981.</p>`;
-  return '';
-}
-function htmlApriLegge(){
-  const a = statoAtto();
-  return `<p class="ut-tit">Apri una legge</p><div class="ut-box ut-targa-box ut-atto">`
-    + `<label class="ut-campo">Tipo<select id="utAttoTipo">${TIPI_ATTO.map(t => `<option value="${t.id}"${t.id === a.tipo ? ' selected' : ''}>${t.nome}</option>`).join('')}</select></label>`
-    + `<label class="ut-campo">Numero<input id="utAttoNum" inputmode="numeric" autocomplete="off" placeholder="es. 121" maxlength="9" value="${escapeHtml(a.num)}"></label>`
-    + `<label class="ut-campo">Data o anno<input id="utAttoData" inputmode="numeric" autocomplete="off" placeholder="es. 01/04/1981" maxlength="10" value="${escapeHtml(a.data)}"></label>`
-    + `<small class="ut-tenue">Scrivi numero e data: qui sotto compare il link. Con la data completa è più preciso.</small></div><div id="utAttoEsito">${esitoAtto()}</div>`;
+  return `<p class="ut-tit">Normativa</p><div class="ut-lista" id="utListaNorme">${righeNorme()}</div>${htmlCercaLeggi()}`;
 }
 
 // ── «Cerca nelle leggi»: ricerca per parola con le API open data di Normattiva (IPZS, licenza CC BY-NC 4.0) ──
@@ -748,5 +687,5 @@ function disegnaLeggi(){ const b = el('utRisultatiLeggi'); if(b) b.innerHTML = r
 function htmlCercaLeggi(){
   const st = statoLeggi();
   return `<p class="ut-tit">Cerca nelle leggi</p><form id="utFormLeggi" class="ut-cerca ut-cerca-leggi" role="search">${ic('cerca')}<input type="search" id="utCercaLeggi" enterkeyhint="search" autocomplete="off" placeholder="Una parola, es. perquisizione" value="${escapeHtml(st.testo)}" maxlength="80"><button type="submit" class="ut-chip">Cerca</button></form>`
-    + `<div id="utRisultatiLeggi">${righeLeggi()}</div><p class="ut-nota">Cerca in tutte le leggi pubblicate su Normattiva (serve internet). La parola viene inviata a Normattiva: non scrivere dati personali. Dati: Normattiva – Istituto Poligrafico e Zecca dello Stato, licenza CC BY-NC 4.0.</p>`;
+    + `<div id="utRisultatiLeggi">${righeLeggi()}</div><p class="ut-nota">Le norme si aprono sul sito ufficiale: tocca ☆ per mettere in cima quelle che usi di più. «Cerca nelle leggi» cerca in tutte le leggi pubblicate su Normattiva (serve internet). La parola viene inviata a Normattiva: non scrivere dati personali. Dati: Normattiva – Istituto Poligrafico e Zecca dello Stato, licenza CC BY-NC 4.0.</p>`;
 }

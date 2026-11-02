@@ -3244,8 +3244,6 @@ html[data-tema=scuro] .ut-sotto-arancio,html[data-tema=scuro] .ut-uscita .k smal
 .ut-norma.preferita .ut-stella{color:#E0A100}
 .ut-norma.preferita{background:color-mix(in srgb,#E0A100 7%,var(--pannello))}
 
-/* v3.8.20: «Apri una legge» (link URN Normattiva) */
-#utAttoEsito .ut-lista{margin-top:8px}
 .ut-cerca-leggi{padding-right:6px}
 .ut-cerca-leggi .ut-chip{flex:none}
 .ut-leggi-conta{font-size:.8rem;color:var(--testo-tenue);margin:10px 2px 4px}
