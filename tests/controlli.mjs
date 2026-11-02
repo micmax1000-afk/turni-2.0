@@ -53,7 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.17');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.19');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -267,7 +267,7 @@ sezione('Altro: due gruppi, pagina Backup, Tabelle');
   const { p, ctx, errori } = await apri({ turni: turniDiProva() });
   await p.click('#tabAltro');
   const a = await p.evaluate(() => ({ titoli: [...document.querySelectorAll('#sezioneAltro .strumenti-turni-titolo')].map(x => x.textContent).join(','), backupVisibile: !!el('impostazioniBackupContainer').offsetParent, promemoria: el('campoPromemoriaTurno').checked }));
-  ok('Altro: gruppi Impostazioni, Utilità e Dati e aiuto, backup non più in fondo alla pagina, promemoria spento', a.titoli === 'Impostazioni,Utilità,Dati e aiuto' && !a.backupVisibile && !a.promemoria, JSON.stringify(a));
+  ok('Altro: gruppi Impostazioni, Utilità, Link e Dati e aiuto, backup non più in fondo alla pagina, promemoria spento', a.titoli === 'Impostazioni,Utilità,Link,Dati e aiuto' && !a.backupVisibile && !a.promemoria, JSON.stringify(a));
   await p.click('#settingsBackupV4');
   ok('"Backup" apre la sua pagina con telefono e Google Drive, il resto di Altro sparisce', await p.evaluate(() => !!el('btnEsportaBackup').offsetParent && !!el('sezioneBackupDrive').offsetParent && !el('settingsTabelle').offsetParent));
   ok('v3.8.7: backup su Google Drive gratuito, nessun pulsante di acquisto', await p.evaluate(() => !!el('btnSalvaDrive') && !el('btnAcquistaBackupDrive') && !/1,99/.test(el('sezioneBackupDrive').textContent)));
@@ -627,8 +627,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 2 fumetti: Utilità e il giorno', passi.join(' | ') === 'Novità: le Utilità (1 di 2) | Anche nel giorno (2 di 2)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.17'));
+  ok('chi usava già l\'app vede 2 fumetti: Link utili e tasto indietro', passi.join(' | ') === 'Novità: Link utili (1 di 2) | Tasto «indietro» (2 di 2)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.19'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -870,6 +870,51 @@ sezione('v3.9: Utilità (scadenze, note, cambi, veicolo)');
   conferme.length = 0;
   conferme.push(await elimina('scadenze', '[data-ut="apri-scadenza"]', '[data-ut="elimina-scadenza"]'));
   ok('«Elimina» anche in Scadenze', conferme[0] && await p.evaluate(() => U.scadenze.length === 0));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.19: Link utili, tasto indietro, note che si salvano da sole');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(900);
+  await p.evaluate(() => { mostraScheda('altro'); });
+  await p.click('#utilLink');
+  const l = await p.evaluate(() => ({ link: document.querySelectorAll('#paginaUt a.ut-link[target="_blank"]').length, fonti: [...document.querySelectorAll('#paginaUt .ut-fonte')].every(x => /^Fonte: /.test(x.textContent)), crimnet: !!document.querySelector('#paginaUt a[href^="https://crimnet.dcpc.interno.gov.it"]') }));
+  ok('Link utili: pagine ufficiali che si aprono fuori, ognuna con «Fonte: …»', l.link === 7 && l.fonti && l.crimnet, JSON.stringify(l));
+  await p.click('[data-ut="nuovo-link"]');
+  await p.fill('#editorUt [data-campo="titolo"]', 'Sindacato'); await p.fill('#editorUt [data-campo="url"]', 'www.siulp.it');
+  await p.click('[data-ut="salva-link"]');
+  ok('un link mio: «www.siulp.it» diventa https://www.siulp.it/', await p.evaluate(() => U.link.length === 1 && U.link[0].url === 'https://www.siulp.it/'));
+  await p.fill('#utTargaCopia', 'ab 123 cd');
+  ok('campo targa da copiare (non viene salvata)', await p.evaluate(() => !JSON.stringify(U).includes('AB123CD')));
+  // Nota scritta e chiusa con ✕: si salva da sola
+  await p.evaluate(() => { chiudiPaginaUt(1); apriUtilita('note'); });
+  await p.click('[data-ut="nuova-nota"]');
+  await p.fill('#editorUt [data-campo="testo"]', 'Appunto veloce');
+  await p.click('#editorUt [data-ut="chiudi"]');
+  ok('nota chiusa con ✕: salvata lo stesso', await p.evaluate(() => U.note.length === 1 && U.note[0].testo === 'Appunto veloce'));
+  // Scadenza modificata e chiusa con ✕: chiede se uscire senza salvare
+  await p.evaluate(() => apriUtilita('scadenze'));
+  await p.click('[data-ut="nuova-scadenza"]');
+  await p.fill('#editorUt [data-campo="nome"]', 'Prova');
+  await p.click('#editorUt [data-ut="chiudi"]');
+  ok('scadenza modificata e chiusa: «Uscire senza salvare?»', await p.evaluate(() => !el('overlayAvviso').hidden && /senza salvare/.test(el('overlayAvviso').textContent) && !el('editorUt').hidden));
+  await p.click('#btnConfermaAvviso');
+  ok('confermando si esce senza salvare', await p.evaluate(() => el('editorUt').hidden && U.scadenze.length === 0));
+  // Tasto indietro: chiude in ordine editor, pagina, scheda Altro
+  await p.evaluate(() => { chiudiPaginaUt(1); mostraScheda('altro'); apriUtilita('note'); apriEditorNota(U.note[0].id); });
+  await p.goBack(); await p.waitForTimeout(200);
+  const s1 = await p.evaluate(() => ({ editor: !el('editorUt').hidden, pagina: !el('paginaUt').hidden }));
+  await p.goBack(); await p.waitForTimeout(200);
+  const s2 = await p.evaluate(() => ({ pagina: !el('paginaUt').hidden, altro: el('tabAltro').classList.contains('attiva') }));
+  await p.goBack(); await p.waitForTimeout(200);
+  const s3 = await p.evaluate(() => el('tabCalendario').classList.contains('attiva'));
+  ok('indietro: prima chiude la nota, poi la pagina, poi torna al Calendario (l\'app resta aperta)', !s1.editor && s1.pagina && !s2.pagina && s2.altro && s3, JSON.stringify({ s1, s2, s3 }));
+  await p.evaluate(() => { giornoSelezionato = '2026-10-13'; apriModaleTurno('2026-10-13'); });
+  await p.goBack(); await p.waitForTimeout(200);
+  ok('indietro chiude anche «Modifica il giorno»', await p.evaluate(() => el('pannelloTurno').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

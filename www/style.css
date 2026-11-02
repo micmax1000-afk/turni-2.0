@@ -3220,3 +3220,20 @@ html[data-tema=scuro] .ut-banner .icona-linea{color:#FFD38A}
 #utilitaRiquadroGiorno .ut-mini{font-size:.9rem;padding:6px 0;border-bottom:1px solid var(--bordo)}
 .agenda-righe .ut-mini-lista{margin:2px 2px 0}
 .agenda-evento > .icona-linea{width:16px;height:16px;flex:none;margin-top:2px}
+
+/* v3.8.19: Link utili */
+a.ut-link{text-decoration:none;color:inherit}
+.ut-link > i{font-style:normal;color:var(--testo-tenue);flex:none}
+.ut-fonte{color:var(--acc,#1D4FD7)!important;font-weight:600}
+.ut-link-mod{width:36px;height:36px;flex:none;border-radius:10px;border:1px solid var(--bordo);background:var(--pannello);color:var(--acc,#1D4FD7);display:grid;place-items:center;cursor:pointer}
+.ut-link-mod .icona-linea{width:17px;height:17px}
+.ut-targa-box{padding:4px 14px 12px}
+.ut-targa-box .ut-campo{border-bottom:0}
+.ut-targa-box #utTargaCopia{text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-cifre,monospace)}
+.ut-targa-box small{display:block;font-size:.74rem;margin-top:6px}
+
+/* v3.8.19: tema scuro delle Utilità, scritte più chiare */
+html[data-tema=scuro] .ut-btn-r,html[data-tema=scuro] .ut-tit-azione button,html[data-tema=scuro] .ut-giorno,html[data-tema=scuro] .ut-fissata,html[data-tema=scuro] .ut-chip.on,html[data-tema=scuro] .ut-mic,html[data-tema=scuro] .ut-ic,html[data-tema=scuro] .ut-aggiungi-giorno,html[data-tema=scuro] .ut-fonte,html[data-tema=scuro] .ut-link-mod{color:#8FA6FF!important;border-color:color-mix(in srgb,#8FA6FF 45%,transparent)}
+html[data-tema=scuro] .ut-ic,html[data-tema=scuro] .ut-giorno,html[data-tema=scuro] .ut-chip.on{background:color-mix(in srgb,#8FA6FF 14%,transparent)}
+html[data-tema=scuro] .ut-sotto-arancio,html[data-tema=scuro] .ut-uscita .k small,html[data-tema=scuro] .ut-mini em{color:#FFC27A!important}
+@media (prefers-color-scheme: dark){html:not([data-tema="chiaro"]) .ut-btn-r,html:not([data-tema="chiaro"]) .ut-tit-azione button,html:not([data-tema="chiaro"]) .ut-ic,html:not([data-tema="chiaro"]) .ut-fonte,html:not([data-tema="chiaro"]) .ut-mic{color:#8FA6FF!important}html:not([data-tema="chiaro"]) .ut-sotto-arancio{color:#FFC27A!important}}

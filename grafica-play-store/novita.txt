@@ -1,5 +1,6 @@
 <it-IT>
-• Utilità: «Elimina» ora funziona in tutte le schede
-• Veicolo, note di servizio e scambi si vedono anche sotto il giorno, in Settimana e in Agenda
-• La ricerca dell'Agenda trova anche note e veicoli (mezzo, targa, anomalie)
+• Link utili in Altro: Crimnet, PRADO, Normattiva, addizionali MEF, contratto SIULP e SAP, Viaggiare Sicuri, più i tuoi link
+• Il tasto «indietro» di Android chiude la scheda aperta invece dell'app
+• Le note di servizio si salvano da sole; nelle altre schede l'app chiede prima di perdere le modifiche
+• Utilità più leggibili col tema scuro
 </it-IT>

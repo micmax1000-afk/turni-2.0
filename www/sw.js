@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V251 (v3.8.18 — Utilità: Elimina funziona in tutte le schede) */
+/* Turni & Accessorio PS — Service Worker V252 (v3.8.19 — Link utili, tasto indietro, note salvate da sole) */
 'use strict';
-const CACHE='turni-ps-v251';
+const CACHE='turni-ps-v252';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/utilita.js','./js/data/tabelle-2026.js',
