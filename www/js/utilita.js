@@ -502,38 +502,20 @@ document.addEventListener('click', e => {
 
 // ── v3.8.19: Link utili (Altro → Link utili): pagine ufficiali, con la fonte sotto ──
 const GRUPPI_LINK = [
-  { titolo: 'Controlli sul veicolo', targa: true, link: [
-    { titolo: 'Veicolo rubato', testo: 'Per targa o numero di telaio', fonte: 'Ministero dell’Interno – Crimnet', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'auto' },
-    { titolo: 'Assicurazione e ultima revisione', testo: 'Verifica copertura RCA e revisione', fonte: 'Ministero delle Infrastrutture e dei Trasporti – Portale dell’Automobilista', url: 'https://www.ilportaledellautomobilista.it/', icona: 'scudo' },
-    { titolo: 'Bollo auto', testo: 'Calcolo del bollo', fonte: 'ACI', url: 'https://online.aci.it/acinet/calcolobollo/', icona: 'euro' }
+  { titolo: 'Controlli', targa: true, link: [
+    { titolo: 'Crimnet – banche dati', testo: 'Veicoli rubati (targa o telaio), documenti rubati o smarriti', fonte: 'Ministero dell\u2019Interno', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'occhio' },
+    { titolo: 'PRADO – documenti originali', testo: 'Modelli dei documenti d\'identità e di viaggio europei, per riconoscere i falsi', fonte: 'Consiglio dell\'Unione europea', url: 'https://www.consilium.europa.eu/prado/it/prado-start-page.html', icona: 'tessera' }
   ] },
-  { titolo: 'Per i cittadini', link: [
-    { titolo: 'Documenti rubati o smarriti', testo: 'Controllo di un documento', fonte: 'Ministero dell’Interno – Crimnet', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'tessera' },
-    { titolo: 'Banche dati della Polizia di Stato', testo: 'Veicoli rubati, documenti rubati o smarriti, banconote false, oggetti rubati', fonte: 'Polizia di Stato', url: 'https://www.poliziadistato.it/articolo/banche-dati', icona: 'occhio' },
-    { titolo: 'PRADO – documenti autentici', testo: 'Modelli dei documenti d\'identità e di viaggio europei, per riconoscere i falsi', fonte: 'Consiglio dell\'Unione europea', url: 'https://www.consilium.europa.eu/prado/it/prado-start-page.html', icona: 'tessera' },
-    { titolo: 'Denuncia via web', testo: 'Furti e smarrimenti, da confermare in ufficio', fonte: 'Polizia di Stato', url: 'https://www.denunceviaweb.poliziadistato.it/', icona: 'ricevuta' },
-    { titolo: 'Questure sul web', testo: 'La tua Questura: passaporti, permessi di soggiorno, armi, orari', fonte: 'Polizia di Stato', url: 'https://questure.poliziadistato.it/', icona: 'edificio' },
-    { titolo: 'Passaporto online', testo: 'Prenotare l\'appuntamento in Questura', fonte: 'Polizia di Stato', url: 'https://www.passaportonline.poliziadistato.it/', icona: 'tessera' },
-    { titolo: 'Commissariato di P.S. online', testo: 'Truffe e reati informatici: segnalazioni e consigli', fonte: 'Polizia di Stato', url: 'https://www.commissariatodips.it/', icona: 'globo' },
+  { titolo: 'Leggi', link: [
+    { titolo: 'Normattiva', testo: 'Codice penale, procedura penale, Codice della strada, TULPS e tutte le leggi in vigore', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.normattiva.it/', icona: 'libro' }
+  ] },
+  { titolo: 'Stipendio e contratto', link: [
+    { titolo: 'Addizionali regionali e comunali IRPEF', testo: 'Aliquote di ogni Regione e di ogni Comune', fonte: 'MEF – Dipartimento delle Finanze', url: 'https://www.finanze.gov.it/it/fiscalita/fiscalita-regionale-e-locale/', icona: 'euro' },
+    { titolo: 'Contratto di lavoro – SIULP', testo: 'Testi del contratto e della contrattazione', fonte: 'SIULP', url: 'https://siulp.it/category/contrattazione/contratto/', icona: 'lista' },
+    { titolo: 'Contratto di lavoro – SAP', testo: 'I contratti', fonte: 'SAP – Sindacato Autonomo di Polizia', url: 'https://sap-nazionale.org/2023/i-contratti/', icona: 'lista' }
+  ] },
+  { titolo: 'Viaggi', link: [
     { titolo: 'Viaggiare Sicuri', testo: 'Avvisi e documenti richiesti per ogni Paese', fonte: 'Ministero degli Affari Esteri', url: 'https://www.viaggiaresicuri.it/', icona: 'mappa' }
-  ] },
-  { titolo: 'Stipendio e tasse', link: [
-    { titolo: 'NoiPA', testo: 'Cedolino, CU e dati stipendiali', fonte: 'Ministero dell’Economia e delle Finanze', url: 'https://noipa.mef.gov.it/', icona: 'ricevuta' },
-    { titolo: 'Dichiarazione precompilata', testo: '730 e Certificazione Unica', fonte: 'Agenzia delle Entrate', url: 'https://infoprecompilata.agenziaentrate.gov.it/', icona: 'ricevuta' },
-    { titolo: 'INPS', testo: 'Posizione contributiva e pensione (MyINPS)', fonte: 'INPS', url: 'https://www.inps.it/', icona: 'edificio' },
-    { titolo: 'Addizionali regionali e comunali IRPEF', testo: 'Aliquote di ogni Regione e di ogni Comune', fonte: 'MEF – Dipartimento delle Finanze', url: 'https://www.finanze.gov.it/it/fiscalita/fiscalita-regionale-e-locale/', icona: 'euro' }
-  ] },
-  { titolo: 'Codici e leggi', link: [
-    { titolo: 'Codice della strada', testo: 'D.Lgs. 30 aprile 1992, n. 285 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1992-04-30;285', icona: 'auto' },
-    { titolo: 'Codice penale', testo: 'R.D. 19 ottobre 1930, n. 1398 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:regio.decreto:1930-10-19;1398', icona: 'libro' },
-    { titolo: 'Codice di procedura penale', testo: 'D.P.R. 22 settembre 1988, n. 447 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1988-09-22;447', icona: 'libro' },
-    { titolo: 'TULPS', testo: 'Testo unico leggi di pubblica sicurezza – R.D. 18 giugno 1931, n. 773', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:regio.decreto:1931-06-18;773', icona: 'libro' }
-  ] },
-  { titolo: 'Norme e istituzioni', link: [
-    { titolo: 'Normattiva', testo: 'Leggi e codici in vigore', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.normattiva.it/', icona: 'libro' },
-    { titolo: 'Gazzetta Ufficiale', testo: 'Leggi e decreti appena pubblicati', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.gazzettaufficiale.it/', icona: 'lista' },
-    { titolo: 'Polizia di Stato', testo: 'Sito ufficiale', fonte: 'Polizia di Stato', url: 'https://www.poliziadistato.it/', icona: 'scudo' },
-    { titolo: 'Ministero dell’Interno', testo: 'Sito ufficiale', fonte: 'Ministero dell’Interno', url: 'https://www.interno.gov.it/', icona: 'edificio' }
   ] }
 ];
 function urlSicuro(u){ const t = String(u || '').trim(); if(!t) return ''; const c = /^https?:\/\//i.test(t) ? t : 'https://' + t; try{ const x = new URL(c); return /^https?:$/.test(x.protocol) ? x.href : ''; }catch(e){ return ''; } }
@@ -549,7 +531,7 @@ function htmlLink(){
       + `<div class="ut-lista">${g.link.map(l => rigaLink(l)).join('')}</div>`).join('')
     + `<p class="ut-tit ut-tit-azione">I tuoi link <button type="button" data-ut="nuovo-link">＋ Link</button></p>`
     + (miei.length ? `<div class="ut-lista">${miei.map(l => rigaLink(l, true)).join('')}</div>` : `<p class="ut-vuoto">Aggiungi i siti che usi di più: il tuo sindacato, l'ufficio, la mensa…</p>`)
-    + `<p class="ut-nota">I controlli li fanno i siti ufficiali, con i loro dati aggiornati. I risultati di Crimnet non hanno valore legale e possono arrivare con qualche giorno di ritardo rispetto alla denuncia.</p></div>`;
+    + `<p class="ut-nota">Si aprono i siti ufficiali, con i loro dati aggiornati. I risultati di Crimnet non hanno valore legale e possono arrivare con qualche giorno di ritardo rispetto alla denuncia.</p></div>`;
 }
 function apriEditorLink(id){
   const l = id ? (U.link || []).find(x => x.id === id) : { id: null, titolo: '', url: '' };

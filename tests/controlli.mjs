@@ -882,7 +882,7 @@ sezione('v3.8.19: Link utili, tasto indietro, note che si salvano da sole');
   await p.evaluate(() => { mostraScheda('altro'); });
   await p.click('#utilLink');
   const l = await p.evaluate(() => ({ link: document.querySelectorAll('#paginaUt a.ut-link[target="_blank"]').length, fonti: [...document.querySelectorAll('#paginaUt .ut-fonte')].every(x => /^Fonte: /.test(x.textContent)), crimnet: !!document.querySelector('#paginaUt a[href^="https://crimnet.dcpc.interno.gov.it"]') }));
-  ok('Link utili: pagine ufficiali che si aprono fuori, ognuna con «Fonte: …»', l.link >= 9 && l.fonti && l.crimnet, JSON.stringify(l));
+  ok('Link utili: pagine ufficiali che si aprono fuori, ognuna con «Fonte: …»', l.link === 7 && l.fonti && l.crimnet, JSON.stringify(l));
   await p.click('[data-ut="nuovo-link"]');
   await p.fill('#editorUt [data-campo="titolo"]', 'Sindacato'); await p.fill('#editorUt [data-campo="url"]', 'www.siulp.it');
   await p.click('[data-ut="salva-link"]');
