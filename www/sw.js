@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V253 (v3.8.20 — Normativa e «Apri una legge» in Link utili) */
+/* Turni & Accessorio PS — Service Worker V254 (v3.8.21 — Cerca nelle leggi su Normattiva) */
 'use strict';
-const CACHE='turni-ps-v253';
+const CACHE='turni-ps-v254';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/utilita.js','./js/data/tabelle-2026.js',

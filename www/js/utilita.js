@@ -44,6 +44,7 @@ function paginaUt(livello){
     p.setAttribute('role', 'dialog'); p.setAttribute('aria-modal', 'true');
     document.body.appendChild(p);
     p.addEventListener('click', clicUt); p.addEventListener('input', inputUt); p.addEventListener('change', inputUt);
+    p.addEventListener('submit', e => { if(e.target.id === 'utFormLeggi'){ e.preventDefault(); cercaNelleLeggi(1); } });
   }
   return p;
 }
@@ -504,7 +505,7 @@ document.addEventListener('click', e => {
 
 // ── v3.8.19: Link utili (Altro → Link utili): pagine ufficiali, con la fonte sotto ──
 const GRUPPI_LINK = [
-  { titolo: 'Controlli', targa: true, link: [
+  { titolo: 'Controlli', link: [
     { titolo: 'Crimnet – banche dati', testo: 'Veicoli rubati (targa o telaio), documenti rubati o smarriti', fonte: 'Ministero dell\u2019Interno', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'occhio' },
     { titolo: 'PRADO – documenti originali', testo: 'Modelli dei documenti d\'identità e di viaggio europei, per riconoscere i falsi', fonte: 'Consiglio dell\'Unione europea', url: 'https://www.consilium.europa.eu/prado/it/prado-start-page.html', icona: 'tessera' }
   ] },
@@ -526,7 +527,6 @@ function htmlLink(){
   return testaUt('Link utili', 'Pagine ufficiali: si aprono nel browser', '')
     + `<div class="ut-corpo">`
     + GRUPPI_LINK.map((g, gi) => (gi === 1 ? htmlNormativa() : '') + `<p class="ut-tit">${g.titolo}</p>`
-      + (g.targa ? `<div class="ut-box ut-targa-box"><label class="ut-campo">Targa o telaio<input id="utTargaCopia" autocapitalize="characters" autocomplete="off" placeholder="es. AB123CD" maxlength="17"></label><button type="button" class="ut-chip" data-ut="copia-targa">${ic('lista')} Copia</button><small class="ut-tenue">Copiala qui, poi incollala nella pagina ufficiale. L'app non la salva.</small></div>` : '')
       + `<div class="ut-lista">${g.link.map(l => rigaLink(l)).join('')}</div>`).join('')
     + `<p class="ut-tit ut-tit-azione">I tuoi link <button type="button" data-ut="nuovo-link">＋ Link</button></p>`
     + (miei.length ? `<div class="ut-lista">${miei.map(l => rigaLink(l, true)).join('')}</div>` : `<p class="ut-vuoto">Aggiungi i siti che usi di più: il tuo sindacato, l'ufficio, la mensa…</p>`)
@@ -545,16 +545,9 @@ function apriEditorLink(id){
 function clicLinkUt(b){
   const a = b.dataset.ut, ed = utStato.editor;
   if(a === 'nuovo-link'){ apriEditorLink(null); return true; }
+  if(a === 'leggi-altri'){ cercaNelleLeggi((utStato.leggi.pagina || 1) + 1); return true; }
   if(a === 'stella-norma'){ const id = b.dataset.id; const p = new Set(U.preferitiNorme || []); if(p.has(id)) p.delete(id); else p.add(id); U.preferitiNorme = [...p]; salvaUtilita(); const l = el('utListaNorme'); if(l) l.innerHTML = righeNorme(); return true; }
   if(a === 'apri-link'){ apriEditorLink(b.dataset.id); return true; }
-  if(a === 'copia-targa'){
-    const v = (el('utTargaCopia').value || '').replace(/\s+/g, '').toUpperCase();
-    if(!v){ mostraToast('Scrivi prima la targa o il telaio.', 'avviso'); return true; }
-    const fatto = () => mostraToast(`«${v}» copiata: incollala nella pagina ufficiale.`, 'successo');
-    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(fatto, () => { el('utTargaCopia').select(); document.execCommand('copy'); fatto(); });
-    else { el('utTargaCopia').select(); document.execCommand('copy'); fatto(); }
-    return true;
-  }
   if(a === 'salva-link'){
     const l = ed.bozza, url = urlSicuro(l.url);
     if(!l.titolo.trim()){ mostraToast('Dai un nome al link.', 'avviso'); return true; }
@@ -647,7 +640,7 @@ function righeNorme(){
 }
 function htmlNormativa(){
   return `<p class="ut-tit">Normativa</p><label class="ut-cerca">${ic('cerca')}<input type="search" id="utCercaNorme" placeholder="Cerca una norma (es. TULPS, arresto)" value="${escapeHtml(utStato.cercaNorme || '')}"></label>`
-    + `<div class="ut-lista" id="utListaNorme">${righeNorme()}</div>${htmlApriLegge()}<p class="ut-nota">Ogni voce apre il testo ufficiale: l'app non copia le norme. Tocca ☆ per mettere una norma in cima.</p>`;
+    + `<div class="ut-lista" id="utListaNorme">${righeNorme()}</div>${htmlApriLegge()}${htmlCercaLeggi()}<p class="ut-nota">Ogni voce apre il testo ufficiale: l'app non copia le norme. Tocca ☆ per mettere una norma in cima.</p>`;
 }
 
 // ── «Apri una legge»: tipo + numero + data (o solo anno) → link URN ufficiale di Normattiva (testo vigente) ──
@@ -700,4 +693,60 @@ function htmlApriLegge(){
     + `<label class="ut-campo">Numero<input id="utAttoNum" inputmode="numeric" autocomplete="off" placeholder="es. 121" maxlength="9" value="${escapeHtml(a.num)}"></label>`
     + `<label class="ut-campo">Data o anno<input id="utAttoData" inputmode="numeric" autocomplete="off" placeholder="es. 01/04/1981" maxlength="10" value="${escapeHtml(a.data)}"></label>`
     + `<small class="ut-tenue">Scrivi numero e data: qui sotto compare il link. Con la data completa è più preciso.</small></div><div id="utAttoEsito">${esitoAtto()}</div>`;
+}
+
+// ── «Cerca nelle leggi»: ricerca per parola con le API open data di Normattiva (IPZS, licenza CC BY-NC 4.0) ──
+// Solo l'elenco degli atti trovati; il testo si apre sempre sul sito ufficiale. Nulla viene salvato.
+const API_NORMATTIVA = 'https://api.normattiva.it/t/normattiva.api/bff-opendata/v1/api/v1/ricerca/semplice';
+const LEGGI_PER_PAGINA = 10;
+function statoLeggi(){ return utStato.leggi || (utStato.leggi = { testo: '', pagina: 0, atti: [], totale: 0, stato: '', richiesta: 0 }); }
+function maiuscolaIniziale(t){ t = String(t || '').toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); }
+function attoDaApi(a){
+  const titolo = String(a.titoloAtto || '').replace(/^\[|\]$/g, '').replace(/\s*\(\w{8,}\)\s*\]?\s*$/, '').replace(/\s+/g, ' ').trim();
+  const nome = maiuscolaIniziale(String(a.descrizioneAtto || '').replace(/\s+/g, ' ').trim()) || 'Atto';
+  const ok = /^\d{4}-\d{2}-\d{2}$/.test(a.dataGU || '') && /^[\w]+$/.test(a.codiceRedazionale || '');
+  const url = ok ? `https://www.normattiva.it/atto/caricaDettaglioAtto?atto.dataPubblicazioneGazzetta=${a.dataGU}&atto.codiceRedazionale=${a.codiceRedazionale}` : 'https://www.normattiva.it/';
+  return { url, titolo: nome, testo: titolo, icona: 'libro', fonte: 'Normattiva' };
+}
+async function cercaNelleLeggi(pagina){
+  const st = statoLeggi(), inp = el('utCercaLeggi');
+  const testo = pagina === 1 ? (inp ? inp.value : '').trim() : st.testo;
+  if(testo.length < 3){ st.stato = 'corto'; st.atti = []; disegnaLeggi(); return; }
+  if(inp) inp.blur();
+  const id = ++st.richiesta;
+  Object.assign(st, { testo, stato: 'carica' }); if(pagina === 1){ st.atti = []; st.totale = 0; }
+  disegnaLeggi();
+  try{
+    const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    const t = setTimeout(() => ctrl && ctrl.abort(), 20000);
+    const r = await fetch(API_NORMATTIVA, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl ? ctrl.signal : undefined,
+      body: JSON.stringify({ testoRicerca: testo, orderType: 'recente', paginazione: { paginaCorrente: pagina, numeroElementiPerPagina: LEGGI_PER_PAGINA } }) });
+    clearTimeout(t);
+    if(id !== st.richiesta) return;
+    if(r.status === 204){ Object.assign(st, { stato: 'ok', totale: 0, pagina: 1 }); disegnaLeggi(); return; }
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if(id !== st.richiesta) return;
+    st.atti = st.atti.concat((d.listaAtti || []).map(attoDaApi));
+    Object.assign(st, { stato: 'ok', totale: d.numeroAttiTrovati || st.atti.length, pagina });
+  }catch(e){ if(id === st.richiesta) st.stato = navigator.onLine === false ? 'offline' : 'errore'; }
+  disegnaLeggi();
+}
+function righeLeggi(){
+  const st = statoLeggi();
+  if(st.stato === 'corto') return `<p class="ut-vuoto">Scrivi almeno 3 lettere.</p>`;
+  if(st.stato === 'offline') return `<p class="ut-vuoto">Serve internet per cercare su Normattiva.</p>`;
+  if(st.stato === 'errore') return `<p class="ut-vuoto">Normattiva non risponde in questo momento. Riprova più tardi.</p>`;
+  if(st.stato === 'ok' && !st.atti.length) return `<p class="ut-vuoto">Nessuna legge trovata con «${escapeHtml(st.testo)}».</p>`;
+  let h = '';
+  if(st.atti.length) h += `<p class="ut-leggi-conta">${numeroIt0(st.totale)} ${st.totale === 1 ? 'atto trovato' : 'atti trovati'} · dai più recenti</p><div class="ut-lista">${st.atti.map(a => rigaLink(a)).join('')}</div>`;
+  if(st.stato === 'carica') h += `<p class="ut-vuoto">Cerco su Normattiva…</p>`;
+  else if(st.atti.length < st.totale) h += `<button type="button" class="ut-chip ut-leggi-altri" data-ut="leggi-altri">Mostra altri ${Math.min(LEGGI_PER_PAGINA, st.totale - st.atti.length)}</button>`;
+  return h;
+}
+function disegnaLeggi(){ const b = el('utRisultatiLeggi'); if(b) b.innerHTML = righeLeggi(); }
+function htmlCercaLeggi(){
+  const st = statoLeggi();
+  return `<p class="ut-tit">Cerca nelle leggi</p><form id="utFormLeggi" class="ut-cerca ut-cerca-leggi" role="search">${ic('cerca')}<input type="search" id="utCercaLeggi" enterkeyhint="search" autocomplete="off" placeholder="Una parola, es. perquisizione" value="${escapeHtml(st.testo)}" maxlength="80"><button type="submit" class="ut-chip">Cerca</button></form>`
+    + `<div id="utRisultatiLeggi">${righeLeggi()}</div><p class="ut-nota">Cerca in tutte le leggi pubblicate su Normattiva (serve internet). La parola viene inviata a Normattiva: non scrivere dati personali. Dati: Normattiva – Istituto Poligrafico e Zecca dello Stato, licenza CC BY-NC 4.0.</p>`;
 }
