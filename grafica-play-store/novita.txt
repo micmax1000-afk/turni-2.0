@@ -1,5 +1,5 @@
 <it-IT>
-• Normativa in Link utili: codici, TULPS, Legge 121/1981 e Regolamento di servizio (D.P.R. 782/1985) su Normattiva
-• Cerca una norma e metti ☆ alle più usate
-• «Apri una legge»: scrivi tipo, numero e data e apri qualsiasi legge in vigore su Normattiva
+• Cerca nelle leggi: scrivi una parola e trovi le leggi su Normattiva che ne parlano
+• Normativa in Link utili: codici, TULPS, Legge 121/1981 e Regolamento di servizio, con ricerca e ☆ preferiti
+• «Apri una legge»: tipo, numero e data e si apre il testo in vigore
 </it-IT>

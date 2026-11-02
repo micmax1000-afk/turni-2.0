@@ -53,7 +53,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.20');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.21');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -627,8 +627,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Normativa', passi.join(' | ') === 'Novità: Normativa (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.20'));
+  ok('chi usava già l\'app vede 1 fumetto: Cerca nelle leggi', passi.join(' | ') === 'Novità: Cerca nelle leggi (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.21'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -903,8 +903,27 @@ sezione('v3.8.19: Link utili, tasto indietro, note che si salvano da sole');
   await p.fill('#editorUt [data-campo="titolo"]', 'Sindacato'); await p.fill('#editorUt [data-campo="url"]', 'www.siulp.it');
   await p.click('[data-ut="salva-link"]');
   ok('un link mio: «www.siulp.it» diventa https://www.siulp.it/', await p.evaluate(() => U.link.length === 1 && U.link[0].url === 'https://www.siulp.it/'));
-  await p.fill('#utTargaCopia', 'ab 123 cd');
-  ok('campo targa da copiare (non viene salvata)', await p.evaluate(() => !JSON.stringify(U).includes('AB123CD')));
+  ok('in Controlli non c\'è più il campo targa o telaio', await p.evaluate(() => !document.getElementById('utTargaCopia') && !!document.querySelector('#paginaUt a[href^="https://crimnet"]')));
+  // Cerca nelle leggi: API open data di Normattiva (qui finta)
+  const richieste = [];
+  const attoFinto = i => ({ descrizioneAtto: 'LEGGE 2 dicembre 2025, n. ' + i, titoloAtto: '[Titolo di prova ' + i + '. (25G0018' + (i % 10) + ')  ]', dataGU: '2025-12-02', codiceRedazionale: '25G0018' + (i % 10) });
+  await p.route('https://api.normattiva.it/**', r => { const b = JSON.parse(r.request().postData()); richieste.push(b);
+    if(b.testoRicerca === 'guasto') return r.fulfill({ status: 500, body: '' });
+    const pag = b.paginazione.paginaCorrente; r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ numeroAttiTrovati: 12, listaAtti: Array.from({ length: pag === 1 ? 10 : 2 }, (_, k) => attoFinto((pag - 1) * 10 + k + 1)) }) }); });
+  await p.fill('#utCercaLeggi', 'perquisizione'); await p.press('#utCercaLeggi', 'Enter');
+  await p.waitForFunction(() => document.querySelectorAll('#utRisultatiLeggi .ut-link').length === 10);
+  const rl = await p.evaluate(() => { const a = document.querySelector('#utRisultatiLeggi .ut-link'); return { tit: a.querySelector('b').textContent, sotto: a.querySelector('small').textContent, href: a.href, blank: a.target, conta: document.querySelector('.ut-leggi-conta').textContent }; });
+  ok('Cerca nelle leggi: manda la parola a Normattiva, 10 per pagina dai più recenti', richieste.length === 1 && richieste[0].testoRicerca === 'perquisizione' && richieste[0].orderType === 'recente' && richieste[0].paginazione.numeroElementiPerPagina === 10, JSON.stringify(richieste));
+  ok('risultato: «Legge 2 dicembre 2025, n. 1», titolo pulito, link al testo su Normattiva', rl.tit === 'Legge 2 dicembre 2025, n. 1' && rl.sotto === 'Titolo di prova 1.' && rl.href === 'https://www.normattiva.it/atto/caricaDettaglioAtto?atto.dataPubblicazioneGazzetta=2025-12-02&atto.codiceRedazionale=25G00181' && rl.blank === '_blank' && /12 atti trovati/.test(rl.conta), JSON.stringify(rl));
+  await p.click('[data-ut="leggi-altri"]');
+  await p.waitForFunction(() => document.querySelectorAll('#utRisultatiLeggi .ut-link').length === 12);
+  ok('«Mostra altri»: chiede la pagina 2 e poi il tasto sparisce', richieste[1].paginazione.paginaCorrente === 2 && await p.evaluate(() => !document.querySelector('[data-ut="leggi-altri"]')));
+  await p.fill('#utCercaLeggi', 'guasto'); await p.click('#utFormLeggi button[type="submit"]');
+  await p.waitForFunction(() => /non risponde/.test(el('utRisultatiLeggi').textContent));
+  ok('Normattiva non risponde → avviso chiaro', true);
+  await p.fill('#utCercaLeggi', 'ab'); await p.press('#utCercaLeggi', 'Enter');
+  ok('meno di 3 lettere: non cerca', richieste.length === 3 && await p.evaluate(() => /almeno 3 lettere/.test(el('utRisultatiLeggi').textContent)));
+  ok('la ricerca nelle leggi non viene salvata', await p.evaluate(() => !localStorage.getItem('simCedolino_utilita_v1').includes('perquisizione')));
   // Nota scritta e chiusa con ✕: si salva da sola
   await p.evaluate(() => { chiudiPaginaUt(1); apriUtilita('note'); });
   await p.click('[data-ut="nuova-nota"]');
