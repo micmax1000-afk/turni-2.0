@@ -3244,10 +3244,14 @@ html[data-tema=scuro] .ut-sotto-arancio,html[data-tema=scuro] .ut-uscita .k smal
 .ut-norma.preferita .ut-stella{color:#E0A100}
 .ut-norma.preferita{background:color-mix(in srgb,#E0A100 7%,var(--pannello))}
 
-/* v3.8.20: «Apri una legge» (link URN Normattiva) */
-#utAttoEsito .ut-lista{margin-top:8px}
 .ut-cerca-leggi{padding-right:6px}
 .ut-cerca-leggi .ut-chip{flex:none}
-.ut-leggi-conta{font-size:.8rem;color:var(--testo-tenue);margin:10px 2px 4px}
 .ut-leggi-altri{display:flex;margin:10px auto 0}
 #utRisultatiLeggi .ut-t small:not(.ut-fonte){display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ut-leggi-testa{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 2px 6px;font-size:.84rem;color:var(--testo-tenue)}
+.ut-leggi-chiudi{border:0;background:none;font:700 .84rem var(--font-corpo);color:var(--acc,#1D4FD7);padding:6px 4px;cursor:pointer}
+.ut-leggi-chiudi-fondo{display:block;margin:6px auto 0}
+.ut-leggi-filtri{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.ut-leggi-filtri .ut-chip b{font-weight:600;opacity:.65;margin-left:2px}
+.ut-leggi-filtri .ut-chip.attivo{background:var(--acc,#1D4FD7);border-color:var(--acc,#1D4FD7);color:#fff}
+.ut-leggi-filtri .ut-chip.attivo b{opacity:.85}
