@@ -511,11 +511,23 @@ const GRUPPI_LINK = [
     { titolo: 'Documenti rubati o smarriti', testo: 'Controllo di un documento', fonte: 'Ministero dell’Interno – Crimnet', url: 'https://crimnet.dcpc.interno.gov.it/crimnet/', icona: 'tessera' },
     { titolo: 'Banche dati della Polizia di Stato', testo: 'Veicoli rubati, documenti rubati o smarriti, banconote false, oggetti rubati', fonte: 'Polizia di Stato', url: 'https://www.poliziadistato.it/articolo/banche-dati', icona: 'occhio' },
     { titolo: 'PRADO – documenti autentici', testo: 'Modelli dei documenti d\'identità e di viaggio europei, per riconoscere i falsi', fonte: 'Consiglio dell\'Unione europea', url: 'https://www.consilium.europa.eu/prado/it/prado-start-page.html', icona: 'tessera' },
-    { titolo: 'Denuncia via web', testo: 'Furti e smarrimenti, da confermare in ufficio', fonte: 'Polizia di Stato', url: 'https://www.denunceviaweb.poliziadistato.it/', icona: 'ricevuta' }
+    { titolo: 'Denuncia via web', testo: 'Furti e smarrimenti, da confermare in ufficio', fonte: 'Polizia di Stato', url: 'https://www.denunceviaweb.poliziadistato.it/', icona: 'ricevuta' },
+    { titolo: 'Questure sul web', testo: 'La tua Questura: passaporti, permessi di soggiorno, armi, orari', fonte: 'Polizia di Stato', url: 'https://questure.poliziadistato.it/', icona: 'edificio' },
+    { titolo: 'Passaporto online', testo: 'Prenotare l\'appuntamento in Questura', fonte: 'Polizia di Stato', url: 'https://www.passaportonline.poliziadistato.it/', icona: 'tessera' },
+    { titolo: 'Commissariato di P.S. online', testo: 'Truffe e reati informatici: segnalazioni e consigli', fonte: 'Polizia di Stato', url: 'https://www.commissariatodips.it/', icona: 'globo' },
+    { titolo: 'Viaggiare Sicuri', testo: 'Avvisi e documenti richiesti per ogni Paese', fonte: 'Ministero degli Affari Esteri', url: 'https://www.viaggiaresicuri.it/', icona: 'mappa' }
   ] },
   { titolo: 'Stipendio e tasse', link: [
     { titolo: 'NoiPA', testo: 'Cedolino, CU e dati stipendiali', fonte: 'Ministero dell’Economia e delle Finanze', url: 'https://noipa.mef.gov.it/', icona: 'ricevuta' },
+    { titolo: 'Dichiarazione precompilata', testo: '730 e Certificazione Unica', fonte: 'Agenzia delle Entrate', url: 'https://infoprecompilata.agenziaentrate.gov.it/', icona: 'ricevuta' },
+    { titolo: 'INPS', testo: 'Posizione contributiva e pensione (MyINPS)', fonte: 'INPS', url: 'https://www.inps.it/', icona: 'edificio' },
     { titolo: 'Addizionali regionali e comunali IRPEF', testo: 'Aliquote di ogni Regione e di ogni Comune', fonte: 'MEF – Dipartimento delle Finanze', url: 'https://www.finanze.gov.it/it/fiscalita/fiscalita-regionale-e-locale/', icona: 'euro' }
+  ] },
+  { titolo: 'Codici e leggi', link: [
+    { titolo: 'Codice della strada', testo: 'D.Lgs. 30 aprile 1992, n. 285 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1992-04-30;285', icona: 'auto' },
+    { titolo: 'Codice penale', testo: 'R.D. 19 ottobre 1930, n. 1398 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:regio.decreto:1930-10-19;1398', icona: 'libro' },
+    { titolo: 'Codice di procedura penale', testo: 'D.P.R. 22 settembre 1988, n. 447 – testo vigente', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1988-09-22;447', icona: 'libro' },
+    { titolo: 'TULPS', testo: 'Testo unico leggi di pubblica sicurezza – R.D. 18 giugno 1931, n. 773', fonte: 'Normattiva', url: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:regio.decreto:1931-06-18;773', icona: 'libro' }
   ] },
   { titolo: 'Norme e istituzioni', link: [
     { titolo: 'Normattiva', testo: 'Leggi e codici in vigore', fonte: 'Istituto Poligrafico e Zecca dello Stato', url: 'https://www.normattiva.it/', icona: 'libro' },
