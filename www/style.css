@@ -3208,3 +3208,5 @@ body:not(.calendario-moderno) .scheda-calendario-v2 .giorno-cella .giorno-turno-
 html[data-tema=scuro] .ut-rosso{background:#4A1F1C;color:#FFB4AB}html[data-tema=scuro] .ut-arancio,html[data-tema=scuro] .ut-saldo-devo,html[data-tema=scuro] .ut-banner{background:#4A3510;color:#FFD38A}
 html[data-tema=scuro] .ut-verde,html[data-tema=scuro] .ut-saldo-mideve,html[data-tema=scuro] .ut-calc{background:#173A28;color:#9BE2B5}
 html[data-tema=scuro] .ut-banner .icona-linea{color:#FFD38A}
+/* v3.8.18: la conferma ("Eliminare…?") e gli avvisi in basso stanno sopra le pagine delle Utilità */
+#overlayAvviso{z-index:400}

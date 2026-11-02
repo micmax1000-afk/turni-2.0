@@ -839,7 +839,26 @@ sezione('v3.9: Utilità (scadenze, note, cambi, veicolo)');
   await p.click('[data-ut="nuova-uscita"]');
   ok('nuova uscita: km di partenza = ultimi km del mezzo', await p.evaluate(() => el('editorUt').querySelector('[data-campo="kmInizio"]').value === '128598'));
   await p.click('#editorUt [data-ut="chiudi"]');
+  // v3.8.18: «Elimina» in tutte e quattro: la conferma deve stare sopra la pagina e funzionare
+  const elimina = async (pagina, apri, bottone) => {
+    await p.evaluate(pg => { chiudiPaginaUt(2); apriUtilita(pg); if(pg === 'veicolo'){ utStato.meseVeicolo = '2026-10'; renderPaginaUt(); } }, pagina);
+    await p.click(apri); await p.click(bottone);
+    const sopra = await p.evaluate(() => { const r = el('btnConfermaAvviso').getBoundingClientRect(); const x = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!(x && x.closest('#overlayAvviso')); });
+    await p.click('#btnConfermaAvviso');
+    return sopra;
+  };
+  const conferme = [];
+  conferme.push(await elimina('note', '[data-ut="apri-nota"]', '[data-ut="elimina-nota"]'));
+  conferme.push(await elimina('scambi', '[data-ut="apri-scambio"]', '[data-ut="elimina-scambio"]'));
+  conferme.push(await elimina('veicolo', '[data-ut="apri-uscita"]', '[data-ut="elimina-uscita"]'));
+  conferme.push(await elimina('veicolo', '[data-ut="apri-mezzo"]', '[data-ut="elimina-mezzo"]'));
+  const dopo = await p.evaluate(() => ({ note: U.note.length, scambi: U.scambi.length, uscite: U.uscite.length, mezzi: U.mezzi.length }));
+  ok('«Elimina» in Note, Cambi e Veicolo: la conferma è sopra la pagina e cancella', conferme.every(Boolean) && !dopo.note && !dopo.scambi && !dopo.uscite && !dopo.mezzi, JSON.stringify({ conferme, dopo }));
+  await p.evaluate(() => { U.note.push({ id: 'n_b', titolo: 'B', testo: '', giorno: '', fissata: false, modificata: Date.now() }); U.uscite.push({ id: 'u_b', giorno: '2026-10-13', mezzoId: '', kmInizio: '1', kmFine: '2' }); U.mezzi.push({ id: 'm_b', sigla: 'V', targa: '' }); });
   ok('il backup contiene le Utilità', await p.evaluate(() => { const d = costruisciDatiBackup(); return d.utilita && d.utilita.scadenze.length === 1 && d.utilita.uscite.length === 1 && d.utilita.note.length === 1; }));
+  conferme.length = 0;
+  conferme.push(await elimina('scadenze', '[data-ut="apri-scadenza"]', '[data-ut="elimina-scadenza"]'));
+  ok('«Elimina» anche in Scadenze', conferme[0] && await p.evaluate(() => U.scadenze.length === 0));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

@@ -1,8 +1,4 @@
 <it-IT>
-• Nuove Utilità in Altro:
-  – Scadenze (visita medica, tiro, tesserino…) con avvisi
-  – Note di servizio, anche dettate
-  – Cambi con i colleghi: chi deve un turno a chi
-  – Gestione veicolo: km a mano o a voce, carburante, anomalie
-• Nel giorno: veicolo, scambio e note sotto «Altro per questo giorno»
+• Utilità: «Elimina» ora funziona in Scadenze, Note di servizio, Cambi con i colleghi e Gestione veicolo
+• Nuove Utilità in Altro: scadenze con avvisi, note di servizio, cambi con i colleghi, gestione veicolo (km a mano o a voce)
 </it-IT>
