@@ -72,6 +72,8 @@ const DISEGNI_LINEA = {
   mappa: '<path d="M3 6.5 9 4l6 2.5 6-2.5v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/>',
   regalo: '<rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8.5h14V12M12 8v12.5M12 8c-1-3-5-4-5-1.5S12 8 12 8zM12 8c1-3 5-4 5-1.5S12 8 12 8z"/>',
   pezzo: '<path d="M10 4.5a2 2 0 0 1 4 0V6h4v4h-1.5a2 2 0 0 0 0 4H18v4h-4v-1.5a2 2 0 0 0-4 0V18H6v-4h1.5a2 2 0 0 0 0-4H6V6h4z"/>',
+  tazza: '<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8.5 3.5c-.6 1 .6 1.6 0 2.8M12 3.5c-.6 1 .6 1.6 0 2.8"/>',
+  altoparlante: '<path d="M4 10h3.5L12 6v12l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
   stella: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   occhio: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
   condividi: '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4M8.2 13.2l7.6 4"/>',
@@ -92,7 +94,7 @@ const EMOJI_LINEA = {
   '⏭': 'avanti', '⚡': 'fulmine', '🔦': 'torcia', '↩': 'indietro', '🩺': 'salute', '🌓': 'contrasto', '📖': 'libro', '📚': 'libro', '💬': 'fumetto',
   '👋': 'mano', '👆': 'tocco', '🐞': 'insetto', '💡': 'lampadina', '❓': 'domanda', '✉': 'busta', '📧': 'busta', '🏠': 'casa', '⏸': 'pausa', '🔑': 'chiave',
   '🔒': 'lucchetto', '🎓': 'cappello', '🚀': 'razzo', '🌐': 'globo', '🎖': 'medaglia', '🏅': 'medaglia', '🧮': 'calcolatrice', '🗺': 'mappa', '🎁': 'regalo',
-  '🧩': 'pezzo', '⭐': 'stella', '👁': 'occhio', '🔗': 'condividi', '⚠': 'avviso', 'ℹ': 'info'
+  '🧩': 'pezzo', '⭐': 'stella', '☕': 'tazza', '🔊': 'altoparlante', '🔉': 'altoparlante', '👁': 'occhio', '🔗': 'condividi', '⚠': 'avviso', 'ℹ': 'info'
 };
 function svgLinea(nome, classe){
   const d = DISEGNI_LINEA[nome];

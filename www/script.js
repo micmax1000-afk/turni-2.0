@@ -466,7 +466,8 @@ function inizializza(){
   if(typeof inizializzaOffline==='function') inizializzaOffline();
   // v3.8.9: permesso breve a 36 ore e congedo ordinario dagli anni di servizio.
   correggiPermessoBreve(); aggiornaCongedoAutomatico();
-  inizializzaPlayBilling().then(() => renderSezioneBackupDrive());
+  inizializzaPro();
+  inizializzaPlayBilling().then(() => { renderSezioneBackupDrive(); aggiornaInterfacciaPro(); });
   mostraVersioneApp();
   aggiornaClasseCalendarioColori();
   aggiornaIconaCalendarioOggi();
@@ -1035,7 +1036,7 @@ function inizializza(){
   on('tabAltro','click', () => mostraScheda('altro'));
 
   on('btnPersonalizzaReport','click', apriPersonalizzaReport);
-  on('reportFondoV4','click', e => { const r = e.target.closest('[data-apri-report]'); if(r) apriChiudiReport(r.dataset.apriReport); });
+  on('reportFondoV4','click', e => { const r = e.target.closest('[data-apri-report]'); if(!r) return; if(!proAttivo() && !reportAperto[r.dataset.apriReport]) apriPaginaPro(); else apriChiudiReport(r.dataset.apriReport); });
   on('btnChiudiPersonalizzaReport','click', () => { el('overlayPersonalizzaReport').hidden = true; });
   on('btnFattoPersonalizzaReport','click', () => {
     AppState.reportBlocchi = {
@@ -3596,7 +3597,7 @@ function mostraPassoBenvenuto(n){
     el('benvenutoSaldi').innerHTML = formSaldiPartenzaHtml('benvenutoSaldo', valoriSaldiPartenza());
     el('benvenutoNotaSaldi').innerHTML = notaSpettantiCongedo();
   }
-  if(n === 4){ aggiornaTemiBenvenuto(); aggiornaStatoNotificheBenvenuto(); }
+  if(n === 4){ aggiornaTemiBenvenuto(); aggiornaStatoNotificheBenvenuto(); aggiornaRigheBenvenutoPro(); }
   if(n === 5) renderRiepilogoBenvenuto();
   el('overlayBenvenuto').scrollTop = 0;
 }

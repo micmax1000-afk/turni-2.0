@@ -39,8 +39,10 @@ function turniDiProva(){
 }
 
 const browser = await chromium.launch();
-async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true, scuro = false, nativo = false } = {}){
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome', colorScheme: scuro ? 'dark' : 'light' });
+async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true, scuro = false, nativo = false, premium = false } = {}){
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome', colorScheme: scuro ? 'dark' : 'light', ...(premium ? { serviceWorkers: 'block' } : {}) });
+  // Premium è spento nell'app (PREMIUM_ACCESO = false): per provarlo lo si accende solo qui.
+  if(premium) await ctx.route('**/js/pro.js', async r => { const resp = await r.fetch(); await r.fulfill({ response: resp, body: (await resp.text()).replace('const PREMIUM_ACCESO = false;', 'const PREMIUM_ACCESO = true;') }); });
   await ctx.route('https://micmax-apps.netlify.app/**', r => r.fulfill({ status: 404, body: '' }));
   const p = await ctx.newPage();
   const errori = [];
@@ -948,6 +950,60 @@ sezione('v3.8.19: Link utili, tasto indietro, note che si salvano da sole');
 }
 
 // ───────────────────────────────────────
+sezione('Premium spento: l\'app resta tutta gratuita come prima');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.click('#tabAltro');
+  ok('niente etichette PREMIUM, niente righe Premium e caffè in Altro', await p.evaluate(() => !document.querySelector('.badge-pro') && el('listaProAltro').hidden && getComputedStyle(el('listaProAltro')).display === 'none'));
+  ok('tutto sbloccato e nessun controllo del regalo', await p.evaluate(() => proAttivo() && localStorage.getItem('simCedolino_proRegalo_v1') === null));
+  await p.click('#campoPromemoriaTurno');
+  ok('il promemoria del turno si accende senza chiedere niente', await p.evaluate(() => el('campoPromemoriaTurno').checked && el('overlayPro').hidden));
+  await p.click('#tabReport'); await p.click('[data-apri-report="cedolino"]');
+  ok('il cedolino si apre', await p.evaluate(() => !el('sezioneCedolino').hidden && el('overlayPro').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('Premium (acceso solo nella prova) e "Offrimi un caffè"');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva(), premium: true });
+  ok('chi usava già l\'app (turni salvati) ha la Pro in regalo', await p.evaluate(() => proAttivo() && localStorage.getItem('simCedolino_proRegalo_v1') === '1'));
+  // Da qui come un'installazione nuova, con il modulo acquisti di Google Play simulato.
+  await p.evaluate(async () => {
+    localStorage.setItem('simCedolino_proRegalo_v1', '0'); localStorage.removeItem('simCedolino_proAttivo_v1'); localStorage.removeItem('simCedolino_backupDriveAttivo_v1');
+    window.__log = []; const asc = {};
+    const emetti = (nome, dati) => (asc[nome] || []).forEach(f => f(dati));
+    window.Capacitor = Object.assign(window.Capacitor || {}, { isNativePlatform: () => true, Plugins: Object.assign((window.Capacitor && window.Capacitor.Plugins) || {}, { PurchasePlugin: {
+      init: async () => {}, getAvailableProducts: async a => { window.__log.push(['catalogo', a.inAppSkus.join()]); },
+      addListener: async (nome, f) => { (asc[nome] = asc[nome] || []).push(f); return { remove: () => { asc[nome] = asc[nome].filter(x => x !== f); } }; },
+      getPurchases: async () => { setTimeout(() => emetti('setPurchases', { purchases: window.__posseduti || [] }), 10); },
+      buy: async a => { window.__log.push(['buy', a.productId]); setTimeout(() => emetti('purchasesUpdated', { purchases: [{ productId: a.productId, purchaseToken: 'tok-' + a.productId, acknowledged: false }] }), 10); },
+      acknowledgePurchase: async a => { window.__log.push(['ack', a.purchaseToken]); },
+      consumePurchase: async a => { window.__log.push(['consuma', a.purchaseToken]); }
+    } }) });
+    listenerAcquistiCollegato = false;
+    await inizializzaPlayBilling(); aggiornaInterfacciaPro();
+  });
+  ok('catalogo di Google Play: Pro, caffè e vecchio backup', await p.evaluate(() => window.__log.some(x => x[0] === 'catalogo' && x[1] === 'turni_pro,offri_caffe,backup_drive_automatico')));
+  await p.click('#tabReport');
+  ok('senza Pro: Cedolino stimato e Statistiche con l\'etichetta PRO', await p.evaluate(() => !proAttivo() && document.querySelectorAll('#reportFondoV4 .badge-pro').length === 2));
+  await p.click('[data-apri-report="cedolino"]');
+  ok('senza Pro: toccando il cedolino si apre la pagina Pro, non il cedolino', await p.evaluate(() => !el('overlayPro').hidden && el('sezioneCedolino').hidden));
+  await p.click('#btnOffriCaffePro'); await p.waitForTimeout(150);
+  ok('caffè: si compra e si "consuma" (si può offrire di nuovo), la Pro resta bloccata', await p.evaluate(() => window.__log.some(x => x[0] === 'buy' && x[1] === 'offri_caffe') && window.__log.some(x => x[0] === 'consuma' && x[1] === 'tok-offri_caffe') && !proAttivo()), await p.evaluate(() => JSON.stringify(window.__log)));
+  await p.click('#btnAcquistaPro'); await p.waitForTimeout(150);
+  ok('Premium comprato: confermato a Google, sbloccato, niente etichette, pagina "Premium attivo"', await p.evaluate(() => window.__log.some(x => x[0] === 'ack' && x[1] === 'tok-turni_pro') && proAttivo() && !document.querySelector('.badge-pro') && /Premium attivo/.test(el('titoloPaginaPro').textContent) && getComputedStyle(el('btnAcquistaPro')).display === 'none'));
+  await p.click('#btnChiudiPro');
+  await p.click('[data-apri-report="cedolino"]');
+  ok('con la Pro il cedolino si apre', await p.evaluate(() => !el('sezioneCedolino').hidden && el('overlayPro').hidden));
+  await p.evaluate(async () => { localStorage.removeItem('simCedolino_proAttivo_v1'); window.__posseduti = [{ productId: 'backup_drive_automatico', purchaseToken: 'vecchio' }]; await verificaAcquistoBackupDrive(); aggiornaInterfacciaPro(); });
+  ok('chi aveva comprato il backup Drive da 1,99 € ha la Pro', await p.evaluate(() => proAttivo()));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
 sezione('Promemoria (moduli Android simulati)');
 {
   const ev = (id, titolo, ora, extra) => Object.assign({ id, titolo, tuttoIlGiorno:false, oraInizio:ora, oraFine:'', promemoria:[{min:10},{min:60}] }, extra || {});
@@ -1178,8 +1234,9 @@ sezione('Riposo compensativo, colori delle assenze, cambio turno');
 // ─────────────────────────────────────────────────────────────
 sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
 {
-  // Installazione nuova: niente anagrafica, niente turni → si apre la guida.
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome' });
+  // Installazione nuova: niente anagrafica, niente turni → si apre la guida. Premium acceso solo qui (senza service worker, che salterebbe la modifica).
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, timezoneId: 'Europe/Rome', serviceWorkers: 'block' });
+  await ctx.route('**/js/pro.js', async r => { const resp = await r.fetch(); await r.fulfill({ response: resp, body: (await resp.text()).replace('const PREMIUM_ACCESO = false;', 'const PREMIUM_ACCESO = true;') }); });
   const p = await ctx.newPage();
   const errori = []; p.on('pageerror', e => errori.push(e.message));
   await p.clock.setFixedTime(new Date('2026-10-09T10:00:00+02:00'));
@@ -1214,6 +1271,13 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
   const spenti = await p.evaluate(() => ({ prom: impostazioniPromemoriaTurno().attivo, lista: promemoriaTurnoDaProgrammare().length, widget: datiWidget().attivo }));
   ok('promemoria del turno e widget partono spenti', spenti.prom === false && spenti.lista === 0 && spenti.widget === false, JSON.stringify(spenti));
   await p.click('#tabAltro');
+  // v3.9: installazione nuova senza Pro: accendere il promemoria apre la pagina Pro e resta spento.
+  ok('senza Pro: etichetta PRO su promemoria e widget, niente regalo per le installazioni nuove', await p.evaluate(() => !proAttivo() && localStorage.getItem('simCedolino_proRegalo_v1') === '0' && !!document.querySelector('#campoPromemoriaTurno').closest('.riga-strumento-turni').querySelector('.badge-pro')));
+  await p.click('#campoPromemoriaTurno');
+  ok('senza Pro: il promemoria non si accende e si apre la pagina Pro (3,99 €)', await p.evaluate(() => !el('campoPromemoriaTurno').checked && !el('overlayPro').hidden && /3,99/.test(el('btnAcquistaPro').textContent)));
+  await p.click('#btnChiudiPro');
+  await p.evaluate(() => { localStorage.setItem('simCedolino_proAttivo_v1', '1'); aggiornaInterfacciaPro(); });
+  ok('con la Pro: niente più etichette PRO', await p.evaluate(() => proAttivo() && !document.querySelector('.badge-pro') && el('overlayPro').hidden));
   await p.click('#campoPromemoriaTurno');
   const prom = await p.evaluate(() => promemoriaTurnoDaProgrammare()[0]);
   ok('acceso: "Domani: Mattino" la sera prima alle 20:00', prom.title === 'Domani: Mattino' && prom.body === '07:00 – 13:00' && new Date(prom.quando).toISOString() === '2026-10-09T18:00:00.000Z', JSON.stringify(prom));
