@@ -3301,3 +3301,6 @@ html[data-tema="scuro"] .badge-pro{background:#26304A;color:#9FB4FF;border-color
   html:not([data-tema="chiaro"]) .badge-pro{background:#26304A;color:#9FB4FF;border-color:#3A4A78}
 }
 .lista-pro-altro[hidden]{display:none}
+/* Settimana su telefoni stretti (320 px): le righe di Utilità vanno a capo con i puntini invece di allargare la pagina */
+.vs-riga{grid-template-columns:40px minmax(0,1fr) auto}
+.vs-corpo,.vs-testa,.vs-chip,.vs-riga .ut-mini-lista{min-width:0;max-width:100%}
