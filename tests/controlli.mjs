@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.24');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.25');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -630,8 +630,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Chiedi a voce', passi.join(' | ') === 'Novità: chiedi a voce (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.24'));
+  ok('chi usava già l\'app vede 1 fumetto: la lente', passi.join(' | ') === 'Novità: cerca o chiedi (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.25'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -982,6 +982,32 @@ sezione('Domande a voce: l\'app risponde con i dati salvati');
   ok('toccando il giorno si apre nel calendario (settembre)', await p.evaluate(() => giornoSelezionato === '2026-09-14' && meseCorrente === 8 && el('schedaVoce').hidden));
   await p.evaluate(() => mostraRisultatoVoce('domani notte'));
   ok('«domani notte» propone ancora di salvare il turno', await p.evaluate(() => statoVoce.righe.length === 1 && !!document.querySelector('#schedaVoce [data-voce="salva"]')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.25: lente del calendario, Impostazioni raccolte in Altro');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(600);
+  ok('la lente è nella barra del mese', await p.evaluate(() => !!el('btnCercaCal').closest('.calendario-header-v2') && !!el('btnCercaCal').offsetParent));
+  await p.click('#btnCercaCal');
+  ok('tocco la lente: si apre la ricerca (in Agenda) con il microfono', await p.evaluate(() => vistaCalendario() === 'agenda' && !el('boxCercaAgenda').hidden && !!document.querySelector('[data-agenda-voce]')));
+  await p.fill('#campoCercaAgenda', 'quante notti ho fatto a settembre');
+  ok('una domanda nella ricerca: in cima la risposta «6 notti a settembre» con i giorni', await p.evaluate(() => /6 notti a settembre/.test(document.querySelector('.cerca-risposta')?.textContent || '') && document.querySelectorAll('[data-cerca-giorno]').length === 6));
+  await p.click('[data-cerca-giorno]');
+  ok('tocco un giorno della risposta: torna al mese su quel giorno', await p.evaluate(() => vistaCalendario() === 'mese' && giornoSelezionato === '2026-09-04' && meseCorrente === 8 && el('boxCercaAgenda').hidden));
+  await p.click('#btnCercaCal'); await p.goBack(); await p.waitForTimeout(200);
+  ok('indietro chiude la ricerca e torna alla vista di prima', await p.evaluate(() => vistaCalendario() === 'mese' && el('boxCercaAgenda').hidden));
+  await p.evaluate(() => { U.scadenze = [{ id: 'sx', tipo: 'tiro', nome: 'Tiro annuale', data: '2026-10-20', ripeti: '1', avvisi: [], note: '' }]; salvaUtilita(); aggiornaBannerScadenze(); });
+  ok('la scadenza vicina è una riga sottile sopra il mese', await p.evaluate(() => el('bannerScadenze').parentElement.id === 'calSopra' && /Tiro annuale tra 11 giorni/.test(el('bannerScadenze').textContent)));
+  await p.evaluate(() => { U.scadenze = []; aggiornaBannerScadenze(); });
+  ok('senza scadenze la riga sparisce', await p.evaluate(() => !el('bannerScadenze') && getComputedStyle(el('calSopra')).display === 'none'));
+  await p.click('#tabAltro');
+  ok('Altro: promemoria, widget, tema e tabelle chiusi sotto «Impostazioni»', await p.evaluate(() => el('listaImpostazioniAltro').hidden && !el('campoPromemoriaTurno').offsetParent && !el('settingsTabelle').offsetParent));
+  await p.click('#btnImpostazioniAltro');
+  ok('tocco «Impostazioni»: si aprono lì sotto', await p.evaluate(() => !el('listaImpostazioniAltro').hidden && !!el('settingsTabelle').offsetParent && el('btnImpostazioniAltro').getAttribute('aria-expanded') === 'true'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

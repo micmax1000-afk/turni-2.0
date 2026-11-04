@@ -1,4 +1,5 @@
 <it-IT>
-• Chiedi a voce: «Il 15 agosto che turno ho fatto?», «Quante notti a ottobre?», «Quanti giorni di congedo mi restano?»
-• L'app risponde con i tuoi dati, senza internet
+• Nuova lente nel calendario: cerca eventi, note e scadenze, oppure chiedi «quante notti a ottobre?»
+• Scadenza vicina in una riga sottile, più spazio al calendario
+• Impostazioni raccolte in Altro
 </it-IT>
