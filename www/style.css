@@ -3304,3 +3304,8 @@ html[data-tema="scuro"] .badge-pro{background:#26304A;color:#9FB4FF;border-color
 /* Settimana su telefoni stretti (320 px): le righe di Utilità vanno a capo con i puntini invece di allargare la pagina */
 .vs-riga{grid-template-columns:40px minmax(0,1fr) auto}
 .vs-corpo,.vs-testa,.vs-chip,.vs-riga .ut-mini-lista{min-width:0;max-width:100%}
+/* Domande a voce: le righe della risposta si toccano per aprire il giorno */
+.voce-riga-risposta{width:100%;border:0;border-bottom:1px solid var(--bordo);background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.voce-riga-risposta > i{font-style:normal;color:var(--testo-tenue);font-size:1.3rem;margin-left:auto}
+.voce-riga-risposta .voce-testo > div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.voce-riga-risposta .voce-data small:last-child{display:block}
