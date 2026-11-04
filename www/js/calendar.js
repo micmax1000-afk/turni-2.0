@@ -1227,7 +1227,13 @@ function adattaTitoloCalendario(){
   if(!t) return;
   t.style.fontSize = '';
   let px = parseFloat(getComputedStyle(t).fontSize) || 18, giri = 0;
-  while(t.scrollWidth > t.clientWidth + 1 && px > 11 && giri++ < 20){ px -= 1; t.style.fontSize = px + 'px'; }
+  const minimo = t.textContent === t.dataset.corto ? 11 : 14;
+  while(t.scrollWidth > t.clientWidth + 1 && px > minimo && giri++ < 20){ px -= 1; t.style.fontSize = px + 'px'; }
+  // Telefoni stretti: se anche piccolo non ci sta, il mese si accorcia ("Ottobre 2026" → "Ott 2026").
+  if(t.scrollWidth > t.clientWidth + 1 && t.textContent !== t.dataset.corto){
+    const corto = t.textContent.replace(/^([A-Za-zÀ-ÿ]{3})[A-Za-zÀ-ÿ]+/, '$1');
+    if(corto !== t.textContent){ t.dataset.corto = corto; t.textContent = corto; }
+  }
 }
 function inizializzaVisteCalendario(){
   const menu = el('menuVistaCalendario');

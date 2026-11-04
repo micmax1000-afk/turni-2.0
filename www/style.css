@@ -3311,10 +3311,11 @@ html[data-tema="scuro"] .badge-pro{background:#26304A;color:#9FB4FF;border-color
 .voce-riga-risposta .voce-data small:last-child{display:block}
 /* v3.8.25 — Lente del calendario e riga della scadenza più sottile */
 .cal-sopra{display:flex;align-items:center;gap:8px;margin:0 0 6px;min-height:0}
+.cal-sopra:empty{display:none}
 .cal-sopra .ut-banner{flex:1;min-width:0;margin:0;padding:6px 10px;border-radius:10px;font-size:.8rem;background:color-mix(in srgb,#E0A100 10%,var(--pannello))}
 .cal-sopra .ut-banner .icona-linea{width:17px;height:17px}
 .cal-sopra .ut-banner span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.btn-cerca-cal{margin-left:auto;flex:none;width:38px;height:38px;border-radius:999px;border:1px solid var(--bordo);background:var(--pannello);color:var(--acc,#1D4FD7);display:grid;place-items:center;cursor:pointer}
+.btn-cerca-cal{flex:none;width:34px;height:34px;border-radius:999px;border:1px solid var(--bordo);background:var(--pannello);color:var(--acc,#1D4FD7);display:grid;place-items:center;cursor:pointer}
 .scheda-calendario-v2[data-vista="agenda"] .btn-cerca-cal{display:none}
 .agenda-cerca:not([hidden]){display:flex;gap:8px;align-items:center}
 .agenda-cerca input{flex:1;min-width:0}
