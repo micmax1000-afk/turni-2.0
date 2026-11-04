@@ -55,7 +55,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.22');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.24');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -629,8 +629,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Cerca nelle leggi', passi.join(' | ') === 'Novità: Cerca nelle leggi (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.22'));
+  ok('chi usava già l\'app vede 1 fumetto: Chiedi a voce', passi.join(' | ') === 'Novità: chiedi a voce (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.24'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -945,6 +945,42 @@ sezione('v3.8.19: Link utili, tasto indietro, note che si salvano da sole');
   await p.evaluate(() => { giornoSelezionato = '2026-10-13'; apriModaleTurno('2026-10-13'); });
   await p.goBack(); await p.waitForTimeout(200);
   ok('indietro chiude anche «Modifica il giorno»', await p.evaluate(() => el('pannelloTurno').hidden));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('Domande a voce: l\'app risponde con i dati salvati');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(600);
+  const r = await p.evaluate(() => {
+    const d = f => eDomandaVoce(f), q = f => rispondiDomandaVoce(f);
+    const g = q('il 14 settembre che turno ho fatto');
+    return {
+      domande: [d('il 15 agosto che turno ho fatto?'), d('quando sono di notte'), d('quante notti a ottobre'), d('quanti giorni di congedo mi restano')],
+      comandi: [d('domani notte'), d('giovedì alle 10 dentista'), d('ferie dal 3 al 10 dicembre'), d('elimina lo straordinario di oggi')],
+      giorno: g.titolo + ' | ' + g.righe.map(x => x.html.replace(/<[^>]+>/g, ' ')).join(''),
+      notti: q('quante notti ho fatto a settembre').titolo,
+      riposo: (x => x.titolo + ' ' + x.righe.map(y => y.iso).join(','))(q('quando sono di riposo la prossima settimana')),
+      congedo: q('quanti giorni di congedo mi restano').titolo,
+      domani: q('domani che turno ho').titolo
+    };
+  });
+  ok('riconosce le domande («che turno», «quando», «quante», «mi restano»)', r.domande.every(Boolean), JSON.stringify(r.domande));
+  ok('le frasi per inserire restano comandi («domani notte», «elimina…»)', r.comandi.every(x => !x), JSON.stringify(r.comandi));
+  ok('«il 14 settembre che turno ho fatto» → lunedì 14 settembre, Notte 01:00 – 07:00', /^Lunedì 14 settembre \|.*Notte.*01:00 – 07:00/.test(r.giorno), r.giorno);
+  ok('«quante notti ho fatto a settembre» → 6 notti', r.notti === '6 notti a settembre', r.notti);
+  ok('«quando sono di riposo la prossima settimana» → giovedì 15 ottobre', /^Riposo: 1 giorno la prossima settimana 2026-10-15$/.test(r.riposo), r.riposo);
+  ok('«quanti giorni di congedo mi restano» → saldo del congedo ordinario', /^Congedo ordinario: te ne restan/.test(r.congedo), r.congedo);
+  ok('«domani che turno ho» → sabato 10 ottobre', r.domani === 'Sabato 10 ottobre', r.domani);
+  const prima = await p.evaluate(() => JSON.stringify(AppState.turni));
+  await p.evaluate(() => mostraRisultatoVoce('il 14 settembre che turno ho fatto'));
+  ok('la risposta non ha il tasto Salva e non cambia i turni', await p.evaluate(p0 => !document.querySelector('#schedaVoce [data-voce="salva"]') && /Lunedì 14 settembre/.test(el('schedaVoce').textContent) && JSON.stringify(AppState.turni) === p0, prima));
+  await p.click('#schedaVoce [data-voce="apri-giorno"]');
+  ok('toccando il giorno si apre nel calendario (settembre)', await p.evaluate(() => giornoSelezionato === '2026-09-14' && meseCorrente === 8 && el('schedaVoce').hidden));
+  await p.evaluate(() => mostraRisultatoVoce('domani notte'));
+  ok('«domani notte» propone ancora di salvare il turno', await p.evaluate(() => statoVoce.righe.length === 1 && !!document.querySelector('#schedaVoce [data-voce="salva"]')));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

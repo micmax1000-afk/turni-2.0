@@ -1,4 +1,4 @@
 <it-IT>
-• Vista Settimana più ordinata anche sui telefoni piccoli
-• Piccole correzioni e miglioramenti
+• Chiedi a voce: «Il 15 agosto che turno ho fatto?», «Quante notti a ottobre?», «Quanti giorni di congedo mi restano?»
+• L'app risponde con i tuoi dati, senza internet
 </it-IT>
