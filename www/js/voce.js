@@ -549,6 +549,7 @@ function clicSchedaVoce(e){
   else if(azione === 'apri-giorno'){ const iso = b.dataset.iso; chiudiVoce(); if(typeof mostraScheda === 'function') mostraScheda('calendario'); if(typeof impostaVistaCalendario === 'function') impostaVistaCalendario('mese'); vaiAlGiornoVoce(iso); }
   else if(azione === 'vai-assenze'){ chiudiVoce(); if(typeof mostraScheda === 'function') mostraScheda('assenze'); }
   else if(azione === 'vai-scadenze'){ chiudiVoce(); if(typeof apriUtilita === 'function') apriUtilita('scadenze'); }
+  else if(azione === 'vai-scambi' || azione === 'vai-veicolo'){ chiudiVoce(); if(typeof apriUtilita === 'function') apriUtilita(azione.slice(4)); }
 }
 
 // ── Ascolto ──
