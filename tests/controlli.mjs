@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.25');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.26');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -630,8 +630,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: la lente', passi.join(' | ') === 'Novità: cerca o chiedi (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.25'));
+  ok('chi usava già l\'app vede 1 fumetto: la ricerca', passi.join(' | ') === 'Novità: la ricerca capisce di più (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.26'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1008,6 +1008,46 @@ sezione('v3.8.25: lente del calendario, Impostazioni raccolte in Altro');
   ok('Altro: promemoria, widget, tema e tabelle chiusi sotto «Impostazioni»', await p.evaluate(() => el('listaImpostazioniAltro').hidden && !el('campoPromemoriaTurno').offsetParent && !el('settingsTabelle').offsetParent));
   await p.click('#btnImpostazioniAltro');
   ok('tocco «Impostazioni»: si aprono lì sotto', await p.evaluate(() => !el('listaImpostazioniAltro').hidden && !!el('settingsTabelle').offsetParent && el('btnImpostazioniAltro').getAttribute('aria-expanded') === 'true'));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('Ricerca: plurali, passato e futuro, errori di battitura, nuove domande, suggerimenti');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(600);
+  const r = await p.evaluate(() => {
+    const t = f => (rispondiDomandaVoce(f) || {}).titolo;
+    AppState.turni['2026-10-13'] = { ...AppState.turni['2026-10-13'], straordinarioDopoInizio: '13:00', straordinarioDopoFine: '15:00', buonoPasto: true, reperibilita: true };
+    U.scambi = [{ id: 'c1', giorno: '2026-09-24', collega: 'Verdi', verso: 'mideve', turno: 'Mattino', restituito: null }];
+    return {
+      plurali: [t('quante nottate ho fatto a settembre'), t('quanti notturni a settembre'), t('quante notti ho fatto a settembre')],
+      errori: t('quante nottii ho fato a setembre'),
+      futuro: t('quante notti farò a novembre'),
+      ore: t('quante ore ho lavorato a settembre'),
+      prossimo: t('quando è il prossimo riposo'),
+      prossima: t('quando sarà la prossima notte'),
+      settimana: t('quando lavorerò di sera la prossima settimana'),
+      str: t('quanti straordinari a ottobre'),
+      rep: t('quante reperibilità a ottobre'),
+      chi: t('chi mi deve un turno'),
+      sugg: [suggerimentiDomanda('').length, suggerimentiDomanda('quante').every(x => /^quante/.test(x)), suggerimentiDomanda('chi')[0]]
+    };
+  });
+  ok('plurali e sinonimi: nottate, notturni, notti → 6 notti a settembre', r.plurali.every(x => x === '6 notti a settembre'), JSON.stringify(r.plurali));
+  ok('errori di battitura: «nottii ho fato a setembre» → 6 notti a settembre', r.errori === '6 notti a settembre', r.errori);
+  ok('futuro: «quante notti farò a novembre» → novembre di quest\'anno', /notti a novembre$/.test(r.futuro || ''), r.futuro);
+  ok('«quante ore ho lavorato a settembre» → ore di servizio', /^\d+ h di servizio a settembre$/.test(r.ore || ''), r.ore);
+  ok('«il prossimo riposo» e «la prossima notte» (maschile e femminile)', /^Prossimo riposo: /.test(r.prossimo || '') && /^Prossima notte: /.test(r.prossima || ''), r.prossimo + ' | ' + r.prossima);
+  ok('«la prossima settimana» resta un periodo, non «il prossimo»', /la prossima settimana$/.test(r.settimana || ''), r.settimana);
+  ok('straordinari e reperibilità contati a ottobre', r.str === '2 h di straordinario a ottobre' && r.rep === '1 reperibilità a ottobre', r.str + ' | ' + r.rep);
+  ok('«chi mi deve un turno» → Verdi', r.chi === 'Verdi ti deve un turno', r.chi);
+  ok('suggerimenti: 4 a casella vuota, completano quello che scrivi', r.sugg[0] === 4 && r.sugg[1] && r.sugg[2] === 'chi mi deve un turno?', JSON.stringify(r.sugg));
+  await p.click('#btnCercaCal');
+  ok('aprendo la lente compaiono 4 domande pronte', await p.evaluate(() => document.querySelectorAll('#cercaSuggerimenti .cerca-sugg').length === 4));
+  await p.click('#cercaSuggerimenti .cerca-sugg');
+  ok('tocco un suggerimento: la frase va nella casella e risponde', await p.evaluate(() => el('campoCercaAgenda').value === 'domani che turno ho?' && !!document.querySelector('.cerca-risposta')));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

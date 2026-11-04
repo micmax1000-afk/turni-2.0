@@ -1325,7 +1325,7 @@ function barraAgendaHtml(){
   return `<div class="agenda-barra"><div class="agenda-filtri" role="tablist" aria-label="Cosa mostrare">`
     + ['tutto', 'eventi', 'turni'].map(f => `<button type="button" role="tab" data-filtro-agenda="${f}">${f === 'tutto' ? 'Tutto' : f === 'eventi' ? 'Eventi' : 'Turni'}</button>`).join('')
     + `</div><button type="button" class="agenda-cerca-btn" data-agenda-cerca aria-label="Cerca">${lente}</button></div>`
-    + `<div class="agenda-cerca" id="boxCercaAgenda" hidden><input type="search" id="campoCercaAgenda" placeholder="Cerca o chiedi: visita, quante notti a ottobre…" autocomplete="off" enterkeyhint="search"><button type="button" class="agenda-cerca-mic" data-agenda-voce aria-label="Chiedi a voce"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>`
+    + `<div class="agenda-cerca" id="boxCercaAgenda" hidden><input type="search" id="campoCercaAgenda" placeholder="Cerca o chiedi: visita, quante notti a ottobre…" autocomplete="off" enterkeyhint="search"><button type="button" class="agenda-cerca-mic" data-agenda-voce aria-label="Chiedi a voce"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><div class="cerca-suggerimenti" id="cercaSuggerimenti"></div></div>`
     + `<div id="agendaElenco"></div>`;
 }
 function risultatiCercaAgenda(q){
@@ -1350,7 +1350,8 @@ function risultatiCercaAgenda(q){
   const futuri = trovati.filter(x => x.iso >= oggiIso).sort((a, b) => a.iso.localeCompare(b.iso));
   const passati = trovati.filter(x => x.iso < oggiIso).sort((a, b) => b.iso.localeCompare(a.iso));
   const riga = x => { const d = dataDaIso(x.iso); return `<div class="agenda-giorno${eFestivoOdDomenica(x.iso) ? ' festivo' : ''}"><div class="agenda-data"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b><small>${meseBreveAgenda(d)}${d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''}</small></div><div class="agenda-righe">${x.html}</div></div>`; };
-  if(!trovati.length) return `<p class="agenda-vuota">Nessun evento, servizio svolto o nota con «${escapeHtml(q)}».</p>`;
+  if(!trovati.length && typeof suggerimentiDomanda === 'function' && suggerimentiDomanda(q).length) return ''; // stai ancora scrivendo: bastano i suggerimenti
+  if(!trovati.length) return `<p class="agenda-vuota">Nessun evento, servizio svolto, nota o scadenza con «${escapeHtml(q)}».</p>`;
   return (futuri.length ? `<div class="agenda-settimana"><span>In arrivo</span><b>${futuri.length}</b></div>${futuri.map(riga).join('')}` : '')
     + (passati.length ? `<div class="agenda-settimana"><span>Passati</span><b>${passati.length}</b></div>${passati.map(riga).join('')}` : '');
 }
@@ -1403,14 +1404,16 @@ function clicAgenda(e){
   if(filtro){ filtroAgenda = filtro.dataset.filtroAgenda; renderAgenda(); return; }
   if(e.target.closest('[data-agenda-cerca]')){
     const box = el('boxCercaAgenda'); box.hidden = !box.hidden;
-    if(!box.hidden) el('campoCercaAgenda').focus(); else chiudiCercaCal();
+    if(!box.hidden){ el('campoCercaAgenda').focus(); aggiornaSuggerimentiCerca(); } else chiudiCercaCal();
     return;
   }
   if(e.target.closest('[data-agenda-voce]')){ if(typeof apriDettaVoce === 'function') apriDettaVoce(); return; }
+  const sugg = e.target.closest('[data-suggerimento]');
+  if(sugg){ const c = el('campoCercaAgenda'); c.value = sugg.dataset.suggerimento; cercaAgenda = c.value; renderAgenda(); aggiornaSuggerimentiCerca(); return; }
   const giornoRisposta = e.target.closest('[data-cerca-giorno]');
   if(giornoRisposta){ const iso = giornoRisposta.dataset.cercaGiorno; chiudiCercaCal(); if(typeof vaiAlGiornoVoce === 'function') vaiAlGiornoVoce(iso); return; }
   const vaiRisposta = e.target.closest('[data-cerca-vai]');
-  if(vaiRisposta){ const v = vaiRisposta.dataset.cercaVai; chiudiCercaCal(); if(v === 'assenze') mostraScheda('assenze'); else if(v === 'scadenze') apriUtilita('scadenze'); return; }
+  if(vaiRisposta){ const v = vaiRisposta.dataset.cercaVai; chiudiCercaCal(); if(v === 'assenze') mostraScheda('assenze'); else apriUtilita(v); return; }
   const nuovo = e.target.closest('[data-agenda-nuovo]');
   if(nuovo){
     const iso = nuovo.dataset.agendaNuovo, d = dataDaIso(iso);
@@ -1439,7 +1442,7 @@ function clicAgenda(e){
   apriModaleTurno(iso);
 }
 function inizializzaCercaAgenda(){
-  document.addEventListener('input', e => { if(e.target && e.target.id === 'campoCercaAgenda'){ cercaAgenda = e.target.value; renderAgenda(); } });
+  document.addEventListener('input', e => { if(e.target && e.target.id === 'campoCercaAgenda'){ cercaAgenda = e.target.value; renderAgenda(); aggiornaSuggerimentiCerca(); } });
 }
 
 
@@ -1529,7 +1532,7 @@ function apriCercaCal(){
   vistaPrimaCerca = vistaCalendario() === 'agenda' ? null : vistaCalendario();
   impostaVistaCalendario('agenda');
   const box = el('boxCercaAgenda'); if(!box) return;
-  box.hidden = false; window.scrollTo(0, 0);
+  box.hidden = false; window.scrollTo(0, 0); aggiornaSuggerimentiCerca();
   setTimeout(() => { const c = el('campoCercaAgenda'); if(c) c.focus(); }, 50);
 }
 function chiudiCercaCal(){
@@ -1542,3 +1545,12 @@ function htmlRispostaCerca(r){
   return `<div class="cerca-risposta"><small>Risposta</small><b>${escapeHtml(r.titolo)}</b>${r.sotto ? `<span>${escapeHtml(r.sotto)}</span>` : ''}${r.vai ? `<button type="button" class="btn-testo-evento" data-cerca-vai="${r.vai}">Apri ›</button>` : ''}</div>${righe ? `<div class="voce-righe cerca-righe">${righe}</div>` : ''}`;
 }
 document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#btnCercaCal')) apriCercaCal(); });
+
+// Suggerimenti sotto la casella: domande pronte che completano quello che stai scrivendo (al massimo 4).
+function aggiornaSuggerimentiCerca(){
+  const box = el('cercaSuggerimenti'), c = el('campoCercaAgenda');
+  if(!box || !c || typeof suggerimentiDomanda !== 'function') return;
+  const lista = suggerimentiDomanda(c.value);
+  box.innerHTML = lista.map(f => `<button type="button" class="cerca-sugg" data-suggerimento="${escapeHtml(f)}">${escapeHtml(f.charAt(0).toUpperCase() + f.slice(1))}</button>`).join('');
+  box.hidden = !lista.length;
+}

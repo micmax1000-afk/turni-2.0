@@ -1,5 +1,5 @@
 <it-IT>
-• Nuova lente nel calendario: cerca eventi, note e scadenze, oppure chiedi «quante notti a ottobre?»
-• Scadenza vicina in una riga sottile, più spazio al calendario
-• Impostazioni raccolte in Altro
+• La ricerca capisce di più: plurali, passato e futuro, anche con qualche errore
+• Nuove domande: ore lavorate, buoni pasto, festivi, prossimo riposo, ultimo straordinario, chi ti deve un turno, km del veicolo
+• Suggerimenti mentre scrivi
 </it-IT>

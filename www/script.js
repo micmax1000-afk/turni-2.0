@@ -4209,9 +4209,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.25';
+const VERSIONE_NOVITA = '3.8.26';
 const PASSI_NOVITA = [
-  { id: 'btnCercaCal', titolo: 'Novità: cerca o chiedi', testo: 'Con la lente cerchi eventi, note, scadenze e servizi, oppure fai una domanda: «quante notti a ottobre?», «il 15 agosto che turno ho fatto?». C\'è anche il microfono. Le impostazioni ora sono raccolte in Altro → Impostazioni.' }
+  { id: 'btnCercaCal', titolo: 'Novità: la ricerca capisce di più', testo: 'Scrivi come parli: «quante nottate ho fatto a settembre?», «quando è il prossimo riposo?», «chi mi deve un turno?». Capisce plurali, passato e futuro e anche qualche errore. Mentre scrivi ti suggerisce le domande.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){
