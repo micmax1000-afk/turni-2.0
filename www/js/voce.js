@@ -493,6 +493,8 @@ function schedaAscoltoVoce(){
     <p class="voce-live" id="voceLive"><i>Ti ascolto…</i></p>
     <p class="voce-sotto">Puoi dire per esempio:</p>
     <div class="voce-esempi"><span>«Domani notte»</span><span>«Lunedì riposo, martedì mattina»</span><span>«Straordinario 2 ore dopo»</span><span>«Ferie dal 3 al 10 dicembre»</span><span>«Giovedì alle 10 dentista»</span><span>«Servizio svolto OP Stadio»</span><span>«Elimina lo straordinario di oggi»</span></div>
+    <p class="voce-sotto">Oppure chiedi:</p>
+    <div class="voce-esempi"><span>«Il 15 agosto che turno ho fatto?»</span><span>«Quando sono di notte?»</span><span>«Quante notti a ottobre?»</span><span>«Quanti giorni di congedo mi restano?»</span></div>
     <p class="voce-privacy">${web ? 'Nel browser la voce passa dal servizio di Google solo per diventare testo. L\'app non salva l\'audio.' : '🔒 La voce è riconosciuta sul telefono. Niente viene salvato o inviato.'}</p>
     <div class="voce-tasti"><button type="button" class="voce-sec" data-voce="chiudi">Annulla</button></div>`);
 }
@@ -522,6 +524,11 @@ function schedaRisultatoVoce(){
 }
 function capitoNonTurno(){ return statoVoce.avvisi.some(a => a.includes('non l\'ho capito')); }
 function mostraRisultatoVoce(testo){
+  // Domande ("il 15 agosto che turno ho fatto?"): si risponde con i dati salvati, senza cambiare niente.
+  if(typeof eDomandaVoce === 'function' && eDomandaVoce(testo)){
+    const r = rispondiDomandaVoce(testo);
+    if(r){ statoVoce = { ...statoVoce, righe: [], avvisi: [], frase: testo }; schedaRispostaVoce(r, testo); return; }
+  }
   const capito = capisciFraseVoce(testo, { giorno: giornoSelezionato || null });
   const { righe, avvisi } = righeDaAzioniVoce(capito);
   statoVoce = { ...statoVoce, righe, avvisi, frase: testo };
@@ -539,6 +546,9 @@ function clicSchedaVoce(e){
   else if(azione === 'internet') avviaAscoltoVoce(false);
   else if(azione === 'impostazioni'){ const p = pluginVoce(); if(p && p.apriImpostazioni) p.apriImpostazioni().catch(() => {}); }
   else if(azione === 'salva') salvaRigheVoce();
+  else if(azione === 'apri-giorno'){ const iso = b.dataset.iso; chiudiVoce(); if(typeof mostraScheda === 'function') mostraScheda('calendario'); if(typeof impostaVistaCalendario === 'function') impostaVistaCalendario('mese'); vaiAlGiornoVoce(iso); }
+  else if(azione === 'vai-assenze'){ chiudiVoce(); if(typeof mostraScheda === 'function') mostraScheda('assenze'); }
+  else if(azione === 'vai-scadenze'){ chiudiVoce(); if(typeof apriUtilita === 'function') apriUtilita('scadenze'); }
 }
 
 // ── Ascolto ──

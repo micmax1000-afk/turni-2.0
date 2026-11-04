@@ -1,28 +1,47 @@
 === DESCRIZIONE BREVE (max 80 caratteri) ===
-Turni, indennità e cedolino per la Polizia di Stato. Dati solo sul telefono.
+Turni, indennità, cedolino e agenda per la Polizia di Stato. Tutto gratis.
 
 === DESCRIZIONE COMPLETA (max 4000 caratteri) ===
-Turni & Accessorio PS calcola automaticamente i tuoi turni di lavoro, le indennità accessorie e una simulazione del cedolino, pensata per il personale della Polizia di Stato.
+Turni & Accessorio PS è l'app gratuita per organizzare turni, indennità e assenze, pensata per il personale della Polizia di Stato. Calcola da sola ore, indennità e una stima di quanto arriva sul conto.
 
-COSA FA L'APP
-- Calendario turni a colori con vista giorno, settimana, mese o agenda e scorrimento col dito
-- Generazione automatica dei cicli (turno in quinta, settimana corta/lunga e sequenze personalizzate) oppure "Riempi più giorni": scegli il turno e tocca i giorni
-- Eventi e promemoria personali, nomi delle festività e tasto Annulla per le modifiche
-- Condividi il mese come immagine
-- Riconoscimento automatico di ore ordinarie, serali, notturne, festive e domenicali
-- Straordinario, rientri, missioni, ordine pubblico, servizio esterno, controllo territorio e reperibilità, con simboli nel calendario
-- Assenze (congedo ordinario, permessi, recupero riposo/festivo e altro), con quanto ti resta calcolato in automatico
-- Quanto arriva sul conto ogni mese, con lordo, trattenute e netto ben distinti
-- Cedolino simulato, con conguagli manuali e tredicesima automatica a dicembre
-- Statistiche mensili e annuali
-- Promemoria del turno (la sera prima o poco prima dell'inizio) e widget per la schermata Home, da accendere se vuoi
-- Esportazione dei turni in Google Calendar
-- Tema chiaro, grigio, nero oppure automatico in base alla luce
+TURNI E CALENDARIO
+- Calendario a colori con vista mese, settimana, giorno o agenda
+- Turnazione automatica (quinta, settimana corta o lunga, sequenze tue) oppure «Riempi più giorni»: scegli il turno e tocca i giorni
+- Agenda con filtri, ricerca e eventi insieme ai turni
+- Detta a voce: «domani mattino con buono pasto», «lunedì dentista alle 15 con promemoria», anche senza internet
+- Eventi e promemoria personali, festività e tasto Annulla
+- Condividi il mese come immagine ed esporta i turni in Google Calendar
+
+ORE, INDENNITÀ E STIPENDIO
+- Ore ordinarie, serali, notturne, festive e domenicali riconosciute da sole
+- Straordinario, rientri, missioni, ordine pubblico, servizio esterno, controllo territorio, reperibilità e buoni pasto
+- Quanto arriva sul conto ogni mese, con lordo, tasse e netto
+- Cedolino stimato voce per voce, tredicesima e statistiche dell'anno
+- Tabelle economiche aggiornate dal sito, modificabili a mano
+
+ASSENZE
+- Congedo ordinario calcolato dagli anni di servizio, permessi, recupero riposo e festivo, L.104, donazione sangue, ore studio e altro
+- Quanto ti resta, sempre aggiornato, con le scadenze
+
+UTILITÀ DI SERVIZIO
+- Scadenze (visita medica, tiro, tesserino, corsi) con avvisi
+- Note di servizio, da cercare, fissare o dettare a voce
+- Cambi turno con i colleghi: chi deve a chi
+- Gestione veicolo: uscite, km, carburante e anomalie
+
+LINK UTILI E NORMATIVA
+- Collegamenti ai siti ufficiali (Crimnet, PRADO, Viaggiare Sicuri, addizionali MEF, contratto)
+- Codice penale, procedura penale, TULPS, Codice della strada, Legge 121/1981 e Regolamento di servizio sempre aggiornati su Normattiva
+- Cerca nelle leggi: scrivi una parola e trovi le leggi su Normattiva, con filtri per tipo e data
+
+E ANCORA
+- Promemoria del turno e widget per la schermata Home
+- Tema chiaro, grigio, nero o automatico
+- Backup in un file e backup automatico su Google Drive
 - Apertura guidata: in pochi passi l'app è pronta
-- Backup manuale dei dati in un file, e backup automatico opzionale su Google Drive
 
 PRIVACY PRIMA DI TUTTO
-Tutti i tuoi dati restano sul tuo telefono. L'app non mostra pubblicità, non traccia il tuo utilizzo e non condivide nulla con terze parti.
+Tutti i tuoi dati restano sul tuo telefono. Nessuna pubblicità, nessun tracciamento, nessuna registrazione.
 
 IMPORTANTE
-Questa è un'app indipendente, non ufficiale e non affiliata alla Polizia di Stato né ad alcun ente pubblico. I valori delle tabelle retributive sono stati reperiti da fonti pubbliche disponibili online e possono contenere errori o non essere aggiornati: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni economiche o personali. L'autore declina ogni responsabilità per incongruenze o danni derivanti dall'uso dell'app.
+Questa è un'app indipendente, non ufficiale e non affiliata alla Polizia di Stato né ad alcun ente pubblico. I valori delle tabelle retributive sono stati reperiti da fonti pubbliche disponibili online e possono contenere errori o non essere aggiornati: verifica sempre i dati sul tuo cedolino ufficiale prima di prendere decisioni economiche o personali. L'autore declina ogni responsabilità per incongruenze o danni derivanti dall'uso dell'app. Le norme si aprono sul sito ufficiale Normattiva (Istituto Poligrafico e Zecca dello Stato).
