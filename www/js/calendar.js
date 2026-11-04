@@ -1351,7 +1351,7 @@ function risultatiCercaAgenda(q){
   const passati = trovati.filter(x => x.iso < oggiIso).sort((a, b) => b.iso.localeCompare(a.iso));
   const riga = x => { const d = dataDaIso(x.iso); return `<div class="agenda-giorno${eFestivoOdDomenica(x.iso) ? ' festivo' : ''}"><div class="agenda-data"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b><small>${meseBreveAgenda(d)}${d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''}</small></div><div class="agenda-righe">${x.html}</div></div>`; };
   if(!trovati.length && typeof suggerimentiDomanda === 'function' && suggerimentiDomanda(q).length) return ''; // stai ancora scrivendo: bastano i suggerimenti
-  if(!trovati.length) return `<p class="agenda-vuota">Nessun evento, servizio svolto, nota o scadenza con «${escapeHtml(q)}».</p><p class="cerca-segnala">Era una domanda e non l'ho capita? <button type="button" class="btn-testo-evento" data-segnala-frase="${escapeHtml(q)}">Segnala la frase</button></p>`;
+  if(!trovati.length) return `<p class="agenda-vuota">Nessun evento, servizio svolto, nota o scadenza con «${escapeHtml(q)}».</p>`;
   return (futuri.length ? `<div class="agenda-settimana"><span>In arrivo</span><b>${futuri.length}</b></div>${futuri.map(riga).join('')}` : '')
     + (passati.length ? `<div class="agenda-settimana"><span>Passati</span><b>${passati.length}</b></div>${passati.map(riga).join('')}` : '');
 }
@@ -1410,8 +1410,6 @@ function clicAgenda(e){
   if(e.target.closest('[data-agenda-voce]')){ if(typeof apriDettaVoce === 'function') apriDettaVoce(); return; }
   const sugg = e.target.closest('[data-suggerimento]');
   if(sugg){ const c = el('campoCercaAgenda'); c.value = sugg.dataset.suggerimento; cercaAgenda = c.value; renderAgenda(); aggiornaSuggerimentiCerca(); return; }
-  const segn = e.target.closest('[data-segnala-frase]');
-  if(segn){ if(typeof apriSegnala === 'function'){ apriSegnala(); const t = el('testoSegnala'); if(t) t.value = `La ricerca non ha capito questa frase: «${segn.dataset.segnalaFrase}»`; } return; }
   const giornoRisposta = e.target.closest('[data-cerca-giorno]');
   if(giornoRisposta){ const iso = giornoRisposta.dataset.cercaGiorno; chiudiCercaCal(); if(typeof vaiAlGiornoVoce === 'function') vaiAlGiornoVoce(iso); return; }
   const vaiRisposta = e.target.closest('[data-cerca-vai]');

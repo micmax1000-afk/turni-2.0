@@ -3331,12 +3331,10 @@ html[data-tema=scuro] .cal-sopra .ut-banner{background:#4A3510}
 .lista-impostazioni-altro{border-top:1px solid var(--bordo)}
 #btnImpostazioniAltro[aria-expanded="true"] > b{transform:rotate(90deg)}
 #btnImpostazioniAltro > b{transition:transform .15s}
-/* v3.8.26 — Suggerimenti della ricerca (autocompilazione) e «Segnala la frase» */
+/* v3.8.26 — Suggerimenti della ricerca (autocompilazione) */
 .agenda-cerca:not([hidden]){flex-wrap:wrap}
 .cerca-suggerimenti{flex-basis:100%;display:flex;flex-direction:column;gap:2px;margin-top:2px}
 .cerca-suggerimenti[hidden]{display:none}
 .cerca-sugg{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;padding:8px 6px;border-radius:10px;font:500 .9rem var(--font-corpo);color:var(--testo);cursor:pointer}
 .cerca-sugg::before{content:'';flex:none;width:16px;height:16px;background:currentColor;opacity:.45;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E") center/contain no-repeat}
 .cerca-sugg:active{background:color-mix(in srgb,var(--testo) 6%,transparent)}
-.cerca-segnala{font-size:.84rem;color:var(--testo-tenue);text-align:center;margin:0 0 10px}
-.cerca-segnala .btn-testo-evento{display:inline;padding:0 0 0 4px}
