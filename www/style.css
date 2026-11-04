@@ -3309,3 +3309,25 @@ html[data-tema="scuro"] .badge-pro{background:#26304A;color:#9FB4FF;border-color
 .voce-riga-risposta > i{font-style:normal;color:var(--testo-tenue);font-size:1.3rem;margin-left:auto}
 .voce-riga-risposta .voce-testo > div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .voce-riga-risposta .voce-data small:last-child{display:block}
+/* v3.8.25 — Lente del calendario e riga della scadenza più sottile */
+.cal-sopra{display:flex;align-items:center;gap:8px;margin:0 0 6px;min-height:0}
+.cal-sopra:empty{display:none}
+.cal-sopra .ut-banner{flex:1;min-width:0;margin:0;padding:6px 10px;border-radius:10px;font-size:.8rem;background:color-mix(in srgb,#E0A100 10%,var(--pannello))}
+.cal-sopra .ut-banner .icona-linea{width:17px;height:17px}
+.cal-sopra .ut-banner span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-cerca-cal{flex:none;width:34px;height:34px;border-radius:999px;border:1px solid var(--bordo);background:var(--pannello);color:var(--acc,#1D4FD7);display:grid;place-items:center;cursor:pointer}
+.scheda-calendario-v2[data-vista="agenda"] .btn-cerca-cal{display:none}
+.agenda-cerca:not([hidden]){display:flex;gap:8px;align-items:center}
+.agenda-cerca input{flex:1;min-width:0}
+.agenda-cerca-mic{flex:none;width:40px;height:40px;border-radius:999px;border:0;background:var(--acc,#1D4FD7);color:#fff;display:grid;place-items:center;cursor:pointer}
+.cerca-risposta{background:var(--pannello);border:1px solid var(--bordo);border-radius:14px;padding:12px 14px;margin:4px 0 8px}
+.cerca-risposta small{display:block;font-size:.72rem;color:var(--testo-tenue);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.cerca-risposta b{display:block;font-size:1.05rem;margin-top:2px}
+.cerca-risposta span{display:block;font-size:.84rem;color:var(--testo-tenue);margin-top:2px}
+.cerca-risposta .btn-testo-evento{padding:6px 0 0}
+html[data-tema=scuro] .cal-sopra .ut-banner{background:#4A3510}
+/* Altro: le impostazioni si aprono in una riga sola */
+.lista-impostazioni-altro[hidden]{display:none}
+.lista-impostazioni-altro{border-top:1px solid var(--bordo)}
+#btnImpostazioniAltro[aria-expanded="true"] > b{transform:rotate(90deg)}
+#btnImpostazioniAltro > b{transition:transform .15s}

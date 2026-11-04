@@ -136,10 +136,10 @@ function aggiornaBannerScadenze(){
   const ord = [...U.scadenze].sort((a, b) => a.data.localeCompare(b.data));
   const vicina = ord.find(s => giorniDa(s.data) >= 0 && giorniDa(s.data) <= 30) || ord.reverse().find(s => giorniDa(s.data) < 0 && giorniDa(s.data) >= -7);
   if(!vicina){ if(b) b.remove(); return; }
-  if(!b){ b = document.createElement('button'); b.type = 'button'; b.id = 'bannerScadenze'; b.className = 'ut-banner'; b.addEventListener('click', () => apriUtilita('scadenze')); sez.insertBefore(b, sez.firstChild); }
+  if(!b){ b = document.createElement('button'); b.type = 'button'; b.id = 'bannerScadenze'; b.className = 'ut-banner'; b.addEventListener('click', () => apriUtilita('scadenze')); const sopra = el('calSopra'); if(sopra) sopra.insertBefore(b, sopra.firstChild); else sez.insertBefore(b, sez.firstChild); }
   const g = giorniDa(vicina.data);
   b.classList.toggle('ut-banner-rosso', g <= 0);
-  b.innerHTML = `${ic('sveglia')}<span>${escapeHtml(vicina.nome)} ${g < 0 ? `<b>scaduta da ${-g} ${-g === 1 ? 'giorno' : 'giorni'}</b>` : g === 0 ? '<b>scade oggi</b>' : `tra <b>${g} ${g === 1 ? 'giorno' : 'giorni'}</b> (${dataBreveUt(vicina.data)})`}</span><i aria-hidden="true">›</i>`;
+  b.innerHTML = `${ic('sveglia')}<span>${escapeHtml(vicina.nome)} ${g < 0 ? `<b>scaduta da ${-g} ${-g === 1 ? 'giorno' : 'giorni'}</b>` : g === 0 ? '<b>scade oggi</b>' : `tra <b>${g} ${g === 1 ? 'giorno' : 'giorni'}</b>`}</span><i aria-hidden="true">›</i>`;
 }
 
 // ── Note di servizio ──
@@ -491,6 +491,7 @@ function risultatiUtilitaPerCerca(va){
   const r = [];
   U.note.forEach(n => { if(va(`${n.titolo} ${n.testo}`)) r.push({ iso: n.giorno || dataISO(new Date(n.modificata)), html: `<button type="button" class="agenda-evento" data-ut-apri="nota" data-id="${n.id}">${ic('lista')}<em>Nota</em><span class="agenda-ev-testo"><b>${escapeHtml(n.titolo || 'Nota')}</b>${n.testo ? `<small>${escapeHtml(n.testo.slice(0, 70))}</small>` : ''}</span></button>` }); });
   U.uscite.forEach(u => { const mz = mezzoDi(u.mezzoId); if(va(`${mz ? mz.sigla + ' ' + mz.targa : ''} ${u.anomalie || ''} ${u.appunti || ''} ${u.collega || ''}`)) r.push({ iso: u.giorno, html: `<button type="button" class="agenda-evento" data-ut-apri="uscita" data-id="${u.id}">${ic('auto')}<em>${escapeHtml(mz ? mz.sigla : 'Mezzo')}</em><span class="agenda-ev-testo"><b>${kmPercorsi(u) !== null ? numeroIt0(kmPercorsi(u)) + ' km' : 'Uscita'}${u.anomalie ? ' · ' + escapeHtml(u.anomalie) : ''}</b>${u.appunti ? `<small>${escapeHtml(u.appunti.slice(0, 70))}</small>` : ''}</span></button>` }); });
+  U.scadenze.forEach(sc => { if(va(`${sc.nome} ${sc.note || ''}`)) r.push({ iso: sc.data, html: `<button type="button" class="agenda-evento" data-ut-apri="scadenza" data-id="${sc.id}">${ic('sveglia')}<em>Scadenza</em><span class="agenda-ev-testo"><b>${escapeHtml(sc.nome)}</b>${sc.ripeti ? `<small>${escapeHtml(testoRipeti(sc.ripeti))}</small>` : ''}</span></button>` }); });
   return r;
 }
 document.addEventListener('click', e => {
@@ -498,7 +499,7 @@ document.addEventListener('click', e => {
   if(!x || x.closest('#paginaUt, #editorUt')) return;
   e.stopPropagation(); e.preventDefault();
   const id = x.dataset.id, t = x.dataset.utApri;
-  if(t === 'uscita') apriEditorUscita(id); else if(t === 'nota') apriEditorNota(id); else if(t === 'scambio') apriEditorScambio(id);
+  if(t === 'uscita') apriEditorUscita(id); else if(t === 'nota') apriEditorNota(id); else if(t === 'scambio') apriEditorScambio(id); else if(t === 'scadenza'){ apriUtilita('scadenze'); apriEditorScadenza(id); }
 }, true);
 
 // ── v3.8.19: Link utili (Altro → Link utili): pagine ufficiali, con la fonte sotto ──
@@ -600,6 +601,7 @@ function chiudiInCima(){
   if(vis('pannelloTurno')){ const c = el('btnChiudiTurno'); if(c) c.click(); else el('pannelloTurno').hidden = true; return true; }
   if(vis('menuFabGiorno') && typeof chiudiFabGiorno === 'function'){ chiudiFabGiorno(); return true; }
   if(vis('barraPennello') && typeof chiudiPennello === 'function'){ chiudiPennello(); return true; }
+  if(vis('boxCercaAgenda') && typeof chiudiCercaCal === 'function' && document.querySelector('.scheda-calendario-v2[data-vista="agenda"]')){ chiudiCercaCal(); return true; }
   const schedaAperta = document.querySelector('.scheda-nav.attiva, .scheda-nav[aria-current="page"]');
   if(schedaAperta && schedaAperta.id !== 'tabCalendario' && typeof mostraScheda === 'function'){ mostraScheda('calendario'); window.scrollTo(0, 0); return true; }
   return false;
@@ -705,3 +707,10 @@ function htmlCercaLeggi(){
   return `<p class="ut-tit">Cerca nelle leggi</p><form id="utFormLeggi" class="ut-cerca ut-cerca-leggi" role="search">${ic('cerca')}<input type="search" id="utCercaLeggi" enterkeyhint="search" autocomplete="off" placeholder="Una parola, es. perquisizione" value="${escapeHtml(st.testo)}" maxlength="80"><button type="submit" class="ut-chip">Cerca</button></form>`
     + `<div id="utRisultatiLeggi">${righeLeggi()}</div><p class="ut-nota">Le norme si aprono sul sito ufficiale: tocca ☆ per mettere in cima quelle che usi di più. «Cerca nelle leggi» cerca in tutte le leggi pubblicate su Normattiva (serve internet). La parola viene inviata a Normattiva: non scrivere dati personali. Dati: Normattiva – Istituto Poligrafico e Zecca dello Stato, licenza CC BY-NC 4.0.</p>`;
 }
+// Altro: «Impostazioni» si apre e si chiude con un tocco (promemoria, widget, tema, tabelle)
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('#btnImpostazioniAltro');
+  if(!b) return;
+  const l = el('listaImpostazioniAltro'); l.hidden = !l.hidden;
+  b.setAttribute('aria-expanded', String(!l.hidden));
+});

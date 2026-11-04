@@ -4209,9 +4209,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.24';
+const VERSIONE_NOVITA = '3.8.25';
 const PASSI_NOVITA = [
-  { id: 'tabCalendario', titolo: 'Novità: chiedi a voce', testo: 'Con il microfono ora puoi anche fare domande: «Il 15 agosto che turno ho fatto?», «Quante notti a ottobre?», «Quanti giorni di congedo mi restano?». L\'app risponde con i tuoi dati, senza cambiare niente.' }
+  { id: 'btnCercaCal', titolo: 'Novità: cerca o chiedi', testo: 'Con la lente cerchi eventi, note, scadenze e servizi, oppure fai una domanda: «quante notti a ottobre?», «il 15 agosto che turno ho fatto?». C\'è anche il microfono. Le impostazioni ora sono raccolte in Altro → Impostazioni.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

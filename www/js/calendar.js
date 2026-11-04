@@ -1227,7 +1227,13 @@ function adattaTitoloCalendario(){
   if(!t) return;
   t.style.fontSize = '';
   let px = parseFloat(getComputedStyle(t).fontSize) || 18, giri = 0;
-  while(t.scrollWidth > t.clientWidth + 1 && px > 11 && giri++ < 20){ px -= 1; t.style.fontSize = px + 'px'; }
+  const minimo = t.textContent === t.dataset.corto ? 11 : 14;
+  while(t.scrollWidth > t.clientWidth + 1 && px > minimo && giri++ < 20){ px -= 1; t.style.fontSize = px + 'px'; }
+  // Telefoni stretti: se anche piccolo non ci sta, il mese si accorcia ("Ottobre 2026" → "Ott 2026").
+  if(t.scrollWidth > t.clientWidth + 1 && t.textContent !== t.dataset.corto){
+    const corto = t.textContent.replace(/^([A-Za-zÀ-ÿ]{3})[A-Za-zÀ-ÿ]+/, '$1');
+    if(corto !== t.textContent){ t.dataset.corto = corto; t.textContent = corto; }
+  }
 }
 function inizializzaVisteCalendario(){
   const menu = el('menuVistaCalendario');
@@ -1319,10 +1325,15 @@ function barraAgendaHtml(){
   return `<div class="agenda-barra"><div class="agenda-filtri" role="tablist" aria-label="Cosa mostrare">`
     + ['tutto', 'eventi', 'turni'].map(f => `<button type="button" role="tab" data-filtro-agenda="${f}">${f === 'tutto' ? 'Tutto' : f === 'eventi' ? 'Eventi' : 'Turni'}</button>`).join('')
     + `</div><button type="button" class="agenda-cerca-btn" data-agenda-cerca aria-label="Cerca">${lente}</button></div>`
-    + `<div class="agenda-cerca" id="boxCercaAgenda" hidden><input type="search" id="campoCercaAgenda" placeholder="Cerca eventi, servizi, note e veicoli" autocomplete="off" enterkeyhint="search"></div>`
+    + `<div class="agenda-cerca" id="boxCercaAgenda" hidden><input type="search" id="campoCercaAgenda" placeholder="Cerca o chiedi: visita, quante notti a ottobre…" autocomplete="off" enterkeyhint="search"><button type="button" class="agenda-cerca-mic" data-agenda-voce aria-label="Chiedi a voce"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>`
     + `<div id="agendaElenco"></div>`;
 }
 function risultatiCercaAgenda(q){
+  // Una domanda ("quante notti a ottobre?", "il 15 agosto che turno ho fatto?"): prima la risposta.
+  if(typeof eDomandaVoce === 'function' && eDomandaVoce(q)){
+    const r = rispondiDomandaVoce(q);
+    if(r) return htmlRispostaCerca(r);
+  }
   const parole = (typeof normalizzaVoce === 'function' ? normalizzaVoce(q) : q.toLowerCase()).split(' ').filter(Boolean);
   const norm = t => typeof normalizzaVoce === 'function' ? normalizzaVoce(t) : String(t || '').toLowerCase();
   const va = testo => { const n = norm(testo); return parole.every(w => n.includes(w)); };
@@ -1392,9 +1403,14 @@ function clicAgenda(e){
   if(filtro){ filtroAgenda = filtro.dataset.filtroAgenda; renderAgenda(); return; }
   if(e.target.closest('[data-agenda-cerca]')){
     const box = el('boxCercaAgenda'); box.hidden = !box.hidden;
-    if(!box.hidden) el('campoCercaAgenda').focus(); else { cercaAgenda = ''; el('campoCercaAgenda').value = ''; renderAgenda(); }
+    if(!box.hidden) el('campoCercaAgenda').focus(); else chiudiCercaCal();
     return;
   }
+  if(e.target.closest('[data-agenda-voce]')){ if(typeof apriDettaVoce === 'function') apriDettaVoce(); return; }
+  const giornoRisposta = e.target.closest('[data-cerca-giorno]');
+  if(giornoRisposta){ const iso = giornoRisposta.dataset.cercaGiorno; chiudiCercaCal(); if(typeof vaiAlGiornoVoce === 'function') vaiAlGiornoVoce(iso); return; }
+  const vaiRisposta = e.target.closest('[data-cerca-vai]');
+  if(vaiRisposta){ const v = vaiRisposta.dataset.cercaVai; chiudiCercaCal(); if(v === 'assenze') mostraScheda('assenze'); else if(v === 'scadenze') apriUtilita('scadenze'); return; }
   const nuovo = e.target.closest('[data-agenda-nuovo]');
   if(nuovo){
     const iso = nuovo.dataset.agendaNuovo, d = dataDaIso(iso);
@@ -1506,3 +1522,23 @@ async function condividiMese(){
   }catch(e){}
   const a = document.createElement('a'); a.href = dataUrl; a.download = nome; a.click();
 }
+
+// ── Lente del calendario: una sola ricerca (eventi, servizi, note, veicolo, scadenze) che risponde anche alle domande ──
+let vistaPrimaCerca = null;
+function apriCercaCal(){
+  vistaPrimaCerca = vistaCalendario() === 'agenda' ? null : vistaCalendario();
+  impostaVistaCalendario('agenda');
+  const box = el('boxCercaAgenda'); if(!box) return;
+  box.hidden = false; window.scrollTo(0, 0);
+  setTimeout(() => { const c = el('campoCercaAgenda'); if(c) c.focus(); }, 50);
+}
+function chiudiCercaCal(){
+  cercaAgenda = ''; const c = el('campoCercaAgenda'); if(c) c.value = '';
+  const box = el('boxCercaAgenda'); if(box) box.hidden = true;
+  if(vistaPrimaCerca){ const v = vistaPrimaCerca; vistaPrimaCerca = null; impostaVistaCalendario(v); } else renderAgenda();
+}
+function htmlRispostaCerca(r){
+  const righe = r.righe.map(x => { const d = dataDaIso(x.iso); return `<button type="button" class="voce-riga voce-riga-risposta" data-cerca-giorno="${x.iso}"><div class="voce-data"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b><small>${NOMI_MESI[d.getMonth()].slice(0, 3).toLowerCase()}</small></div><div class="voce-testo"><div>${x.html}</div>${x.sotto ? `<small>${x.sotto}</small>` : ''}</div><i aria-hidden="true">›</i></button>`; }).join('');
+  return `<div class="cerca-risposta"><small>Risposta</small><b>${escapeHtml(r.titolo)}</b>${r.sotto ? `<span>${escapeHtml(r.sotto)}</span>` : ''}${r.vai ? `<button type="button" class="btn-testo-evento" data-cerca-vai="${r.vai}">Apri ›</button>` : ''}</div>${righe ? `<div class="voce-righe cerca-righe">${righe}</div>` : ''}`;
+}
+document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#btnCercaCal')) apriCercaCal(); });
