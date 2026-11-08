@@ -1,5 +1,4 @@
 <it-IT>
-• Vista Anno: tutti i mesi colorati per turno, con le ferie in evidenza
-• Trascina la barretta sotto il calendario per passare da Anno a Mese a Settimana
-• Assenze: le date chieste su ogni voce, anni sfogliabili e giorni già chiesti per l'anno dopo
+• Nuova vista Diario: la settimana come un'agenda di carta, con turni, appuntamenti e note
+• Scorri col dito per girare pagina
 </it-IT>

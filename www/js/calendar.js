@@ -1095,7 +1095,7 @@ function spostaVistaCalendario(dir){
   if(v === 'anno'){ annoCorrente += dir; renderCalendario(); return true; }
   if(v !== 'giorno' && v !== 'settimana' && v !== 'diario') return false;
   giornoSelezionato = giornoPiu(giornoSelezionato || dataISO(new Date()), dir * (v === 'giorno' ? 1 : 7));
-  if(v === 'diario') voltaPaginaDiario(dir);
+  if(v === 'diario') paginaDaGirareDiario = dir;
   const d = dataDaIso(giornoSelezionato); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
   renderCalendario();
   return true;
@@ -1643,6 +1643,7 @@ function paginaGiornoDiario(iso, mezza){
     + `<span class="diario-testa">${nomi[d.getDay()]} <b>${d.getDate()}</b>${festa ? `<small>${escapeHtml(festa)}</small>` : ''}</span>`
     + `<span class="diario-righe">${righe.map(r => `<span>${r}</span>`).join('')}</span></button>`;
 }
+let paginaDaGirareDiario = 0;
 function renderVistaDiario(iso){
   const host = el('vistaDiarioCal'); if(!host) return;
   const lun = dataISO(lunediDi(iso)), g = n => giornoPiu(lun, n);
@@ -1651,6 +1652,7 @@ function renderVistaDiario(iso){
     + `<div class="diario-spirale" aria-hidden="true"></div>`
     + `<div class="diario-pagina dx">${paginaGiornoDiario(g(3))}${paginaGiornoDiario(g(4))}<div class="diario-weekend">${paginaGiornoDiario(g(5), true)}${paginaGiornoDiario(g(6), true)}</div></div>`
     + `</div><p class="diario-sett">Settimana ${settimanaDellAnno(dataDaIso(lun))}</p>`;
+  if(paginaDaGirareDiario){ voltaPaginaDiario(paginaDaGirareDiario); paginaDaGirareDiario = 0; }
 }
 function voltaPaginaDiario(dir){
   const libro = document.querySelector('.diario-libro'); if(!libro) return;

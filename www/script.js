@@ -4209,10 +4209,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.27';
+const VERSIONE_NOVITA = '3.8.28';
 const PASSI_NOVITA = [
-  { id: 'btnVistaCalendario', titolo: 'Novità: vista Anno', testo: 'In «Mese ▾» c\'è la vista Anno: tutti i mesi colorati per turno, con le ferie in evidenza. Sotto il calendario trascina la barretta in su o in giù per passare da Anno a Mese a Settimana.' },
-  { id: 'tabAssenze', titolo: 'Date sulle assenze', testo: 'In Assenze ogni voce mostra le date che hai chiesto. Con ‹ › cambi anno: le date vecchie restano nel loro anno, quelle già chieste per l\'anno dopo le vedi con ›.' }
+  { id: 'btnVistaCalendario', titolo: 'Novità: vista Diario', testo: 'In «Mese ▾» c\'è il Diario: la settimana come un\'agenda di carta, con turni, appuntamenti e note. Scorri col dito per girare pagina, tocca un giorno per modificarlo.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){
