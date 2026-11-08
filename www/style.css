@@ -3397,5 +3397,6 @@ html[data-tema=scuro] .diario-ora{color:#8FB0FF}
 @keyframes voltaAvanti{0%{transform:rotateY(-80deg);transform-origin:left center;opacity:.4}100%{transform:none;transform-origin:left center;opacity:1}}
 @keyframes voltaIndietro{0%{transform:rotateY(80deg);transform-origin:right center;opacity:.4}100%{transform:none;transform-origin:right center;opacity:1}}
 
-/* Diario: 4 giorni a sinistra (lun–gio), 3 a destra (ven–dom), la domenica grande come gli altri */
-.diario-giorno{flex:1;min-height:150px}
+/* Diario: lun–mer a sinistra; gio e ven a destra, sabato e domenica un po' più bassi (non a metà) */
+.diario-giorno{flex:1 1 150px;min-height:150px}
+.diario-giorno.mezza{flex:1 1 118px;min-height:118px}

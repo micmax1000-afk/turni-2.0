@@ -1648,9 +1648,9 @@ function renderVistaDiario(iso){
   const host = el('vistaDiarioCal'); if(!host) return;
   const lun = dataISO(lunediDi(iso)), g = n => giornoPiu(lun, n);
   host.innerHTML = `<div class="diario-libro">`
-    + `<div class="diario-pagina sx">${paginaGiornoDiario(g(0))}${paginaGiornoDiario(g(1))}${paginaGiornoDiario(g(2))}${paginaGiornoDiario(g(3))}</div>`
+    + `<div class="diario-pagina sx">${paginaGiornoDiario(g(0))}${paginaGiornoDiario(g(1))}${paginaGiornoDiario(g(2))}</div>`
     + `<div class="diario-spirale" aria-hidden="true"></div>`
-    + `<div class="diario-pagina dx">${paginaGiornoDiario(g(4))}${paginaGiornoDiario(g(5))}${paginaGiornoDiario(g(6))}</div>`
+    + `<div class="diario-pagina dx">${paginaGiornoDiario(g(3))}${paginaGiornoDiario(g(4))}${paginaGiornoDiario(g(5), true)}${paginaGiornoDiario(g(6), true)}</div>`
     + `</div><p class="diario-sett">Settimana ${settimanaDellAnno(dataDaIso(lun))}</p>`;
   if(paginaDaGirareDiario){ voltaPaginaDiario(paginaDaGirareDiario); paginaDaGirareDiario = 0; }
 }
