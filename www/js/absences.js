@@ -550,6 +550,8 @@ function renderCardAssenzaItem(a){
     // v2.94: nel congedo ordinario, i giorni di ogni anno (anche quelli vecchi) sotto il nome.
     const anniCongedoRiga = (eCongedoOrdinario && saldoCO.perAnno
       ? `<span class="anni-congedo-v4">${Object.entries(saldoCO.perAnno).filter(([y, g]) => g !== 0 || Number(y) === anno).sort((x, y) => y[0] - x[0]).map(([y, g]) => `<em>${y}: ${numeroIt(g)}</em>`).join('')}</span>` : '')
+      // v3.8.27: i giorni già segnati più avanti (anche nell'anno dopo), così si vede cosa è prenotato.
+      + (eCongedoOrdinario ? programmatiCongedoHtml(a, anno) : '')
       // v3.8.9: i 4 riposi legge vanno usati entro il 31/12 (da ottobre in arancione).
       + (a.nome === 'Riposo legge' && rimangono > 0 ? `<span class="scadenza-assenza${mese >= 9 ? ' vicina' : ''}">Entro il 31/12</span>` : '');
     const anniServizio = Number((AppState.anagrafica || {}).anni) || 0;
@@ -819,3 +821,18 @@ function inizializzaSaldiPartenza(){
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', inizializzaSaldiPartenza);
 else inizializzaSaldiPartenza();
+
+// v3.8.27: congedo già programmato: giorni futuri di quest'anno e giorni segnati negli anni dopo.
+function programmatiCongedoHtml(voce, anno){
+  const oggiIso = dataISO(new Date());
+  const giorni = Object.entries(AppState.turni).filter(([iso, t]) => t && t.assenzaTipo === voce.id && iso > oggiIso).map(([iso]) => iso).sort();
+  const questAnno = giorni.filter(iso => iso.startsWith(anno + '-'));
+  const dopo = giorni.filter(iso => Number(iso.slice(0, 4)) > anno);
+  if(!questAnno.length && !dopo.length) return '';
+  const parti = [];
+  if(questAnno.length) parti.push(`${questAnno.length} già ${questAnno.length === 1 ? 'programmato' : 'programmati'}`);
+  const perAnno = {};
+  dopo.forEach(iso => { const y = iso.slice(0, 4); perAnno[y] = (perAnno[y] || 0) + 1; });
+  Object.entries(perAnno).forEach(([y, n]) => parti.push(`${n} per il ${y}`));
+  return `<span class="programmati-congedo">${parti.join(' · ')}</span>`;
+}

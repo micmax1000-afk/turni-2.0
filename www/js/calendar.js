@@ -1071,11 +1071,11 @@ function aggiornaVistaCalendario(){
 
 // ── v3.8.10: viste del calendario (Giorno · Settimana · Mese · Agenda), scelte dal pulsantino in alto ──
 const CHIAVE_VISTA_CALENDARIO = 'simCedolino_vistaCalendario_v1';
-const NOMI_VISTA_CALENDARIO = { giorno: 'Giorno', settimana: 'Settimana', mese: 'Mese', agenda: 'Agenda' };
+const NOMI_VISTA_CALENDARIO = { giorno: 'Giorno', settimana: 'Settimana', mese: 'Mese', anno: 'Anno', agenda: 'Agenda' };
 function vistaCalendario(){
   if(agendaSottoAttiva()) return 'agenda';
   let v = null; try{ v = TurniPSStorage.getItem(CHIAVE_VISTA_CALENDARIO); }catch(e){}
-  return v === 'giorno' || v === 'settimana' ? v : 'mese';
+  return v === 'giorno' || v === 'settimana' || v === 'anno' ? v : 'mese';
 }
 function impostaVistaCalendario(v){
   try{ TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, v === 'agenda' ? 'mese' : v); }catch(e){}
@@ -1092,6 +1092,7 @@ function giornoPiu(iso, n){ const d = dataDaIso(iso); return dataISO(new Date(d.
 // Frecce ‹ ›: nella vista Giorno si va di un giorno, nella Settimana di una settimana.
 function spostaVistaCalendario(dir){
   const v = vistaCalendario();
+  if(v === 'anno'){ annoCorrente += dir; renderCalendario(); return true; }
   if(v !== 'giorno' && v !== 'settimana') return false;
   giornoSelezionato = giornoPiu(giornoSelezionato || dataISO(new Date()), dir * (v === 'giorno' ? 1 : 7));
   const d = dataDaIso(giornoSelezionato); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
@@ -1120,6 +1121,7 @@ function applicaVistaCalendario(){
   document.querySelectorAll('[data-vista-calendario]').forEach(b => b.classList.toggle('attivo', b.dataset.vistaCalendario === v));
   el('vistaGiornoCal').hidden = v !== 'giorno';
   el('vistaSettimanaCal').hidden = v !== 'settimana';
+  if(el('vistaAnnoCal')) el('vistaAnnoCal').hidden = v !== 'anno';
   const iso = giornoSelezionato || dataISO(new Date());
   const d = dataDaIso(iso);
   if(v === 'giorno'){
@@ -1130,6 +1132,9 @@ function applicaVistaCalendario(){
     const mm = x => x.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
     el('etichettaMese').textContent = lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${mm(dom)}` : `${lun.getDate()} ${mm(lun)}–${dom.getDate()} ${mm(dom)}`;
     renderVistaSettimana(iso);
+  } else if(v === 'anno'){
+    el('etichettaMese').textContent = String(annoCorrente);
+    renderVistaAnno(annoCorrente);
   } else if(v === 'agenda'){
     el('etichettaMese').textContent = 'Agenda';
   }
@@ -1554,3 +1559,51 @@ function aggiornaSuggerimentiCerca(){
   box.innerHTML = lista.map(f => `<button type="button" class="cerca-sugg" data-suggerimento="${escapeHtml(f)}">${escapeHtml(f.charAt(0).toUpperCase() + f.slice(1))}</button>`).join('');
   box.hidden = !lista.length;
 }
+
+// ── v3.8.27: vista Anno (12 mesi piccoli, colorati per turno) e maniglia per cambiare vista col dito ──
+function renderVistaAnno(anno){
+  const host = el('vistaAnnoCal'); if(!host) return;
+  const oggiIso = dataISO(new Date());
+  let html = '<div class="anno-griglia">';
+  for(let m = 0; m < 12; m++){
+    const primo = new Date(anno, m, 1, 12), giorni = new Date(anno, m + 1, 0).getDate();
+    const vuoti = (primo.getDay() + 6) % 7;
+    const corrente = anno === new Date().getFullYear() && m === new Date().getMonth();
+    html += `<button type="button" class="anno-mese${corrente ? ' corrente' : ''}" data-anno-mese="${m}"><b>${NOMI_MESI[m].slice(0, 3)}</b><span class="anno-giorni">`
+      + ['L', 'M', 'M', 'G', 'V', 'S', 'D'].map(x => `<i>${x}</i>`).join('') + '<em></em>'.repeat(vuoti);
+    for(let g = 1; g <= giorni; g++){
+      const iso = `${anno}-${String(m + 1).padStart(2, '0')}-${String(g).padStart(2, '0')}`;
+      const t = AppState.turni[iso], col = coloreGiornoVista(t);
+      const cls = (iso === oggiIso ? ' oggi' : '') + (t && t.assenzaTipo ? ' assenza' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
+      html += `<em class="${cls.trim()}"${col ? ` style="background:${col}"` : ''}>${g}</em>`;
+    }
+    html += '</span></button>';
+  }
+  html += '</div>';
+  // Riassunto dell'anno: le assenze segnate (ferie e altro), utile per programmare.
+  const ass = {};
+  Object.entries(AppState.turni).forEach(([iso, t]) => { if(t && t.assenzaTipo && iso.startsWith(anno + '-')){ const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo); const n = v ? v.nome : 'Assenza'; ass[n] = (ass[n] || 0) + 1; } });
+  const voci = Object.entries(ass).sort((a, b) => b[1] - a[1]);
+  if(voci.length) html += `<p class="anno-riassunto">${voci.map(([n, k]) => `<span>${escapeHtml(n)} <b>${k}</b></span>`).join('')}</p>`;
+  host.innerHTML = html;
+}
+document.addEventListener('click', e => {
+  const m = e.target.closest && e.target.closest('[data-anno-mese]');
+  if(!m) return;
+  const mm = Number(m.dataset.annoMese), oggi = new Date();
+  giornoSelezionato = annoCorrente === oggi.getFullYear() && mm === oggi.getMonth() ? dataISO(oggi) : dataISO(new Date(annoCorrente, mm, 1, 12));
+  impostaVistaCalendario('mese');
+});
+// Maniglia sotto il calendario: trascina in su per stringere (Anno → Mese → Settimana), in giù per allargare.
+const ORDINE_VISTE_MANIGLIA = ['settimana', 'mese', 'anno'];
+function cambiaVistaConManiglia(dir){
+  let v = vistaCalendario(); if(v === 'giorno') v = 'settimana'; if(v === 'agenda') return;
+  const i = ORDINE_VISTE_MANIGLIA.indexOf(v), j = Math.max(0, Math.min(ORDINE_VISTE_MANIGLIA.length - 1, i + dir));
+  if(j !== i) impostaVistaCalendario(ORDINE_VISTE_MANIGLIA[j]);
+}
+(function(){
+  let y0 = null;
+  document.addEventListener('touchstart', e => { if(e.target.closest && e.target.closest('#manigliaVista') && e.touches.length === 1) y0 = e.touches[0].clientY; else y0 = null; }, { passive: true });
+  document.addEventListener('touchend', e => { if(y0 === null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; if(Math.abs(dy) >= 25) cambiaVistaConManiglia(dy > 0 ? 1 : -1); }, { passive: true });
+  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#manigliaVista') && y0 === null) cambiaVistaConManiglia(vistaCalendario() === 'settimana' ? 1 : -1); });
+})();

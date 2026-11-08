@@ -3338,3 +3338,24 @@ html[data-tema=scuro] .cal-sopra .ut-banner{background:#4A3510}
 .cerca-sugg{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;padding:8px 6px;border-radius:10px;font:500 .9rem var(--font-corpo);color:var(--testo);cursor:pointer}
 .cerca-sugg::before{content:'';flex:none;width:16px;height:16px;background:currentColor;opacity:.45;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E") center/contain no-repeat}
 .cerca-sugg:active{background:color-mix(in srgb,var(--testo) 6%,transparent)}
+
+/* v3.8.27 — Vista Anno, maniglia per cambiare vista, congedi già programmati */
+.scheda-calendario-v2[data-vista="anno"] .riepilogo-giorno-selezionato-box-v2{display:none}
+.vista-anno-cal[hidden]{display:none}
+.anno-griglia{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px;margin:6px 0 4px}
+.anno-mese{border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--testo);cursor:pointer}
+.anno-mese > b{display:block;font:700 1rem var(--font-corpo);margin:0 0 4px 2px}
+.anno-mese.corrente > b{color:var(--acc,#1D4FD7)}
+.anno-giorni{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.anno-giorni i{font:600 .5rem var(--font-corpo);color:var(--testo-tenue);text-align:center;font-style:normal}
+.anno-giorni em{font:600 .56rem/1.55 var(--font-corpo);text-align:center;font-style:normal;border-radius:3px;color:#1E2129}
+.anno-giorni em:not([style]){color:var(--testo)}
+.anno-giorni em.festivo:not([style]){color:#C62828}
+.anno-giorni em.assenza{outline:1.5px solid #1E2129;outline-offset:-1px}
+.anno-giorni em.oggi{outline:2px solid var(--acc,#1D4FD7);outline-offset:0}
+.anno-riassunto{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.82rem;color:var(--testo-tenue);margin:12px 2px 4px}
+.anno-riassunto b{color:var(--testo)}
+.maniglia-vista{display:block;width:100%;border:0;background:none;padding:6px 0 4px;cursor:grab;touch-action:none}
+.maniglia-vista span{display:block;width:42px;height:5px;border-radius:99px;margin:0 auto;background:color-mix(in srgb,var(--testo) 22%,transparent)}
+.scheda-calendario-v2[data-vista="agenda"] .maniglia-vista,.scheda-calendario-v2[data-vista="giorno"] .maniglia-vista{display:none}
+.card-assenza-compact-nome .programmati-congedo{display:block;font:600 .74rem/1.3 var(--font-corpo)!important;color:var(--acc,#1D4FD7);margin-top:3px}
