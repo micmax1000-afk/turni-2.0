@@ -3396,3 +3396,6 @@ html[data-tema=scuro] .diario-ora{color:#8FB0FF}
 .diario-libro.volta-indietro .diario-pagina.sx{animation:voltaIndietro .45s ease-out}
 @keyframes voltaAvanti{0%{transform:rotateY(-80deg);transform-origin:left center;opacity:.4}100%{transform:none;transform-origin:left center;opacity:1}}
 @keyframes voltaIndietro{0%{transform:rotateY(80deg);transform-origin:right center;opacity:.4}100%{transform:none;transform-origin:right center;opacity:1}}
+
+/* Diario: 4 giorni a sinistra (lun–gio), 3 a destra (ven–dom), la domenica grande come gli altri */
+.diario-giorno{flex:1;min-height:150px}
