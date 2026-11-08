@@ -1,4 +1,4 @@
 <it-IT>
-• Nuova vista Diario: la settimana come un'agenda di carta, con turni, appuntamenti e note
-• Scorri col dito per girare pagina
+• Diario: 8 riquadri uguali, da lunedì a domenica, più le Note della settimana da scrivere sulle righe
+• La lente trova anche le Note della settimana
 </it-IT>
