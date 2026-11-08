@@ -60,7 +60,22 @@ function segnaQuandoNuovo(nuovo, vecchio){
   return nuovo;
 }
 // L'anno e il mese di oggi: la pagina Assenze non segue il mese aperto nel calendario.
-function rifAssenze(){ const d = new Date(); return { anno: d.getFullYear(), mese: d.getMonth() }; }
+// v3.8.27: l'anno delle Assenze si può cambiare (‹ 2026 ›) per rivedere le date degli anni passati.
+let annoVistaAssenze = null;
+function rifAssenze(){ const d = new Date(); const a = annoVistaAssenze || d.getFullYear(); return { anno: a, mese: a === d.getFullYear() ? d.getMonth() : a < d.getFullYear() ? 11 : 0 }; }
+function cambiaAnnoAssenze(dir){ annoVistaAssenze = rifAssenze().anno + dir; if(annoVistaAssenze === new Date().getFullYear()) annoVistaAssenze = null; renderAssenze(); }
+// Le date in cui hai usato (o hai già chiesto) una voce, in quell'anno: «1 ott · 21–23 dic».
+function dateAssenzaHtml(voce, anno){
+  const giorni = Object.entries(AppState.turni).filter(([iso, t]) => t && t.assenzaTipo === voce.id && iso.startsWith(anno + '-')).map(([iso]) => iso).sort();
+  if(!giorni.length) return '';
+  const oggiIso = dataISO(new Date());
+  const gruppi = [];
+  giorni.forEach(iso => { const g = gruppi[gruppi.length - 1]; if(g && giornoPiu(g.a, 1) === iso){ g.a = iso; g.n++; } else gruppi.push({ da: iso, a: iso, n: 1 }); });
+  const mese = d => NOMI_MESI[d.getMonth()].slice(0, 3).toLowerCase();
+  const testo = g => { const a = dataDaIso(g.da), b = dataDaIso(g.a); return g.n === 1 ? `${a.getDate()} ${mese(a)}` : a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${mese(b)}` : `${a.getDate()} ${mese(a)}–${b.getDate()} ${mese(b)}`; };
+  const MAX = 6, mostrati = gruppi.slice(0, MAX);
+  return `<span class="date-assenza">${mostrati.map(g => `<em class="${g.da > oggiIso ? 'futura' : ''}">${testo(g)}</em>`).join('')}${gruppi.length > MAX ? `<em class="altre">+${gruppi.length - MAX}</em>` : ''}</span>`;
+}
 
 function trovaAssenzaRecuperoFestivo(){
   return AppState.assenze.find(a => a.nome === 'Recupero festivo') || null;
@@ -368,7 +383,7 @@ function renderDashboardAssenze(){
     + `<span>⏱️ ${oreEMinuti(resto('Permesso breve'))} di permesso breve</span>`
     + `<span>🔄 ${numeroIt(recuperi)} ${recuperi === 1 ? 'recupero' : 'recuperi'}</span></div>`;
   const sotto = el('sottotitoloAssenze');
-  if(sotto) sotto.textContent = `Quanto ti resta nel ${rif.anno} · non cambia il cedolino`;
+  if(sotto) sotto.innerHTML = `<span class="anno-assenze"><button type="button" data-anno-assenze="-1" aria-label="Anno prima">‹</button><b>${rif.anno}</b><button type="button" data-anno-assenze="1" aria-label="Anno dopo">›</button></span> ${rif.anno === new Date().getFullYear() ? 'Quanto ti resta' : rif.anno < new Date().getFullYear() ? 'Com\'era a fine anno' : 'Anno prossimo'} · non cambia il cedolino`;
   renderBoxSaldiPartenza();
 }
 
@@ -550,10 +565,11 @@ function renderCardAssenzaItem(a){
     // v2.94: nel congedo ordinario, i giorni di ogni anno (anche quelli vecchi) sotto il nome.
     const anniCongedoRiga = (eCongedoOrdinario && saldoCO.perAnno
       ? `<span class="anni-congedo-v4">${Object.entries(saldoCO.perAnno).filter(([y, g]) => g !== 0 || Number(y) === anno).sort((x, y) => y[0] - x[0]).map(([y, g]) => `<em>${y}: ${numeroIt(g)}</em>`).join('')}</span>` : '')
-      // v3.8.27: i giorni già segnati più avanti (anche nell'anno dopo), così si vede cosa è prenotato.
-      + (eCongedoOrdinario ? programmatiCongedoHtml(a, anno) : '')
+      // v3.8.27: le date chieste quell'anno e, per il congedo, i giorni già segnati più avanti.
+      + dateAssenzaHtml(a, anno)
+      + (eCongedoOrdinario && anno === new Date().getFullYear() ? programmatiCongedoHtml(a, anno) : '')
       // v3.8.9: i 4 riposi legge vanno usati entro il 31/12 (da ottobre in arancione).
-      + (a.nome === 'Riposo legge' && rimangono > 0 ? `<span class="scadenza-assenza${mese >= 9 ? ' vicina' : ''}">Entro il 31/12</span>` : '');
+      + (a.nome === 'Riposo legge' && rimangono > 0 && anno === new Date().getFullYear() ? `<span class="scadenza-assenza${mese >= 9 ? ' vicina' : ''}">Entro il 31/12</span>` : '');
     const anniServizio = Number((AppState.anagrafica || {}).anni) || 0;
     const notaCongedoAuto = eCongedoOrdinario
       ? `<div class="congedo-orario">${sceltaSettimanaCongedoHtml()}</div>` + (a.manuale
@@ -828,11 +844,12 @@ function programmatiCongedoHtml(voce, anno){
   const giorni = Object.entries(AppState.turni).filter(([iso, t]) => t && t.assenzaTipo === voce.id && iso > oggiIso).map(([iso]) => iso).sort();
   const questAnno = giorni.filter(iso => iso.startsWith(anno + '-'));
   const dopo = giorni.filter(iso => Number(iso.slice(0, 4)) > anno);
-  if(!questAnno.length && !dopo.length) return '';
+  if(!dopo.length) return '';
   const parti = [];
-  if(questAnno.length) parti.push(`${questAnno.length} già ${questAnno.length === 1 ? 'programmato' : 'programmati'}`);
   const perAnno = {};
   dopo.forEach(iso => { const y = iso.slice(0, 4); perAnno[y] = (perAnno[y] || 0) + 1; });
-  Object.entries(perAnno).forEach(([y, n]) => parti.push(`${n} per il ${y}`));
+  Object.entries(perAnno).forEach(([y, n]) => parti.push(`+ ${n} già ${n === 1 ? 'chiesto' : 'chiesti'} per il ${y} (li vedi con ›)`));
   return `<span class="programmati-congedo">${parti.join(' · ')}</span>`;
 }
+
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-anno-assenze]'); if(b) cambiaAnnoAssenze(Number(b.dataset.annoAssenze)); });
