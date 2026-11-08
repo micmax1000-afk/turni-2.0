@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.26');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.27');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -629,9 +629,9 @@ sezione('v3.8.13: guida alle novità');
   await p.evaluate(() => { localStorage.removeItem('simCedolino_novitaViste_v1'); avviaNovitaSeServe(); });
   await p.waitForTimeout(200);
   const passi = [];
-  for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: la ricerca', passi.join(' | ') === 'Novità: la ricerca capisce di più (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.26'));
+  for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
+  ok('chi usava già l\'app vede 1 fumetto: vista Anno', passi.join(' | ') === 'Novità: vista Anno (1 di 2) | Date sulle assenze (2 di 2)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.27'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1048,6 +1048,38 @@ sezione('Ricerca: plurali, passato e futuro, errori di battitura, nuove domande,
   ok('aprendo la lente compaiono 4 domande pronte', await p.evaluate(() => document.querySelectorAll('#cercaSuggerimenti .cerca-sugg').length === 4));
   await p.click('#cercaSuggerimenti .cerca-sugg');
   ok('tocco un suggerimento: la frase va nella casella e risponde', await p.evaluate(() => el('campoCercaAgenda').value === 'domani che turno ho?' && !!document.querySelector('.cerca-risposta')));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.27: vista Anno, maniglia, date sulle assenze, anni sfogliabili');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(600);
+  await p.evaluate(() => { localStorage.setItem('simCedolino_saldiPartenza_v1', JSON.stringify({ data: '2026-09-01', congedoAnni: { 2026: 30 }, recuperoRiposo: 0, recuperoFestivo: 0, riposoCompensativoOre: 0 }));
+    const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
+    ['2026-10-01', '2026-12-21', '2026-12-22', '2026-12-23', '2027-01-04', '2027-01-05', '2025-12-29'].forEach(iso => { AppState.turni[iso] = { data: iso, assenzaTipo: co.id }; });
+    salvaTurniStorage(); impostaVistaCalendario('anno'); });
+  ok('vista Anno: 12 mesi, titolo 2026, le ferie con il bordino', await p.evaluate(() => document.querySelectorAll('#vistaAnnoCal .anno-mese').length === 12 && el('etichettaMese').textContent === '2026' && document.querySelectorAll('#vistaAnnoCal em.assenza').length === 4));
+  await p.click('#btnMeseSucc');
+  ok('freccia › nella vista Anno: 2027', await p.evaluate(() => el('etichettaMese').textContent === '2027'));
+  await p.click('#btnMesePrec');
+  await p.click('#vistaAnnoCal [data-anno-mese="11"]');
+  ok('tocco dicembre: si apre il mese di dicembre', await p.evaluate(() => vistaCalendario() === 'mese' && meseCorrente === 11 && annoCorrente === 2026));
+  await p.evaluate(() => cambiaVistaConManiglia(-1));
+  ok('maniglia in su dal Mese: Settimana', await p.evaluate(() => vistaCalendario() === 'settimana'));
+  await p.evaluate(() => { cambiaVistaConManiglia(1); cambiaVistaConManiglia(1); });
+  ok('maniglia in giù due volte: Mese poi Anno', await p.evaluate(() => vistaCalendario() === 'anno'));
+  await p.evaluate(() => impostaVistaCalendario('mese'));
+  await p.click('#tabAltro'); await p.evaluate(() => { mostraScheda('assenze'); });
+  const co = await p.evaluate(() => [...document.querySelectorAll('.card-assenza')].find(c => /Congedo ordinario/.test(c.textContent)).querySelector('.card-assenza-compact-nome').innerText);
+  ok('Congedo ordinario 2026: le date chieste, unite se di fila', /1 ott/.test(co) && /21–23 dic/.test(co) && !/29 dic/.test(co) && !/gen/.test(co.replace(/2027/, '')), co);
+  ok('…e i giorni già chiesti per il 2027', /\+ 2 già chiesti per il 2027/.test(co), co);
+  await p.click('[data-anno-assenze="1"]');
+  ok('› sulle Assenze: 2027 con le sue date (4–5 gen)', await p.evaluate(() => /2027/.test(el('sottotitoloAssenze').textContent) && /4–5 gen/.test(document.querySelector('#corpoAssenze').innerText)));
+  await p.click('[data-anno-assenze="-1"]'); await p.click('[data-anno-assenze="-1"]');
+  ok('‹ due volte: 2025 con le date vecchie (29 dic)', await p.evaluate(() => /2025/.test(el('sottotitoloAssenze').textContent) && /29 dic/.test(document.querySelector('#corpoAssenze').innerText)));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
