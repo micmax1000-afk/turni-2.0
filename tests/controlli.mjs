@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.27');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.28');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -629,9 +629,9 @@ sezione('v3.8.13: guida alle novità');
   await p.evaluate(() => { localStorage.removeItem('simCedolino_novitaViste_v1'); avviaNovitaSeServe(); });
   await p.waitForTimeout(200);
   const passi = [];
-  for(let i = 0; i < 2; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: vista Anno', passi.join(' | ') === 'Novità: vista Anno (1 di 2) | Date sulle assenze (2 di 2)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.27'));
+  for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
+  ok('chi usava già l\'app vede 1 fumetto: Diario', passi.join(' | ') === 'Novità: vista Diario (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.28'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1080,6 +1080,23 @@ sezione('v3.8.27: vista Anno, maniglia, date sulle assenze, anni sfogliabili');
   ok('› sulle Assenze: 2027 con le sue date (4–5 gen)', await p.evaluate(() => /2027/.test(el('sottotitoloAssenze').textContent) && /4–5 gen/.test(document.querySelector('#corpoAssenze').innerText)));
   await p.click('[data-anno-assenze="-1"]'); await p.click('[data-anno-assenze="-1"]');
   ok('‹ due volte: 2025 con le date vecchie (29 dic)', await p.evaluate(() => /2025/.test(el('sottotitoloAssenze').textContent) && /29 dic/.test(document.querySelector('#corpoAssenze').innerText)));
+  ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
+  await ctx.close();
+}
+
+// ───────────────────────────────────────
+sezione('v3.8.28: vista Diario (agenda di carta)');
+{
+  const { p, ctx, errori } = await apri({ turni: turniDiProva() });
+  await p.waitForTimeout(600);
+  await p.evaluate(() => { AppState.eventiGiorno = { '2026-10-07': [{ id: 'd1', titolo: 'Dentista', oraInizio: '15:00' }] }; selezionaGiorno('2026-10-08'); impostaVistaCalendario('diario'); });
+  const r = await p.evaluate(() => ({ giorni: [...document.querySelectorAll('#vistaDiarioCal [data-diario-giorno]')].map(x => x.dataset.diarioGiorno), testo: el('vistaDiarioCal').innerText, spirale: !!document.querySelector('.diario-spirale'), oggi: !!document.querySelector('.diario-giorno.oggi') }));
+  ok('Diario: 7 giorni da lunedì 5 a domenica 11, con la spirale', r.giorni.length === 7 && r.giorni[0] === '2026-10-05' && r.giorni[6] === '2026-10-11' && r.spirale, JSON.stringify(r.giorni));
+  ok('Diario: turno con orario e appuntamento con l\'ora (15:00 Dentista)', /15:00\s*Dentista/.test(r.testo) && /Notte\s*01:00–07:00/.test(r.testo), r.testo.slice(0, 200));
+  await p.click('#btnMeseSucc');
+  ok('freccia ›: settimana dopo e la pagina si gira', await p.evaluate(() => document.querySelector('[data-diario-giorno]').dataset.diarioGiorno === '2026-10-12' && document.querySelector('.diario-libro').classList.contains('volta-avanti')));
+  await p.click('[data-diario-giorno="2026-10-13"]');
+  ok('tocco un giorno: si apre «Modifica il giorno»', await p.evaluate(() => !el('pannelloTurno').hidden && giornoSelezionato === '2026-10-13'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

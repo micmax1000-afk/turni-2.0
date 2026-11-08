@@ -1071,11 +1071,11 @@ function aggiornaVistaCalendario(){
 
 // ── v3.8.10: viste del calendario (Giorno · Settimana · Mese · Agenda), scelte dal pulsantino in alto ──
 const CHIAVE_VISTA_CALENDARIO = 'simCedolino_vistaCalendario_v1';
-const NOMI_VISTA_CALENDARIO = { giorno: 'Giorno', settimana: 'Settimana', mese: 'Mese', anno: 'Anno', agenda: 'Agenda' };
+const NOMI_VISTA_CALENDARIO = { giorno: 'Giorno', settimana: 'Settimana', mese: 'Mese', anno: 'Anno', diario: 'Diario', agenda: 'Agenda' };
 function vistaCalendario(){
   if(agendaSottoAttiva()) return 'agenda';
   let v = null; try{ v = TurniPSStorage.getItem(CHIAVE_VISTA_CALENDARIO); }catch(e){}
-  return v === 'giorno' || v === 'settimana' || v === 'anno' ? v : 'mese';
+  return v === 'giorno' || v === 'settimana' || v === 'anno' || v === 'diario' ? v : 'mese';
 }
 function impostaVistaCalendario(v){
   try{ TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, v === 'agenda' ? 'mese' : v); }catch(e){}
@@ -1093,8 +1093,9 @@ function giornoPiu(iso, n){ const d = dataDaIso(iso); return dataISO(new Date(d.
 function spostaVistaCalendario(dir){
   const v = vistaCalendario();
   if(v === 'anno'){ annoCorrente += dir; renderCalendario(); return true; }
-  if(v !== 'giorno' && v !== 'settimana') return false;
+  if(v !== 'giorno' && v !== 'settimana' && v !== 'diario') return false;
   giornoSelezionato = giornoPiu(giornoSelezionato || dataISO(new Date()), dir * (v === 'giorno' ? 1 : 7));
+  if(v === 'diario') paginaDaGirareDiario = dir;
   const d = dataDaIso(giornoSelezionato); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
   renderCalendario();
   return true;
@@ -1122,6 +1123,7 @@ function applicaVistaCalendario(){
   el('vistaGiornoCal').hidden = v !== 'giorno';
   el('vistaSettimanaCal').hidden = v !== 'settimana';
   if(el('vistaAnnoCal')) el('vistaAnnoCal').hidden = v !== 'anno';
+  if(el('vistaDiarioCal')) el('vistaDiarioCal').hidden = v !== 'diario';
   const iso = giornoSelezionato || dataISO(new Date());
   const d = dataDaIso(iso);
   if(v === 'giorno'){
@@ -1132,6 +1134,10 @@ function applicaVistaCalendario(){
     const mm = x => x.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
     el('etichettaMese').textContent = lun.getMonth() === dom.getMonth() ? `${lun.getDate()}–${dom.getDate()} ${mm(dom)}` : `${lun.getDate()} ${mm(lun)}–${dom.getDate()} ${mm(dom)}`;
     renderVistaSettimana(iso);
+  } else if(v === 'diario'){
+    const lun = lunediDi(iso);
+    el('etichettaMese').textContent = `${NOMI_MESI[lun.getMonth()]} ${lun.getFullYear()}`;
+    renderVistaDiario(iso);
   } else if(v === 'anno'){
     el('etichettaMese').textContent = String(annoCorrente);
     renderVistaAnno(annoCorrente);
@@ -1607,3 +1613,56 @@ function cambiaVistaConManiglia(dir){
   document.addEventListener('touchend', e => { if(y0 === null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; if(Math.abs(dy) >= 25) cambiaVistaConManiglia(dy > 0 ? 1 : -1); }, { passive: true });
   document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#manigliaVista') && y0 === null) cambiaVistaConManiglia(vistaCalendario() === 'settimana' ? 1 : -1); });
 })();
+
+// ── v3.8.28: vista Diario — la settimana come un'agenda di carta: due pagine, spirale, righe ──
+function settimanaDellAnno(d){
+  const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const g = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - g);
+  const inizio = new Date(Date.UTC(x.getUTCFullYear(), 0, 1));
+  return Math.ceil(((x - inizio) / 86400000 + 1) / 7);
+}
+function paginaGiornoDiario(iso, mezza){
+  const d = dataDaIso(iso), t = AppState.turni[iso], oggi = iso === dataISO(new Date());
+  const nomi = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+  const righe = [];
+  if(t && (t.riposo || t.assenzaTipo || t.oraInizio)){
+    const col = coloreGiornoVista(t);
+    righe.push(`<span class="diario-turno"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` ${t.oraInizio}–${t.oraFine}` : ''}</span>`);
+    if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
+    if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
+    if(t.servizioSvolto) righe.push(`✎ ${escapeHtml(t.servizioSvolto)}`);
+  }
+  try{ eventiDelGiorno(iso).forEach(({ ev }) => righe.push(`${ev.tuttoIlGiorno || !ev.oraInizio ? '' : `<span class="diario-ora">${ev.oraInizio}</span> `}${escapeHtml(ev.titolo || 'Evento')}`)); }catch(e){}
+  try{
+    U.note.filter(n => n.giorno === iso).forEach(n => righe.push(`☐ ${escapeHtml(n.titolo || n.testo.slice(0, 40))}`));
+    U.uscite.filter(u => u.giorno === iso).forEach(u => { const mz = mezzoDi(u.mezzoId); righe.push(`🚓 ${escapeHtml(mz ? mz.sigla : 'Veicolo')}${kmPercorsi(u) !== null ? ' · ' + numeroIt0(kmPercorsi(u)) + ' km' : ''}`); });
+    U.scadenze.filter(x => x.data === iso).forEach(x => righe.push(`<mark>⏰ ${escapeHtml(x.nome)}</mark>`));
+  }catch(e){}
+  const festa = typeof nomeFestivita === 'function' ? nomeFestivita(iso) : '';
+  return `<button type="button" class="diario-giorno${mezza ? ' mezza' : ''}${oggi ? ' oggi' : ''}${eFestivoOdDomenica(iso) ? ' festivo' : ''}" data-diario-giorno="${iso}">`
+    + `<span class="diario-testa">${nomi[d.getDay()]} <b>${d.getDate()}</b>${festa ? `<small>${escapeHtml(festa)}</small>` : ''}</span>`
+    + `<span class="diario-righe">${righe.map(r => `<span>${r}</span>`).join('')}</span></button>`;
+}
+let paginaDaGirareDiario = 0;
+function renderVistaDiario(iso){
+  const host = el('vistaDiarioCal'); if(!host) return;
+  const lun = dataISO(lunediDi(iso)), g = n => giornoPiu(lun, n);
+  host.innerHTML = `<div class="diario-libro">`
+    + `<div class="diario-pagina sx">${paginaGiornoDiario(g(0))}${paginaGiornoDiario(g(1))}${paginaGiornoDiario(g(2))}</div>`
+    + `<div class="diario-spirale" aria-hidden="true"></div>`
+    + `<div class="diario-pagina dx">${paginaGiornoDiario(g(3))}${paginaGiornoDiario(g(4))}<div class="diario-weekend">${paginaGiornoDiario(g(5), true)}${paginaGiornoDiario(g(6), true)}</div></div>`
+    + `</div><p class="diario-sett">Settimana ${settimanaDellAnno(dataDaIso(lun))}</p>`;
+  if(paginaDaGirareDiario){ voltaPaginaDiario(paginaDaGirareDiario); paginaDaGirareDiario = 0; }
+}
+function voltaPaginaDiario(dir){
+  const libro = document.querySelector('.diario-libro'); if(!libro) return;
+  const c = dir > 0 ? 'volta-avanti' : 'volta-indietro';
+  libro.classList.remove('volta-avanti', 'volta-indietro'); void libro.offsetWidth; libro.classList.add(c);
+}
+document.addEventListener('click', e => {
+  const g = e.target.closest && e.target.closest('[data-diario-giorno]');
+  if(!g) return;
+  const iso = g.dataset.diarioGiorno, d = dataDaIso(iso);
+  meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); giornoSelezionato = iso;
+  if(typeof apriModaleTurno === 'function') apriModaleTurno(iso);
+});
