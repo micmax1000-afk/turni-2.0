@@ -3397,6 +3397,10 @@ html[data-tema=scuro] .diario-ora{color:#8FB0FF}
 @keyframes voltaAvanti{0%{transform:rotateY(-80deg);transform-origin:left center;opacity:.4}100%{transform:none;transform-origin:left center;opacity:1}}
 @keyframes voltaIndietro{0%{transform:rotateY(80deg);transform-origin:right center;opacity:.4}100%{transform:none;transform-origin:right center;opacity:1}}
 
-/* Diario: lun–mer a sinistra; gio e ven a destra, sabato e domenica un po' più bassi (non a metà) */
+/* Diario: 4 riquadri per pagina, tutti uguali: lun–gio a sinistra, ven–dom e le note della settimana a destra */
 .diario-giorno{flex:1 1 150px;min-height:150px}
-.diario-giorno.mezza{flex:1 1 118px;min-height:118px}
+.diario-note{cursor:default}
+.diario-note .diario-testa{font-style:normal;font-weight:700;font-size:.78rem;letter-spacing:.02em}
+.diario-note-testo{flex:1;width:100%;border:0;background:none;resize:none;padding:0;margin:0;font:500 .78rem/22px var(--font-corpo);color:var(--inchiostro-d)}
+.diario-note-testo::placeholder{color:color-mix(in srgb,var(--inchiostro-d) 40%,transparent);font-style:italic}
+.diario-note-testo:focus{outline:none}
