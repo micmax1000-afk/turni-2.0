@@ -1097,6 +1097,11 @@ sezione('v3.8.28: vista Diario (agenda di carta)');
   ok('freccia ›: settimana dopo e la pagina si gira', await p.evaluate(() => document.querySelector('[data-diario-giorno]').dataset.diarioGiorno === '2026-10-12' && document.querySelector('.diario-libro').classList.contains('volta-avanti')));
   await p.click('[data-diario-giorno="2026-10-13"]');
   ok('tocco un giorno: si apre «Modifica il giorno»', await p.evaluate(() => !el('pannelloTurno').hidden && giornoSelezionato === '2026-10-13'));
+  await p.evaluate(() => { el('pannelloTurno').hidden = true; document.querySelectorAll('.overlay').forEach(o => o.hidden = true); });
+  ok('Diario: 8 riquadri uguali, l\'ultimo è «Note della settimana»', await p.evaluate(() => document.querySelectorAll('.diario-libro .diario-giorno').length === 8 && !!document.querySelector('.diario-note-testo')));
+  await p.fill('.diario-note-testo', 'Divisa in lavanderia'); await p.evaluate(() => document.activeElement.blur());
+  ok('le note della settimana si salvano (e restano nel backup)', await p.evaluate(() => U.noteSettimana['2026-10-12'] === 'Divisa in lavanderia' && JSON.stringify(datiUtilitaPerBackup()).includes('Divisa in lavanderia')));
+  ok('la ricerca trova le note della settimana', await p.evaluate(() => /Note della settimana/.test(risultatiCercaAgenda('lavanderia'))));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
