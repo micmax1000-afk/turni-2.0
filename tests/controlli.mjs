@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.28');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.29');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -630,8 +630,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Diario', passi.join(' | ') === 'Novità: vista Diario (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.28'));
+  ok('chi usava già l\'app vede 1 fumetto: Diario', passi.join(' | ') === 'Novità nel Diario (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.29'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1097,6 +1097,11 @@ sezione('v3.8.28: vista Diario (agenda di carta)');
   ok('freccia ›: settimana dopo e la pagina si gira', await p.evaluate(() => document.querySelector('[data-diario-giorno]').dataset.diarioGiorno === '2026-10-12' && document.querySelector('.diario-libro').classList.contains('volta-avanti')));
   await p.click('[data-diario-giorno="2026-10-13"]');
   ok('tocco un giorno: si apre «Modifica il giorno»', await p.evaluate(() => !el('pannelloTurno').hidden && giornoSelezionato === '2026-10-13'));
+  await p.evaluate(() => { el('pannelloTurno').hidden = true; document.querySelectorAll('.overlay').forEach(o => o.hidden = true); });
+  ok('Diario: 8 riquadri uguali, l\'ultimo è «Note della settimana»', await p.evaluate(() => document.querySelectorAll('.diario-libro .diario-giorno').length === 8 && !!document.querySelector('.diario-note-testo')));
+  await p.fill('.diario-note-testo', 'Divisa in lavanderia'); await p.evaluate(() => document.activeElement.blur());
+  ok('le note della settimana si salvano (e restano nel backup)', await p.evaluate(() => U.noteSettimana['2026-10-12'] === 'Divisa in lavanderia' && JSON.stringify(datiUtilitaPerBackup()).includes('Divisa in lavanderia')));
+  ok('la ricerca trova le note della settimana', await p.evaluate(() => /Note della settimana/.test(risultatiCercaAgenda('lavanderia'))));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

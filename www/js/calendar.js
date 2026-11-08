@@ -1648,9 +1648,10 @@ function renderVistaDiario(iso){
   const host = el('vistaDiarioCal'); if(!host) return;
   const lun = dataISO(lunediDi(iso)), g = n => giornoPiu(lun, n);
   host.innerHTML = `<div class="diario-libro">`
-    + `<div class="diario-pagina sx">${paginaGiornoDiario(g(0))}${paginaGiornoDiario(g(1))}${paginaGiornoDiario(g(2))}</div>`
+    + `<div class="diario-pagina sx">${paginaGiornoDiario(g(0))}${paginaGiornoDiario(g(1))}${paginaGiornoDiario(g(2))}${paginaGiornoDiario(g(3))}</div>`
     + `<div class="diario-spirale" aria-hidden="true"></div>`
-    + `<div class="diario-pagina dx">${paginaGiornoDiario(g(3))}${paginaGiornoDiario(g(4))}<div class="diario-weekend">${paginaGiornoDiario(g(5), true)}${paginaGiornoDiario(g(6), true)}</div></div>`
+    + `<div class="diario-pagina dx">${paginaGiornoDiario(g(4))}${paginaGiornoDiario(g(5))}${paginaGiornoDiario(g(6))}`
+    + `<div class="diario-giorno diario-note"><span class="diario-testa">Note della settimana</span><textarea class="diario-note-testo" data-diario-note="${lun}" placeholder="Scrivi qui…" maxlength="600">${escapeHtml(((typeof U !== 'undefined' && U.noteSettimana) || {})[lun] || '')}</textarea></div></div>`
     + `</div><p class="diario-sett">Settimana ${settimanaDellAnno(dataDaIso(lun))}</p>`;
   if(paginaDaGirareDiario){ voltaPaginaDiario(paginaDaGirareDiario); paginaDaGirareDiario = 0; }
 }
@@ -1665,4 +1666,14 @@ document.addEventListener('click', e => {
   const iso = g.dataset.diarioGiorno, d = dataDaIso(iso);
   meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); giornoSelezionato = iso;
   if(typeof apriModaleTurno === 'function') apriModaleTurno(iso);
+});
+
+// Note della settimana (Diario): si salvano quando esci dal riquadro; restano sul telefono e nel backup.
+document.addEventListener('change', e => {
+  const t = e.target.closest && e.target.closest('[data-diario-note]');
+  if(!t || typeof U === 'undefined') return;
+  U.noteSettimana = U.noteSettimana || {};
+  const v = t.value.trim();
+  if(v) U.noteSettimana[t.dataset.diarioNote] = v; else delete U.noteSettimana[t.dataset.diarioNote];
+  salvaUtilita();
 });

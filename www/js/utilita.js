@@ -491,6 +491,7 @@ function risultatiUtilitaPerCerca(va){
   const r = [];
   U.note.forEach(n => { if(va(`${n.titolo} ${n.testo}`)) r.push({ iso: n.giorno || dataISO(new Date(n.modificata)), html: `<button type="button" class="agenda-evento" data-ut-apri="nota" data-id="${n.id}">${ic('lista')}<em>Nota</em><span class="agenda-ev-testo"><b>${escapeHtml(n.titolo || 'Nota')}</b>${n.testo ? `<small>${escapeHtml(n.testo.slice(0, 70))}</small>` : ''}</span></button>` }); });
   U.uscite.forEach(u => { const mz = mezzoDi(u.mezzoId); if(va(`${mz ? mz.sigla + ' ' + mz.targa : ''} ${u.anomalie || ''} ${u.appunti || ''} ${u.collega || ''}`)) r.push({ iso: u.giorno, html: `<button type="button" class="agenda-evento" data-ut-apri="uscita" data-id="${u.id}">${ic('auto')}<em>${escapeHtml(mz ? mz.sigla : 'Mezzo')}</em><span class="agenda-ev-testo"><b>${kmPercorsi(u) !== null ? numeroIt0(kmPercorsi(u)) + ' km' : 'Uscita'}${u.anomalie ? ' · ' + escapeHtml(u.anomalie) : ''}</b>${u.appunti ? `<small>${escapeHtml(u.appunti.slice(0, 70))}</small>` : ''}</span></button>` }); });
+  Object.entries(U.noteSettimana || {}).forEach(([lun, testo]) => { if(va(testo)) r.push({ iso: lun, html: `<button type="button" class="agenda-evento" data-diario-settimana="${lun}">${ic('lista')}<em>Note della settimana</em><span class="agenda-ev-testo"><b>${escapeHtml(testo.split('\n')[0].slice(0, 60))}</b></span></button>` }); });
   U.scadenze.forEach(sc => { if(va(`${sc.nome} ${sc.note || ''}`)) r.push({ iso: sc.data, html: `<button type="button" class="agenda-evento" data-ut-apri="scadenza" data-id="${sc.id}">${ic('sveglia')}<em>Scadenza</em><span class="agenda-ev-testo"><b>${escapeHtml(sc.nome)}</b>${sc.ripeti ? `<small>${escapeHtml(testoRipeti(sc.ripeti))}</small>` : ''}</span></button>` }); });
   return r;
 }
@@ -714,3 +715,14 @@ document.addEventListener('click', e => {
   const l = el('listaImpostazioniAltro'); l.hidden = !l.hidden;
   b.setAttribute('aria-expanded', String(!l.hidden));
 });
+
+// Dalla ricerca: «Note della settimana» apre il Diario su quella settimana.
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-diario-settimana]');
+  if(!b) return;
+  e.stopPropagation();
+  giornoSelezionato = b.dataset.diarioSettimana;
+  if(typeof chiudiCercaCal === 'function') vistaPrimaCerca = null;
+  const box = el('boxCercaAgenda'); if(box) box.hidden = true; cercaAgenda = '';
+  impostaVistaCalendario('diario');
+}, true);
