@@ -745,9 +745,14 @@ function renderCalendario(){
       const rigaEvento = eventiCella.length
         ? `<span class="mod-eventi" title="${escapeHtml(eventiCella.map(x => x.ev.titolo || 'Evento').join(' · '))}">${eventiCella.slice(0, 3).map(x => `<i class="mod-evento"${coloreEventoStile(x.ev)}></i>`).join('')}</span>`
         : '';
+      // v3.8.30: lo straordinario si vede già dal mese, con le ore (es. "+2h") sotto il turno.
+      const minStr = typeof minutiStraordinario === 'function' ? minutiStraordinario(t) : 0;
+      const oreStr = minStr ? String(Math.round(minStr / 6) / 10).replace('.', ',') : '';
+      const segnoStr = minStr ? `<span class="mod-straord" title="Straordinario ${oreStr} ore">+${oreStr}h</span>` : '';
       cella.innerHTML = `
         <span class="mod-numero">${g}</span>
         ${etichettaTurno}
+        ${segnoStr}
         ${rigaEvento}
       `;
       cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
@@ -1075,7 +1080,9 @@ const NOMI_VISTA_CALENDARIO = { giorno: 'Giorno', settimana: 'Settimana', mese: 
 function vistaCalendario(){
   if(agendaSottoAttiva()) return 'agenda';
   let v = null; try{ v = TurniPSStorage.getItem(CHIAVE_VISTA_CALENDARIO); }catch(e){}
-  return v === 'giorno' || v === 'settimana' || v === 'anno' || v === 'diario' ? v : 'mese';
+  // v3.8.30: la vista Settimana è confluita nel Diario (chi l'aveva scelta ritrova il Diario).
+  if(v === 'settimana') v = 'diario';
+  return v === 'giorno' || v === 'anno' || v === 'diario' ? v : 'mese';
 }
 function impostaVistaCalendario(v){
   try{ TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, v === 'agenda' ? 'mese' : v); }catch(e){}
@@ -1257,7 +1264,6 @@ function inizializzaVisteCalendario(){
     if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(adattaTitoloCalendario));
     requestAnimationFrame(adattaTitoloCalendario);
   }
-  on('btnCondividiMese', 'click', condividiMese);
   on('btnVistaCalendario', 'click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; el('btnVistaCalendario').setAttribute('aria-expanded', String(!menu.hidden)); });
   document.addEventListener('click', e => {
     if(!menu.hidden && !e.target.closest('#menuVistaCalendario')) menu.hidden = true;
@@ -1601,9 +1607,9 @@ document.addEventListener('click', e => {
   impostaVistaCalendario('mese');
 });
 // Maniglia sotto il calendario: trascina in su per stringere (Anno → Mese → Settimana), in giù per allargare.
-const ORDINE_VISTE_MANIGLIA = ['settimana', 'mese', 'anno'];
+const ORDINE_VISTE_MANIGLIA = ['diario', 'mese', 'anno'];
 function cambiaVistaConManiglia(dir){
-  let v = vistaCalendario(); if(v === 'giorno') v = 'settimana'; if(v === 'agenda') return;
+  let v = vistaCalendario(); if(v === 'giorno') v = 'diario'; if(v === 'agenda') return;
   const i = ORDINE_VISTE_MANIGLIA.indexOf(v), j = Math.max(0, Math.min(ORDINE_VISTE_MANIGLIA.length - 1, i + dir));
   if(j !== i) impostaVistaCalendario(ORDINE_VISTE_MANIGLIA[j]);
 }
@@ -1611,7 +1617,7 @@ function cambiaVistaConManiglia(dir){
   let y0 = null;
   document.addEventListener('touchstart', e => { if(e.target.closest && e.target.closest('#manigliaVista') && e.touches.length === 1) y0 = e.touches[0].clientY; else y0 = null; }, { passive: true });
   document.addEventListener('touchend', e => { if(y0 === null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; if(Math.abs(dy) >= 25) cambiaVistaConManiglia(dy > 0 ? 1 : -1); }, { passive: true });
-  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#manigliaVista') && y0 === null) cambiaVistaConManiglia(vistaCalendario() === 'settimana' ? 1 : -1); });
+  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#manigliaVista') && y0 === null) cambiaVistaConManiglia(vistaCalendario() === 'diario' || vistaCalendario() === 'giorno' ? 1 : -1); });
 })();
 
 // ── v3.8.28: vista Diario — la settimana come un'agenda di carta: due pagine, spirale, righe ──

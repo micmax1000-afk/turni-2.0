@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.29');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.30');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -471,6 +471,12 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno', eventi: { '2026-10-16': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }, { id: 'evento_2', titolo: 'Palestra', oraInizio: '18:00', colore: '#D64545' }] } });
   const m = await p.evaluate(() => [...document.querySelectorAll('.giorno-cella[data-data="2026-10-16"] .mod-evento')].map(e => getComputedStyle(e).backgroundColor + ' ' + getComputedStyle(e).width + ' ' + e.textContent.length));
   ok('calendario moderno: un pallino per evento, del suo colore, senza nome tagliato', m.join('|') === 'rgb(46, 158, 91) 8px 0|rgb(214, 69, 69) 8px 0', JSON.stringify(m));
+  // v3.8.30: lo straordinario si vede dal mese, sotto il turno, con le ore
+  const st = await p.evaluate(() => { const alt0 = document.querySelector('.giorno-cella[data-data="2026-10-20"]').offsetHeight;
+    Object.assign(AppState.turni['2026-10-16'], { riposo: false, oraInizio: '07:00', oraFine: '13:00', modelloId: 'mattina', straordinarioDopoInizio: '13:00', straordinarioDopoFine: '14:30' }); renderCalendario();
+    const c = document.querySelector('.giorno-cella[data-data="2026-10-16"]'), s = c.querySelector('.mod-straord'), t = c.querySelector('.mod-turno'), e = c.querySelector('.mod-eventi');
+    return { testo: s && s.textContent, sotto: !!s && s.getBoundingClientRect().top >= t.getBoundingClientRect().bottom - 1 && e.getBoundingClientRect().top >= s.getBoundingClientRect().bottom - 1, alta: c.offsetHeight === alt0, altri: document.querySelectorAll('.mod-straord').length }; });
+  ok('straordinario nella casella: «+1,5h» sotto il turno e sopra i pallini, solo in quel giorno, riga alta uguale', st.testo === '+1,5h' && st.sotto && st.alta && st.altri === 1, JSON.stringify(st));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -630,8 +636,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Diario', passi.join(' | ') === 'Novità nel Diario (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.29'));
+  ok('chi usava già l\'app vede 1 fumetto: Calendario più semplice', passi.join(' | ') === 'Calendario più semplice (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.30'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -845,8 +851,8 @@ sezione('v3.9: Utilità (scadenze, note, cambi, veicolo)');
   // v3.8.18: le Utilità si vedono nel riquadro del giorno, in Settimana, in Agenda e nella ricerca
   await p.evaluate(() => { chiudiPaginaUt(2); chiudiPaginaUt(1); document.querySelectorAll('.overlay').forEach(o => o.hidden = true); el('pannelloTurno').hidden = true; mostraScheda('calendario'); selezionaGiorno('2026-10-13'); });
   ok('riquadro del giorno: «Volante 12 · 142 km», la nota e lo scambio', await p.evaluate(() => { const t = el('utilitaRiquadroGiorno').textContent; return /Volante 12 · 142 km/.test(t) && /Consegne/.test(t) && /Rossi ti ha sostituito/.test(t); }));
-  await p.evaluate(() => { impostaVistaCalendario('settimana'); selezionaGiorno('2026-10-13'); applicaVistaCalendario(); });
-  ok('Settimana: la riga del veicolo sotto il 13', await p.evaluate(() => /Volante 12 · 142 km/.test(document.querySelector('.vs-riga[data-vista-giorno="2026-10-13"]').textContent)));
+  await p.evaluate(() => { impostaVistaCalendario('diario'); selezionaGiorno('2026-10-13'); applicaVistaCalendario(); });
+  ok('Diario: la riga del veicolo sotto il 13', await p.evaluate(() => /Volante 12 · 142 km/.test(document.querySelector('[data-diario-giorno="2026-10-13"]').textContent)));
   await p.evaluate(() => impostaVistaCalendario('agenda'));
   await p.click('[data-agenda-cerca]'); await p.fill('#campoCercaAgenda', 'volante');
   ok('Cerca «volante» in Agenda: trova l\'uscita', await p.evaluate(() => !!document.querySelector('#agendaElenco [data-ut-apri="uscita"]')));
@@ -1068,7 +1074,7 @@ sezione('v3.8.27: vista Anno, maniglia, date sulle assenze, anni sfogliabili');
   await p.click('#vistaAnnoCal [data-anno-mese="11"]');
   ok('tocco dicembre: si apre il mese di dicembre', await p.evaluate(() => vistaCalendario() === 'mese' && meseCorrente === 11 && annoCorrente === 2026));
   await p.evaluate(() => cambiaVistaConManiglia(-1));
-  ok('maniglia in su dal Mese: Settimana', await p.evaluate(() => vistaCalendario() === 'settimana'));
+  ok('maniglia in su dal Mese: Diario (la maniglia c\'è anche lì)', await p.evaluate(() => vistaCalendario() === 'diario' && el('manigliaVista').offsetHeight > 0));
   await p.evaluate(() => { cambiaVistaConManiglia(1); cambiaVistaConManiglia(1); });
   ok('maniglia in giù due volte: Mese poi Anno', await p.evaluate(() => vistaCalendario() === 'anno'));
   await p.evaluate(() => impostaVistaCalendario('mese'));
@@ -1695,8 +1701,7 @@ sezione('Agenda (vista del calendario)');
   const prima = await p.evaluate(() => ({ nascosta: el('agendaSottoCalendario').hidden, campo: el('campoAgendaSotto').checked, prossimi: !el('prossimiEventiV2').hidden && getComputedStyle(el('prossimiEventiV2')).display !== 'none' }));
   ok('all\'inizio l\'agenda è spenta; "Prossimi 7 giorni" non c\'è più sotto il mese (c\'è la vista Agenda)', prima.nascosta && !prima.campo && !prima.prossimi, JSON.stringify(prima));
   ok('in Altro non c\'è più l\'interruttore dell\'agenda (si sceglie dal calendario)', await p.evaluate(() => !el('campoAgendaSotto').offsetParent));
-  await p.click('#btnVistaCalendario');
-  await p.click('[data-vista-calendario="agenda"]');
+  await p.evaluate(() => impostaVistaCalendario('agenda'));
   const a = await p.evaluate(() => {
     const righe = [...document.querySelectorAll('.agenda-giorno')];
     return { n: righe.length, primo: righe[0].dataset.agendaGiorno, oggi: righe[0].classList.contains('oggi'), testoPrimo: righe[0].textContent,
@@ -1730,15 +1735,13 @@ sezione('Agenda (vista del calendario)');
   await p.evaluate(() => { el('overlayEvento').hidden = true; });
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
   ok('di nuovo Mese: torna il calendario', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none'));
-  // Vista Settimana: una riga per giorno con le ore e il totale; frecce di una settimana.
-  await p.evaluate(() => { selezionaGiorno('2026-10-09'); });
-  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="settimana"]');
-  const w = await p.evaluate(() => ({ righe: document.querySelectorAll('#vistaSettimanaCal .vs-riga').length, tit: el('etichettaMese').textContent, primo: document.querySelector('#vistaSettimanaCal .vs-riga').dataset.vistaGiorno, tot: document.querySelector('.vs-totale b').textContent, griglia: getComputedStyle(el('calendarioGriglia')).display }));
-  ok('vista Settimana: 7 giorni da lunedì 5 ottobre, titolo "5–11 ott", totale ore, niente mese', w.righe === 7 && w.primo === '2026-10-05' && w.tit === '5–11 ott' && /\d+:\d\d/.test(w.tot) && w.griglia === 'none', JSON.stringify(w));
-  await p.click('#btnMeseSucc');
-  ok('freccia › in Settimana: settimana dopo (12–18 ott)', await p.evaluate(() => el('etichettaMese').textContent === '12–18 ott' && giornoSelezionato === '2026-10-16'));
-  await p.click('#vistaSettimanaCal [data-vista-giorno="2026-10-13"]');
-  ok('tocco su un giorno della settimana: diventa il giorno selezionato', await p.evaluate(() => giornoSelezionato === '2026-10-13' && /13/.test(el('riepilogoGiornoSelezionatoV2').textContent)));
+  // v3.8.30: il menu ha quattro viste in una riga; Settimana è confluita nel Diario, Agenda resta per la lente.
+  await p.click('#btnVistaCalendario');
+  const mv = await p.evaluate(() => ({ viste: [...document.querySelectorAll('#menuVistaCalendario [data-vista-calendario]')].map(b => b.dataset.vistaCalendario).join(), condividi: !!el('btnCondividiMese'), colonne: getComputedStyle(document.querySelector('.menu-vista-griglia')).gridTemplateColumns.split(' ').length }));
+  ok('menu delle viste: Giorno, Diario, Mese, Anno in una riga, senza «Condividi il mese»', mv.viste === 'giorno,diario,mese,anno' && !mv.condividi && mv.colonne === 4, JSON.stringify(mv));
+  await p.click('#btnVistaCalendario');
+  ok('chi aveva scelto la Settimana ritrova il Diario', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'settimana'); const v = vistaCalendario(); applicaVistaCalendario(); const vista = !el('vistaDiarioCal').hidden && el('vistaSettimanaCal').hidden; impostaVistaCalendario('mese'); return v === 'diario' && vista; }));
+  await p.evaluate(() => { selezionaGiorno('2026-10-13'); });
   // Vista Giorno: striscia della settimana, giornata a ore con il turno.
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="giorno"]');
   const gg = await p.evaluate(() => ({ tit: el('etichettaMese').textContent, blocchi: [...document.querySelectorAll('#vistaGiornoCal .vg-turno')].map(b => b.textContent), striscia: document.querySelectorAll('.vg-giorno').length }));

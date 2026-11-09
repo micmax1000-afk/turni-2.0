@@ -2714,7 +2714,12 @@ html[data-tema="scuro"] #overlayEvento .foglio-evento-azioni > .btn-testo-evento
 
 /* v3.8.2 — Calendario moderno: eventi a pallino, come nel classico */
 body.calendario-moderno .mod-eventi{display:flex;justify-content:center;gap:3px;margin-top:2px}
+body.calendario-moderno .mod-straord + .mod-eventi{margin-top:0}
 body.calendario-moderno .mod-eventi .mod-evento{display:block;width:8px!important;height:8px!important;padding:0!important;border-radius:50%!important;font-size:0!important;align-self:auto}
+body.calendario-moderno .mod-straord{flex-shrink:0;font:800 .56rem/1 var(--font-cifre);color:#6D3FD9;background:#EEE7FF;border-radius:4px;padding:1px 3px;margin-top:-1px}
+html[data-tema="scuro"] body.calendario-moderno .mod-straord{color:#D9CCFF;background:#3A2E63}
+@media(prefers-color-scheme:dark){html:not([data-tema="chiaro"]) body.calendario-moderno .mod-straord{color:#D9CCFF;background:#3A2E63}}
+@media(min-width:420px){body.calendario-moderno .mod-straord{font-size:.64rem}}
 
 /* v3.8.2 — Righina del classico: una barretta dritta e corta in fondo (con la casella arrotondata l'ombra faceva una curva) */
 body:not(.calendario-moderno) .giorno-cella.ha-straordinario,body:not(.calendario-moderno) .giorno-cella.ha-missione,body:not(.calendario-moderno) .giorno-cella.ha-op{background-repeat:no-repeat!important;background-size:56% 4px!important;background-position:center bottom 6px!important}
@@ -2777,6 +2782,10 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 .menu-vista-calendario button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:10px 12px;border-radius:10px;font:600 .92rem var(--font-corpo);color:var(--testo);text-align:left;cursor:pointer}
 .menu-vista-calendario button.attivo{background:color-mix(in srgb,#155EEF 10%,var(--pannello));color:#155EEF}
 .menu-vista-calendario svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+/* v3.8.30: le quattro viste in una riga (prima erano una lista lunga) */
+.menu-vista-griglia{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.menu-vista-griglia button{flex-direction:column;justify-content:center;gap:5px;padding:10px 4px;font-size:.74rem;text-align:center;min-width:64px}
+.menu-vista-griglia svg{width:22px;height:22px}
 .scheda-calendario-v2:not([data-vista="mese"]) .calendario-giorni-settimana,.scheda-calendario-v2:not([data-vista="mese"]) #calendarioGriglia{display:none}
 .scheda-calendario-v2[data-vista="agenda"] .riepilogo-giorno-selezionato-box-v2,.scheda-calendario-v2[data-vista="agenda"] #btnCancellaTurniMese,.scheda-calendario-v2[data-vista="agenda"] .agenda-sotto-titolo{display:none}
 .scheda-calendario-v2[data-vista="agenda"] .btn-freccia{visibility:hidden}
@@ -3370,7 +3379,7 @@ html[data-tema=scuro] .cal-sopra .ut-banner{background:#4A3510}
 
 /* v3.8.28 — Vista Diario (agenda di carta) */
 .vista-diario-cal[hidden]{display:none}
-.scheda-calendario-v2[data-vista="diario"] .riepilogo-giorno-selezionato-box-v2,.scheda-calendario-v2[data-vista="diario"] .maniglia-vista{display:none}
+.scheda-calendario-v2[data-vista="diario"] .riepilogo-giorno-selezionato-box-v2{display:none}
 .diario-libro{--carta-d:#FBF8F0;--riga-d:#D9E2F2;--inchiostro-d:#1E2A44;--testa-d:#2C4170;display:grid;grid-template-columns:1fr 14px 1fr;background:var(--carta-d);border-radius:14px;box-shadow:0 2px 0 #E4DCC8,0 6px 18px rgba(20,30,60,.12);margin:4px 0 6px;overflow:hidden;perspective:1200px}
 html[data-tema=scuro] .diario-libro,html.tema-scuro .diario-libro{--carta-d:#22324F;--riga-d:#2F4366;--inchiostro-d:#E8EEFA;--testa-d:#9FB7E8;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 .diario-pagina{display:flex;flex-direction:column;min-width:0}
