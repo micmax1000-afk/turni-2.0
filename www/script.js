@@ -4209,9 +4209,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.29';
+const VERSIONE_NOVITA = '3.8.30';
 const PASSI_NOVITA = [
-  { id: 'btnVistaCalendario', titolo: 'Novità nel Diario', testo: 'Ora il Diario ha 8 riquadri uguali: da lunedì a domenica e le Note della settimana, da scrivere direttamente sulle righe. Le trovi anche con la lente.' }
+  { id: 'btnVistaCalendario', titolo: 'Calendario più semplice', testo: 'Qui ora scegli tra quattro viste: Giorno, Diario, Mese e Anno. Nel mese, i giorni con straordinario mostrano le ore sotto il turno (es. +2h).' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

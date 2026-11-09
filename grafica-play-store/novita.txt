@@ -1,4 +1,5 @@
 <it-IT>
-• Diario: 8 riquadri uguali, da lunedì a domenica, più le Note della settimana da scrivere sulle righe
-• La lente trova anche le Note della settimana
+• Mese: i giorni con straordinario mostrano le ore sotto il turno (es. +2h)
+• Menu delle viste più corto: Giorno, Diario, Mese, Anno
+• La Settimana è confluita nel Diario; l'Agenda si apre con la lente
 </it-IT>
