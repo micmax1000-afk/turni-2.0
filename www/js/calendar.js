@@ -798,7 +798,7 @@ function renderCalendario(){
     cella.classList.toggle('c2-senza-colori', conTurno && !calendarioAColoriAttivo());
     if(testoC2) cella.style.setProperty('--c2-testo', testoC2); else cella.style.removeProperty('--c2-testo');
     cella.innerHTML = `<span class="c2-numero">${g}</span>`
-      + `<span class="c2-sigla${modoSigla === 'lettera' ? ' c2-lettera' : ''}" title="${escapeHtml(nomeCategoria)}">${escapeHtml(testoSigla)}</span>`
+      + `<span class="c2-sigla${modoSigla === 'lettera' ? ' c2-lettera' : ''}${testoSigla.length >= 6 ? ' c2-lunga2' : testoSigla.length >= 5 ? ' c2-lunga' : ''}" title="${escapeHtml(nomeCategoria)}">${escapeHtml(testoSigla)}</span>`
       + (oreStrC2 ? `<span class="c2-straord" title="Straordinario ${oreStrC2} ore">+${oreStrC2}h</span>` : '')
       + eventiC2;
 
@@ -1160,15 +1160,17 @@ function modelloColoreGiorno(t, categoria){
   const modelli = AppState.modelliTurno || [];
   if(t.riposo) return modelli.find(m => m.riposo) || null;
   const proprio = t.modelloId ? modelli.find(m => m.id === t.modelloId) : null;
-  if(proprio && proprio.colore) return proprio;
-  const base = modelloBaseFascia(categoria, t.data, true);
-  return base || proprio || null;
+  // v3.8.39: un giorno con il suo turno usa sempre quel turno (il suo colore, o quello automatico della fascia).
+  // Prima un turno senza colore scelto prendeva per errore il colore di un altro turno colorato della stessa fascia.
+  if(proprio) return proprio;
+  // Solo i giorni con orari cambiati a mano prendono il turno di riferimento della fascia.
+  return modelloBaseFascia(categoria, t.data);
 }
 // Il turno «di riferimento» di una fascia (mattina, pomeriggio, sera, notte): prima quello di serie con quel nome,
 // altrimenti un turno creato dall'utente con orari in quella fascia (es. «Mattino 06:40–13:15» personalizzato).
-function modelloBaseFascia(categoria, data, soloColorati){
+function modelloBaseFascia(categoria, data){
   if(!categoria) return null;
-  const modelli = (AppState.modelliTurno || []).filter(m => !m.riposo && (!soloColorati || m.colore));
+  const modelli = (AppState.modelliTurno || []).filter(m => !m.riposo);
   const speciali = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'];
   return modelli.find(m => m.id === categoria)
     || modelli.find(m => !speciali.includes(m.id) && m.oraInizio && m.oraFine && categoriaTurno(m.oraInizio, m.oraFine, data) === categoria)

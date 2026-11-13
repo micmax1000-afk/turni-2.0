@@ -3561,3 +3561,6 @@ html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.fuori-mese{
 .tavolozza-auto i,.tavolozza-altro i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-style:normal;font-weight:800;font-size:.8rem;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);background:color-mix(in srgb,var(--testo) 8%,var(--pannello))}
 .tavolozza-auto.attivo,.tavolozza-altro.attivo{border-color:var(--testo)}
 .tavolozza-altro input[type=color]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+/* v3.8.39: sigle lunghe (es. «Mat.P.», nomi di 5 lettere) più strette, così non vengono tagliate */
+.giorno-cella.c2 .c2-sigla.c2-lunga{font-size:.8rem;letter-spacing:-.03em}
+.giorno-cella.c2 .c2-sigla.c2-lunga2{font-size:.7rem;letter-spacing:-.04em}

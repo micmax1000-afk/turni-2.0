@@ -485,6 +485,9 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
     return salvato;
   });
   ok('backup automatico su Drive: dopo 6 giorni parte, anche se Google è pronto in ritardo', ba === 1, String(ba));
+  // v3.8.39: un turno nuovo colorato nella stessa fascia non cambia il colore degli altri turni.
+  const cf = await p.evaluate(() => { const prima = coloreGiornoVista({ data: '2026-10-08', oraInizio: '07:00', oraFine: '13:00', modelloId: 'mattina' }); AppState.modelliTurno.push({ id: 'personalizzato_prova', nome: 'Scorta', oraInizio: '08:00', oraFine: '16:00', sigla: 'SC', colore: '#1E88E5' }); const dopo = coloreGiornoVista({ data: '2026-10-08', oraInizio: '07:00', oraFine: '13:00', modelloId: 'mattina' }); const suo = coloreGiornoVista({ data: '2026-10-08', oraInizio: '08:00', oraFine: '16:00', modelloId: 'personalizzato_prova' }); AppState.modelliTurno = AppState.modelliTurno.filter(m => m.id !== 'personalizzato_prova'); return { prima, dopo, suo }; });
+  ok('un turno nuovo blu di mattina non colora di blu i giorni di Mattino', cf.prima === cf.dopo && cf.suo === '#1E88E5', JSON.stringify(cf));
   // v3.8.33: nel Classico si sceglie cosa mostrare: nome corto, lettera o la sigla del turno (e finisce nel backup).
   const sg = await p.evaluate(() => { const out = {}; for(const m of ['lettera', 'sigla', 'nome']){ document.querySelector(`[data-sigla-classico="${m}"]`).click(); out[m] = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla').textContent; } out.backup = costruisciDatiBackup().siglaClassico; return out; });
   ok('Classico: «Lettera» mostra S, «La tua sigla» SE, «Nome corto» Sera; la scelta va nel backup', sg.lettera === 'S' && sg.sigla === 'SE' && sg.nome === 'Sera' && sg.backup === 'nome', JSON.stringify(sg));
