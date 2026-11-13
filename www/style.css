@@ -3549,3 +3549,4 @@ html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-co
 .ut-banner-x + i{display:none}
 html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.fuori-mese{filter:grayscale(1)}
 .ut-banner .ut-banner-x{flex:none}
+.giorno-v3-barra{box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}

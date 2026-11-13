@@ -2420,8 +2420,8 @@ function infoTurnoGiornata(t, iso){
   const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
   const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
   return {
-    nome: modello ? modello.nome : (INIZIALE_CATEGORIA[categoria] || 'Turno'),
-    colore: (modello && modello.colore) || coloreCategoria(categoriaColore),
+    nome: modello ? modello.nome : (nomeGiornoVista(t) !== 'Turno' ? nomeGiornoVista(t) : (INIZIALE_CATEGORIA[categoria] || 'Turno')),
+    colore: (modello && modello.colore) || ((modelloColoreGiorno(t, categoriaColore) || {}).colore) || coloreCategoria(categoriaColore),
     icona: ICONA_CATEGORIA[categoria] || '🕒'
   };
 }
@@ -3379,8 +3379,9 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
     const modelli = AppState.modelliTurno || [];
     const m = modelli.find(x => !x.riposo && turnoUsaModello(t, x));
     const cat = categoriaTurno(t.oraInizio, t.oraFine, giornoSelezionato);
-    nome = m ? m.nome : (cat.charAt(0).toUpperCase() + cat.slice(1));
-    colore = m ? coloreModelloV2(m) : coloreCategoria(cat);
+    // v3.8.36: orari cambiati a mano → nome e colore del tuo turno della stessa fascia, come nel calendario.
+    nome = m ? m.nome : (typeof nomeGiornoVista === 'function' && nomeGiornoVista(t) !== 'Turno' ? nomeGiornoVista(t) : (cat.charAt(0).toUpperCase() + cat.slice(1)));
+    colore = m ? coloreModelloV2(m) : (typeof coloreGiornoVista === 'function' ? coloreGiornoVista(t) : coloreCategoria(cat));
     orario = `${t.oraInizio} – ${t.oraFine}`;
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine) orario += ` · rientro ${t.secondoOraInizio} – ${t.secondoOraFine}`;
     if(typeof classificaTurno === 'function'){
