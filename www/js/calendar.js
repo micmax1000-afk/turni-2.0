@@ -1339,12 +1339,16 @@ function corpoGiornoAgenda(iso, t){
   const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
   // Come nel calendario: Ufficio, Aggiornamento e Tiro hanno un colore proprio anche se l'orario è di mattina.
   const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
-  const colore = (modello && modello.colore) || coloreCategoria(categoriaColore);
-  const nome = modello ? modello.nome : (INIZIALE_CATEGORIA[categoria] || 'Turno');
+  // v3.8.32: orari cambiati a mano → colore e nome del turno della stessa fascia, come nel calendario.
+  const rif = modelloColoreGiorno(t, categoriaColore);
+  const colore = (modello && modello.colore) || (rif && rif.colore) || coloreCategoria(categoriaColore);
+  const nome = modello ? modello.nome : (nomeGiornoVista(t) !== 'Turno' ? nomeGiornoVista(t) : (INIZIALE_CATEGORIA[categoria] || 'Turno'));
   const chip = chipDettagliGiorno(t).join('');
+  const rientro = t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine
+    ? `<span class="agenda-rientro">${iconaLineaAgenda('orologio')}Rientro ${escapeHtml(t.secondoOraInizio)} – ${escapeHtml(t.secondoOraFine)}</span>` : '';
   const nota = notaServizioHtml(t);
   return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">`
-    + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>`
+    + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>${rientro}`
     + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}${nota}</span>`
     + `${oreConStraordinarioHtml(t, 'agenda-ore')}</span>`;
 }
@@ -1428,8 +1432,8 @@ function renderAgenda(){
     const classi = 'agenda-giorno' + (iso === oggiIso ? ' oggi' : '') + (iso < oggiIso ? ' passato' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
     const corpo = filtroAgenda === 'eventi' ? '' : `<button type="button" class="agenda-corpo" aria-label="${d.getDate()} ${NOMI_MESI[d.getMonth()]}: apri il giorno">${corpoGiornoAgenda(iso, t)}</button>`;
     html += `<div class="${classi}" data-agenda-giorno="${iso}">`
-      + `<div class="agenda-data"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b>`
-      + `<button type="button" class="agenda-piu" data-agenda-nuovo="${iso}" aria-label="Nuovo evento il ${d.getDate()} ${NOMI_MESI[d.getMonth()]}">＋</button></div>`
+      // v3.8.32: niente più ＋ su ogni giorno: si tocca il numero del giorno per un nuovo evento.
+      + `<button type="button" class="agenda-data" data-agenda-nuovo="${iso}" aria-label="Nuovo evento il ${d.getDate()} ${NOMI_MESI[d.getMonth()]}"><small>${GIORNI_SETTIMANA_BREVI[d.getDay()]}</small><b>${d.getDate()}</b></button>`
       + `<div class="agenda-righe">${quando}${corpo}${filtroAgenda === 'turni' || typeof righeUtilitaGiorno !== 'function' ? '' : righeUtilitaGiorno(iso)}${righeEventi}</div></div>`;
     mostrati++;
   }
@@ -1777,6 +1781,18 @@ document.addEventListener('click', e => {
   const m = e.target.closest('[data-dpg-modifica]');
   if(m && typeof apriModaleTurno === 'function'){ giornoSelezionato = m.dataset.dpgModifica; apriModaleTurno(m.dataset.dpgModifica); }
 });
+function apriPaginaGiornoDiario(iso){
+  if(typeof chiudiCercaCal === 'function' && el('boxCercaAgenda') && !el('boxCercaAgenda').hidden) chiudiCercaCal();
+  impostaVistaCalendario('diario');
+  const d = dataDaIso(iso);
+  giornoSelezionato = iso; meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
+  diarioGiornoAperto = iso; renderCalendario(); window.scrollTo(0, 0);
+}
+document.addEventListener('click', e => {
+  const x = e.target.closest && e.target.closest('[data-diario-apri]');
+  if(!x) return;
+  e.stopPropagation(); apriPaginaGiornoDiario(x.dataset.diarioApri);
+}, true);
 window.addEventListener('resize', () => { if(diarioGiornoAperto && vistaCalendario() === 'diario') renderCalendario(); });
 
 // Note della settimana (Diario): si salvano quando esci dal riquadro; restano sul telefono e nel backup.
