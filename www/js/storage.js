@@ -321,8 +321,14 @@ function caricaAnagrafica(){
 
 function salvaAnagraficaStorage(){ TurniPSStorage.setItem(CHIAVE_ANAGRAFICA, JSON.stringify(AppState.anagrafica)); }
 
+// v3.8.39: si tengono solo i giorni validi; una voce vuota o rovinata (es. da un backup danneggiato) bloccava l'app.
+function pulisciTurni(t){
+  if(!t || typeof t !== 'object' || Array.isArray(t)) return {};
+  Object.keys(t).forEach(k => { if(!t[k] || typeof t[k] !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(k)) delete t[k]; else if(!t[k].data) t[k].data = k; });
+  return t;
+}
 function caricaTurni(){
-  try{ return JSON.parse(TurniPSStorage.getItem(CHIAVE_TURNI)) || {}; }catch{ return {}; }
+  try{ return pulisciTurni(JSON.parse(TurniPSStorage.getItem(CHIAVE_TURNI))); }catch{ return {}; }
 }
 
 // v3.8.12: si tiene la versione di prima dell'ultimo salvataggio, per il pulsante "Annulla".

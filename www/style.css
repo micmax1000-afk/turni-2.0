@@ -3564,3 +3564,7 @@ html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.fuori-mese{
 /* v3.8.39: sigle lunghe (es. «Mat.P.», nomi di 5 lettere) più strette, così non vengono tagliate */
 .giorno-cella.c2 .c2-sigla.c2-lunga{font-size:.8rem;letter-spacing:-.03em}
 .giorno-cella.c2 .c2-sigla.c2-lunga2{font-size:.7rem;letter-spacing:-.04em}
+/* v3.8.39: un titolo lunghissimo senza spazi (es. un link incollato) non allarga più la pagina */
+.riga-evento-giorno-v2{min-width:0;max-width:100%}
+.riga-evento-giorno-testo{min-width:0;overflow:hidden}
+.riga-evento-giorno-testo strong,.riga-evento-giorno-testo small{overflow-wrap:anywhere}

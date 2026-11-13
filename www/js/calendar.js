@@ -1697,8 +1697,8 @@ function paginaGiornoDiario(iso, mezza){
     const col = coloreGiornoVista(t);
     righe.push(`<span class="diario-turno"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <i class="diario-turno-ora">${t.oraInizio}–${t.oraFine}</i>` : ''}</span>`);
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
-    if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
-    if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
+    if(!t.riposo && !t.assenzaTipo && t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
+    if(!t.riposo && !t.assenzaTipo && t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
     if(t.servizioSvolto) righe.push(`${svgLinea('matita', 'diario-ic')}${escapeHtml(t.servizioSvolto)}`);
     // v3.8.31: le indennità del giorno come icone piccole (il nome compare tenendo il dito o toccando il giorno).
     const ind = iconeIndennitaDiario(t);
@@ -1777,8 +1777,8 @@ function paginaGiornoIntera(iso){
     const col = coloreGiornoVista(t);
     righe.push(`<button type="button" class="dpg-turno" data-dpg-modifica="${iso}"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <span>${t.oraInizio}–${t.oraFine}</span>` : ''}<i aria-hidden="true">›</i></button>`);
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
-    if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
-    if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
+    if(!t.riposo && !t.assenzaTipo && t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
+    if(!t.riposo && !t.assenzaTipo && t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
     if(t.servizioSvolto) righe.push(`${svgLinea('matita', 'diario-ic')}${escapeHtml(t.servizioSvolto)}`);
     const chip = typeof chipDettagliGiorno === 'function' ? chipDettagliGiorno(t).filter(c => !/chip-dett-str/.test(c)) : [];
     if(chip.length) righe.push(`<span class="dpg-chip">${chip.join('')}</span>`);
