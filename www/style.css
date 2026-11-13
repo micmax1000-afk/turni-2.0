@@ -3477,3 +3477,4 @@ html[data-tema=scuro] .agenda-calendario .agenda-evento em,html[data-tema=scuro]
 .agenda-calendario .agenda-chip-giorno b{line-height:22px;padding:0 8px;border-radius:6px}
 .agenda-calendario .agenda-libero{color:color-mix(in srgb,var(--inchiostro-d) 50%,transparent)}
 .agenda-calendario .agenda-giorno.passato{opacity:.55}
+.btn-vista-calendario.torna-calendario .freccia-vista{display:none}

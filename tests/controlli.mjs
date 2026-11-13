@@ -1107,10 +1107,20 @@ sezione('v3.8.28: vista Diario (agenda di carta)');
   ok('dalla pagina del giorno, toccando il turno si apre «Modifica il giorno»', await p.evaluate(() => !el('pannelloTurno').hidden));
   await p.evaluate(() => { el('pannelloTurno').hidden = true; document.querySelectorAll('.overlay').forEach(o => o.hidden = true); });
   await p.click('[data-dpg-settimana]');
-  ok('Diario: 8 riquadri uguali, l\'ultimo è «Note della settimana»', await p.evaluate(() => document.querySelectorAll('.diario-libro .diario-giorno').length === 8 && !!document.querySelector('.diario-note-testo')));
-  await p.fill('.diario-note-testo', 'Divisa in lavanderia'); await p.evaluate(() => document.activeElement.blur());
-  ok('le note della settimana si salvano (e restano nel backup)', await p.evaluate(() => U.noteSettimana['2026-10-12'] === 'Divisa in lavanderia' && JSON.stringify(datiUtilitaPerBackup()).includes('Divisa in lavanderia')));
-  ok('la ricerca trova le note della settimana', await p.evaluate(() => /Note della settimana/.test(risultatiCercaAgenda('lavanderia'))));
+  // v3.8.32: niente più «Note della settimana»: chi le aveva le ritrova nelle note di servizio del lunedì.
+  ok('Diario: 7 giorni, senza il riquadro «Note della settimana»', await p.evaluate(() => document.querySelectorAll('.diario-libro .diario-giorno').length === 7 && !document.querySelector('.diario-note-testo')));
+  const mig = await p.evaluate(() => { U.noteSettimana = { '2026-10-12': 'Divisa in lavanderia' }; unisciNoteSettimana(); const n = notaDiarioDi('2026-10-12'); return { testo: n && n.testo, via: !U.noteSettimana, backup: JSON.stringify(datiUtilitaPerBackup()).includes('Divisa in lavanderia'), cerca: /Note di servizio/.test(risultatiCercaAgenda('lavanderia')) }; });
+  ok('le vecchie note della settimana diventano le note di servizio del lunedì (backup e lente compresi)', mig.testo === 'Divisa in lavanderia' && mig.via && mig.backup && mig.cerca, JSON.stringify(mig));
+  // Dalla finestra del giorno le note di servizio si scrivono sulla pagina del giorno.
+  await p.evaluate(() => { selezionaGiorno('2026-10-15'); apriModaleTurno('2026-10-15'); aggiornaUtilitaGiorno(); });
+  const btnNote = await p.$('#utilitaGiorno [data-diario-apri="2026-10-15"]');
+  if(btnNote) await btnNote.evaluate(b => b.click()); // la sezione «Altro per questo giorno» è chiusa: basta il tocco
+  ok('finestra del giorno: «Scrivi le note di servizio» apre la pagina del giorno', !!btnNote && await p.evaluate(() => diarioGiornoAperto === '2026-10-15' && el('pannelloTurno').hidden && !!document.querySelector('.dpg-note')));
+  // In Agenda il pulsante in alto riporta al calendario, nella vista di prima.
+  await p.evaluate(() => impostaVistaCalendario('agenda'));
+  ok('in Agenda il pulsante dice «‹ Calendario»', await p.evaluate(() => el('etichettaVistaCalendario').textContent === '‹ Calendario'));
+  await p.click('#btnVistaCalendario');
+  ok('«‹ Calendario» torna al Diario (la vista di prima), senza aprire il menu', await p.evaluate(() => vistaCalendario() === 'diario' && el('menuVistaCalendario').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1736,8 +1746,8 @@ sezione('Agenda (vista del calendario)');
   await p.click('[data-agenda-giorno="2026-10-12"] .agenda-evento');
   ok('tocco su un evento: si apre la modifica dell\'evento', await p.evaluate(() => !el('overlayEvento').hidden && el('campoEventoTitolo').value === 'Visita medica'));
   await p.evaluate(() => { el('overlayEvento').hidden = true; });
-  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
-  ok('di nuovo Mese: torna il calendario', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none'));
+  await p.click('#btnVistaCalendario'); // in Agenda il pulsante è «‹ Calendario»
+  ok('«‹ Calendario»: torna il calendario del mese', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none'));
   // v3.8.30: il menu ha quattro viste in una riga; Settimana è confluita nel Diario, Agenda resta per la lente.
   await p.click('#btnVistaCalendario');
   const mv = await p.evaluate(() => ({ viste: [...document.querySelectorAll('#menuVistaCalendario [data-vista-calendario]')].map(b => b.dataset.vistaCalendario).join(), condividi: !!el('btnCondividiMese'), colonne: getComputedStyle(document.querySelector('.menu-vista-griglia')).gridTemplateColumns.split(' ').length }));

@@ -15,8 +15,21 @@ const TIPI_SCADENZA = [
 let U = { scadenze: [], note: [], scambi: [], mezzi: [], uscite: [], link: [] };
 let utStato = { pagina: null, cerca: '', meseVeicolo: null, editor: null };
 
+// v3.8.32: le «Note della settimana» sono diventate le note di servizio del lunedì (una sola cosa da capire).
+function unisciNoteSettimana(){
+  const ns = U.noteSettimana; if(!ns || typeof ns !== 'object') return false;
+  Object.entries(ns).forEach(([lun, testo]) => {
+    if(!String(testo || '').trim()) return;
+    const n = U.note.find(x => x.diario && x.giorno === lun);
+    if(n){ if(!n.testo.includes(testo)) n.testo = n.testo + '\n' + testo; n.modificata = Date.now(); }
+    else U.note.push({ id: idUt('nt'), titolo: '', testo, giorno: lun, fissata: false, diario: true, modificata: Date.now() });
+  });
+  delete U.noteSettimana;
+  return true;
+}
 function caricaUtilita(){
   try{ const v = JSON.parse(TurniPSStorage.getItem(CHIAVE_UTILITA) || 'null'); if(v && typeof v === 'object') U = Object.assign({ scadenze: [], note: [], scambi: [], mezzi: [], uscite: [], link: [] }, v); }catch(e){}
+  try{ if(unisciNoteSettimana()) TurniPSStorage.setItem(CHIAVE_UTILITA, JSON.stringify(U)); }catch(e){}
 }
 function salvaUtilita(){ try{ TurniPSStorage.setItem(CHIAVE_UTILITA, JSON.stringify(U)); }catch(e){} aggiornaRigheUtilita(); aggiornaBannerScadenze(); try{ renderUtilitaRiquadroGiorno(); if(typeof applicaVistaCalendario === 'function' && typeof vistaCalendario === 'function' && vistaCalendario() !== 'mese'){ if(vistaCalendario() === 'agenda') renderAgenda(); else applicaVistaCalendario(); } }catch(e){} }
 function datiUtilitaPerBackup(){ return JSON.parse(JSON.stringify(U)); }
@@ -24,6 +37,7 @@ function ripristinaUtilitaDaBackup(d){
   if(!d || typeof d !== 'object') return;
   (U.scadenze || []).forEach(s => annullaAvvisiScadenza(s));
   U = Object.assign({ scadenze: [], note: [], scambi: [], mezzi: [], uscite: [], link: [] }, d);
+  unisciNoteSettimana();
   salvaUtilita();
   U.scadenze.forEach(s => programmaAvvisiScadenza(s, true));
 }
@@ -147,7 +161,7 @@ function htmlNote(){
   const q = (typeof normalizzaVoce === 'function' ? normalizzaVoce(utStato.cerca) : utStato.cerca.toLowerCase()).trim();
   const norm = t => typeof normalizzaVoce === 'function' ? normalizzaVoce(t) : String(t).toLowerCase();
   const note = U.note.filter(n => !q || q.split(' ').every(w => norm(`${n.titolo} ${n.testo}`).includes(w))).sort((a, b) => b.modificata - a.modificata);
-  const card = n => `<button type="button" class="ut-card" data-ut="apri-nota" data-id="${n.id}"><b>${escapeHtml(n.titolo || 'Senza titolo')}</b>${n.testo ? `<p>${escapeHtml(n.testo)}</p>` : ''}`
+  const card = n => `<button type="button" class="ut-card" ${n.diario ? `data-diario-apri="${n.giorno}"` : `data-ut="apri-nota" data-id="${n.id}"`}><b>${escapeHtml(n.titolo || (n.diario ? 'Note di servizio' : 'Senza titolo'))}</b>${n.testo ? `<p>${escapeHtml(n.testo)}</p>` : ''}`
     + `<span class="ut-meta">${n.fissata ? `<span class="ut-fissata">${ic('puntina')} Fissata</span>` : ''}${n.giorno ? `<span class="ut-giorno">${dataBreveUt(n.giorno)}${nomeTurnoDelGiorno(n.giorno) ? ' · ' + escapeHtml(nomeTurnoDelGiorno(n.giorno)) : ''}</span>` : ''}<span>${new Date(n.modificata).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</span></span></button>`;
   const fissate = note.filter(n => n.fissata), altre = note.filter(n => !n.fissata);
   const gruppi = {};
@@ -419,8 +433,8 @@ function aggiornaUtilitaGiorno(){
     + (sc ? `<button type="button" class="riquadro-giorno ut-giorno-riga" data-ut-giorno="scambio" data-id="${sc.id}"><span class="ut-ic">${ic('giro')}</span><span class="ut-t"><b>${sc.verso === 'devo' ? `${escapeHtml(sc.collega)} ti ha sostituito` : `Hai sostituito ${escapeHtml(sc.collega)}`}</b><small>${sc.restituito ? `Pari: restituito ${dataBreveUt(sc.restituito)}` : sc.verso === 'devo' ? 'Gli devi un turno' : 'Ti deve un turno'}</small></span><i aria-hidden="true">›</i></button>`
       : `<button type="button" class="ut-aggiungi-giorno" data-ut-giorno="nuovo-scambio">＋ Segna uno scambio con un collega</button>`)
     + `<p class="titolo-sezione-giorno">Note di servizio</p>`
-    + note.map(n => `<button type="button" class="riquadro-giorno ut-giorno-riga" data-ut-giorno="nota" data-id="${n.id}"><span class="ut-ic">${ic('lista')}</span><span class="ut-t"><b>${escapeHtml(n.titolo || 'Nota')}</b><small>${escapeHtml((n.testo || '').slice(0, 80))}</small></span><i aria-hidden="true">›</i></button>`).join('')
-    + `<button type="button" class="ut-aggiungi-giorno" data-ut-giorno="nuova-nota">＋ Nota per questo giorno</button>`;
+    + note.map(n => `<button type="button" class="riquadro-giorno ut-giorno-riga" ${n.diario ? `data-diario-apri="${iso}"` : `data-ut-giorno="nota" data-id="${n.id}"`}><span class="ut-ic">${ic('lista')}</span><span class="ut-t"><b>${escapeHtml(n.titolo || (n.diario ? 'Note di servizio' : 'Nota'))}</b><small>${escapeHtml((n.testo || '').slice(0, 80))}</small></span><i aria-hidden="true">›</i></button>`).join('')
+    + (note.some(n => n.diario) ? '' : `<button type="button" class="ut-aggiungi-giorno" data-diario-apri="${iso}">＋ Scrivi le note di servizio</button>`);
 }
 function clicUtilitaGiorno(e){
   const b = e.target.closest('[data-ut-giorno]'); if(!b) return;
