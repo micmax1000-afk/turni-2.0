@@ -515,10 +515,11 @@ function inizializza(){
   // programmano le prossime volte degli eventi che si ripetono. Con calma, dopo l'avvio.
   setTimeout(() => { riprogrammaPromemoriaEventi(); }, 4000);
   // Piccolo ritardo perché la libreria Google (caricata con "defer") abbia il tempo di essere pronta
-  setTimeout(() => {
-    inizializzaGoogleIdentity();
-    controllaBackupDriveAutomatico();
-  }, 800);
+  // v3.8.38: prima si aspetta che Google sia pronto, poi si controlla il backup automatico (prima il controllo
+  // partiva subito, trovava Google non ancora pronto e rinunciava: sul telefono il backup automatico non partiva mai).
+  // Si ricontrolla anche ogni volta che l'app torna in primo piano, non solo all'avvio.
+  setTimeout(avviaBackupDriveAutomatico, 800);
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) avviaBackupDriveAutomatico(); });
   // Nessun avviso/popup sul backup (tolto su richiesta): si esporta quando si vuole da Backup Dati.
 
   // "Servizio svolto" in Azioni rapide: salvataggio indipendente (come la nota del giorno),

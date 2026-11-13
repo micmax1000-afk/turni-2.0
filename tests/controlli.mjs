@@ -467,6 +467,21 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
   // v3.8.36: a un turno nuovo l'app propone un colore che nessun altro turno usa.
   const cp = await p.evaluate(() => { apriModificaModelloV2(null); const c = el('campoModModelloColore').value.toLowerCase(); const usati = (AppState.modelliTurno || []).map(m => String(coloreModelloV2(m)).toLowerCase()); el('overlayModificaModello').hidden = true; return { c, libero: !usati.includes(c), tav: document.querySelectorAll('#tavolozzaModello [data-colore-tavolozza]').length }; });
   ok('Nuovo servizio: colore proposto libero e tavolozza di 24 colori (tenui e accesi)', cp.libero && cp.tav === 24, JSON.stringify(cp));
+  // v3.8.38: il backup automatico su Drive parte anche se Google ci mette un po' a essere pronto (sul telefono non partiva).
+  const ba = await p.evaluate(async () => {
+    const prima = { auto: TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_AUTO), ult: TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP_DRIVE) };
+    TurniPSStorage.setItem(CHIAVE_BACKUP_DRIVE_AUTO, '1'); TurniPSStorage.setItem(CHIAVE_ULTIMO_BACKUP_DRIVE, new Date(Date.now() - 6 * 86400000).toISOString());
+    const vecchi = { plug: pluginGoogleSignInNativo, salva: salvaBackupSuDrive, tok: tokenClientGoogle };
+    let salvato = 0; tokenClientGoogle = null; ultimoControlloBackupAuto = 0;
+    pluginGoogleSignInNativo = () => ({ initialize: () => new Promise(r => setTimeout(r, 80)), signIn: async () => ({ accessToken: 'prova' }) });
+    salvaBackupSuDrive = async o => { if(o && o.automatico) salvato++; return true; };
+    await avviaBackupDriveAutomatico();
+    pluginGoogleSignInNativo = vecchi.plug; salvaBackupSuDrive = vecchi.salva; tokenClientGoogle = vecchi.tok; tokenAccessoDriveCorrente = null;
+    prima.auto === null ? TurniPSStorage.removeItem(CHIAVE_BACKUP_DRIVE_AUTO) : TurniPSStorage.setItem(CHIAVE_BACKUP_DRIVE_AUTO, prima.auto);
+    prima.ult === null ? TurniPSStorage.removeItem(CHIAVE_ULTIMO_BACKUP_DRIVE) : TurniPSStorage.setItem(CHIAVE_ULTIMO_BACKUP_DRIVE, prima.ult);
+    return salvato;
+  });
+  ok('backup automatico su Drive: dopo 6 giorni parte, anche se Google è pronto in ritardo', ba === 1, String(ba));
   // v3.8.33: nel Classico si sceglie cosa mostrare: nome corto, lettera o la sigla del turno (e finisce nel backup).
   const sg = await p.evaluate(() => { const out = {}; for(const m of ['lettera', 'sigla', 'nome']){ document.querySelector(`[data-sigla-classico="${m}"]`).click(); out[m] = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla').textContent; } out.backup = costruisciDatiBackup().siglaClassico; return out; });
   ok('Classico: «Lettera» mostra S, «La tua sigla» SE, «Nome corto» Sera; la scelta va nel backup', sg.lettera === 'S' && sg.sigla === 'SE' && sg.nome === 'Sera' && sg.backup === 'nome', JSON.stringify(sg));

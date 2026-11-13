@@ -514,6 +514,15 @@ async function ripristinaBackupDaDrive(opz){
   return true;
 }
 
+let backupAutoInCorso = false, ultimoControlloBackupAuto = 0;
+async function avviaBackupDriveAutomatico(){
+  if(backupAutoInCorso || Date.now() - ultimoControlloBackupAuto < 60000) return; // non più di un controllo al minuto
+  backupAutoInCorso = true; ultimoControlloBackupAuto = Date.now();
+  try{
+    if(!tokenClientGoogle) await inizializzaGoogleIdentity();
+    await controllaBackupDriveAutomatico();
+  }catch(e){} finally { backupAutoInCorso = false; }
+}
 async function controllaBackupDriveAutomatico(){
   if(!proAttivo()) return;
   if(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_AUTO)!=='1') return; // spento di default
