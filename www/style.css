@@ -3538,3 +3538,17 @@ body.calendario-moderno #sceltaSiglaClassico{display:none}
 .sigla-classico-pulsanti button.attivo{border-color:var(--acc,#1D4FD7);background:color-mix(in srgb,var(--acc,#1D4FD7) 8%,var(--pannello))}
 .sigla-classico-pulsanti button.attivo b{color:var(--acc,#1D4FD7)}
 body:not(.calendario-moderno) .giorno-cella.c2.selezionata{box-shadow:inset 0 0 0 2px var(--acc,#1D4FD7),inset 0 0 0 4px rgba(255,255,255,.9)!important}
+/* v3.8.34: microfono nelle note di servizio, ore della settimana nel Diario */
+.dpg-note-riga{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 4px}
+.dpg-note-riga .dpg-note-tit{margin:0}
+.dpg-mic{width:36px;height:36px;border-color:var(--riga-d);background:transparent}
+.diario-sett b{color:var(--testo);font-weight:700}
+.diario-sett-str{color:var(--acc,#1D4FD7);font-weight:600}
+html[data-tema=scuro] .diario-sett-str{color:#8FB0FF}
+body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-colori.festivo .c2-sigla{color:#C62828}
+html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-colori.festivo .c2-sigla{color:#FF8A80}
+/* v3.8.34: × per chiudere la striscia delle scadenze; giorni dell'altro mese grigi col tema scuro */
+.ut-banner-x{margin-left:auto;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:1.15rem;line-height:1;opacity:.7;cursor:pointer}
+.ut-banner-x + i{display:none}
+html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.fuori-mese{filter:grayscale(1)}
+.ut-banner .ut-banner-x{flex:none}

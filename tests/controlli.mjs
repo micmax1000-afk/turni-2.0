@@ -1013,6 +1013,10 @@ sezione('v3.8.25: lente del calendario, Impostazioni raccolte in Altro');
   ok('indietro chiude la ricerca e torna alla vista di prima', await p.evaluate(() => vistaCalendario() === 'mese' && el('boxCercaAgenda').hidden));
   await p.evaluate(() => { U.scadenze = [{ id: 'sx', tipo: 'tiro', nome: 'Tiro annuale', data: '2026-10-20', ripeti: '1', avvisi: [], note: '' }]; salvaUtilita(); aggiornaBannerScadenze(); });
   ok('la scadenza vicina è una riga sottile sopra il mese', await p.evaluate(() => el('bannerScadenze').parentElement.id === 'calSopra' && /Tiro annuale tra 11 giorni/.test(el('bannerScadenze').textContent)));
+  // v3.8.34: la × chiude la striscia, che torna negli ultimi 7 giorni.
+  await p.click('#bannerScadenze [data-chiudi-banner]');
+  const bx = await p.evaluate(() => { const via = !el('bannerScadenze'); U.scadenze[0].data = '2026-10-14'; aggiornaBannerScadenze(); const torna = !!el('bannerScadenze') && !el('bannerScadenze').querySelector('[data-chiudi-banner]'); return { via, torna, utilita: el('paginaUt') ? el('paginaUt').hidden !== false : true }; });
+  ok('× sulla striscia: sparisce (senza aprire le Scadenze) e torna a 5 giorni, senza ×', bx.via && bx.torna && bx.utilita, JSON.stringify(bx));
   await p.evaluate(() => { U.scadenze = []; aggiornaBannerScadenze(); });
   ok('senza scadenze la riga sparisce', await p.evaluate(() => !el('bannerScadenze') && getComputedStyle(el('calSopra')).display === 'none'));
   await p.click('#tabAltro');
@@ -1768,9 +1772,12 @@ sezione('Agenda (vista del calendario)');
   await p.click('[data-diario-giorno="2026-10-13"]');
   await p.fill('.dpg-note', 'Servizio allo stadio'); await p.click('#btnMeseSucc'); await p.waitForTimeout(150);
   const pg = await p.evaluate(() => ({ aperto: diarioGiornoAperto, nota: (notaDiarioDi('2026-10-13') || {}).testo, cerca: risultatiUtilitaPerCerca(t => /stadio/i.test(t)).length }));
+  ok('pagina del giorno: c\'è il microfono per dettare le note', await p.evaluate(() => !!document.querySelector('[data-dpg-detta]')));
   ok('pagina del giorno: nota salvata, › va al giorno dopo, la lente la trova', pg.aperto === '2026-10-14' && pg.nota === 'Servizio allo stadio' && pg.cerca >= 1, JSON.stringify(pg));
   await p.click('[data-dpg-settimana]');
   ok('«‹ Settimana» torna al Diario della settimana con la nota', await p.evaluate(() => !diarioGiornoAperto && /Servizio allo stadio/.test(document.querySelector('[data-diario-giorno="2026-10-13"]').textContent)));
+  // v3.8.34: in fondo al Diario le ore della settimana; nella pagina del giorno il microfono per dettare le note.
+  ok('Diario: in fondo «Settimana N · ore» fuori dal libro', await p.evaluate(() => { const f = document.querySelector('#vistaDiarioCal > .diario-sett'); return !!f && /\d+:\d{2} ore/.test(f.textContent); }));
   // v3.8.32: in Agenda il rientro si vede e la nota di servizio riapre la pagina del giorno.
   const ag = await p.evaluate(() => { impostaVistaCalendario('agenda'); agendaDa = '2026-10-12'; renderAgenda(); const g = document.querySelector('[data-agenda-giorno="2026-10-13"]'); return { rientro: /Rientro 15:00 – 18:00/.test(g.textContent), nota: !!g.querySelector('[data-diario-apri="2026-10-13"]') }; });
   ok('Agenda: il rientro sotto l\'orario e la nota di servizio del giorno', ag.rientro && ag.nota, JSON.stringify(ag));
