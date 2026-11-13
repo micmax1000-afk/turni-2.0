@@ -1,5 +1,5 @@
 <it-IT>
+• Corretto il backup automatico su Google Drive, che non partiva
 • Colore del turno: nuova tavolozza con colori tenui e accesi
-• «Automatico» e «Altro colore» più chiari, pallini più grandi
 • Tornano i «Colori di serie» negli Strumenti dei Turni
 </it-IT>
