@@ -3369,9 +3369,6 @@ html[data-tema=scuro] .cal-sopra .ut-banner{background:#4A3510}
 .anno-riassunto{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.82rem;color:var(--testo-tenue);margin:12px 2px 4px}
 .anno-riassunto b{color:var(--testo)}
 /* v3.8.31: la presa è solo la barretta al centro (prima era larga tutta la pagina e bloccava lo scorrimento). */
-.maniglia-vista{display:block;width:120px;margin:0 auto;border:0;background:none;padding:8px 0 6px;cursor:grab;touch-action:none}
-.maniglia-vista span{display:block;width:42px;height:5px;border-radius:99px;margin:0 auto;background:color-mix(in srgb,var(--testo) 22%,transparent)}
-.scheda-calendario-v2[data-vista="agenda"] .maniglia-vista,.scheda-calendario-v2[data-vista="giorno"] .maniglia-vista{display:none}
 .card-assenza-compact-nome .programmati-congedo{display:block;font:600 .74rem/1.3 var(--font-corpo)!important;color:var(--acc,#1D4FD7);margin-top:3px}
 
 .card-assenza-compact-nome .date-assenza{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}

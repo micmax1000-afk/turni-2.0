@@ -1,5 +1,4 @@
 <it-IT>
-• Note di servizio a voce: tocca il microfono nella pagina del giorno
-• Diario: le ore della settimana in fondo alla pagina
-• Ritocchi: avviso scadenze chiudibile, Classico più leggibile col tema scuro
+• Scorrendo la pagina il calendario non cambia più vista per sbaglio
+• La vista (Diario, Mese, Anno) si sceglie dal pulsante in alto
 </it-IT>

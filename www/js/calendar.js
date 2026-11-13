@@ -1676,20 +1676,8 @@ document.addEventListener('click', e => {
   giornoSelezionato = annoCorrente === oggi.getFullYear() && mm === oggi.getMonth() ? dataISO(oggi) : dataISO(new Date(annoCorrente, mm, 1, 12));
   impostaVistaCalendario('mese');
 });
-// Maniglia sotto il calendario: trascina in su per stringere (Anno → Mese → Settimana), in giù per allargare.
-const ORDINE_VISTE_MANIGLIA = ['diario', 'mese', 'anno'];
-function cambiaVistaConManiglia(dir){
-  let v = vistaCalendario(); if(v === 'giorno') v = 'diario'; if(v === 'agenda') return;
-  const i = ORDINE_VISTE_MANIGLIA.indexOf(v), j = Math.max(0, Math.min(ORDINE_VISTE_MANIGLIA.length - 1, i + dir));
-  if(j !== i) impostaVistaCalendario(ORDINE_VISTE_MANIGLIA[j]);
-}
-(function(){
-  // v3.8.31: dopo un trascinamento non conta anche il tocco (prima la vista cambiava due volte).
-  let y0 = null, ultimoTrascinamento = 0;
-  document.addEventListener('touchstart', e => { if(e.target.closest && e.target.closest('#manigliaVista') && e.touches.length === 1) y0 = e.touches[0].clientY; else y0 = null; }, { passive: true });
-  document.addEventListener('touchend', e => { if(y0 === null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; if(Math.abs(dy) >= 25){ ultimoTrascinamento = Date.now(); cambiaVistaConManiglia(dy > 0 ? 1 : -1); } }, { passive: true });
-  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#manigliaVista') && y0 === null && Date.now() - ultimoTrascinamento > 600) cambiaVistaConManiglia(vistaCalendario() === 'diario' || vistaCalendario() === 'giorno' ? 1 : -1); });
-})();
+// v3.8.35: tolta la maniglia sotto il calendario: trascinandola si cambiava vista per sbaglio mentre si scorreva
+// la pagina. La vista si cambia dal pulsante «Mese ▾» in alto.
 
 // ── v3.8.28: vista Diario — la settimana come un'agenda di carta: due pagine, spirale, righe ──
 function settimanaDellAnno(d){
