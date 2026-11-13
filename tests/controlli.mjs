@@ -464,6 +464,9 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
     const altezze = new Set([...document.querySelectorAll('#calendarioGriglia .giorno-cella')].map(c => Math.round(c.getBoundingClientRect().height)));
     return { classico: !document.body.classList.contains('calendario-moderno'), oggi: oggi && getComputedStyle(oggi).backgroundColor, ev: ev && getComputedStyle(ev).width, barrato: [...document.querySelectorAll('.giorno-cella .c2-numero')].some(n => getComputedStyle(n).textDecorationLine === 'line-through'), altezze: altezze.size, sigla: (document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla') || {}).textContent };
   });
+  // v3.8.33: nel Classico si sceglie cosa mostrare: nome corto, lettera o la sigla del turno (e finisce nel backup).
+  const sg = await p.evaluate(() => { const out = {}; for(const m of ['lettera', 'sigla', 'nome']){ document.querySelector(`[data-sigla-classico="${m}"]`).click(); out[m] = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla').textContent; } out.backup = costruisciDatiBackup().siglaClassico; return out; });
+  ok('Classico: «Lettera» mostra S, «La tua sigla» SE, «Nome corto» Sera; la scelta va nel backup', sg.lettera === 'S' && sg.sigla === 'SE' && sg.nome === 'Sera' && sg.backup === 'nome', JSON.stringify(sg));
   // v3.8.33: Classico rifatto — caselle tutte alte uguali, sigla corta, oggi nel cerchio blu, eventi a pallino.
   ok('calendario classico: oggi nel cerchio blu, eventi a pallino, caselle uguali, sigla corta', c.classico && /^rgb\(/.test(c.oggi || '') && c.oggi !== 'rgba(0, 0, 0, 0)' && c.ev === '6px' && !c.barrato && c.altezze === 1 && /^(Matt|Pom|Sera|Not|Rip)$/.test(c.sigla || ''), JSON.stringify(c));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));

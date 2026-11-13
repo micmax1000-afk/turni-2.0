@@ -79,6 +79,7 @@ function costruisciDatiBackup(){
     modelliTurno: Array.isArray(AppState.modelliTurno) ? AppState.modelliTurno : null,
     calendarioAColori: calendarioAColoriAttivo(),
     stileCalendario: calendarioModernoAttivo() ? 'moderno' : 'classico',
+    siglaClassico: typeof siglaClassicoScelta === 'function' ? siglaClassicoScelta() : 'nome',
     tema: TurniPSStorage.getItem(CHIAVE_TEMA) || 'auto',
     temaScuro: TurniPSStorage.getItem(CHIAVE_TEMA_SCURO) || null,
     indennitaNascoste: TurniPSStorage.getItem(CHIAVE_INDENNITA_NASCOSTE) || null,
@@ -717,6 +718,7 @@ function importaBackup(file, datiGiaLetti){
       if(typeof dati.calendarioAColori === 'boolean'){
         TurniPSStorage.setItem(CHIAVE_CALENDARIO_A_COLORI, dati.calendarioAColori ? '1' : '0');
         if(dati.stileCalendario === 'moderno' || dati.stileCalendario === 'classico') TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, dati.stileCalendario);
+        if(['nome', 'lettera', 'sigla'].includes(dati.siglaClassico)) TurniPSStorage.setItem('simCedolino_siglaClassico_v1', dati.siglaClassico);
         if(typeof dati.indennitaNascoste === 'string'){ try{ if(Array.isArray(JSON.parse(dati.indennitaNascoste))) TurniPSStorage.setItem(CHIAVE_INDENNITA_NASCOSTE, dati.indennitaNascoste); }catch(e){} }
         if(['auto', 'luce', 'chiaro', 'scuro', 'grigio', 'nero'].includes(dati.tema)){ TurniPSStorage.setItem(CHIAVE_TEMA, dati.tema === 'scuro' ? 'grigio' : dati.tema); if(dati.temaScuro === 'nero' || dati.temaScuro === 'grigio') TurniPSStorage.setItem(CHIAVE_TEMA_SCURO, dati.temaScuro); if(typeof applicaTema === 'function') applicaTema(); }
         if(typeof aggiornaClasseCalendarioColori === 'function') aggiornaClasseCalendarioColori();

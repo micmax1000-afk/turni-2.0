@@ -780,6 +780,13 @@ function renderCalendario(){
       : (t.aggiornamentoProfessionale || t.addestramentoTiro || ((t.compensazioneRiposo || t.recuperoFestivoLavorato) && !categoria)) ? etichetta
       : modelloPersonalizzato ? (modelloUsato.nome.length <= 5 ? modelloUsato.nome : (modelloUsato.sigla || modelloUsato.nome.slice(0, 4)))
       : SIGLA_CLASSICO_CATEGORIA[categoria] || etichetta || '';
+    const modoSigla = siglaClassicoScelta();
+    const modelloRif = !conTurno ? null : modelloUsato || (AppState.modelliTurno || []).find(m => m.id === categoria || (categoria === 'riposo' && m.riposo)) || null;
+    const siglaPropria = categoria === 'assenza' ? tipoLabel : ((modelloRif && modelloRif.sigla) || siglaC2);
+    const testoSigla = !conTurno ? ''
+      : modoSigla === 'lettera' ? ((categoria !== 'assenza' && !modelloPersonalizzato && SIGLA_SINGOLA_CATEGORIA[categoria]) || String(siglaPropria || siglaC2).charAt(0).toUpperCase())
+      : modoSigla === 'sigla' ? String(siglaPropria || '').toUpperCase().slice(0, 3)
+      : siglaC2;
     const minStrC2 = typeof minutiStraordinario === 'function' ? minutiStraordinario(t) : 0;
     const oreStrC2 = minStrC2 ? String(Math.round(minStrC2 / 6) / 10).replace('.', ',') : '';
     const eventiC2 = eventiCella.length ? `<span class="c2-eventi">${eventiCella.slice(0, 3).map(x => `<i${coloreEventoStile(x.ev)}></i>`).join('')}</span>` : '';
@@ -790,7 +797,7 @@ function renderCalendario(){
     cella.classList.toggle('c2-senza-colori', conTurno && !calendarioAColoriAttivo());
     if(testoC2) cella.style.setProperty('--c2-testo', testoC2); else cella.style.removeProperty('--c2-testo');
     cella.innerHTML = `<span class="c2-numero">${g}</span>`
-      + `<span class="c2-sigla" title="${escapeHtml(nomeCategoria)}">${escapeHtml(siglaC2)}</span>`
+      + `<span class="c2-sigla${modoSigla === 'lettera' ? ' c2-lettera' : ''}" title="${escapeHtml(nomeCategoria)}">${escapeHtml(testoSigla)}</span>`
       + (oreStrC2 ? `<span class="c2-straord" title="Straordinario ${oreStrC2} ore">+${oreStrC2}h</span>` : '')
       + eventiC2;
 
@@ -921,6 +928,9 @@ function iconaIndennita(chiave, classe){
   return d ? `<svg class="icona-indennita${classe ? ' ' + classe : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>` : '';
 }
 
+// v3.8.33: cosa mostra il Classico nella casella: nome corto (Matt), lettera (M) o la sigla scelta dall'utente.
+const CHIAVE_SIGLA_CLASSICO = 'simCedolino_siglaClassico_v1';
+function siglaClassicoScelta(){ let v = null; try{ v = TurniPSStorage.getItem(CHIAVE_SIGLA_CLASSICO); }catch(e){} return v === 'lettera' || v === 'sigla' ? v : 'nome'; }
 // v3.8.33: sigle corte del calendario Classico (come nelle app di turni più usate).
 const SIGLA_CLASSICO_CATEGORIA = { mattina:'Matt', pomeriggio:'Pom', sera:'Sera', notte:'Not', riposo:'Rip', ufficio:'Uff', aggiornamentoProfessionale:'Agg', addestramentoTiro:'Tiro' };
 function rgbDaHex(hex){ const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim()); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
