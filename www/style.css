@@ -3478,3 +3478,37 @@ html[data-tema=scuro] .agenda-calendario .agenda-evento em,html[data-tema=scuro]
 .agenda-calendario .agenda-libero{color:color-mix(in srgb,var(--inchiostro-d) 50%,transparent)}
 .agenda-calendario .agenda-giorno.passato{opacity:.55}
 .btn-vista-calendario.torna-calendario .freccia-vista{display:none}
+/* ── v3.8.32: grafica più uniforme ── */
+/* Intestazioni: pulsante d'azione più piccolo, uguale in tutte le schede */
+.testa-v4 .btn-nuovo-turni-v4,.testata-turni-v4 .btn-nuovo-turni-v4{height:38px;padding:0 14px;font-size:.88rem}
+.btn-testa-icona{flex:none;display:grid;place-items:center;color:var(--acc,#1D4FD7)}
+.anno-assenze-nav{margin:0 0 10px}
+/* Turni: riquadro della turnazione più basso, icone degli strumenti come le sigle dei turni */
+#sezioneStrumentiTurni .azione-genera-v4 i{font-size:.95rem}
+.lista-strumenti-card-v4 .sigla-strumento-v4 .icona-linea{width:20px;height:20px}
+.lista-strumenti-card-v4 .sigla-strumento-v4{opacity:1}
+/* Assenze: saldi di partenza in una riga, voci a zero raccolte in fondo */
+.partenza-v4{border-style:solid!important;padding:6px 10px!important}
+.partenza-v4 i{font-size:.82rem!important}
+.partenza-v4 > span .icona-linea{width:16px;height:16px;color:var(--acc,#1D4FD7)}
+.assenze-altre{margin-top:6px;border-top:1px solid var(--bordo)}
+.assenze-altre > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 4px;font:700 .9rem var(--font-corpo);color:var(--acc,#1D4FD7)}
+.assenze-altre > summary::-webkit-details-marker{display:none}
+.assenze-altre > summary::before{content:'›';display:inline-block;font-size:1.2rem;transition:transform .2s}
+.assenze-altre[open] > summary::before{transform:rotate(90deg)}
+.assenze-altre > summary small{font-weight:500;color:var(--testo-tenue)}
+/* Diario: matita a linea al posto del simbolo */
+.diario-ic{width:13px;height:13px;margin-right:4px;vertical-align:-2px;color:var(--acc,#1D4FD7)}
+html[data-tema=scuro] .diario-ic{color:#8FB0FF}
+/* Riquadro del giorno sotto il Mese con la carta del Diario */
+.scheda-calendario-v2{--carta-d:#FBF8F0;--riga-d:#D9E2F2;--inchiostro-d:#1E2A44;--testa-d:#2C4170}
+html[data-tema=scuro] .scheda-calendario-v2,html.tema-scuro .scheda-calendario-v2{--carta-d:#22324F;--riga-d:#2F4366;--inchiostro-d:#E8EEFA;--testa-d:#9FB7E8}
+.scheda-calendario-v2 .riepilogo-giorno-selezionato-box-v2{background:var(--carta-d)!important;border:0!important;border-radius:14px!important;box-shadow:0 2px 0 #E4DCC8,0 6px 18px rgba(20,30,60,.10);padding:12px 14px 8px!important;margin-top:10px!important;color:var(--inchiostro-d)}
+html[data-tema=scuro] .scheda-calendario-v2 .riepilogo-giorno-selezionato-box-v2{box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.scheda-calendario-v2 .giorno-v4-testa{font:italic 600 .95rem var(--font-corpo);letter-spacing:0;text-transform:capitalize;color:var(--testa-d);border-bottom:1.5px solid var(--testa-d);padding-bottom:4px}
+.scheda-calendario-v2 .giorno-v4-oggi{color:var(--acc,#1D4FD7)}
+.scheda-calendario-v2 .giorno-v4-riga{color:var(--inchiostro-d)}
+.scheda-calendario-v2 #indennitaGiornoSelezionatoV2 .indennita-giorno-badge{border-color:var(--riga-d)!important;color:var(--inchiostro-d)}
+.scheda-calendario-v2 .campo-servizio-svolto{background-color:transparent!important;border-bottom-color:var(--riga-d)!important;color:var(--inchiostro-d)}
+.scheda-calendario-v2 .riga-evento-giorno-v2{border-top-color:var(--riga-d)!important;color:var(--inchiostro-d)}
+html[data-tema=scuro] .dpg-indietro,html[data-tema=scuro] .dpg.oggi .dpg-testa b,html[data-tema=scuro] .scheda-calendario-v2 .giorno-v4-oggi{color:#8FB0FF}

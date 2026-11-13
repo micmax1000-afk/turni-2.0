@@ -1678,14 +1678,14 @@ function paginaGiornoDiario(iso, mezza){
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
     if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
     if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
-    if(t.servizioSvolto) righe.push(`✎ ${escapeHtml(t.servizioSvolto)}`);
+    if(t.servizioSvolto) righe.push(`${svgLinea('matita', 'diario-ic')}${escapeHtml(t.servizioSvolto)}`);
     // v3.8.31: le indennità del giorno come icone piccole (il nome compare tenendo il dito o toccando il giorno).
     const ind = iconeIndennitaDiario(t);
     if(ind) righe.push(`<span class="diario-indennita">${ind}</span>`);
   }
   try{ eventiDelGiorno(iso).forEach(({ ev }) => righe.push(`${ev.tuttoIlGiorno || !ev.oraInizio ? '' : `<span class="diario-ora">${ev.oraInizio}</span> `}${escapeHtml(ev.titolo || 'Evento')}`)); }catch(e){}
   try{
-    U.note.filter(n => n.giorno === iso).forEach(n => righe.push(n.diario ? `<span class="diario-nota-servizio">✎ ${escapeHtml(n.testo.split('\n')[0].slice(0, 80))}</span>` : `✎ ${escapeHtml(n.titolo || n.testo.slice(0, 40))}`));
+    U.note.filter(n => n.giorno === iso).forEach(n => righe.push(n.diario ? `<span class="diario-nota-servizio">${svgLinea('matita', 'diario-ic')}${escapeHtml(n.testo.split('\n')[0].slice(0, 80))}</span>` : `${svgLinea('matita', 'diario-ic')}${escapeHtml(n.titolo || n.testo.slice(0, 40))}`));
     U.uscite.filter(u => u.giorno === iso).forEach(u => { const mz = mezzoDi(u.mezzoId); righe.push(`🚓 ${escapeHtml(mz ? mz.sigla : 'Veicolo')}${kmPercorsi(u) !== null ? ' · ' + numeroIt0(kmPercorsi(u)) + ' km' : ''}`); });
     U.scadenze.filter(x => x.data === iso).forEach(x => righe.push(`<mark>⏰ ${escapeHtml(x.nome)}</mark>`));
   }catch(e){}
@@ -1749,13 +1749,13 @@ function paginaGiornoIntera(iso){
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
     if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
     if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
-    if(t.servizioSvolto) righe.push(`✎ ${escapeHtml(t.servizioSvolto)}`);
+    if(t.servizioSvolto) righe.push(`${svgLinea('matita', 'diario-ic')}${escapeHtml(t.servizioSvolto)}`);
     const chip = typeof chipDettagliGiorno === 'function' ? chipDettagliGiorno(t).filter(c => !/chip-dett-str/.test(c)) : [];
     if(chip.length) righe.push(`<span class="dpg-chip">${chip.join('')}</span>`);
   } else righe.push(`<button type="button" class="dpg-turno vuoto" data-dpg-modifica="${iso}">＋ Segna il turno</button>`);
   try{ eventiDelGiorno(iso).forEach(({ ev }) => righe.push(`${ev.tuttoIlGiorno || !ev.oraInizio ? '' : `<span class="diario-ora">${ev.oraInizio}</span> `}${escapeHtml(ev.titolo || 'Evento')}`)); }catch(e){}
   try{
-    U.note.filter(n => n.giorno === iso && !n.diario).forEach(n => righe.push(`<span role="button" data-ut-apri="nota" data-id="${n.id}">✎ ${escapeHtml(n.titolo || n.testo.slice(0, 60))}</span>`));
+    U.note.filter(n => n.giorno === iso && !n.diario).forEach(n => righe.push(`<span role="button" data-ut-apri="nota" data-id="${n.id}">${svgLinea('matita', 'diario-ic')}${escapeHtml(n.titolo || n.testo.slice(0, 60))}</span>`));
     U.uscite.filter(u => u.giorno === iso).forEach(u => { const mz = mezzoDi(u.mezzoId); righe.push(`🚓 ${escapeHtml(mz ? mz.sigla : 'Veicolo')}${kmPercorsi(u) !== null ? ' · ' + numeroIt0(kmPercorsi(u)) + ' km' : ''}`); });
     U.scadenze.filter(x => x.data === iso).forEach(x => righe.push(`<mark>⏰ ${escapeHtml(x.nome)}</mark>`));
   }catch(e){}

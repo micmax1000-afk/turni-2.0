@@ -109,7 +109,7 @@
     <button class="link-cancella-anagrafica" id="btnCancellaTurniMese" type="button">Cancella i turni del mese…</button>
 
     <div class="agenda-sotto-calendario" id="agendaSottoCalendario" hidden>
-      <div class="agenda-sotto-titolo"><span>📅 Prossimi 14 giorni</span><small>turni, ore ed eventi</small></div>
+      <div class="agenda-sotto-titolo"><span>Prossimi 14 giorni</span><small>turni, ore ed eventi</small></div>
       <div class="agenda-calendario" id="agendaCalendario"></div>
     </div>
 
@@ -272,7 +272,7 @@
               <label class="campo-modale" id="campoEventoOraPromemoriaWrap" hidden>Il promemoria arriva alle<input type="time" id="campoEventoOraPromemoria" value="08:00"></label>
               <small id="hintPromemoriaEvento"></small>
               <div class="avviso-permessi-evento" id="avvisoPermessiEvento" hidden>
-                <span>⚠️ Le notifiche dell'app sono disattivate: i promemoria non arriveranno.</span>
+                <span><span>⚠️</span> Le notifiche dell'app sono disattivate: i promemoria non arriveranno.</span>
                 <button type="button" class="btn-secondario" id="btnAttivaNotificheEvento">Attiva notifiche</button>
               </div>
               <div class="avviso-batteria" id="avvisoBatteriaEvento" hidden>
@@ -482,7 +482,7 @@
     <section class="scheda" id="sezioneReportTop">
       <div class="intestazione-scheda testa-v4">
         <div><h2>Report</h2><p class="sotto-v4">Quanto arriva sul conto</p></div>
-        <button type="button" class="btn-nuovo-turni-v4" id="btnPersonalizzaReport" title="Scegli cosa vedere">Personalizza</button>
+        <button type="button" class="btn-icona tondo-v4 btn-testa-icona" id="btnPersonalizzaReport" title="Scegli cosa vedere" aria-label="Scegli cosa vedere nel Report"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
       </div>
       <div class="manca-dati-v5" id="avvisoReportMancanti" hidden></div>
       <div class="report-mese-nav">
@@ -622,7 +622,7 @@
     <summary>💰 Cosa arriva sul conto ▾</summary>
     <section class="scheda" id="sezioneAccreditoConto">
     <p class="sotto-titolo">Il Cedolino Simulato più sotto mostra quanto <strong>maturi</strong> lavorando nel mese selezionato. Questa scheda invece ricostruisce quanto ti <strong>arriva davvero sul conto</strong> in quel mese, tenendo conto dei tempi reali di accredito NoiPA: lo stipendio base del mese lavorato arriva il mese dopo, le indennità accessorie con un mese di ritardo ulteriore. La tredicesima invece non è sfasata, arriva a dicembre.</p>
-    <p class="avviso-tabelle">⚠ Il calcolo fiscale qui è una stima: nella realtà NoiPA emette due cedolini separati (stipendio e accessorio) con trattamento fiscale proprio; questa scheda somma i due lordi e applica un unico calcolo approssimato — usala per farti un'idea, non come previsione esatta.</p>
+    <p class="avviso-tabelle"><span>⚠️</span> Il calcolo fiscale qui è una stima: nella realtà NoiPA emette due cedolini separati (stipendio e accessorio) con trattamento fiscale proprio; questa scheda somma i due lordi e applica un unico calcolo approssimato — usala per farti un'idea, non come previsione esatta.</p>
     <button class="btn-primario" id="btnGeneraAccreditoConto" type="button">Genera Stima Accredito</button>
     <div id="contenitoreAccreditoConto" class="contenitore-cedolino" hidden></div>
     <button class="btn-secondario" id="btnCancellaAccreditoConto" type="button" hidden style="margin-top:12px;">🗑️ Cancella Stima Accredito</button>
@@ -674,11 +674,11 @@
   <section class="scheda" id="sezioneStrumentiTurni">
     <div class="testata-turni-v4">
       <div><h2>Turni</h2><p class="sotto-turni-v4" id="meseTurniV4"></p></div>
-      <button type="button" class="btn-nuovo-turni-v4" id="btnNuovoTurnoTab">Nuovo servizio</button>
+      <button type="button" class="btn-nuovo-turni-v4" id="btnNuovoTurnoTab" aria-label="Nuovo servizio">＋ Servizio</button>
     </div>
     <button type="button" class="azione-genera-v4" id="settingsSequenza">
       <span class="icona-genera-v4"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 013-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 01-3 3H4"/></svg></span>
-      <i>Genera turni automaticamente<small id="statoSequenzaTurni">Ripete una sequenza sul calendario</small></i>
+      <i>Turnazione automatica<small id="statoSequenzaTurni">Ripete una sequenza sul calendario</small></i>
       <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
     </button>
     <p class="strumenti-turni-titolo">I tuoi turni</p>
@@ -696,12 +696,12 @@
       </button>
       <button type="button" class="turno-v4 turno-compatto-v4" id="btnCancellaTurniTurni">
         <span class="sigla-v4 sigla-strumento-v4" style="background:#FDECEA;color:#C62828">🗑️</span>
-        <span class="testo-v4"><strong>Cancella i turni di un mese</strong><small id="meseCancellaTurni">Il mese aperto nel calendario</small></span>
+        <span class="testo-v4"><strong>Cancella un mese</strong><small id="meseCancellaTurni">Il mese aperto nel calendario</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
       <button type="button" class="turno-v4 turno-compatto-v4" id="btnApriEsportaCalendario">
         <span class="sigla-v4 sigla-strumento-v4" style="background:#E8F0FE;color:#1D4FD7">📤</span>
-        <span class="testo-v4"><strong>Esporta in Google Calendar</strong><small>I turni in un file da importare</small></span>
+        <span class="testo-v4"><strong>Esporta i turni</strong><small>In Google Calendar, con un file</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
       <button type="button" class="turno-v4 turno-compatto-v4" id="settingsColori">
@@ -711,7 +711,7 @@
       </button>
       <button type="button" class="turno-v4 turno-compatto-v4" id="btnRipristinaColoriTurni">
         <span class="sigla-v4 sigla-strumento-v4" style="background:#FFF4E0;color:#B36B00">🔄</span>
-        <span class="testo-v4"><strong>Colori predefiniti dei turni</strong><small>Rimette i colori di partenza a tutti i turni</small></span>
+        <span class="testo-v4"><strong>Colori di serie</strong><small>Rimette i colori di partenza</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
     </div>
@@ -739,7 +739,7 @@
       <div class="riquadro-giorno altro-giorno-v2">
         <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="toggleCalendarioAColori"><span>Calendario a colori<small id="spiegaCalendarioAColori">Ogni turno con il suo colore</small></span></label>
       </div>
-      <p class="nota-stile">✏️ Il colore di un turno si cambia in <b>Turni</b>, toccando il turno.</p>
+      <p class="nota-stile"><span>✏️</span> Il colore di un turno si cambia in <b>Turni</b>, toccando il turno.</p>
       <button class="btn-primario foglio-stile-fatto" id="btnChiudiColoriTurni2" type="button">Fatto</button>
     </div>
 
@@ -752,8 +752,9 @@
   <section class="scheda" id="sezioneAssenze">
     <div class="intestazione-scheda testa-v4">
       <div><h2>Assenze</h2><p class="sotto-v4" id="sottotitoloAssenze">Quanto ti resta</p></div>
-      <button type="button" class="btn-nuovo-turni-v4" id="btnNuovaAssenzaTesta">Nuova assenza</button>
+      <button type="button" class="btn-nuovo-turni-v4" id="btnNuovaAssenzaTesta" aria-label="Nuova assenza">＋ Assenza</button>
     </div>
+    <div class="report-mese-nav anno-assenze-nav" id="annoAssenzeNav"></div>
     <div id="assenzeSummaryGrid" class="saldi-hero" aria-live="polite" hidden></div>
     <div id="saldiPartenzaBox"></div>
     <div class="assenze-filtri-seg" role="group" aria-label="Filtra assenze" hidden>
@@ -1054,7 +1055,7 @@
           <label class="riga-anagrafica" id="rigaOraPromemoriaTurno"><span>Alle</span><input type="time" id="campoOraPromemoriaTurno" value="20:00"></label>
           <label class="riga-anagrafica" id="rigaMinutiPromemoriaTurno" hidden><span>Quanto prima</span><select id="campoMinutiPromemoriaTurno"><option value="30">30 minuti</option><option value="60" selected>1 ora</option><option value="120">2 ore</option></select></label>
           <div class="avviso-permessi-evento" id="avvisoNotificheTurno" hidden>
-            <span>⚠️ Le notifiche dell'app sono disattivate: i promemoria del turno non arriveranno.</span>
+            <span><span>⚠️</span> Le notifiche dell'app sono disattivate: i promemoria del turno non arriveranno.</span>
             <button type="button" class="btn-secondario" id="btnAttivaNotificheTurno">Attiva notifiche</button>
           </div>
           <div class="avviso-batteria" id="avvisoBatteriaTurno" hidden>
@@ -1153,7 +1154,7 @@
   <div class="benvenuto-passo" data-passo-benvenuto="1">
     <p class="benvenuto-prog">Passo 1 di 5</p>
     <div class="benvenuto-hero">
-      <h2>Benvenuto! 👋</h2>
+      <h2>Benvenuto!</h2>
       <p>I tuoi turni, quanto arriva in busta e le ferie: tutto in un'app, e i dati restano sul telefono.</p>
       <div class="benvenuto-striscia" id="benvenutoStriscia"></div>
     </div>
@@ -1209,7 +1210,7 @@
   </div>
   <div class="benvenuto-passo" data-passo-benvenuto="5" hidden>
     <p class="benvenuto-prog">Passo 5 di 5</p>
-    <h2>Tutto pronto! 🎉</h2>
+    <h2>Tutto pronto!</h2>
     <div class="benvenuto-card benvenuto-riepilogo" id="benvenutoRiepilogo"></div>
     <p class="titolo-sezione-giorno">Tre cose utili</p>
     <div class="benvenuto-consiglio"><span>👆</span><div><b>Tocca un giorno</b> per vederlo, poi <b>Turno</b> o <b>Modifica</b> per cambiarlo.</div></div>
