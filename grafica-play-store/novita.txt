@@ -1,4 +1,5 @@
 <it-IT>
-• Scorrendo la pagina il calendario non cambia più vista per sbaglio
-• La vista (Diario, Mese, Anno) si sceglie dal pulsante in alto
+• Nuova pagina «Colori dei turni»: scegli i colori con un tocco
+• I turni nuovi ricevono un colore che nessun altro turno usa
+• Il Classico rispetta sempre i tuoi colori; correzioni nel riquadro del giorno
 </it-IT>

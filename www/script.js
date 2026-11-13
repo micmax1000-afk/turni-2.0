@@ -863,6 +863,17 @@ function inizializza(){
   });
   on('btnChiudiColoriTurni','click', chiudiPannelloColori);
   on('btnChiudiColoriTurni2','click', chiudiPannelloColori);
+  on('btnApriColoriTurniPagina', 'click', apriColoriTurniPagina);
+  // v3.8.36: da «Stile calendario» si arriva ai colori con un tocco (si chiude il foglio dello stile).
+  on('btnStileApriColori', 'click', () => { const c = el('btnChiudiColoriTurni'); if(c) c.click(); apriColoriTurniPagina(); });
+  on('btnChiudiColoriTurniPagina', 'click', () => { el('overlayColoriTurniPagina').hidden = true; });
+  on('btnColoriDiversiTurni', 'click', coloriDiversiPerTurni);
+  on('elencoColoriTurni', 'click', e => {
+    const b = e.target.closest('[data-colore-turno]'); if(!b) return;
+    const m = (AppState.modelliTurno || []).find(x => x.id === b.dataset.coloreTurno); if(!m) return;
+    m.colore = b.dataset.colore; el('avvisoColoriTurni').hidden = true;
+    aggiornaDopoColoriTurni();
+  });
   el('btnRipristinaColoriTurni').addEventListener('click', () => {
     mostraConferma('Tutti i turni tornano ai colori di partenza (Sera rosa, Pomeriggio arancio, Mattino giallo…). Continuare?', () => {
       AppState.coloriTurni = {};
@@ -877,6 +888,7 @@ function inizializza(){
       if(typeof renderCalendario === 'function') renderCalendario();
       if(typeof renderListaModelliTurniV2 === 'function') renderListaModelliTurniV2();
       if(typeof renderModelliTabTurni === 'function') renderModelliTabTurni();
+      if(el('overlayColoriTurniPagina') && !el('overlayColoriTurniPagina').hidden) renderColoriTurniPagina();
     });
   });
 
@@ -1120,6 +1132,12 @@ function inizializza(){
     modelloColoreForzatoV2 = el('campoModModelloColore').value;
     dipingiSwatchModelloV2();
     aggiornaStatoColoreModelloV2();
+  });
+  on('tavolozzaModello', 'click', e => {
+    const b = e.target.closest('[data-colore-tavolozza]'); if(!b) return;
+    modelloColoreForzatoV2 = b.dataset.coloreTavolozza;
+    el('campoModModelloColore').value = modelloColoreForzatoV2;
+    dipingiSwatchModelloV2(); aggiornaStatoColoreModelloV2(); aggiornaAnteprimaModelloV2();
   });
   on('btnModModelloColoreAutomatico','click', () => {
     modelloColoreForzatoV2 = null;
@@ -2036,14 +2054,80 @@ function coloreAutomaticoPerModello(m){
 }
 // Il quadratino viene dipinto direttamente col colore scelto, invece di affidarsi solo a come la
 // WebView disegna il campo colore nativo: così mostra sempre il colore vero, in ogni caso.
+// v3.8.36: tavolozza di colori tenui; a un turno nuovo l'app propone un colore che nessun altro turno usa.
+const TAVOLOZZA_TURNI = ['#8EC5E8', '#A8D5A2', '#C9B6F0', '#F7C59F', '#E8D49A', '#F4A6B8', '#9FD8D0', '#D5C4A1', '#B5C7F5', '#F2B8E0', '#C2D98A', '#FFB3A7'];
+function coloreLiberoProposto(){
+  const usati = new Set((AppState.modelliTurno || []).map(m => String(coloreModelloV2(m) || '').toLowerCase()));
+  return TAVOLOZZA_TURNI.find(c => !usati.has(c.toLowerCase())) || TAVOLOZZA_TURNI[(AppState.modelliTurno || []).length % TAVOLOZZA_TURNI.length];
+}
+function disegnaTavolozzaModelloV2(){
+  const box = el('tavolozzaModello'); if(!box) return;
+  const attuale = String(el('campoModModelloColore').value || '').toLowerCase();
+  box.innerHTML = TAVOLOZZA_TURNI.map(c => `<button type="button" data-colore-tavolozza="${c}" class="${c.toLowerCase() === attuale ? 'attivo' : ''}" style="background:${c}" aria-label="Colore ${c}"></button>`).join('');
+}
+// ── v3.8.36: pagina «Colori dei turni» ──
+function aggiornaDopoColoriTurni(){
+  salvaModelliTurnoStorage();
+  if(typeof renderCalendario === 'function') renderCalendario();
+  if(typeof renderListaModelliTurniV2 === 'function') renderListaModelliTurniV2();
+  if(typeof renderModelliTabTurni === 'function') renderModelliTabTurni();
+  renderColoriTurniPagina();
+}
+function renderColoriTurniPagina(){
+  const box = el('elencoColoriTurni'); if(!box) return;
+  const modelli = AppState.modelliTurno || [];
+  box.innerHTML = modelli.map(m => {
+    const c = String(coloreModelloV2(m) || '').toLowerCase();
+    const fuori = !TAVOLOZZA_TURNI.some(x => x.toLowerCase() === c);
+    const pallini = (fuori ? [c] : []).concat(TAVOLOZZA_TURNI).map(x => `<button type="button" data-colore-turno="${escapeHtml(m.id)}" data-colore="${x}" class="${x.toLowerCase() === c ? 'attivo' : ''}" style="background:${x}" aria-label="${escapeHtml(m.nome)}: colore ${x}"></button>`).join('');
+    return `<div class="colore-turno-riga"><span class="colore-turno-nome"><b style="background:${c};color:${testoSuColore(c)}">${escapeHtml(String(m.sigla || m.nome.slice(0, 2)).toUpperCase())}</b>${escapeHtml(m.nome)}</span><span class="colore-turno-pallini">${pallini}</span></div>`;
+  }).join('');
+  // In cima un pezzo di calendario: la settimana del giorno scelto, con i colori di adesso.
+  const anteprima = el('anteprimaColoriTurni');
+  if(anteprima){
+    const lun = typeof lunediDi === 'function' ? dataISO(lunediDi(giornoSelezionato || dataISO(new Date()))) : dataISO(new Date());
+    const nomi = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+    anteprima.innerHTML = nomi.map((n, k) => {
+      const iso = giornoPiu(lun, k), t = AppState.turni[iso], col = t ? coloreGiornoVista(t) : '';
+      const breve = !t ? '—' : t.riposo ? 'Rip.' : t.assenzaTipo ? nomeGiornoVista(t).slice(0, 5)
+        : (t.oraInizio && t.oraFine && NOME_BREVE_CATEGORIA[categoriaTurno(t.oraInizio, t.oraFine, iso)]) || nomeGiornoVista(t).slice(0, 5);
+      return `<span><small>${n} ${dataDaIso(iso).getDate()}</small><b style="${col ? `background:${col};color:${testoSuColore(col)}` : ''}">${escapeHtml(breve)}</b></span>`;
+    }).join('');
+  }
+}
+function apriColoriTurniPagina(){ const o = el('overlayColoriTurniPagina'); if(o.parentElement !== document.body) document.body.appendChild(o); el('avvisoColoriTurni').hidden = true; renderColoriTurniPagina(); el('overlayColoriTurniPagina').hidden = false; }
+function distanzaColori(a, b){ const x = rgbDaHex(a), y = rgbDaHex(b); if(!x || !y) return 999; return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]); }
+// «Un colore diverso per ogni turno»: chi ha lo stesso colore (o quasi) di un turno prima prende un colore libero.
+function coloriDiversiPerTurni(){
+  const modelli = AppState.modelliTurno || [], prima = modelli.map(m => [m, m.colore]);
+  const presi = [];
+  let cambiati = 0;
+  modelli.forEach(m => {
+    const c = coloreModelloV2(m);
+    if(presi.some(p => distanzaColori(p, c) < 35)){
+      const libero = TAVOLOZZA_TURNI.find(x => !presi.some(p => distanzaColori(p, x) < 35) && !modelli.some(o => o !== m && distanzaColori(coloreModelloV2(o), x) < 30));
+      if(libero){ m.colore = libero; cambiati++; presi.push(libero); return; }
+    }
+    presi.push(c);
+  });
+  aggiornaDopoColoriTurni();
+  const avviso = el('avvisoColoriTurni');
+  avviso.innerHTML = cambiati ? `Colore cambiato a ${cambiati} ${cambiati === 1 ? 'turno' : 'turni'}. <button type="button" id="btnAnnullaColoriDiversi">Annulla</button>` : 'Hanno già tutti un colore diverso.';
+  avviso.hidden = false;
+  const annulla = el('btnAnnullaColoriDiversi');
+  if(annulla) annulla.onclick = () => { prima.forEach(([m, c]) => { if(c) m.colore = c; else delete m.colore; }); aggiornaDopoColoriTurni(); avviso.hidden = true; };
+}
 function dipingiSwatchModelloV2(){
+  disegnaTavolozzaModelloV2();
   const campo = el('campoModModelloColore');
   if(campo && campo.parentElement) campo.parentElement.style.background = campo.value;
 }
 function aggiornaStatoColoreModelloV2(){
   const stato = el('modModelloColoreStato');
   if(!stato) return;
-  stato.textContent = modelloColoreForzatoV2
+  stato.textContent = modelloColoreForzatoV2 && !modelloInModificaV2 && modelloColoreForzatoV2 === coloreLiberoProposto()
+    ? 'Colore proposto: nessun altro turno lo usa. Toccane un altro per cambiarlo.'
+    : modelloColoreForzatoV2
     ? 'Colore scelto a mano — resta questo, qualsiasi orario tu imposti.'
     : 'Colore automatico, in base alla fascia oraria del servizio.';
 }
@@ -2064,7 +2148,8 @@ function apriModificaModelloV2(id){
   el('campiModModelloOrario').hidden = isRiposo;
   el('campoModModelloInizio').value = m ? (m.oraInizio || '') : '';
   el('campoModModelloFine').value = m ? (m.oraFine || '') : '';
-  modelloColoreForzatoV2 = (m && m.colore) || null;
+  // v3.8.36: turno nuovo → colore proposto, diverso da quelli già usati (si cambia con un tocco).
+  modelloColoreForzatoV2 = (m && m.colore) || (!m ? coloreLiberoProposto() : null);
   el('campoModModelloColore').value = modelloColoreForzatoV2 || coloreAutomaticoPerModello(m);
   dipingiSwatchModelloV2();
   aggiornaStatoColoreModelloV2();
@@ -2420,8 +2505,8 @@ function infoTurnoGiornata(t, iso){
   const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
   const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
   return {
-    nome: modello ? modello.nome : (INIZIALE_CATEGORIA[categoria] || 'Turno'),
-    colore: (modello && modello.colore) || coloreCategoria(categoriaColore),
+    nome: modello ? modello.nome : (nomeGiornoVista(t) !== 'Turno' ? nomeGiornoVista(t) : (INIZIALE_CATEGORIA[categoria] || 'Turno')),
+    colore: (modello && modello.colore) || ((modelloColoreGiorno(t, categoriaColore) || {}).colore) || coloreCategoria(categoriaColore),
     icona: ICONA_CATEGORIA[categoria] || '🕒'
   };
 }
@@ -3379,8 +3464,9 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
     const modelli = AppState.modelliTurno || [];
     const m = modelli.find(x => !x.riposo && turnoUsaModello(t, x));
     const cat = categoriaTurno(t.oraInizio, t.oraFine, giornoSelezionato);
-    nome = m ? m.nome : (cat.charAt(0).toUpperCase() + cat.slice(1));
-    colore = m ? coloreModelloV2(m) : coloreCategoria(cat);
+    // v3.8.36: orari cambiati a mano → nome e colore del tuo turno della stessa fascia, come nel calendario.
+    nome = m ? m.nome : (typeof nomeGiornoVista === 'function' && nomeGiornoVista(t) !== 'Turno' ? nomeGiornoVista(t) : (cat.charAt(0).toUpperCase() + cat.slice(1)));
+    colore = m ? coloreModelloV2(m) : (typeof coloreGiornoVista === 'function' ? coloreGiornoVista(t) : coloreCategoria(cat));
     orario = `${t.oraInizio} – ${t.oraFine}`;
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine) orario += ` · rientro ${t.secondoOraInizio} – ${t.secondoOraFine}`;
     if(typeof classificaTurno === 'function'){

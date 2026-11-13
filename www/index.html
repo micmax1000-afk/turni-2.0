@@ -137,6 +137,22 @@
       </div>
     </div>
 
+    <!-- v3.8.36: Colori dei turni — tutti i turni in una pagina, si sceglie il colore con un tocco -->
+    <div class="overlay" id="overlayColoriTurniPagina" hidden>
+      <div class="modale modale-colori-turni">
+        <div class="modale-header"><h2>Colori dei turni</h2><button class="btn-icona" id="btnChiudiColoriTurniPagina" aria-label="Chiudi">✕</button></div>
+        <div class="modale-corpo">
+          <div class="colori-anteprima" id="anteprimaColoriTurni" aria-hidden="true"></div>
+          <div class="colori-avviso" id="avvisoColoriTurni" hidden></div>
+          <div id="elencoColoriTurni"></div>
+        </div>
+        <div class="modale-footer colori-turni-footer">
+          <button class="btn-secondario" id="btnColoriDiversiTurni" type="button">Un colore diverso per ogni turno</button>
+          <button class="btn-secondario" id="btnRipristinaColoriTurni" type="button">Colori di serie</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Nuovo turno personalizzato / modifica di un turno esistente (dei 5 di base o personalizzato) -->
     <div class="overlay" id="overlayModificaModello" hidden>
       <div class="modale">
@@ -159,6 +175,7 @@
             </label>
             <button type="button" class="btn-secondario" id="btnModModelloColoreAutomatico">Automatico</button>
           </div>
+          <div class="tavolozza-modello" id="tavolozzaModello" role="group" aria-label="Colori proposti"></div>
           <p class="sotto-titolo" id="modModelloColoreStato" style="margin:4px 0 0;font-size:.74rem;"></p>
         </div>
         <div class="modale-footer" style="justify-content:space-between;">
@@ -708,9 +725,9 @@
         <span class="testo-v4"><strong>Stile calendario</strong><small id="statoColoriTurni">Classico · a colori</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
-      <button type="button" class="turno-v4 turno-compatto-v4" id="btnRipristinaColoriTurni">
-        <span class="sigla-v4 sigla-strumento-v4" style="background:#FFF4E0;color:#B36B00">🔄</span>
-        <span class="testo-v4"><strong>Colori di serie</strong><small>Rimette i colori di partenza</small></span>
+      <button type="button" class="turno-v4 turno-compatto-v4" id="btnApriColoriTurniPagina">
+        <span class="sigla-v4 sigla-strumento-v4" style="background:#FFF4E0;color:#B36B00">🎨</span>
+        <span class="testo-v4"><strong>Colori dei turni</strong><small>Scegli i colori con un tocco</small></span>
         <svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
     </div>
@@ -747,7 +764,7 @@
       <div class="riquadro-giorno altro-giorno-v2">
         <label class="riga-opzione-seq"><input type="checkbox" class="interruttore" id="toggleCalendarioAColori"><span>Calendario a colori<small id="spiegaCalendarioAColori">Ogni turno con il suo colore</small></span></label>
       </div>
-      <p class="nota-stile"><span>✏️</span> Il colore di un turno si cambia in <b>Turni</b>, toccando il turno.</p>
+      <button type="button" class="btn-secondario btn-cambia-colori" id="btnStileApriColori"><span>🎨</span> Cambia i colori dei turni</button>
       <button class="btn-primario foglio-stile-fatto" id="btnChiudiColoriTurni2" type="button">Fatto</button>
     </div>
 
