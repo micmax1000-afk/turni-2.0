@@ -1347,7 +1347,7 @@ function corpoGiornoAgenda(iso, t){
   const rientro = t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine
     ? `<span class="agenda-rientro">${iconaLineaAgenda('orologio')}Rientro ${escapeHtml(t.secondoOraInizio)} – ${escapeHtml(t.secondoOraFine)}</span>` : '';
   const nota = notaServizioHtml(t);
-  return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)}">`
+  return `<span class="agenda-turno" style="--colore-turno:${escapeHtml(colore)};--testo-turno:${testoSuColore(colore)}">`
     + `<span class="agenda-turno-testo"><b>${escapeHtml(nome)}</b><small>${escapeHtml(t.oraInizio)} – ${escapeHtml(t.oraFine)}</small>${rientro}`
     + `${chip ? `<span class="agenda-indennita">${chip}</span>` : ''}${nota}</span>`
     + `${oreConStraordinarioHtml(t, 'agenda-ore')}</span>`;

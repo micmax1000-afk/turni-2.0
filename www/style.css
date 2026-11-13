@@ -3450,3 +3450,30 @@ html[data-tema=scuro] .diario-ora{color:#8FB0FF}
 .diario-note-testo{flex:1;width:100%;border:0;background:none;resize:none;padding:0;margin:0;font:500 .78rem/22px var(--font-corpo);color:var(--inchiostro-d)}
 .diario-note-testo::placeholder{color:color-mix(in srgb,var(--inchiostro-d) 40%,transparent);font-style:italic}
 .diario-note-testo:focus{outline:none}
+
+/* ── v3.8.32: Agenda con la grafica del Diario: carta, inchiostro blu, giorni in corsivo, turno in etichetta colorata ── */
+.agenda-calendario{--carta-d:#FBF8F0;--riga-d:#D9E2F2;--inchiostro-d:#1E2A44;--testa-d:#2C4170}
+html[data-tema=scuro] .agenda-calendario,html.tema-scuro .agenda-calendario{--carta-d:#22324F;--riga-d:#2F4366;--inchiostro-d:#E8EEFA;--testa-d:#9FB7E8}
+.agenda-calendario #agendaElenco{background:var(--carta-d);border-radius:14px;box-shadow:0 2px 0 #E4DCC8,0 6px 18px rgba(20,30,60,.12);padding:4px 12px 12px;color:var(--inchiostro-d)}
+html[data-tema=scuro] .agenda-calendario #agendaElenco{box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.agenda-calendario .agenda-precedenti{border-color:var(--riga-d);margin:8px 0 2px;color:var(--testa-d)}
+.agenda-calendario .agenda-settimana{margin:16px 0 2px;padding-bottom:3px;border-bottom:1.5px solid var(--testa-d);color:var(--testa-d);font:italic 600 .9rem var(--font-corpo);letter-spacing:0;text-transform:none}
+.agenda-calendario .agenda-settimana b{font-style:normal;color:var(--inchiostro-d)}
+.agenda-calendario .agenda-giorno{border-bottom:1px solid var(--riga-d);padding:9px 0}
+.agenda-calendario .agenda-giorno:last-of-type{border-bottom:0}
+.agenda-calendario .agenda-data small{font:italic 600 .78rem var(--font-corpo);text-transform:capitalize;color:var(--testa-d)}
+.agenda-calendario .agenda-data b{font-weight:800;color:var(--inchiostro-d)}
+.agenda-calendario .agenda-giorno.oggi .agenda-data b{background:var(--acc,#1D4FD7);color:#fff;border-radius:999px;width:auto;min-width:30px;height:30px;padding:0 6px}
+.agenda-calendario .agenda-giorno.festivo .agenda-data small,.agenda-calendario .agenda-giorno.festivo .agenda-data b{color:#C62828}
+.agenda-calendario .agenda-quando{color:var(--acc,#1D4FD7);font:italic 600 .78rem var(--font-corpo);text-transform:none;letter-spacing:0}
+.agenda-calendario .agenda-turno{background:none;border:0;border-radius:0;padding:0}
+.agenda-calendario .agenda-turno-testo b{display:inline-block;padding:0 8px;border-radius:6px;line-height:22px;background:var(--colore-turno);color:var(--testo-turno,#1E2A44);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);margin-right:6px;font-size:.86rem}
+.agenda-calendario .agenda-turno-testo small{color:var(--inchiostro-d);font-weight:600;font-size:.86rem;white-space:nowrap}
+.agenda-calendario .agenda-turno .agenda-ore{color:var(--inchiostro-d)}
+.agenda-calendario .agenda-indennita .chip-dett{color:var(--inchiostro-d)}
+.agenda-calendario .agenda-evento{color:var(--inchiostro-d)}
+.agenda-calendario .agenda-evento em{color:var(--acc,#1D4FD7);font-weight:700}
+html[data-tema=scuro] .agenda-calendario .agenda-evento em,html[data-tema=scuro] .agenda-calendario .agenda-rientro,html[data-tema=scuro] .agenda-calendario .agenda-quando{color:#8FB0FF}
+.agenda-calendario .agenda-chip-giorno b{line-height:22px;padding:0 8px;border-radius:6px}
+.agenda-calendario .agenda-libero{color:color-mix(in srgb,var(--inchiostro-d) 50%,transparent)}
+.agenda-calendario .agenda-giorno.passato{opacity:.55}
