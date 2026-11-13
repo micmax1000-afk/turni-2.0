@@ -771,7 +771,8 @@ function renderCalendario(){
         sfondoC2 = luminanzaColore(base) > 0.9 ? mescolaColori(predefinito, '#FFFFFF', 0.45) : base;
         testoC2 = testoLeggibileSu(sfondoC2);
       } else {
-        testoC2 = mescolaColori(predefinito, '#1E2129', 0.62);
+        // Senza colori: sigla nera, rossa la domenica e nei festivi; il riposo in grigio.
+        testoC2 = eFestivoOdDomenica(iso) ? '#C62828' : categoria === 'riposo' ? '#8A909C' : '';
       }
     }
     const siglaC2 = !conTurno ? ''

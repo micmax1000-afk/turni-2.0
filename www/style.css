@@ -3512,23 +3512,20 @@ html[data-tema=scuro] .scheda-calendario-v2 .riepilogo-giorno-selezionato-box-v2
 .scheda-calendario-v2 .campo-servizio-svolto{background-color:transparent!important;border-bottom-color:var(--riga-d)!important;color:var(--inchiostro-d)}
 .scheda-calendario-v2 .riga-evento-giorno-v2{border-top-color:var(--riga-d)!important;color:var(--inchiostro-d)}
 html[data-tema=scuro] .dpg-indietro,html[data-tema=scuro] .dpg.oggi .dpg-testa b,html[data-tema=scuro] .scheda-calendario-v2 .giorno-v4-oggi{color:#8FB0FF}
-/* ── v3.8.33: calendario Classico — griglia regolare come nelle app di turni ── */
+/* ── v3.8.33: calendario Classico — griglia regolare; in alto la fascia col numero, sotto il turno ── */
 body:not(.calendario-moderno) #calendarioGriglia{gap:0!important;border-top:1px solid var(--bordo);border-left:1px solid var(--bordo);border-radius:10px;overflow:hidden}
-body:not(.calendario-moderno) .giorno-cella.c2{position:relative;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:2px!important;height:62px!important;min-height:62px!important;max-height:62px!important;padding:4px 2px!important;margin:0!important;border:0!important;border-right:1px solid var(--bordo)!important;border-bottom:1px solid var(--bordo)!important;border-radius:0!important;box-shadow:none!important;outline:0;overflow:hidden;color:var(--c2-testo,var(--testo))!important;transform:none!important}
-body:not(.calendario-moderno) .giorno-cella.c2:not(.c2-turno){background:var(--pannello,#fff)!important}
-body:not(.calendario-moderno) .giorno-cella.c2.sabato:not(.c2-turno),body:not(.calendario-moderno) .giorno-cella.c2.domenica:not(.c2-turno){background:color-mix(in srgb,var(--testo) 4%,var(--pannello,#fff))!important}
-.giorno-cella.c2 .c2-numero{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:999px;font:700 .82rem/1 var(--font-corpo);color:inherit;opacity:.85}
-.giorno-cella.c2.festivo .c2-numero{color:#C62828;opacity:1}
-.giorno-cella.c2.c2-turno.festivo .c2-numero{color:inherit;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
-.giorno-cella.c2 .c2-sigla{font:800 .92rem/1.1 var(--font-corpo);letter-spacing:-.01em;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:clip}
-.giorno-cella.c2 .c2-straord{font:800 .62rem/1 var(--font-corpo);padding:1px 4px;border-radius:5px;background:rgba(255,255,255,.75);color:#6D3FD9}
-.giorno-cella.c2 .c2-eventi{position:absolute;top:5px;right:4px;display:flex;flex-direction:column;gap:2px}
-.giorno-cella.c2 .c2-eventi i{display:block;width:6px;height:6px;border-radius:50%;background:var(--c-ev,#2E7DD7);box-shadow:0 0 0 1px rgba(255,255,255,.8)}
-/* Oggi: solo il numero nel cerchio blu. Selezionato: bordo sottile blu. */
-body:not(.calendario-moderno) .giorno-cella.c2.oggi .c2-numero{background:var(--acc,#1D4FD7);color:#fff;opacity:1;text-decoration:none}
+body:not(.calendario-moderno) .giorno-cella.c2{position:relative;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:0!important;height:62px!important;min-height:62px!important;max-height:62px!important;padding:0!important;margin:0!important;border:0!important;border-right:1px solid var(--bordo)!important;border-bottom:1px solid var(--bordo)!important;border-radius:0!important;box-shadow:none!important;outline:0;overflow:hidden;color:var(--c2-testo,var(--testo))!important;transform:none!important}
+body:not(.calendario-moderno) .giorno-cella.c2:not(.c2-turno),body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-colori{background:var(--pannello,#fff)!important}
+/* Fascia del numero: sempre su fondo neutro, così il rosso dei festivi e il blu di oggi si leggono su qualunque turno */
+.giorno-cella.c2 .c2-numero{display:block;flex:none;height:19px;line-height:19px;text-align:center;font:700 .76rem/19px var(--font-corpo);background:color-mix(in srgb,var(--testo) 6%,var(--pannello,#fff));color:var(--testo);border-bottom:1px solid color-mix(in srgb,var(--bordo) 70%,transparent)}
+.giorno-cella.c2.festivo .c2-numero{background:#FDE7E7;color:#C62828}
+html[data-tema=scuro] .giorno-cella.c2.festivo .c2-numero{background:#4A2328;color:#FF8A80}
+body:not(.calendario-moderno) .giorno-cella.c2.oggi .c2-numero{background:var(--acc,#1D4FD7);color:#fff}
+.giorno-cella.c2 .c2-sigla{flex:1;display:flex;align-items:center;justify-content:center;font:800 .95rem/1 var(--font-corpo);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;padding:0 2px}
+.giorno-cella.c2 .c2-straord{position:absolute;left:50%;bottom:3px;transform:translateX(-50%);font:800 .58rem/1 var(--font-corpo);padding:1px 4px;border-radius:5px;background:rgba(255,255,255,.8);color:#6D3FD9}
+.giorno-cella.c2:has(.c2-straord) .c2-sigla{padding-bottom:10px}
+.giorno-cella.c2 .c2-eventi{position:absolute;top:24px;right:3px;display:flex;flex-direction:column;gap:2px}
+.giorno-cella.c2 .c2-eventi i{display:block;width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.8)}
 body:not(.calendario-moderno) .giorno-cella.c2.selezionata{box-shadow:inset 0 0 0 2px var(--acc,#1D4FD7)!important}
 body:not(.calendario-moderno) .giorno-cella.c2.fuori-mese{opacity:.35!important}
 body:not(.calendario-moderno) .giorno-cella.c2::before,body:not(.calendario-moderno) .giorno-cella.c2::after{display:none!important}
-body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-colori{background:var(--pannello,#fff)!important}
-body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-colori.sabato,body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-colori.domenica{background:color-mix(in srgb,var(--testo) 4%,var(--pannello,#fff))!important}
-body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-colori .c2-numero{color:var(--testo)}
