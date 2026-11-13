@@ -1794,6 +1794,12 @@ sezione('Agenda (vista del calendario)');
   await p.click('[data-diario-giorno="2026-10-13"]');
   await p.fill('.dpg-note', 'Servizio allo stadio'); await p.click('#btnMeseSucc'); await p.waitForTimeout(150);
   const pg = await p.evaluate(() => ({ aperto: diarioGiornoAperto, nota: (notaDiarioDi('2026-10-13') || {}).testo, cerca: risultatiUtilitaPerCerca(t => /stadio/i.test(t)).length }));
+  // v3.8.39: la nota si salva mentre scrivi (senza uscire dal campo) e la tastiera che si apre non la fa perdere.
+  await p.click('.dpg-note'); await p.keyboard.type('Scritta senza uscire');
+  const vp = p.viewportSize(); await p.setViewportSize({ width: vp.width, height: Math.round(vp.height * 0.55) }); await p.waitForTimeout(700);
+  const sn = await p.evaluate(() => ({ fuoco: !!document.activeElement && document.activeElement.classList.contains('dpg-note'), salvata: (notaDiarioDi(diarioGiornoAperto) || {}).testo }));
+  await p.setViewportSize(vp); await p.fill('.dpg-note', '');
+  ok('note di servizio: salvate mentre scrivi, il campo resta attivo con la tastiera aperta', sn.fuoco && sn.salvata === 'Scritta senza uscire', JSON.stringify(sn));
   ok('pagina del giorno: c\'è il microfono per dettare le note', await p.evaluate(() => !!document.querySelector('[data-dpg-detta]')));
   ok('pagina del giorno: nota salvata, › va al giorno dopo, la lente la trova', pg.aperto === '2026-10-14' && pg.nota === 'Servizio allo stadio' && pg.cerca >= 1, JSON.stringify(pg));
   await p.click('[data-dpg-settimana]');

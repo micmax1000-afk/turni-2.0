@@ -1759,12 +1759,14 @@ document.addEventListener('click', e => {
 var diarioGiornoAperto = null;
 function diarioDueGiorni(){ return window.innerWidth >= 640; }
 function notaDiarioDi(iso){ return (typeof U !== 'undefined' && U.note || []).find(n => n.diario && n.giorno === iso) || null; }
-function salvaNotaDiario(iso, testo){
+function salvaNotaDiario(iso, testo, silenzioso){
   if(typeof U === 'undefined') return;
   const n = notaDiarioDi(iso), v = String(testo || '').replace(/\s+$/, '');
   if(!v.trim()){ if(n) U.note = U.note.filter(x => x !== n); }
   else if(n){ n.testo = v; n.modificata = Date.now(); }
   else U.note.push({ id: idUt('nt'), titolo: '', testo: v, giorno: iso, fissata: false, diario: true, modificata: Date.now() });
+  // v3.8.39: mentre si scrive si salva senza ridisegnare la pagina (altrimenti il campo perdeva il cursore e la tastiera si chiudeva).
+  if(silenzioso){ try{ TurniPSStorage.setItem(CHIAVE_UTILITA, JSON.stringify(U)); }catch(e){} return; }
   salvaUtilita();
 }
 function paginaGiornoIntera(iso){
@@ -1808,8 +1810,16 @@ function renderPaginaGiornoDiario(host, iso){
   if(paginaDaGirareDiario){ voltaPaginaDiario(paginaDaGirareDiario); paginaDaGirareDiario = 0; }
 }
 function adattaAltezzaNotaDiario(ta){ ta.style.height = 'auto'; ta.style.height = Math.max(ta.scrollHeight, 264) + 'px'; }
-document.addEventListener('input', e => { const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(ta) adattaAltezzaNotaDiario(ta); });
-document.addEventListener('change', e => { const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(ta) salvaNotaDiario(ta.dataset.dpgNote, ta.value); });
+// v3.8.39: la nota si salva da sola mentre scrivi (dopo mezzo secondo di pausa) e quando esci dal campo:
+// prima si salvava solo uscendo dal campo, e cambiando giorno col dito o chiudendo l'app il testo andava perso.
+let timerNotaDiario = null;
+document.addEventListener('input', e => {
+  const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(!ta) return;
+  adattaAltezzaNotaDiario(ta);
+  clearTimeout(timerNotaDiario);
+  timerNotaDiario = setTimeout(() => salvaNotaDiario(ta.dataset.dpgNote, ta.value, true), 500);
+});
+document.addEventListener('change', e => { const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(ta){ clearTimeout(timerNotaDiario); salvaNotaDiario(ta.dataset.dpgNote, ta.value, true); } });
 document.addEventListener('click', e => {
   if(!e.target.closest) return;
   if(e.target.closest('[data-dpg-settimana]')){ diarioGiornoAperto = null; renderCalendario(); return; }
@@ -1844,7 +1854,14 @@ document.addEventListener('click', e => {
   if(!x) return;
   e.stopPropagation(); apriPaginaGiornoDiario(x.dataset.diarioApri);
 }, true);
-window.addEventListener('resize', () => { if(diarioGiornoAperto && vistaCalendario() === 'diario') renderCalendario(); });
+// Si ridisegna solo se si passa da una a due pagine (telefono girato): l'apertura della tastiera rimpicciolisce
+// la finestra, e ridisegnare lì faceva perdere il campo in cui si stava scrivendo.
+let diarioDuePagine = typeof window !== 'undefined' ? window.innerWidth >= 640 : null;
+window.addEventListener('resize', () => {
+  const due = diarioDueGiorni();
+  if(diarioGiornoAperto && vistaCalendario() === 'diario' && diarioDuePagine !== null && due !== diarioDuePagine) renderCalendario();
+  diarioDuePagine = due;
+});
 
 // Note della settimana (Diario): si salvano quando esci dal riquadro; restano sul telefono e nel backup.
 document.addEventListener('change', e => {
