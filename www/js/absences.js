@@ -383,7 +383,10 @@ function renderDashboardAssenze(){
     + `<span>⏱️ ${oreEMinuti(resto('Permesso breve'))} di permesso breve</span>`
     + `<span>🔄 ${numeroIt(recuperi)} ${recuperi === 1 ? 'recupero' : 'recuperi'}</span></div>`;
   const sotto = el('sottotitoloAssenze');
-  if(sotto) sotto.innerHTML = `<span class="anno-assenze"><button type="button" data-anno-assenze="-1" aria-label="Anno prima">‹</button><b>${rif.anno}</b><button type="button" data-anno-assenze="1" aria-label="Anno dopo">›</button></span> ${rif.anno === new Date().getFullYear() ? 'Quanto ti resta' : rif.anno < new Date().getFullYear() ? 'Com\'era a fine anno' : 'Anno prossimo'} · non cambia il cedolino`;
+  // v3.8.32: l'anno con le frecce su una riga sua (come il mese nel Report); sotto il titolo solo la spiegazione.
+  const navAnno = el('annoAssenzeNav');
+  if(navAnno) navAnno.innerHTML = `<button type="button" class="btn-freccia" data-anno-assenze="-1" aria-label="Anno prima">‹</button><b>${rif.anno}</b><button type="button" class="btn-freccia" data-anno-assenze="1" aria-label="Anno dopo">›</button>`;
+  if(sotto) sotto.innerHTML = `${rif.anno === new Date().getFullYear() ? 'Quanto ti resta' : rif.anno < new Date().getFullYear() ? 'Com\'era a fine anno' : 'Anno prossimo'}`;
   renderBoxSaldiPartenza();
 }
 
@@ -397,13 +400,13 @@ function renderBoxSaldiPartenza(){
     box.innerHTML = `<b>📌 Da dove partiamo?</b><p>L'app non sa quanti giorni ti restano dagli anni scorsi. Inserisci il congedo ordinario, i recuperi e il riposo compensativo che hai oggi.</p><button type="button" class="btn-primario" data-apri-saldi>Inserisci i saldi di partenza</button>`;
     return;
   }
-  const data = new Date(s.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dd = new Date(s.data + 'T12:00:00'), data = `${dd.getDate()}/${dd.getMonth() + 1}/${dd.getFullYear()}`;
   const parti = [`Congedo ${numeroIt(s.congedo)} gg`];
   const recuperi = (s.recuperoRiposo || 0) + (s.recuperoFestivo || 0);
   if(recuperi) parti.push(`Recuperi ${numeroIt(recuperi)} gg`);
   if(s.riposoCompensativoOre) parti.push(`Riposo compensativo ${oreEMinuti(s.riposoCompensativoOre)}`);
   box.className = 'partenza-riass partenza-v4';
-  box.innerHTML = `<span aria-hidden="true">📌</span><i>Giorni di partenza al ${escapeHtml(data)}<small>Come risultavano all'ufficio: da lì conta l'app.</small></i><button type="button" data-apri-saldi title="${escapeHtml(parti.join(' · '))}">Modifica</button>`;
+  box.innerHTML = `<span aria-hidden="true">📌</span><i title="Come risultavano all'ufficio: da lì conta l'app.">Giorni di partenza al ${escapeHtml(data)}</i><button type="button" data-apri-saldi title="${escapeHtml(parti.join(' · '))}">Modifica</button>`;
 }
 
 function inizializzaFiltriAssenze(){

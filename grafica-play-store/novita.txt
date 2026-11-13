@@ -1,5 +1,5 @@
 <it-IT>
-• Diario: tocca un giorno e scrivi le note di servizio sulla sua pagina
-• Nel Diario anche rientro e indennità; tre viste: Diario, Mese, Anno
-• Correzioni: colore dei giorni con orari cambiati, gesti più sicuri
+• Agenda e riquadro del giorno con la grafica del Diario, rientro compreso
+• Note di servizio sempre sulla pagina del giorno; in Agenda «‹ Calendario»
+• Grafica più uniforme: icone, intestazioni, Turni, Assenze, tema scuro
 </it-IT>

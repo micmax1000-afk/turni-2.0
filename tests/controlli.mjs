@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.31');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.32');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -636,8 +636,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Diario con le note di servizio', passi.join(' | ') === 'Diario con le note di servizio (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.31'));
+  ok('chi usava già l\'app vede 1 fumetto: Agenda come il Diario', passi.join(' | ') === 'Agenda come il Diario (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.32'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -779,8 +779,8 @@ sezione('v3.8.16: Agenda come una vera agenda');
   await p.waitForTimeout(900);
   await p.evaluate(() => impostaVistaCalendario('agenda'));
   await p.waitForTimeout(200);
-  const a = await p.evaluate(() => ({ filtri: [...document.querySelectorAll('[data-filtro-agenda]')].map(b => b.textContent).join('|'), piu: document.querySelectorAll('.agenda-piu').length, dett: document.querySelector('[data-evento-id="ev_a1"]')?.textContent || '' }));
-  ok('filtri Tutto · Eventi · Turni e un ＋ su ogni giorno', a.filtri === 'Tutto|Eventi|Turni' && a.piu >= 14, JSON.stringify(a));
+  const a = await p.evaluate(() => ({ filtri: [...document.querySelectorAll('[data-filtro-agenda]')].map(b => b.textContent).join('|'), piu: document.querySelectorAll('.agenda-piu').length, numeri: document.querySelectorAll('button.agenda-data[data-agenda-nuovo]').length, dett: document.querySelector('[data-evento-id="ev_a1"]')?.textContent || '' }));
+  ok('filtri Tutto · Eventi · Turni; niente ＋ su ogni giorno, si tocca il numero del giorno', a.filtri === 'Tutto|Eventi|Turni' && a.piu === 0 && a.numeri >= 14, JSON.stringify(a));
   ok('evento con ora di fine e luogo', /10:00–11:00/.test(a.dett) && /Via Roma 3/.test(a.dett), a.dett);
   await p.click('[data-filtro-agenda="eventi"]');
   ok('"Eventi": solo i giorni con eventi, senza turni', await p.evaluate(() => document.querySelectorAll('.agenda-giorno').length >= 1 && !document.querySelector('#agendaElenco .agenda-corpo') && [...document.querySelectorAll('.agenda-giorno')].every(g => g.querySelector('.agenda-evento'))));
@@ -793,7 +793,7 @@ sezione('v3.8.16: Agenda come una vera agenda');
   await p.fill('#campoCercaAgenda', 'dentista');
   ok('Cerca "dentista": trova l\'evento', await p.evaluate(() => !!document.querySelector('#agendaElenco [data-evento-id="ev_a1"]')));
   await p.click('[data-agenda-cerca]');
-  await p.click('.agenda-piu[data-agenda-nuovo="2026-10-14"]');
+  await p.click('button.agenda-data[data-agenda-nuovo="2026-10-14"]');
   ok('＋ sul 14: si apre "Nuovo evento" su quel giorno', await p.evaluate(() => !el('overlayEvento').hidden && giornoSelezionato === '2026-10-14'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
@@ -1083,9 +1083,9 @@ sezione('v3.8.27: vista Anno, maniglia, date sulle assenze, anni sfogliabili');
   ok('Congedo ordinario 2026: le date chieste, unite se di fila', /1 ott/.test(co) && /21–23 dic/.test(co) && !/29 dic/.test(co) && !/gen/.test(co.replace(/2027/, '')), co);
   ok('…e i giorni già chiesti per il 2027', /\+ 2 già chiesti per il 2027/.test(co), co);
   await p.click('[data-anno-assenze="1"]');
-  ok('› sulle Assenze: 2027 con le sue date (4–5 gen)', await p.evaluate(() => /2027/.test(el('sottotitoloAssenze').textContent) && /4–5 gen/.test(document.querySelector('#corpoAssenze').innerText)));
+  ok('› sulle Assenze: 2027 con le sue date (4–5 gen)', await p.evaluate(() => /2027/.test(el('annoAssenzeNav').textContent) && /4–5 gen/.test(document.querySelector('#corpoAssenze').innerText)));
   await p.click('[data-anno-assenze="-1"]'); await p.click('[data-anno-assenze="-1"]');
-  ok('‹ due volte: 2025 con le date vecchie (29 dic)', await p.evaluate(() => /2025/.test(el('sottotitoloAssenze').textContent) && /29 dic/.test(document.querySelector('#corpoAssenze').innerText)));
+  ok('‹ due volte: 2025 con le date vecchie (29 dic)', await p.evaluate(() => /2025/.test(el('annoAssenzeNav').textContent) && /29 dic/.test(document.querySelector('#corpoAssenze').innerText)));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1107,10 +1107,20 @@ sezione('v3.8.28: vista Diario (agenda di carta)');
   ok('dalla pagina del giorno, toccando il turno si apre «Modifica il giorno»', await p.evaluate(() => !el('pannelloTurno').hidden));
   await p.evaluate(() => { el('pannelloTurno').hidden = true; document.querySelectorAll('.overlay').forEach(o => o.hidden = true); });
   await p.click('[data-dpg-settimana]');
-  ok('Diario: 8 riquadri uguali, l\'ultimo è «Note della settimana»', await p.evaluate(() => document.querySelectorAll('.diario-libro .diario-giorno').length === 8 && !!document.querySelector('.diario-note-testo')));
-  await p.fill('.diario-note-testo', 'Divisa in lavanderia'); await p.evaluate(() => document.activeElement.blur());
-  ok('le note della settimana si salvano (e restano nel backup)', await p.evaluate(() => U.noteSettimana['2026-10-12'] === 'Divisa in lavanderia' && JSON.stringify(datiUtilitaPerBackup()).includes('Divisa in lavanderia')));
-  ok('la ricerca trova le note della settimana', await p.evaluate(() => /Note della settimana/.test(risultatiCercaAgenda('lavanderia'))));
+  // v3.8.32: niente più «Note della settimana»: chi le aveva le ritrova nelle note di servizio del lunedì.
+  ok('Diario: 7 giorni, senza il riquadro «Note della settimana»', await p.evaluate(() => document.querySelectorAll('.diario-libro .diario-giorno').length === 7 && !document.querySelector('.diario-note-testo')));
+  const mig = await p.evaluate(() => { U.noteSettimana = { '2026-10-12': 'Divisa in lavanderia' }; unisciNoteSettimana(); const n = notaDiarioDi('2026-10-12'); return { testo: n && n.testo, via: !U.noteSettimana, backup: JSON.stringify(datiUtilitaPerBackup()).includes('Divisa in lavanderia'), cerca: /Note di servizio/.test(risultatiCercaAgenda('lavanderia')) }; });
+  ok('le vecchie note della settimana diventano le note di servizio del lunedì (backup e lente compresi)', mig.testo === 'Divisa in lavanderia' && mig.via && mig.backup && mig.cerca, JSON.stringify(mig));
+  // Dalla finestra del giorno le note di servizio si scrivono sulla pagina del giorno.
+  await p.evaluate(() => { selezionaGiorno('2026-10-15'); apriModaleTurno('2026-10-15'); aggiornaUtilitaGiorno(); });
+  const btnNote = await p.$('#utilitaGiorno [data-diario-apri="2026-10-15"]');
+  if(btnNote) await btnNote.evaluate(b => b.click()); // la sezione «Altro per questo giorno» è chiusa: basta il tocco
+  ok('finestra del giorno: «Scrivi le note di servizio» apre la pagina del giorno', !!btnNote && await p.evaluate(() => diarioGiornoAperto === '2026-10-15' && el('pannelloTurno').hidden && !!document.querySelector('.dpg-note')));
+  // In Agenda il pulsante in alto riporta al calendario, nella vista di prima.
+  await p.evaluate(() => impostaVistaCalendario('agenda'));
+  ok('in Agenda il pulsante dice «‹ Calendario»', await p.evaluate(() => el('etichettaVistaCalendario').textContent === '‹ Calendario'));
+  await p.click('#btnVistaCalendario');
+  ok('«‹ Calendario» torna al Diario (la vista di prima), senza aprire il menu', await p.evaluate(() => vistaCalendario() === 'diario' && el('menuVistaCalendario').hidden));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1230,7 +1240,7 @@ sezione('Assenze nella barra e sequenza automatica');
   await p.click('#btnSalvaSaldiPartenza');
   const sp = await p.evaluate(() => { const v = n => saldoAssenza(AppState.assenze.find(a => a.nome === n), rifAssenze()); return { salvati: JSON.parse(localStorage.getItem('simCedolino_saldiPartenza_v1')), hero: el('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), riass: el('saldiPartenzaBox').innerText.replace(/\s+/g, ' '), co: v('Congedo ordinario').rimangono, rr: v('Recupero riposo').rimangono, rf: v('Recupero festivo').rimangono, rc: v('Riposo compensativo').rimangono }; });
   ok('saldi salvati con la data di oggi (+1 col pulsante per il recupero festivo)', sp.salvati.data === '2026-10-09' && sp.salvati.congedo === 41 && sp.salvati.congedoVecchi === 11 && sp.salvati.congedoAnni['2024'] === 3 && sp.salvati.recuperoFestivo === 1, JSON.stringify(sp.salvati));
-  ok('dopo: "Giorni di partenza al 9 ottobre 2026" in cima con Modifica', /41 giorni/.test(sp.hero) && /Giorni di partenza al 9 ottobre 2026/.test(sp.riass) && /Modifica/.test(sp.riass), sp.hero + ' | ' + sp.riass);
+  ok('dopo: «Giorni di partenza al 9/10/2026» in cima con Modifica', /41 giorni/.test(sp.hero) && /Giorni di partenza al 9\/10\/2026/.test(sp.riass) && /Modifica/.test(sp.riass), sp.hero + ' | ' + sp.riass);
   ok('recupero riposo: 2 di partenza + quello del 15 (quello del 1° non conta più) = 3; festivo 1; riposo compensativo 6 h', sp.rr === 3 && sp.rf === 1 && sp.rc === 6, JSON.stringify(sp));
   await p.evaluate(() => { window.__originali = { a: AppState.turni['2026-10-05'], b: AppState.turni['2026-10-21'] }; const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario').id; AppState.turni['2026-10-05'] = { data: '2026-10-05', assenzaTipo: co }; AppState.turni['2026-10-21'] = { data: '2026-10-21', assenzaTipo: co }; salvaTurniStorage(); renderAssenze(); });
   const co2 = await p.evaluate(() => { const v = saldoAssenza(AppState.assenze.find(a => a.nome === 'Congedo ordinario'), rifAssenze()); const c = [...document.querySelectorAll('#corpoAssenze .card-assenza')].find(x => /Congedo ordinario/.test(x.textContent)); return { r: v.rimangono, u: v.usate, card: c.querySelector('.card-assenza-compact').innerText.replace(/\s+/g, ' '), usati: c.querySelector('.saldo-usati').textContent.replace(/\s+/g, ' ') }; });
@@ -1247,7 +1257,7 @@ sezione('Assenze nella barra e sequenza automatica');
   ok('saldi salvati col formato di prima (totale 45, di cui 8 dell\'anno scorso): diventano 2026: 37 e 2025: 8', await p.evaluate(() => { const prima = localStorage.getItem('simCedolino_saldiPartenza_v1'); localStorage.setItem('simCedolino_saldiPartenza_v1', JSON.stringify({ data: '2026-10-09', congedo: 45, congedoVecchi: 8, recuperoRiposo: 0, recuperoFestivo: 0, riposoCompensativoOre: 0 })); const a = saldiPartenza().congedoAnni; localStorage.setItem('simCedolino_saldiPartenza_v1', prima); return a[2026] === 37 && a[2025] === 8; }));
   await p.evaluate(() => { AppState.turni['2026-10-05'] = window.__originali.a; AppState.turni['2026-10-21'] = window.__originali.b; salvaTurniStorage(); });
   ok('i saldi di partenza finiscono nel backup', await p.evaluate(() => JSON.stringify(costruisciDatiBackup()).includes('saldiPartenza')));
-  ok('tutte le assenze in un elenco, quelle a zero in fondo; "Nuova assenza" in alto e "＋" in fondo', ass.nomi.some(n => n.includes('Riposo festivo')) && ass.nomi.findIndex(n => n.includes('Riposo festivo')) > ass.nomi.findIndex(n => n.includes('Congedo straordinario')) && ass.nuova === 'Nuova assenza' && ass.aggiungi, JSON.stringify(ass.nomi));
+  ok('tutte le assenze in un elenco sempre aperto, quelle a zero in fondo; «＋ Assenza» in alto e «＋» in fondo', ass.nomi.some(n => n.includes('Riposo festivo')) && ass.nomi.findIndex(n => n.includes('Riposo festivo')) > ass.nomi.findIndex(n => n.includes('Congedo straordinario')) && ass.nuova === '＋ Assenza' && ass.aggiungi, JSON.stringify(ass.nomi));
   await p.click('.card-assenza[data-id] .card-assenza-compact');
   ok('tocco su una scheda: si apre il dettaglio a tutta larghezza', await p.evaluate(() => { const c = document.querySelector('#corpoAssenze .card-assenza-aperta'); return !!c && c.getBoundingClientRect().width > document.getElementById('corpoAssenze').getBoundingClientRect().width - 24 && !!c.querySelector('.card-assenza-edit').offsetParent; }));
   await p.click('#tabAltro');
@@ -1736,8 +1746,8 @@ sezione('Agenda (vista del calendario)');
   await p.click('[data-agenda-giorno="2026-10-12"] .agenda-evento');
   ok('tocco su un evento: si apre la modifica dell\'evento', await p.evaluate(() => !el('overlayEvento').hidden && el('campoEventoTitolo').value === 'Visita medica'));
   await p.evaluate(() => { el('overlayEvento').hidden = true; });
-  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
-  ok('di nuovo Mese: torna il calendario', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none'));
+  await p.click('#btnVistaCalendario'); // in Agenda il pulsante è «‹ Calendario»
+  ok('«‹ Calendario»: torna il calendario del mese', await p.evaluate(() => el('agendaSottoCalendario').hidden && getComputedStyle(el('calendarioGriglia')).display !== 'none'));
   // v3.8.30: il menu ha quattro viste in una riga; Settimana è confluita nel Diario, Agenda resta per la lente.
   await p.click('#btnVistaCalendario');
   const mv = await p.evaluate(() => ({ viste: [...document.querySelectorAll('#menuVistaCalendario [data-vista-calendario]')].map(b => b.dataset.vistaCalendario).join(), condividi: !!el('btnCondividiMese'), colonne: getComputedStyle(document.querySelector('.menu-vista-griglia')).gridTemplateColumns.split(' ').length }));
@@ -1756,6 +1766,12 @@ sezione('Agenda (vista del calendario)');
   ok('pagina del giorno: nota salvata, › va al giorno dopo, la lente la trova', pg.aperto === '2026-10-14' && pg.nota === 'Servizio allo stadio' && pg.cerca >= 1, JSON.stringify(pg));
   await p.click('[data-dpg-settimana]');
   ok('«‹ Settimana» torna al Diario della settimana con la nota', await p.evaluate(() => !diarioGiornoAperto && /Servizio allo stadio/.test(document.querySelector('[data-diario-giorno="2026-10-13"]').textContent)));
+  // v3.8.32: in Agenda il rientro si vede e la nota di servizio riapre la pagina del giorno.
+  const ag = await p.evaluate(() => { impostaVistaCalendario('agenda'); agendaDa = '2026-10-12'; renderAgenda(); const g = document.querySelector('[data-agenda-giorno="2026-10-13"]'); return { rientro: /Rientro 15:00 – 18:00/.test(g.textContent), nota: !!g.querySelector('[data-diario-apri="2026-10-13"]') }; });
+  ok('Agenda: il rientro sotto l\'orario e la nota di servizio del giorno', ag.rientro && ag.nota, JSON.stringify(ag));
+  await p.click('[data-agenda-giorno="2026-10-13"] [data-diario-apri]');
+  ok('toccando la nota in Agenda si apre la pagina del giorno nel Diario', await p.evaluate(() => vistaCalendario() === 'diario' && diarioGiornoAperto === '2026-10-13' && document.querySelector('.dpg-note').value === 'Servizio allo stadio' && el('pannelloTurno').hidden));
+  await p.click('[data-dpg-settimana]');
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await p.context().close();

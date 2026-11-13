@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V264 (v3.8.31 — pagina del giorno con note di servizio, tre viste, gesti più sicuri) */
+/* Turni & Accessorio PS — Service Worker V265 (v3.8.32 — Agenda come il Diario, note più semplici, grafica uniforme) */
 'use strict';
-const CACHE='turni-ps-v264';
+const CACHE='turni-ps-v265';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/domande-voce.js','./js/utilita.js','./js/pro.js','./js/data/tabelle-2026.js',
