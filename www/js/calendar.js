@@ -599,13 +599,13 @@ function renderCalendario(){
     const coloreAssenzaScelto = t && t.assenzaTipo ? ((AppState.assenze || []).find(a => a.id === t.assenzaTipo) || {}).coloreCalendario || '' : '';
     if(calendarioAColoriAttivo() && coloreAssenzaScelto) coloreTurno = coloreAssenzaScelto;
     else if(calendarioAColoriAttivo()){
-      const modelloColoreCustomM = (t && t.riposo) ? (AppState.modelliTurno || []).find(m => m.riposo) : (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+      const modelloColoreCustomM = modelloColoreGiorno(t, categoria);
       coloreTurno = modelloColoreCustomM && modelloColoreCustomM.colore ? modelloColoreCustomM.colore : (categoria ? coloreCategoria(categoria) : '');
     }
     if(moderno){
       cella.style.background = '';
     } else if(calendarioAColoriAttivo()){
-      const modelloColoreCustom = (t && t.riposo) ? (AppState.modelliTurno || []).find(m => m.riposo) : (t && t.modelloId) ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
+      const modelloColoreCustom = modelloColoreGiorno(t, categoria);
       if(coloreAssenzaScelto) cella.style.background = coloreAssenzaScelto;
       else if(modelloColoreCustom && modelloColoreCustom.colore) cella.style.background = modelloColoreCustom.colore;
       else if(categoria) cella.style.background = coloreCategoria(categoria);
@@ -1110,14 +1110,29 @@ function spostaVistaCalendario(dir){
 function coloreGiornoVista(t){
   if(!t) return '';
   if(t.assenzaTipo){ const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo); return (v && v.coloreCalendario) || coloreCategoria('assenza'); }
-  const m = t.riposo ? (AppState.modelliTurno || []).find(x => x.riposo) : (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
-  return (m && m.colore) || coloreCategoria(t.riposo ? 'riposo' : (t.oraInizio && t.oraFine ? categoriaTurno(t.oraInizio, t.oraFine, t.data) : 'mattina'));
+  const cat = t.riposo ? 'riposo' : (t.oraInizio && t.oraFine ? categoriaTurno(t.oraInizio, t.oraFine, t.data) : 'mattina');
+  const m = modelloColoreGiorno(t, cat);
+  return (m && m.colore) || coloreCategoria(cat);
+}
+// v3.8.31: il turno da cui un giorno prende il colore. Se gli orari del giorno sono stati cambiati a mano
+// e non corrispondono più a un turno salvato, vale il colore del turno base della stessa fascia
+// (es. orari di mattina → colore del turno «Mattino»), non il colore di serie della fascia.
+function modelloColoreGiorno(t, categoria){
+  if(!t) return null;
+  const modelli = AppState.modelliTurno || [];
+  if(t.riposo) return modelli.find(m => m.riposo) || null;
+  const proprio = t.modelloId ? modelli.find(m => m.id === t.modelloId) : null;
+  if(proprio && proprio.colore) return proprio;
+  const base = categoria ? modelli.find(m => m.id === categoria && m.colore) : null;
+  return base || proprio || null;
 }
 function nomeGiornoVista(t){
   if(!t) return '';
   if(t.assenzaTipo){ const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo); return v ? v.nome : 'Assenza'; }
   if(t.riposo) return 'Riposo';
-  const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
+  // v3.8.31: orari cambiati a mano → il nome del turno base della stessa fascia (es. «Mattino»), non «Turno».
+  const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId)
+    || (t.oraInizio && t.oraFine ? (AppState.modelliTurno || []).find(x => x.id === categoriaTurno(t.oraInizio, t.oraFine, t.data)) : null);
   return m ? m.nome : (t.oraInizio ? 'Turno' : '');
 }
 function applicaVistaCalendario(){
@@ -1614,10 +1629,11 @@ function cambiaVistaConManiglia(dir){
   if(j !== i) impostaVistaCalendario(ORDINE_VISTE_MANIGLIA[j]);
 }
 (function(){
-  let y0 = null;
+  // v3.8.31: dopo un trascinamento non conta anche il tocco (prima la vista cambiava due volte).
+  let y0 = null, ultimoTrascinamento = 0;
   document.addEventListener('touchstart', e => { if(e.target.closest && e.target.closest('#manigliaVista') && e.touches.length === 1) y0 = e.touches[0].clientY; else y0 = null; }, { passive: true });
-  document.addEventListener('touchend', e => { if(y0 === null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; if(Math.abs(dy) >= 25) cambiaVistaConManiglia(dy > 0 ? 1 : -1); }, { passive: true });
-  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#manigliaVista') && y0 === null) cambiaVistaConManiglia(vistaCalendario() === 'diario' || vistaCalendario() === 'giorno' ? 1 : -1); });
+  document.addEventListener('touchend', e => { if(y0 === null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; if(Math.abs(dy) >= 25){ ultimoTrascinamento = Date.now(); cambiaVistaConManiglia(dy > 0 ? 1 : -1); } }, { passive: true });
+  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#manigliaVista') && y0 === null && Date.now() - ultimoTrascinamento > 600) cambiaVistaConManiglia(vistaCalendario() === 'diario' || vistaCalendario() === 'giorno' ? 1 : -1); });
 })();
 
 // ── v3.8.28: vista Diario — la settimana come un'agenda di carta: due pagine, spirale, righe ──
@@ -1633,7 +1649,8 @@ function paginaGiornoDiario(iso, mezza){
   const righe = [];
   if(t && (t.riposo || t.assenzaTipo || t.oraInizio)){
     const col = coloreGiornoVista(t);
-    righe.push(`<span class="diario-turno"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` ${t.oraInizio}–${t.oraFine}` : ''}</span>`);
+    righe.push(`<span class="diario-turno"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <i class="diario-turno-ora">${t.oraInizio}–${t.oraFine}</i>` : ''}</span>`);
+    if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
     if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
     if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
     if(t.servizioSvolto) righe.push(`✎ ${escapeHtml(t.servizioSvolto)}`);
