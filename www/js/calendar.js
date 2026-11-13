@@ -1123,8 +1123,18 @@ function modelloColoreGiorno(t, categoria){
   if(t.riposo) return modelli.find(m => m.riposo) || null;
   const proprio = t.modelloId ? modelli.find(m => m.id === t.modelloId) : null;
   if(proprio && proprio.colore) return proprio;
-  const base = categoria ? modelli.find(m => m.id === categoria && m.colore) : null;
+  const base = modelloBaseFascia(categoria, t.data, true);
   return base || proprio || null;
+}
+// Il turno «di riferimento» di una fascia (mattina, pomeriggio, sera, notte): prima quello di serie con quel nome,
+// altrimenti un turno creato dall'utente con orari in quella fascia (es. «Mattino 06:40–13:15» personalizzato).
+function modelloBaseFascia(categoria, data, soloColorati){
+  if(!categoria) return null;
+  const modelli = (AppState.modelliTurno || []).filter(m => !m.riposo && (!soloColorati || m.colore));
+  const speciali = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'];
+  return modelli.find(m => m.id === categoria)
+    || modelli.find(m => !speciali.includes(m.id) && m.oraInizio && m.oraFine && categoriaTurno(m.oraInizio, m.oraFine, data) === categoria)
+    || null;
 }
 function nomeGiornoVista(t){
   if(!t) return '';
@@ -1132,7 +1142,7 @@ function nomeGiornoVista(t){
   if(t.riposo) return 'Riposo';
   // v3.8.31: orari cambiati a mano → il nome del turno base della stessa fascia (es. «Mattino»), non «Turno».
   const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId)
-    || (t.oraInizio && t.oraFine ? (AppState.modelliTurno || []).find(x => x.id === categoriaTurno(t.oraInizio, t.oraFine, t.data)) : null);
+    || (t.oraInizio && t.oraFine ? modelloBaseFascia(categoriaTurno(t.oraInizio, t.oraFine, t.data), t.data) : null);
   return m ? m.nome : (t.oraInizio ? 'Turno' : '');
 }
 function applicaVistaCalendario(){
