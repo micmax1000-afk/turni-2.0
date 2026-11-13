@@ -4189,17 +4189,19 @@ function inizializzaGestiCalendario(){
   on('chipPennello', 'click', e => { const b = e.target.closest('[data-pennello]'); if(b){ modoPennello = b.dataset.pennello; aggiornaChipPennello(); } });
   const zona = document.querySelector('.scheda-calendario-v2');
   if(!zona) return;
-  let x0 = null, y0 = null;
+  let x0 = null, y0 = null, scroll0 = 0;
   // v3.8.16: niente cambio di mese quando il dito parte dalla barra del pennello, dal menu ＋ o da una fila che scorre
   zona.addEventListener('touchstart', e => {
-    if(e.touches.length !== 1 || (e.target.closest && e.target.closest('#barraPennello, .fab-menu, .voce-scheda, .chip-pennello'))){ x0 = null; return; }
-    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    if(e.touches.length !== 1 || (e.target.closest && e.target.closest('#barraPennello, .fab-menu, .voce-scheda, .chip-pennello, #manigliaVista, .dpg-note'))){ x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; scroll0 = window.scrollY;
   }, { passive: true });
+  // Se il gesto è (anche un po') in verticale, o se intanto la pagina è scorsa, era uno scorrimento: il mese resta.
+  zona.addEventListener('touchcancel', () => { x0 = null; }, { passive: true });
   zona.addEventListener('touchend', e => {
     if(x0 === null || vistaCalendario() === 'agenda') return;
     const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
     x0 = null;
-    if(Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
+    if(Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.5 || Math.abs(window.scrollY - scroll0) > 12) return;
     const griglia = document.querySelector('.scheda-calendario-v2');
     griglia.classList.remove('scorri-sx', 'scorri-dx'); void griglia.offsetWidth;
     griglia.classList.add(dx < 0 ? 'scorri-sx' : 'scorri-dx');
@@ -4209,9 +4211,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.30';
+const VERSIONE_NOVITA = '3.8.31';
 const PASSI_NOVITA = [
-  { id: 'btnVistaCalendario', titolo: 'Calendario più semplice', testo: 'Qui ora scegli tra quattro viste: Giorno, Diario, Mese e Anno. Nel mese, i giorni con straordinario mostrano le ore sotto il turno (es. +2h).' }
+  { id: 'btnVistaCalendario', titolo: 'Diario con le note di servizio', testo: 'Le viste ora sono tre: Diario, Mese e Anno. Nel Diario tocca un giorno: si apre la sua pagina, dove scrivi le note di servizio. Ci sono anche il rientro e le indennità.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

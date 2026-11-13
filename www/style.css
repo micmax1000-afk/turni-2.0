@@ -2783,7 +2783,7 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 .menu-vista-calendario button.attivo{background:color-mix(in srgb,#155EEF 10%,var(--pannello));color:#155EEF}
 .menu-vista-calendario svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 /* v3.8.30: le quattro viste in una riga (prima erano una lista lunga) */
-.menu-vista-griglia{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.menu-vista-griglia{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .menu-vista-griglia button{flex-direction:column;justify-content:center;gap:5px;padding:10px 4px;font-size:.74rem;text-align:center;min-width:64px}
 .menu-vista-griglia svg{width:22px;height:22px}
 .scheda-calendario-v2:not([data-vista="mese"]) .calendario-giorni-settimana,.scheda-calendario-v2:not([data-vista="mese"]) #calendarioGriglia{display:none}
@@ -3364,7 +3364,8 @@ html[data-tema=scuro] .cal-sopra .ut-banner{background:#4A3510}
 .anno-giorni em.oggi{outline:2px solid var(--acc,#1D4FD7);outline-offset:0}
 .anno-riassunto{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.82rem;color:var(--testo-tenue);margin:12px 2px 4px}
 .anno-riassunto b{color:var(--testo)}
-.maniglia-vista{display:block;width:100%;border:0;background:none;padding:6px 0 4px;cursor:grab;touch-action:none}
+/* v3.8.31: la presa è solo la barretta al centro (prima era larga tutta la pagina e bloccava lo scorrimento). */
+.maniglia-vista{display:block;width:120px;margin:0 auto;border:0;background:none;padding:8px 0 6px;cursor:grab;touch-action:none}
 .maniglia-vista span{display:block;width:42px;height:5px;border-radius:99px;margin:0 auto;background:color-mix(in srgb,var(--testo) 22%,transparent)}
 .scheda-calendario-v2[data-vista="agenda"] .maniglia-vista,.scheda-calendario-v2[data-vista="giorno"] .maniglia-vista{display:none}
 .card-assenza-compact-nome .programmati-congedo{display:block;font:600 .74rem/1.3 var(--font-corpo)!important;color:var(--acc,#1D4FD7);margin-top:3px}
@@ -3388,6 +3389,8 @@ html[data-tema=scuro] .diario-libro,html.tema-scuro .diario-libro{--carta-d:#223
 .diario-giorno:last-child{border-bottom:0}
 .diario-weekend{display:flex;flex-direction:column;flex:1}
 .diario-giorno.mezza{min-height:94px}
+/* v3.8.32: un giorno pieno di righe si allunga invece di finire sopra quello dopo. */
+.diario-pagina > .diario-giorno{flex:1 0 auto}
 .diario-testa{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;font:500 .82rem var(--font-corpo);color:var(--testa-d);font-style:italic;border-bottom:1.5px solid var(--testa-d);padding-bottom:2px;margin-bottom:3px}
 .diario-testa b{font-style:normal;font-weight:800;font-size:.95rem}
 .diario-testa small{font:600 .62rem var(--font-corpo);color:#C62828;font-style:normal;margin-left:auto}
@@ -3396,11 +3399,41 @@ html[data-tema=scuro] .diario-libro,html.tema-scuro .diario-libro{--carta-d:#223
 .diario-giorno.oggi .diario-testa b{background:var(--acc,#1D4FD7);color:#fff;border-radius:999px;padding:0 6px}
 .diario-righe{display:flex;flex-direction:column}
 .diario-righe > span{font:500 .74rem/22px var(--font-corpo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* v3.8.31: se nome e orario non stanno su una riga (es. «Pomeriggio»), l'orario va intero sulla riga sotto. */
+.diario-righe .diario-turno{white-space:normal}
+.diario-turno-ora{display:inline-block;white-space:nowrap;font-style:normal}
 .diario-turno b{display:inline-block;padding:0 6px;border-radius:5px;font-size:.7rem;line-height:17px;margin-right:2px}
+.diario-indennita{display:inline-flex;gap:6px;align-items:center;vertical-align:middle}
+.diario-indennita i{display:inline-flex;width:16px;height:16px;color:var(--acc,#1D4FD7)}
+.diario-indennita svg{width:16px;height:16px}
+html[data-tema=scuro] .diario-indennita i{color:#8FB0FF}
 .diario-ora{color:var(--acc,#1D4FD7);font-weight:700}
 html[data-tema=scuro] .diario-ora{color:#8FB0FF}
 .diario-righe mark{background:#FFD978;color:#1E2129;border-radius:4px;padding:0 4px}
 .diario-sett{text-align:center;font-size:.76rem;color:var(--testo-tenue);margin:0 0 6px}
+/* v3.8.32: pagina del giorno nel Diario */
+.dpg-indietro{border:0;background:none;color:var(--acc,#1D4FD7);font:700 .9rem var(--font-corpo);padding:6px 4px 8px;cursor:pointer}
+.dpg-libro.uno{grid-template-columns:1fr}
+.dpg{display:flex;flex-direction:column;padding:12px 14px 16px;color:var(--inchiostro-d);min-height:520px}
+.dpg-testa{display:flex;align-items:center;gap:10px;margin:0 0 6px;padding-bottom:8px;border-bottom:2px solid var(--testa-d);color:var(--testa-d)}
+.dpg-testa b{font-size:2.4rem;line-height:1;font-weight:800}
+.dpg-testa span{display:flex;flex-direction:column;font-size:1.15rem;line-height:1.2;font-weight:600;font-style:italic}
+.dpg-testa small{font:500 .78rem var(--font-corpo);font-style:normal;opacity:.75}
+.dpg.festivo .dpg-testa{color:#C62828;border-color:#C62828}
+.dpg.oggi .dpg-testa b{color:var(--acc,#1D4FD7)}
+.dpg-righe{display:flex;flex-direction:column}
+.dpg-righe > span{font:500 .86rem/30px var(--font-corpo);border-bottom:1px solid var(--riga-d)}
+.dpg-turno{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:0;font:600 .9rem/30px var(--font-corpo);color:inherit;text-align:left;cursor:pointer}
+.dpg-turno b{padding:0 8px;border-radius:6px;line-height:22px}
+.dpg-turno i{margin-left:auto;font-style:normal;opacity:.5;font-size:1.2rem}
+.dpg-turno.vuoto{color:var(--acc,#1D4FD7)}
+.dpg-chip{display:flex;flex-wrap:wrap;gap:4px 10px;padding:4px 0;line-height:22px}
+.dpg-chip .chip-dett{display:inline-flex;align-items:center;gap:4px;font-size:.78rem}
+.dpg-chip svg{width:15px;height:15px;color:var(--acc,#1D4FD7)}
+.dpg-note-tit{margin:14px 0 0;font:700 .8rem var(--font-corpo);letter-spacing:.06em;text-transform:uppercase;color:var(--testa-d)}
+.dpg-note{display:block;width:100%;min-height:264px;resize:none;border:0;outline:0;padding:0 2px;margin:0;background:repeating-linear-gradient(to bottom,transparent 0 29px,var(--riga-d) 29px 30px);font:500 .95rem/30px var(--font-corpo);color:var(--inchiostro-d);overflow:hidden}
+.dpg-note::placeholder{color:color-mix(in srgb,var(--inchiostro-d) 40%,transparent);font-style:italic}
+.diario-nota-servizio{font-style:italic}
 .diario-libro.volta-avanti .diario-pagina.dx{animation:voltaAvanti .45s ease-out}
 .diario-libro.volta-indietro .diario-pagina.sx{animation:voltaIndietro .45s ease-out}
 @keyframes voltaAvanti{0%{transform:rotateY(-80deg);transform-origin:left center;opacity:.4}100%{transform:none;transform-origin:left center;opacity:1}}

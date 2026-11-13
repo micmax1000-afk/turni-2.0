@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.30');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.31');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -636,8 +636,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Calendario più semplice', passi.join(' | ') === 'Calendario più semplice (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.30'));
+  ok('chi usava già l\'app vede 1 fumetto: Diario con le note di servizio', passi.join(' | ') === 'Diario con le note di servizio (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.31'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1102,8 +1102,11 @@ sezione('v3.8.28: vista Diario (agenda di carta)');
   await p.click('#btnMeseSucc');
   ok('freccia ›: settimana dopo e la pagina si gira', await p.evaluate(() => document.querySelector('[data-diario-giorno]').dataset.diarioGiorno === '2026-10-12' && document.querySelector('.diario-libro').classList.contains('volta-avanti')));
   await p.click('[data-diario-giorno="2026-10-13"]');
-  ok('tocco un giorno: si apre «Modifica il giorno»', await p.evaluate(() => !el('pannelloTurno').hidden && giornoSelezionato === '2026-10-13'));
+  ok('tocco un giorno: si apre la sua pagina con le note di servizio', await p.evaluate(() => diarioGiornoAperto === '2026-10-13' && giornoSelezionato === '2026-10-13' && !!document.querySelector('.dpg-note')));
+  await p.click('[data-dpg-modifica]');
+  ok('dalla pagina del giorno, toccando il turno si apre «Modifica il giorno»', await p.evaluate(() => !el('pannelloTurno').hidden));
   await p.evaluate(() => { el('pannelloTurno').hidden = true; document.querySelectorAll('.overlay').forEach(o => o.hidden = true); });
+  await p.click('[data-dpg-settimana]');
   ok('Diario: 8 riquadri uguali, l\'ultimo è «Note della settimana»', await p.evaluate(() => document.querySelectorAll('.diario-libro .diario-giorno').length === 8 && !!document.querySelector('.diario-note-testo')));
   await p.fill('.diario-note-testo', 'Divisa in lavanderia'); await p.evaluate(() => document.activeElement.blur());
   ok('le note della settimana si salvano (e restano nel backup)', await p.evaluate(() => U.noteSettimana['2026-10-12'] === 'Divisa in lavanderia' && JSON.stringify(datiUtilitaPerBackup()).includes('Divisa in lavanderia')));
@@ -1738,16 +1741,21 @@ sezione('Agenda (vista del calendario)');
   // v3.8.30: il menu ha quattro viste in una riga; Settimana è confluita nel Diario, Agenda resta per la lente.
   await p.click('#btnVistaCalendario');
   const mv = await p.evaluate(() => ({ viste: [...document.querySelectorAll('#menuVistaCalendario [data-vista-calendario]')].map(b => b.dataset.vistaCalendario).join(), condividi: !!el('btnCondividiMese'), colonne: getComputedStyle(document.querySelector('.menu-vista-griglia')).gridTemplateColumns.split(' ').length }));
-  ok('menu delle viste: Giorno, Diario, Mese, Anno in una riga, senza «Condividi il mese»', mv.viste === 'giorno,diario,mese,anno' && !mv.condividi && mv.colonne === 4, JSON.stringify(mv));
+  ok('menu delle viste: Diario, Mese, Anno in una riga, senza «Condividi il mese»', mv.viste === 'diario,mese,anno' && !mv.condividi && mv.colonne === 3, JSON.stringify(mv));
   await p.click('#btnVistaCalendario');
   ok('chi aveva scelto la Settimana ritrova il Diario', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'settimana'); const v = vistaCalendario(); applicaVistaCalendario(); const vista = !el('vistaDiarioCal').hidden && el('vistaSettimanaCal').hidden; impostaVistaCalendario('mese'); return v === 'diario' && vista; }));
   await p.evaluate(() => { selezionaGiorno('2026-10-13'); });
-  // Vista Giorno: striscia della settimana, giornata a ore con il turno.
-  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="giorno"]');
-  const gg = await p.evaluate(() => ({ tit: el('etichettaMese').textContent, blocchi: [...document.querySelectorAll('#vistaGiornoCal .vg-turno')].map(b => b.textContent), striscia: document.querySelectorAll('.vg-giorno').length }));
-  ok('vista Giorno: "mar 13 ott", striscia di 7 giorni e il turno nella giornata a ore', /13 ott/.test(gg.tit) && gg.striscia === 7 && gg.blocchi.length >= 1, JSON.stringify(gg));
-  await p.click('#btnMesePrec');
-  ok('freccia ‹ in Giorno: giorno prima (12 ottobre)', await p.evaluate(() => giornoSelezionato === '2026-10-12'));
+  // v3.8.31: niente più vista Giorno; chi l'aveva scelta ritrova il Mese. Il Diario mostra rientro e indennità.
+  ok('chi aveva scelto la vista Giorno ritrova il Mese', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'giorno'); const v = vistaCalendario(); TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'mese'); return v === 'mese'; }));
+  const dia = await p.evaluate(() => { Object.assign(AppState.turni['2026-10-13'], { secondoAttivo: true, secondoOraInizio: '15:00', secondoOraFine: '18:00', servizioEsterno: true, buonoPasto: true }); impostaVistaCalendario('diario'); const g = document.querySelector('[data-diario-giorno="2026-10-13"]'); return { testo: g.textContent, icone: g.querySelectorAll('.diario-indennita i').length }; });
+  ok('Diario: il rientro e le icone delle indennità', /15:00–18:00 rientro/.test(dia.testo) && dia.icone >= 2, JSON.stringify(dia));
+  // v3.8.32: pagina del giorno con le note di servizio; frecce di un giorno; si cercano con la lente.
+  await p.click('[data-diario-giorno="2026-10-13"]');
+  await p.fill('.dpg-note', 'Servizio allo stadio'); await p.click('#btnMeseSucc'); await p.waitForTimeout(150);
+  const pg = await p.evaluate(() => ({ aperto: diarioGiornoAperto, nota: (notaDiarioDi('2026-10-13') || {}).testo, cerca: risultatiUtilitaPerCerca(t => /stadio/i.test(t)).length }));
+  ok('pagina del giorno: nota salvata, › va al giorno dopo, la lente la trova', pg.aperto === '2026-10-14' && pg.nota === 'Servizio allo stadio' && pg.cerca >= 1, JSON.stringify(pg));
+  await p.click('[data-dpg-settimana]');
+  ok('«‹ Settimana» torna al Diario della settimana con la nota', await p.evaluate(() => !diarioGiornoAperto && /Servizio allo stadio/.test(document.querySelector('[data-diario-giorno="2026-10-13"]').textContent)));
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await p.context().close();

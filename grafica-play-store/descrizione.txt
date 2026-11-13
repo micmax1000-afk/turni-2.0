@@ -5,7 +5,7 @@ Turni, indennità, cedolino e agenda per la Polizia di Stato. Tutto gratis.
 Turni & Accessorio PS è l'app gratuita per organizzare turni, indennità e assenze, pensata per il personale della Polizia di Stato. Calcola da sola ore, indennità e una stima di quanto arriva sul conto.
 
 TURNI E CALENDARIO
-- Calendario a colori con vista giorno, diario della settimana, mese o anno
+- Calendario a colori con diario (e note di servizio per ogni giorno), mese o anno
 - Turnazione automatica (quinta, settimana corta o lunga, sequenze tue) oppure «Riempi più giorni»: scegli il turno e tocca i giorni
 - Agenda con filtri, ricerca e eventi insieme ai turni
 - Detta a voce: «domani mattino con buono pasto», «lunedì dentista alle 15 con promemoria», anche senza internet
