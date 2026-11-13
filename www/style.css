@@ -3537,3 +3537,4 @@ body.calendario-moderno #sceltaSiglaClassico{display:none}
 .sigla-classico-pulsanti button small{font-size:.72rem;color:var(--testo-tenue)}
 .sigla-classico-pulsanti button.attivo{border-color:var(--acc,#1D4FD7);background:color-mix(in srgb,var(--acc,#1D4FD7) 8%,var(--pannello))}
 .sigla-classico-pulsanti button.attivo b{color:var(--acc,#1D4FD7)}
+body:not(.calendario-moderno) .giorno-cella.c2.selezionata{box-shadow:inset 0 0 0 2px var(--acc,#1D4FD7),inset 0 0 0 4px rgba(255,255,255,.9)!important}
