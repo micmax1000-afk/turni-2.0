@@ -768,7 +768,8 @@ function renderCalendario(){
       if(calendarioAColoriAttivo()){
         const base = coloreTurno || predefinito;
         // Colore bianco o quasi: una leggera tinta del colore di serie, così il turno si riconosce lo stesso.
-        sfondoC2 = luminanzaColore(base) > 0.9 ? mescolaColori(predefinito, '#FFFFFF', 0.45) : base;
+        // v3.8.36: il colore scelto dall'utente vale sempre, anche il bianco (prima un colore chiarissimo diventava la tinta di serie).
+        sfondoC2 = base;
         testoC2 = testoLeggibileSu(sfondoC2);
       } else {
         // Senza colori: sigla nera, rossa la domenica e nei festivi; il riposo in grigio.
