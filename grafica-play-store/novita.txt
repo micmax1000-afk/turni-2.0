@@ -1,5 +1,5 @@
 <it-IT>
-• Agenda e riquadro del giorno con la grafica del Diario, rientro compreso
-• Note di servizio sempre sulla pagina del giorno; in Agenda «‹ Calendario»
-• Grafica più uniforme: icone, intestazioni, Turni, Assenze, tema scuro
+• Calendario Classico rinnovato: griglia ordinata, numero in alto, turno sotto
+• Scegli cosa vedere nella casella: Matt, M o la tua sigla
+• Testo sempre leggibile anche con i colori scuri
 </it-IT>

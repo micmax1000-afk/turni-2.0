@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.32');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.33');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -459,11 +459,16 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'classico', eventi: { '2026-10-16': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }] } });
   const c = await p.evaluate(() => {
-    const oggi = document.querySelector('.giorno-cella.oggi .giorno-numero');
-    const ev = document.querySelector('.giorno-cella[data-data="2026-10-16"] .giorno-evento-titolo');
-    return { classico: !document.body.classList.contains('calendario-moderno'), oggi: oggi && getComputedStyle(oggi).backgroundColor, ev: ev && getComputedStyle(ev).width, barrato: [...document.querySelectorAll('.giorno-cella .giorno-numero')].some(n => getComputedStyle(n).textDecorationLine === 'line-through') };
+    const oggi = document.querySelector('.giorno-cella.oggi .c2-numero');
+    const ev = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-eventi i');
+    const altezze = new Set([...document.querySelectorAll('#calendarioGriglia .giorno-cella')].map(c => Math.round(c.getBoundingClientRect().height)));
+    return { classico: !document.body.classList.contains('calendario-moderno'), oggi: oggi && getComputedStyle(oggi).backgroundColor, ev: ev && getComputedStyle(ev).width, barrato: [...document.querySelectorAll('.giorno-cella .c2-numero')].some(n => getComputedStyle(n).textDecorationLine === 'line-through'), altezze: altezze.size, sigla: (document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla') || {}).textContent };
   });
-  ok('calendario classico: oggi nel cerchio blu, eventi a pallino, niente numeri barrati', c.classico && c.oggi === 'rgb(21, 94, 239)' && c.ev === '9px' && !c.barrato, JSON.stringify(c));
+  // v3.8.33: nel Classico si sceglie cosa mostrare: nome corto, lettera o la sigla del turno (e finisce nel backup).
+  const sg = await p.evaluate(() => { const out = {}; for(const m of ['lettera', 'sigla', 'nome']){ document.querySelector(`[data-sigla-classico="${m}"]`).click(); out[m] = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla').textContent; } out.backup = costruisciDatiBackup().siglaClassico; return out; });
+  ok('Classico: «Lettera» mostra S, «La tua sigla» SE, «Nome corto» Sera; la scelta va nel backup', sg.lettera === 'S' && sg.sigla === 'SE' && sg.nome === 'Sera' && sg.backup === 'nome', JSON.stringify(sg));
+  // v3.8.33: Classico rifatto — caselle tutte alte uguali, sigla corta, oggi nel cerchio blu, eventi a pallino.
+  ok('calendario classico: oggi nel cerchio blu, eventi a pallino, caselle uguali, sigla corta', c.classico && /^rgb\(/.test(c.oggi || '') && c.oggi !== 'rgba(0, 0, 0, 0)' && c.ev === '6px' && !c.barrato && c.altezze === 1 && /^(Matt|Pom|Sera|Not|Rip)$/.test(c.sigla || ''), JSON.stringify(c));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -636,8 +641,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Agenda come il Diario', passi.join(' | ') === 'Agenda come il Diario (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.32'));
+  ok('chi usava già l\'app vede 1 fumetto: Classico rinnovato', passi.join(' | ') === 'Classico rinnovato (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.33'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }

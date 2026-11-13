@@ -290,6 +290,8 @@ function aggiornaClasseCalendarioColori(){
     b.classList.toggle('attivo', attivo);
     b.setAttribute('aria-pressed', attivo ? 'true' : 'false');
   });
+  const modo = typeof siglaClassicoScelta === 'function' ? siglaClassicoScelta() : 'nome';
+  document.querySelectorAll('[data-sigla-classico]').forEach(b => { const on = b.dataset.siglaClassico === modo; b.classList.toggle('attivo', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
 }
 
 // Numero di versione mostrato in Impostazioni — letto da manifest.json, la stessa fonte
@@ -843,6 +845,11 @@ function inizializza(){
     spiegaCalendarioAColori();
     renderCalendario();
   });
+  document.querySelectorAll('[data-sigla-classico]').forEach(b => b.addEventListener('click', () => {
+    TurniPSStorage.setItem(CHIAVE_SIGLA_CLASSICO, b.dataset.siglaClassico);
+    aggiornaClasseCalendarioColori();
+    renderCalendario();
+  }));
   document.querySelectorAll('[data-stile-calendario]').forEach(b => b.addEventListener('click', () => {
     TurniPSStorage.setItem(CHIAVE_STILE_CALENDARIO, b.dataset.stileCalendario); aggiornaStatoStrumentiTurni();
     aggiornaClasseCalendarioColori();
@@ -4211,9 +4218,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.32';
+const VERSIONE_NOVITA = '3.8.33';
 const PASSI_NOVITA = [
-  { id: 'btnVistaCalendario', titolo: 'Agenda come il Diario', testo: 'Agenda e riquadro del giorno hanno la grafica del Diario. Le note di servizio si scrivono sempre sulla pagina del giorno; le vecchie note della settimana sono nel lunedì.' }
+  { id: 'btnVistaCalendario', titolo: 'Classico rinnovato', testo: 'Chi usa lo stile Classico ha una griglia ordinata: il numero in alto (rosso nei festivi) e il turno sotto. In Turni → Stile calendario scegli se vedere Matt, M o la tua sigla.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){
