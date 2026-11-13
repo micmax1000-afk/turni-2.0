@@ -308,7 +308,8 @@ function vaiAlGiornoVoce(iso){
 
 // Aiuti per contare
 function minutiStraordinario(t){
-  if(!t) return 0; let m = 0;
+  // v3.8.39: in un giorno di riposo o di assenza lo straordinario rimasto da prima non conta (come nel Report).
+  if(!t || t.riposo || t.assenzaTipo) return 0; let m = 0;
   [['straordinarioPrimaInizio', 'straordinarioPrimaFine'], ['straordinarioDopoInizio', 'straordinarioDopoFine']].forEach(([a, b]) => { if(t[a] && t[b]){ let x = minDa(t[b]) - minDa(t[a]); if(x <= 0) x += 1440; m += x; } });
   return m;
 }

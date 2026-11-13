@@ -485,6 +485,12 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
     return salvato;
   });
   ok('backup automatico su Drive: dopo 6 giorni parte, anche se Google è pronto in ritardo', ba === 1, String(ba));
+  // v3.8.39: un turno nuovo colorato nella stessa fascia non cambia il colore degli altri turni.
+  const cf = await p.evaluate(() => { const prima = coloreGiornoVista({ data: '2026-10-08', oraInizio: '07:00', oraFine: '13:00', modelloId: 'mattina' }); AppState.modelliTurno.push({ id: 'personalizzato_prova', nome: 'Scorta', oraInizio: '08:00', oraFine: '16:00', sigla: 'SC', colore: '#1E88E5' }); const dopo = coloreGiornoVista({ data: '2026-10-08', oraInizio: '07:00', oraFine: '13:00', modelloId: 'mattina' }); const suo = coloreGiornoVista({ data: '2026-10-08', oraInizio: '08:00', oraFine: '16:00', modelloId: 'personalizzato_prova' }); AppState.modelliTurno = AppState.modelliTurno.filter(m => m.id !== 'personalizzato_prova'); return { prima, dopo, suo }; });
+  ok('un turno nuovo blu di mattina non colora di blu i giorni di Mattino', cf.prima === cf.dopo && cf.suo === '#1E88E5', JSON.stringify(cf));
+  // v3.8.39: dati rovinati non bloccano l'app; lo straordinario rimasto su un giorno di riposo non compare.
+  const dr = await p.evaluate(() => ({ puliti: Object.keys(pulisciTurni({ '2026-10-01': null, 'x': {}, '2026-10-02': { riposo: true } })).join(), str: minutiStraordinario({ riposo: true, straordinarioDopoInizio: '10:00', straordinarioDopoFine: '12:00' }), strTurno: minutiStraordinario({ oraInizio: '07:00', oraFine: '13:00', straordinarioDopoInizio: '13:00', straordinarioDopoFine: '15:00' }) }));
+  ok('giorni rovinati scartati al caricamento; niente «+2h» su un riposo', dr.puliti === '2026-10-02' && dr.str === 0 && dr.strTurno === 120, JSON.stringify(dr));
   // v3.8.33: nel Classico si sceglie cosa mostrare: nome corto, lettera o la sigla del turno (e finisce nel backup).
   const sg = await p.evaluate(() => { const out = {}; for(const m of ['lettera', 'sigla', 'nome']){ document.querySelector(`[data-sigla-classico="${m}"]`).click(); out[m] = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla').textContent; } out.backup = costruisciDatiBackup().siglaClassico; return out; });
   ok('Classico: «Lettera» mostra S, «La tua sigla» SE, «Nome corto» Sera; la scelta va nel backup', sg.lettera === 'S' && sg.sigla === 'SE' && sg.nome === 'Sera' && sg.backup === 'nome', JSON.stringify(sg));
@@ -1791,6 +1797,12 @@ sezione('Agenda (vista del calendario)');
   await p.click('[data-diario-giorno="2026-10-13"]');
   await p.fill('.dpg-note', 'Servizio allo stadio'); await p.click('#btnMeseSucc'); await p.waitForTimeout(150);
   const pg = await p.evaluate(() => ({ aperto: diarioGiornoAperto, nota: (notaDiarioDi('2026-10-13') || {}).testo, cerca: risultatiUtilitaPerCerca(t => /stadio/i.test(t)).length }));
+  // v3.8.39: la nota si salva mentre scrivi (senza uscire dal campo) e la tastiera che si apre non la fa perdere.
+  await p.click('.dpg-note'); await p.keyboard.type('Scritta senza uscire');
+  const vp = p.viewportSize(); await p.setViewportSize({ width: vp.width, height: Math.round(vp.height * 0.55) }); await p.waitForTimeout(700);
+  const sn = await p.evaluate(() => ({ fuoco: !!document.activeElement && document.activeElement.classList.contains('dpg-note'), salvata: (notaDiarioDi(diarioGiornoAperto) || {}).testo }));
+  await p.setViewportSize(vp); await p.fill('.dpg-note', '');
+  ok('note di servizio: salvate mentre scrivi, il campo resta attivo con la tastiera aperta', sn.fuoco && sn.salvata === 'Scritta senza uscire', JSON.stringify(sn));
   ok('pagina del giorno: c\'è il microfono per dettare le note', await p.evaluate(() => !!document.querySelector('[data-dpg-detta]')));
   ok('pagina del giorno: nota salvata, › va al giorno dopo, la lente la trova', pg.aperto === '2026-10-14' && pg.nota === 'Servizio allo stadio' && pg.cerca >= 1, JSON.stringify(pg));
   await p.click('[data-dpg-settimana]');

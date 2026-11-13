@@ -656,7 +656,7 @@ function ripristinaSnapshotPreRipristino(){
     if(!raw) return false;
     const dati = JSON.parse(raw);
     AppState.anagrafica = dati.anagrafica ?? null;
-    AppState.turni = dati.turni && typeof dati.turni === 'object' ? dati.turni : {};
+    AppState.turni = pulisciTurni(dati.turni);
     AppState.tabelle = dati.tabelle && typeof dati.tabelle === 'object' ? dati.tabelle : AppState.tabelle;
     AppState.conguagliPerMese = dati.conguagliPerMese && typeof dati.conguagliPerMese === 'object' ? dati.conguagliPerMese : {};
     AppState.storico = dati.storico && typeof dati.storico === 'object' ? dati.storico : {};
@@ -695,7 +695,7 @@ function importaBackup(file, datiGiaLetti){
       analizzaBackup(dati);
       if(!creaSnapshotPreRipristino()) throw new Error('Impossibile creare la copia di sicurezza');
       if(dati.anagrafica !== undefined) AppState.anagrafica = dati.anagrafica;
-      if(dati.turni) AppState.turni = dati.turni;
+      if(dati.turni) AppState.turni = pulisciTurni(dati.turni);
       if(dati.tabelle) AppState.tabelle = dati.tabelle;
       if(dati.conguagliPerMese) AppState.conguagliPerMese = dati.conguagliPerMese;
       if(dati.storico) AppState.storico = dati.storico;

@@ -798,7 +798,7 @@ function renderCalendario(){
     cella.classList.toggle('c2-senza-colori', conTurno && !calendarioAColoriAttivo());
     if(testoC2) cella.style.setProperty('--c2-testo', testoC2); else cella.style.removeProperty('--c2-testo');
     cella.innerHTML = `<span class="c2-numero">${g}</span>`
-      + `<span class="c2-sigla${modoSigla === 'lettera' ? ' c2-lettera' : ''}" title="${escapeHtml(nomeCategoria)}">${escapeHtml(testoSigla)}</span>`
+      + `<span class="c2-sigla${modoSigla === 'lettera' ? ' c2-lettera' : ''}${testoSigla.length >= 6 ? ' c2-lunga2' : testoSigla.length >= 5 ? ' c2-lunga' : ''}" title="${escapeHtml(nomeCategoria)}">${escapeHtml(testoSigla)}</span>`
       + (oreStrC2 ? `<span class="c2-straord" title="Straordinario ${oreStrC2} ore">+${oreStrC2}h</span>` : '')
       + eventiC2;
 
@@ -1160,15 +1160,17 @@ function modelloColoreGiorno(t, categoria){
   const modelli = AppState.modelliTurno || [];
   if(t.riposo) return modelli.find(m => m.riposo) || null;
   const proprio = t.modelloId ? modelli.find(m => m.id === t.modelloId) : null;
-  if(proprio && proprio.colore) return proprio;
-  const base = modelloBaseFascia(categoria, t.data, true);
-  return base || proprio || null;
+  // v3.8.39: un giorno con il suo turno usa sempre quel turno (il suo colore, o quello automatico della fascia).
+  // Prima un turno senza colore scelto prendeva per errore il colore di un altro turno colorato della stessa fascia.
+  if(proprio) return proprio;
+  // Solo i giorni con orari cambiati a mano prendono il turno di riferimento della fascia.
+  return modelloBaseFascia(categoria, t.data);
 }
 // Il turno «di riferimento» di una fascia (mattina, pomeriggio, sera, notte): prima quello di serie con quel nome,
 // altrimenti un turno creato dall'utente con orari in quella fascia (es. «Mattino 06:40–13:15» personalizzato).
-function modelloBaseFascia(categoria, data, soloColorati){
+function modelloBaseFascia(categoria, data){
   if(!categoria) return null;
-  const modelli = (AppState.modelliTurno || []).filter(m => !m.riposo && (!soloColorati || m.colore));
+  const modelli = (AppState.modelliTurno || []).filter(m => !m.riposo);
   const speciali = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'];
   return modelli.find(m => m.id === categoria)
     || modelli.find(m => !speciali.includes(m.id) && m.oraInizio && m.oraFine && categoriaTurno(m.oraInizio, m.oraFine, data) === categoria)
@@ -1695,8 +1697,8 @@ function paginaGiornoDiario(iso, mezza){
     const col = coloreGiornoVista(t);
     righe.push(`<span class="diario-turno"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <i class="diario-turno-ora">${t.oraInizio}–${t.oraFine}</i>` : ''}</span>`);
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
-    if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
-    if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
+    if(!t.riposo && !t.assenzaTipo && t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
+    if(!t.riposo && !t.assenzaTipo && t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
     if(t.servizioSvolto) righe.push(`${svgLinea('matita', 'diario-ic')}${escapeHtml(t.servizioSvolto)}`);
     // v3.8.31: le indennità del giorno come icone piccole (il nome compare tenendo il dito o toccando il giorno).
     const ind = iconeIndennitaDiario(t);
@@ -1757,12 +1759,14 @@ document.addEventListener('click', e => {
 var diarioGiornoAperto = null;
 function diarioDueGiorni(){ return window.innerWidth >= 640; }
 function notaDiarioDi(iso){ return (typeof U !== 'undefined' && U.note || []).find(n => n.diario && n.giorno === iso) || null; }
-function salvaNotaDiario(iso, testo){
+function salvaNotaDiario(iso, testo, silenzioso){
   if(typeof U === 'undefined') return;
   const n = notaDiarioDi(iso), v = String(testo || '').replace(/\s+$/, '');
   if(!v.trim()){ if(n) U.note = U.note.filter(x => x !== n); }
   else if(n){ n.testo = v; n.modificata = Date.now(); }
   else U.note.push({ id: idUt('nt'), titolo: '', testo: v, giorno: iso, fissata: false, diario: true, modificata: Date.now() });
+  // v3.8.39: mentre si scrive si salva senza ridisegnare la pagina (altrimenti il campo perdeva il cursore e la tastiera si chiudeva).
+  if(silenzioso){ try{ TurniPSStorage.setItem(CHIAVE_UTILITA, JSON.stringify(U)); }catch(e){} return; }
   salvaUtilita();
 }
 function paginaGiornoIntera(iso){
@@ -1773,8 +1777,8 @@ function paginaGiornoIntera(iso){
     const col = coloreGiornoVista(t);
     righe.push(`<button type="button" class="dpg-turno" data-dpg-modifica="${iso}"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <span>${t.oraInizio}–${t.oraFine}</span>` : ''}<i aria-hidden="true">›</i></button>`);
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
-    if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
-    if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
+    if(!t.riposo && !t.assenzaTipo && t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
+    if(!t.riposo && !t.assenzaTipo && t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
     if(t.servizioSvolto) righe.push(`${svgLinea('matita', 'diario-ic')}${escapeHtml(t.servizioSvolto)}`);
     const chip = typeof chipDettagliGiorno === 'function' ? chipDettagliGiorno(t).filter(c => !/chip-dett-str/.test(c)) : [];
     if(chip.length) righe.push(`<span class="dpg-chip">${chip.join('')}</span>`);
@@ -1806,8 +1810,16 @@ function renderPaginaGiornoDiario(host, iso){
   if(paginaDaGirareDiario){ voltaPaginaDiario(paginaDaGirareDiario); paginaDaGirareDiario = 0; }
 }
 function adattaAltezzaNotaDiario(ta){ ta.style.height = 'auto'; ta.style.height = Math.max(ta.scrollHeight, 264) + 'px'; }
-document.addEventListener('input', e => { const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(ta) adattaAltezzaNotaDiario(ta); });
-document.addEventListener('change', e => { const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(ta) salvaNotaDiario(ta.dataset.dpgNote, ta.value); });
+// v3.8.39: la nota si salva da sola mentre scrivi (dopo mezzo secondo di pausa) e quando esci dal campo:
+// prima si salvava solo uscendo dal campo, e cambiando giorno col dito o chiudendo l'app il testo andava perso.
+let timerNotaDiario = null;
+document.addEventListener('input', e => {
+  const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(!ta) return;
+  adattaAltezzaNotaDiario(ta);
+  clearTimeout(timerNotaDiario);
+  timerNotaDiario = setTimeout(() => salvaNotaDiario(ta.dataset.dpgNote, ta.value, true), 500);
+});
+document.addEventListener('change', e => { const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(ta){ clearTimeout(timerNotaDiario); salvaNotaDiario(ta.dataset.dpgNote, ta.value, true); } });
 document.addEventListener('click', e => {
   if(!e.target.closest) return;
   if(e.target.closest('[data-dpg-settimana]')){ diarioGiornoAperto = null; renderCalendario(); return; }
@@ -1842,7 +1854,14 @@ document.addEventListener('click', e => {
   if(!x) return;
   e.stopPropagation(); apriPaginaGiornoDiario(x.dataset.diarioApri);
 }, true);
-window.addEventListener('resize', () => { if(diarioGiornoAperto && vistaCalendario() === 'diario') renderCalendario(); });
+// Si ridisegna solo se si passa da una a due pagine (telefono girato): l'apertura della tastiera rimpicciolisce
+// la finestra, e ridisegnare lì faceva perdere il campo in cui si stava scrivendo.
+let diarioDuePagine = typeof window !== 'undefined' ? window.innerWidth >= 640 : null;
+window.addEventListener('resize', () => {
+  const due = diarioDueGiorni();
+  if(diarioGiornoAperto && vistaCalendario() === 'diario' && diarioDuePagine !== null && due !== diarioDuePagine) renderCalendario();
+  diarioDuePagine = due;
+});
 
 // Note della settimana (Diario): si salvano quando esci dal riquadro; restano sul telefono e nel backup.
 document.addEventListener('change', e => {
