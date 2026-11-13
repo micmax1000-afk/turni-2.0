@@ -4192,7 +4192,7 @@ function inizializzaGestiCalendario(){
   let x0 = null, y0 = null, scroll0 = 0;
   // v3.8.16: niente cambio di mese quando il dito parte dalla barra del pennello, dal menu ＋ o da una fila che scorre
   zona.addEventListener('touchstart', e => {
-    if(e.touches.length !== 1 || (e.target.closest && e.target.closest('#barraPennello, .fab-menu, .voce-scheda, .chip-pennello, #manigliaVista'))){ x0 = null; return; }
+    if(e.touches.length !== 1 || (e.target.closest && e.target.closest('#barraPennello, .fab-menu, .voce-scheda, .chip-pennello, #manigliaVista, .dpg-note'))){ x0 = null; return; }
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; scroll0 = window.scrollY;
   }, { passive: true });
   // Se il gesto è (anche un po') in verticale, o se intanto la pagina è scorsa, era uno scorrimento: il mese resta.

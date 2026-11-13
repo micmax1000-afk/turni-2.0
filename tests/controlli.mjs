@@ -1746,6 +1746,13 @@ sezione('Agenda (vista del calendario)');
   ok('chi aveva scelto la vista Giorno ritrova il Mese', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'giorno'); const v = vistaCalendario(); TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'mese'); return v === 'mese'; }));
   const dia = await p.evaluate(() => { Object.assign(AppState.turni['2026-10-13'], { secondoAttivo: true, secondoOraInizio: '15:00', secondoOraFine: '18:00', servizioEsterno: true, buonoPasto: true }); impostaVistaCalendario('diario'); const g = document.querySelector('[data-diario-giorno="2026-10-13"]'); return { testo: g.textContent, icone: g.querySelectorAll('.diario-indennita i').length }; });
   ok('Diario: il rientro e le icone delle indennità', /15:00–18:00 rientro/.test(dia.testo) && dia.icone >= 2, JSON.stringify(dia));
+  // v3.8.32: pagina del giorno con le note di servizio; frecce di un giorno; si cercano con la lente.
+  await p.click('[data-diario-giorno="2026-10-13"]');
+  await p.fill('.dpg-note', 'Servizio allo stadio'); await p.click('#btnMeseSucc'); await p.waitForTimeout(150);
+  const pg = await p.evaluate(() => ({ aperto: diarioGiornoAperto, nota: (notaDiarioDi('2026-10-13') || {}).testo, cerca: risultatiUtilitaPerCerca(t => /stadio/i.test(t)).length }));
+  ok('pagina del giorno: nota salvata, › va al giorno dopo, la lente la trova', pg.aperto === '2026-10-14' && pg.nota === 'Servizio allo stadio' && pg.cerca >= 1, JSON.stringify(pg));
+  await p.click('[data-dpg-settimana]');
+  ok('«‹ Settimana» torna al Diario della settimana con la nota', await p.evaluate(() => !diarioGiornoAperto && /Servizio allo stadio/.test(document.querySelector('[data-diario-giorno="2026-10-13"]').textContent)));
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await p.context().close();

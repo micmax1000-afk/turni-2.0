@@ -1086,6 +1086,7 @@ function vistaCalendario(){
   return v === 'anno' || v === 'diario' ? v : 'mese';
 }
 function impostaVistaCalendario(v){
+  diarioGiornoAperto = null;
   try{ TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, v === 'agenda' ? 'mese' : v); }catch(e){}
   if(!giornoSelezionato) giornoSelezionato = dataISO(new Date());
   if(v !== 'agenda'){ const d = dataDaIso(giornoSelezionato); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); }
@@ -1102,7 +1103,9 @@ function spostaVistaCalendario(dir){
   const v = vistaCalendario();
   if(v === 'anno'){ annoCorrente += dir; renderCalendario(); return true; }
   if(v !== 'giorno' && v !== 'settimana' && v !== 'diario') return false;
-  giornoSelezionato = giornoPiu(giornoSelezionato || dataISO(new Date()), dir * (v === 'giorno' ? 1 : 7));
+  const passo = v === 'giorno' ? 1 : (v === 'diario' && diarioGiornoAperto) ? (diarioDueGiorni() ? 2 : 1) : 7;
+  giornoSelezionato = giornoPiu(giornoSelezionato || dataISO(new Date()), dir * passo);
+  if(v === 'diario' && diarioGiornoAperto) diarioGiornoAperto = giornoSelezionato;
   if(v === 'diario') paginaDaGirareDiario = dir;
   const d = dataDaIso(giornoSelezionato); meseCorrente = d.getMonth(); annoCorrente = d.getFullYear();
   renderCalendario();
@@ -1671,7 +1674,7 @@ function paginaGiornoDiario(iso, mezza){
   }
   try{ eventiDelGiorno(iso).forEach(({ ev }) => righe.push(`${ev.tuttoIlGiorno || !ev.oraInizio ? '' : `<span class="diario-ora">${ev.oraInizio}</span> `}${escapeHtml(ev.titolo || 'Evento')}`)); }catch(e){}
   try{
-    U.note.filter(n => n.giorno === iso).forEach(n => righe.push(`☐ ${escapeHtml(n.titolo || n.testo.slice(0, 40))}`));
+    U.note.filter(n => n.giorno === iso).forEach(n => righe.push(n.diario ? `<span class="diario-nota-servizio">✎ ${escapeHtml(n.testo.split('\n')[0].slice(0, 80))}</span>` : `☐ ${escapeHtml(n.titolo || n.testo.slice(0, 40))}`));
     U.uscite.filter(u => u.giorno === iso).forEach(u => { const mz = mezzoDi(u.mezzoId); righe.push(`🚓 ${escapeHtml(mz ? mz.sigla : 'Veicolo')}${kmPercorsi(u) !== null ? ' · ' + numeroIt0(kmPercorsi(u)) + ' km' : ''}`); });
     U.scadenze.filter(x => x.data === iso).forEach(x => righe.push(`<mark>⏰ ${escapeHtml(x.nome)}</mark>`));
   }catch(e){}
@@ -1689,6 +1692,7 @@ function iconeIndennitaDiario(t){
 let paginaDaGirareDiario = 0;
 function renderVistaDiario(iso){
   const host = el('vistaDiarioCal'); if(!host) return;
+  if(diarioGiornoAperto){ renderPaginaGiornoDiario(host, diarioGiornoAperto); return; }
   const lun = dataISO(lunediDi(iso)), g = n => giornoPiu(lun, n);
   host.innerHTML = `<div class="diario-libro">`
     + `<div class="diario-pagina sx">${paginaGiornoDiario(g(0))}${paginaGiornoDiario(g(1))}${paginaGiornoDiario(g(2))}${paginaGiornoDiario(g(3))}</div>`
@@ -1708,8 +1712,72 @@ document.addEventListener('click', e => {
   if(!g) return;
   const iso = g.dataset.diarioGiorno, d = dataDaIso(iso);
   meseCorrente = d.getMonth(); annoCorrente = d.getFullYear(); giornoSelezionato = iso;
-  if(typeof apriModaleTurno === 'function') apriModaleTurno(iso);
+  diarioGiornoAperto = iso; paginaDaGirareDiario = 1; renderCalendario(); window.scrollTo(0, 0);
 });
+
+// ── v3.8.32: pagina del giorno — tocchi un giorno nel Diario e si apre la sua pagina, come un'agenda giornaliera.
+// Sul telefono un giorno per pagina; col telefono in orizzontale o sul tablet due pagine affiancate.
+// Le «Note di servizio» sono una nota del giorno (la stessa delle Utilità): si cercano con la lente e finiscono nel backup.
+var diarioGiornoAperto = null;
+function diarioDueGiorni(){ return window.innerWidth >= 640; }
+function notaDiarioDi(iso){ return (typeof U !== 'undefined' && U.note || []).find(n => n.diario && n.giorno === iso) || null; }
+function salvaNotaDiario(iso, testo){
+  if(typeof U === 'undefined') return;
+  const n = notaDiarioDi(iso), v = String(testo || '').replace(/\s+$/, '');
+  if(!v.trim()){ if(n) U.note = U.note.filter(x => x !== n); }
+  else if(n){ n.testo = v; n.modificata = Date.now(); }
+  else U.note.push({ id: idUt('nt'), titolo: '', testo: v, giorno: iso, fissata: false, diario: true, modificata: Date.now() });
+  salvaUtilita();
+}
+function paginaGiornoIntera(iso){
+  const d = dataDaIso(iso), t = AppState.turni[iso], oggi = iso === dataISO(new Date());
+  const festa = typeof nomeFestivita === 'function' ? nomeFestivita(iso) : '';
+  const righe = [];
+  if(t && (t.riposo || t.assenzaTipo || t.oraInizio)){
+    const col = coloreGiornoVista(t);
+    righe.push(`<button type="button" class="dpg-turno" data-dpg-modifica="${iso}"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <span>${t.oraInizio}–${t.oraFine}</span>` : ''}<i aria-hidden="true">›</i></button>`);
+    if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
+    if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
+    if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
+    if(t.servizioSvolto) righe.push(`✎ ${escapeHtml(t.servizioSvolto)}`);
+    const chip = typeof chipDettagliGiorno === 'function' ? chipDettagliGiorno(t).filter(c => !/chip-dett-str/.test(c)) : [];
+    if(chip.length) righe.push(`<span class="dpg-chip">${chip.join('')}</span>`);
+  } else righe.push(`<button type="button" class="dpg-turno vuoto" data-dpg-modifica="${iso}">＋ Segna il turno</button>`);
+  try{ eventiDelGiorno(iso).forEach(({ ev }) => righe.push(`${ev.tuttoIlGiorno || !ev.oraInizio ? '' : `<span class="diario-ora">${ev.oraInizio}</span> `}${escapeHtml(ev.titolo || 'Evento')}`)); }catch(e){}
+  try{
+    U.note.filter(n => n.giorno === iso && !n.diario).forEach(n => righe.push(`☐ ${escapeHtml(n.titolo || n.testo.slice(0, 60))}`));
+    U.uscite.filter(u => u.giorno === iso).forEach(u => { const mz = mezzoDi(u.mezzoId); righe.push(`🚓 ${escapeHtml(mz ? mz.sigla : 'Veicolo')}${kmPercorsi(u) !== null ? ' · ' + numeroIt0(kmPercorsi(u)) + ' km' : ''}`); });
+    U.scadenze.filter(x => x.data === iso).forEach(x => righe.push(`<mark>⏰ ${escapeHtml(x.nome)}</mark>`));
+  }catch(e){}
+  const nota = notaDiarioDi(iso);
+  const nomi = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+  return `<div class="dpg${oggi ? ' oggi' : ''}${eFestivoOdDomenica(iso) ? ' festivo' : ''}">`
+    + `<p class="dpg-testa"><b>${d.getDate()}</b><span>${nomi[d.getDay()]}<small>${NOMI_MESI[d.getMonth()]} ${d.getFullYear()}${festa ? ' · ' + escapeHtml(festa) : ''}</small></span></p>`
+    + `<div class="dpg-righe">${righe.map(r => `<span>${r}</span>`).join('')}</div>`
+    + `<label class="dpg-note-tit" for="dpgNote${iso}">Note di servizio</label>`
+    + `<textarea id="dpgNote${iso}" class="dpg-note" data-dpg-note="${iso}" placeholder="Scrivi qui com'è andato il servizio…" maxlength="4000">${escapeHtml(nota ? nota.testo : '')}</textarea>`
+    + `</div>`;
+}
+function renderPaginaGiornoDiario(host, iso){
+  const due = diarioDueGiorni();
+  host.innerHTML = `<button type="button" class="dpg-indietro" data-dpg-settimana>‹ Settimana ${settimanaDellAnno(dataDaIso(iso))}</button>`
+    + `<div class="diario-libro dpg-libro${due ? '' : ' uno'}">`
+    + `<div class="diario-pagina sx${due ? '' : ' dx'}">${paginaGiornoIntera(iso)}</div>`
+    + (due ? `<div class="diario-spirale" aria-hidden="true"></div><div class="diario-pagina dx">${paginaGiornoIntera(giornoPiu(iso, 1))}</div>` : '')
+    + `</div>`;
+  host.querySelectorAll('.dpg-note').forEach(adattaAltezzaNotaDiario);
+  if(paginaDaGirareDiario){ voltaPaginaDiario(paginaDaGirareDiario); paginaDaGirareDiario = 0; }
+}
+function adattaAltezzaNotaDiario(ta){ ta.style.height = 'auto'; ta.style.height = Math.max(ta.scrollHeight, 264) + 'px'; }
+document.addEventListener('input', e => { const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(ta) adattaAltezzaNotaDiario(ta); });
+document.addEventListener('change', e => { const ta = e.target.closest && e.target.closest('[data-dpg-note]'); if(ta) salvaNotaDiario(ta.dataset.dpgNote, ta.value); });
+document.addEventListener('click', e => {
+  if(!e.target.closest) return;
+  if(e.target.closest('[data-dpg-settimana]')){ diarioGiornoAperto = null; renderCalendario(); return; }
+  const m = e.target.closest('[data-dpg-modifica]');
+  if(m && typeof apriModaleTurno === 'function'){ giornoSelezionato = m.dataset.dpgModifica; apriModaleTurno(m.dataset.dpgModifica); }
+});
+window.addEventListener('resize', () => { if(diarioGiornoAperto && vistaCalendario() === 'diario') renderCalendario(); });
 
 // Note della settimana (Diario): si salvano quando esci dal riquadro; restano sul telefono e nel backup.
 document.addEventListener('change', e => {
