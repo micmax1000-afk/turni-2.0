@@ -2783,7 +2783,7 @@ body:not(.calendario-moderno) .giorno-cella.ha-straordinario{background-image:li
 .menu-vista-calendario button.attivo{background:color-mix(in srgb,#155EEF 10%,var(--pannello));color:#155EEF}
 .menu-vista-calendario svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 /* v3.8.30: le quattro viste in una riga (prima erano una lista lunga) */
-.menu-vista-griglia{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.menu-vista-griglia{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .menu-vista-griglia button{flex-direction:column;justify-content:center;gap:5px;padding:10px 4px;font-size:.74rem;text-align:center;min-width:64px}
 .menu-vista-griglia svg{width:22px;height:22px}
 .scheda-calendario-v2:not([data-vista="mese"]) .calendario-giorni-settimana,.scheda-calendario-v2:not([data-vista="mese"]) #calendarioGriglia{display:none}
@@ -3401,6 +3401,10 @@ html[data-tema=scuro] .diario-libro,html.tema-scuro .diario-libro{--carta-d:#223
 .diario-righe .diario-turno{white-space:normal}
 .diario-turno-ora{display:inline-block;white-space:nowrap;font-style:normal}
 .diario-turno b{display:inline-block;padding:0 6px;border-radius:5px;font-size:.7rem;line-height:17px;margin-right:2px}
+.diario-indennita{display:inline-flex;gap:6px;align-items:center;vertical-align:middle}
+.diario-indennita i{display:inline-flex;width:16px;height:16px;color:var(--acc,#1D4FD7)}
+.diario-indennita svg{width:16px;height:16px}
+html[data-tema=scuro] .diario-indennita i{color:#8FB0FF}
 .diario-ora{color:var(--acc,#1D4FD7);font-weight:700}
 html[data-tema=scuro] .diario-ora{color:#8FB0FF}
 .diario-righe mark{background:#FFD978;color:#1E2129;border-radius:4px;padding:0 4px}

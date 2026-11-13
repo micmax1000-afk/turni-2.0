@@ -1738,16 +1738,14 @@ sezione('Agenda (vista del calendario)');
   // v3.8.30: il menu ha quattro viste in una riga; Settimana è confluita nel Diario, Agenda resta per la lente.
   await p.click('#btnVistaCalendario');
   const mv = await p.evaluate(() => ({ viste: [...document.querySelectorAll('#menuVistaCalendario [data-vista-calendario]')].map(b => b.dataset.vistaCalendario).join(), condividi: !!el('btnCondividiMese'), colonne: getComputedStyle(document.querySelector('.menu-vista-griglia')).gridTemplateColumns.split(' ').length }));
-  ok('menu delle viste: Giorno, Diario, Mese, Anno in una riga, senza «Condividi il mese»', mv.viste === 'giorno,diario,mese,anno' && !mv.condividi && mv.colonne === 4, JSON.stringify(mv));
+  ok('menu delle viste: Diario, Mese, Anno in una riga, senza «Condividi il mese»', mv.viste === 'diario,mese,anno' && !mv.condividi && mv.colonne === 3, JSON.stringify(mv));
   await p.click('#btnVistaCalendario');
   ok('chi aveva scelto la Settimana ritrova il Diario', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'settimana'); const v = vistaCalendario(); applicaVistaCalendario(); const vista = !el('vistaDiarioCal').hidden && el('vistaSettimanaCal').hidden; impostaVistaCalendario('mese'); return v === 'diario' && vista; }));
   await p.evaluate(() => { selezionaGiorno('2026-10-13'); });
-  // Vista Giorno: striscia della settimana, giornata a ore con il turno.
-  await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="giorno"]');
-  const gg = await p.evaluate(() => ({ tit: el('etichettaMese').textContent, blocchi: [...document.querySelectorAll('#vistaGiornoCal .vg-turno')].map(b => b.textContent), striscia: document.querySelectorAll('.vg-giorno').length }));
-  ok('vista Giorno: "mar 13 ott", striscia di 7 giorni e il turno nella giornata a ore', /13 ott/.test(gg.tit) && gg.striscia === 7 && gg.blocchi.length >= 1, JSON.stringify(gg));
-  await p.click('#btnMesePrec');
-  ok('freccia ‹ in Giorno: giorno prima (12 ottobre)', await p.evaluate(() => giornoSelezionato === '2026-10-12'));
+  // v3.8.31: niente più vista Giorno; chi l'aveva scelta ritrova il Mese. Il Diario mostra rientro e indennità.
+  ok('chi aveva scelto la vista Giorno ritrova il Mese', await p.evaluate(() => { TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'giorno'); const v = vistaCalendario(); TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, 'mese'); return v === 'mese'; }));
+  const dia = await p.evaluate(() => { Object.assign(AppState.turni['2026-10-13'], { secondoAttivo: true, secondoOraInizio: '15:00', secondoOraFine: '18:00', servizioEsterno: true, buonoPasto: true }); impostaVistaCalendario('diario'); const g = document.querySelector('[data-diario-giorno="2026-10-13"]'); return { testo: g.textContent, icone: g.querySelectorAll('.diario-indennita i').length }; });
+  ok('Diario: il rientro e le icone delle indennità', /15:00–18:00 rientro/.test(dia.testo) && dia.icone >= 2, JSON.stringify(dia));
   await p.click('#btnVistaCalendario'); await p.click('[data-vista-calendario="mese"]');
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await p.context().close();

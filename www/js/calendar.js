@@ -1082,7 +1082,8 @@ function vistaCalendario(){
   let v = null; try{ v = TurniPSStorage.getItem(CHIAVE_VISTA_CALENDARIO); }catch(e){}
   // v3.8.30: la vista Settimana è confluita nel Diario (chi l'aveva scelta ritrova il Diario).
   if(v === 'settimana') v = 'diario';
-  return v === 'giorno' || v === 'anno' || v === 'diario' ? v : 'mese';
+  // v3.8.31: la vista Giorno (a ore) è stata tolta: i dettagli del giorno sono sotto il Mese, toccando il giorno.
+  return v === 'anno' || v === 'diario' ? v : 'mese';
 }
 function impostaVistaCalendario(v){
   try{ TurniPSStorage.setItem(CHIAVE_VISTA_CALENDARIO, v === 'agenda' ? 'mese' : v); }catch(e){}
@@ -1664,6 +1665,9 @@ function paginaGiornoDiario(iso, mezza){
     if(t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
     if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
     if(t.servizioSvolto) righe.push(`✎ ${escapeHtml(t.servizioSvolto)}`);
+    // v3.8.31: le indennità del giorno come icone piccole (il nome compare tenendo il dito o toccando il giorno).
+    const ind = iconeIndennitaDiario(t);
+    if(ind) righe.push(`<span class="diario-indennita">${ind}</span>`);
   }
   try{ eventiDelGiorno(iso).forEach(({ ev }) => righe.push(`${ev.tuttoIlGiorno || !ev.oraInizio ? '' : `<span class="diario-ora">${ev.oraInizio}</span> `}${escapeHtml(ev.titolo || 'Evento')}`)); }catch(e){}
   try{
@@ -1675,6 +1679,12 @@ function paginaGiornoDiario(iso, mezza){
   return `<button type="button" class="diario-giorno${mezza ? ' mezza' : ''}${oggi ? ' oggi' : ''}${eFestivoOdDomenica(iso) ? ' festivo' : ''}" data-diario-giorno="${iso}">`
     + `<span class="diario-testa">${nomi[d.getDay()]} <b>${d.getDate()}</b>${festa ? `<small>${escapeHtml(festa)}</small>` : ''}</span>`
     + `<span class="diario-righe">${righe.map(r => `<span>${r}</span>`).join('')}</span></button>`;
+}
+function iconeIndennitaDiario(t){
+  if(!t || !t.oraInizio || !t.oraFine || t.riposo || t.assenzaTipo || typeof ELENCO_INDENNITA === 'undefined') return '';
+  const festivo = typeof lavoratoInFestivo === 'function' ? lavoratoInFestivo(t) : !!t.recuperoFestivoLavorato;
+  return ELENCO_INDENNITA.filter(x => x.chiave !== 'straordinario' && x.chiave !== 'servizioSvolto' && (x.chiave === 'recuperoFestivoLavorato' ? festivo : !!t[x.chiave]))
+    .map(x => `<i title="${escapeHtml(x.nome)}" aria-label="${escapeHtml(x.nome)}">${iconaIndennita(x.chiave)}</i>`).join('');
 }
 let paginaDaGirareDiario = 0;
 function renderVistaDiario(iso){
