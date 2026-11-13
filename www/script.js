@@ -4218,9 +4218,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.32';
+const VERSIONE_NOVITA = '3.8.33';
 const PASSI_NOVITA = [
-  { id: 'btnVistaCalendario', titolo: 'Agenda come il Diario', testo: 'Agenda e riquadro del giorno hanno la grafica del Diario. Le note di servizio si scrivono sempre sulla pagina del giorno; le vecchie note della settimana sono nel lunedì.' }
+  { id: 'btnVistaCalendario', titolo: 'Classico rinnovato', testo: 'Chi usa lo stile Classico ha una griglia ordinata: il numero in alto (rosso nei festivi) e il turno sotto. In Turni → Stile calendario scegli se vedere Matt, M o la tua sigla.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){
