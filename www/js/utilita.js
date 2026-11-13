@@ -142,18 +142,31 @@ function programmaAvvisiScadenza(s, silenzioso){
 }
 function annullaAvvisiScadenza(s){ try{ if(typeof annullaPromemoriaEvento === 'function') annullaPromemoriaEvento('scadenza_' + s.id); }catch(e){} }
 function aggiungiAnni(iso, n){ const d = dataDaIso(iso); return dataISO(new Date(d.getFullYear() + n, d.getMonth(), d.getDate(), 12)); }
+document.addEventListener('click', e => {
+  const x = e.target.closest && e.target.closest('[data-chiudi-banner]');
+  if(!x) return;
+  e.stopPropagation(); e.preventDefault();
+  const b = el('bannerScadenze'), sc = b && U.scadenze.find(s => s.id === b.dataset.scadenza);
+  if(!sc) return;
+  U.bannerChiusi = U.bannerChiusi || {}; U.bannerChiusi[sc.id] = sc.data;
+  salvaUtilita();
+  if(typeof mostraToast === 'function') mostraToast('Te la ricordo di nuovo 7 giorni prima', 'info', 3000);
+}, true);
 function aggiornaBannerScadenze(){
   const sez = document.querySelector('.scheda-calendario-v2');
   if(!sez) return;
   let b = el('bannerScadenze');
   // Prima la prossima entro 30 giorni; se non c'è, una appena scaduta (per una settimana).
   const ord = [...U.scadenze].sort((a, b) => a.data.localeCompare(b.data));
-  const vicina = ord.find(s => giorniDa(s.data) >= 0 && giorniDa(s.data) <= 30) || ord.reverse().find(s => giorniDa(s.data) < 0 && giorniDa(s.data) >= -7);
+  // v3.8.34: con la × la striscia si chiude e torna solo negli ultimi 7 giorni (o se la scadenza cambia data).
+  const chiusa = s => { const c = (U.bannerChiusi || {})[s.id]; return c === s.data && giorniDa(s.data) > 7; };
+  const vicina = ord.find(s => giorniDa(s.data) >= 0 && giorniDa(s.data) <= 30 && !chiusa(s)) || ord.reverse().find(s => giorniDa(s.data) < 0 && giorniDa(s.data) >= -7);
   if(!vicina){ if(b) b.remove(); return; }
   if(!b){ b = document.createElement('button'); b.type = 'button'; b.id = 'bannerScadenze'; b.className = 'ut-banner'; b.addEventListener('click', () => apriUtilita('scadenze')); const sopra = el('calSopra'); if(sopra) sopra.insertBefore(b, sopra.firstChild); else sez.insertBefore(b, sez.firstChild); }
   const g = giorniDa(vicina.data);
   b.classList.toggle('ut-banner-rosso', g <= 0);
-  b.innerHTML = `${ic('sveglia')}<span>${escapeHtml(vicina.nome)} ${g < 0 ? `<b>scaduta da ${-g} ${-g === 1 ? 'giorno' : 'giorni'}</b>` : g === 0 ? '<b>scade oggi</b>' : `tra <b>${g} ${g === 1 ? 'giorno' : 'giorni'}</b>`}</span><i aria-hidden="true">›</i>`;
+  b.dataset.scadenza = vicina.id;
+  b.innerHTML = `${ic('sveglia')}<span>${escapeHtml(vicina.nome)} ${g < 0 ? `<b>scaduta da ${-g} ${-g === 1 ? 'giorno' : 'giorni'}</b>` : g === 0 ? '<b>scade oggi</b>' : `tra <b>${g} ${g === 1 ? 'giorno' : 'giorni'}</b>`}</span><i aria-hidden="true">›</i>${g > 7 ? '<span class="ut-banner-x" role="button" tabindex="0" data-chiudi-banner aria-label="Nascondi fino a 7 giorni prima">×</span>' : ''}`;
 }
 
 // ── Note di servizio ──

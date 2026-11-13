@@ -1859,7 +1859,7 @@ function aggiornaStatoStrumentiTurni(){
   if(seq){
     const usato = typeof patternInUsoV2 === 'function' ? patternInUsoV2() : null;
     const fino = TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO);
-    seq.textContent = usato ? `In uso: ${usato.nome}${fino ? ' · fino al ' + dataBreve(fino) : ''}` : 'Ripete una sequenza sul calendario';
+    seq.textContent = usato ? `In uso: ${usato.nome}${fino ? ' · fino al ' + dataBreve(fino) : ''}` : 'Ripete la tua sequenza';
     seq.classList.toggle('stato-attivo', !!usato);
   }
   const col = el('statoColoriTurni');
@@ -4218,6 +4218,7 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
+// v3.8.34: il fumetto si cambia solo per le novità grandi; per le correzioni piccole resta quello di prima.
 const VERSIONE_NOVITA = '3.8.33';
 const PASSI_NOVITA = [
   { id: 'btnVistaCalendario', titolo: 'Classico rinnovato', testo: 'Chi usa lo stile Classico ha una griglia ordinata: il numero in alto (rosso nei festivi) e il turno sotto. In Turni → Stile calendario scegli se vedere Matt, M o la tua sigla.' }

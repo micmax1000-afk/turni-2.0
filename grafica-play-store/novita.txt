@@ -1,5 +1,5 @@
 <it-IT>
-• Calendario Classico rinnovato: griglia ordinata, numero in alto, turno sotto
-• Scegli cosa vedere nella casella: Matt, M o la tua sigla
-• Testo sempre leggibile anche con i colori scuri
+• Note di servizio a voce: tocca il microfono nella pagina del giorno
+• Diario: le ore della settimana in fondo alla pagina
+• Ritocchi: avviso scadenze chiudibile, Classico più leggibile col tema scuro
 </it-IT>

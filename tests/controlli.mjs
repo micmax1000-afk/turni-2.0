@@ -1013,6 +1013,10 @@ sezione('v3.8.25: lente del calendario, Impostazioni raccolte in Altro');
   ok('indietro chiude la ricerca e torna alla vista di prima', await p.evaluate(() => vistaCalendario() === 'mese' && el('boxCercaAgenda').hidden));
   await p.evaluate(() => { U.scadenze = [{ id: 'sx', tipo: 'tiro', nome: 'Tiro annuale', data: '2026-10-20', ripeti: '1', avvisi: [], note: '' }]; salvaUtilita(); aggiornaBannerScadenze(); });
   ok('la scadenza vicina è una riga sottile sopra il mese', await p.evaluate(() => el('bannerScadenze').parentElement.id === 'calSopra' && /Tiro annuale tra 11 giorni/.test(el('bannerScadenze').textContent)));
+  // v3.8.34: la × chiude la striscia, che torna negli ultimi 7 giorni.
+  await p.click('#bannerScadenze [data-chiudi-banner]');
+  const bx = await p.evaluate(() => { const via = !el('bannerScadenze'); U.scadenze[0].data = '2026-10-14'; aggiornaBannerScadenze(); const torna = !!el('bannerScadenze') && !el('bannerScadenze').querySelector('[data-chiudi-banner]'); return { via, torna, utilita: el('paginaUt') ? el('paginaUt').hidden !== false : true }; });
+  ok('× sulla striscia: sparisce (senza aprire le Scadenze) e torna a 5 giorni, senza ×', bx.via && bx.torna && bx.utilita, JSON.stringify(bx));
   await p.evaluate(() => { U.scadenze = []; aggiornaBannerScadenze(); });
   ok('senza scadenze la riga sparisce', await p.evaluate(() => !el('bannerScadenze') && getComputedStyle(el('calSopra')).display === 'none'));
   await p.click('#tabAltro');
