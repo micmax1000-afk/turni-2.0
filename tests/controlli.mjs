@@ -475,7 +475,10 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
     let salvato = 0; tokenClientGoogle = null; ultimoControlloBackupAuto = 0;
     pluginGoogleSignInNativo = () => ({ initialize: () => new Promise(r => setTimeout(r, 80)), signIn: async () => ({ accessToken: 'prova' }) });
     salvaBackupSuDrive = async o => { if(o && o.automatico) salvato++; return true; };
+    TurniPSStorage.removeItem('simCedolino_tentativoBackupAuto_v1');
     await avviaBackupDriveAutomatico();
+    ultimoControlloBackupAuto = 0; await avviaBackupDriveAutomatico(); // subito dopo non riprova (un tentativo ogni 6 ore)
+    TurniPSStorage.removeItem('simCedolino_tentativoBackupAuto_v1');
     pluginGoogleSignInNativo = vecchi.plug; salvaBackupSuDrive = vecchi.salva; tokenClientGoogle = vecchi.tok; tokenAccessoDriveCorrente = null;
     prima.auto === null ? TurniPSStorage.removeItem(CHIAVE_BACKUP_DRIVE_AUTO) : TurniPSStorage.setItem(CHIAVE_BACKUP_DRIVE_AUTO, prima.auto);
     prima.ult === null ? TurniPSStorage.removeItem(CHIAVE_ULTIMO_BACKUP_DRIVE) : TurniPSStorage.setItem(CHIAVE_ULTIMO_BACKUP_DRIVE, prima.ult);
