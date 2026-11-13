@@ -4211,9 +4211,9 @@ function inizializzaGestiCalendario(){
 
 // ── v3.8.12: guida alle novità, una volta sola, per chi usava già l'app ──
 const CHIAVE_NOVITA = 'simCedolino_novitaViste_v1';
-const VERSIONE_NOVITA = '3.8.30';
+const VERSIONE_NOVITA = '3.8.31';
 const PASSI_NOVITA = [
-  { id: 'btnVistaCalendario', titolo: 'Calendario più semplice', testo: 'Qui ora scegli tra quattro viste: Giorno, Diario, Mese e Anno. Nel mese, i giorni con straordinario mostrano le ore sotto il turno (es. +2h).' }
+  { id: 'btnVistaCalendario', titolo: 'Diario con le note di servizio', testo: 'Le viste ora sono tre: Diario, Mese e Anno. Nel Diario tocca un giorno: si apre la sua pagina, dove scrivi le note di servizio. Ci sono anche il rientro e le indennità.' }
 ];
 let passoNovita = -1;
 function avviaNovitaSeServe(){

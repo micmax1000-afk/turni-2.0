@@ -1,5 +1,5 @@
 <it-IT>
-• Mese: i giorni con straordinario mostrano le ore sotto il turno (es. +2h)
-• Menu delle viste più corto: Giorno, Diario, Mese, Anno
-• La Settimana è confluita nel Diario; l'Agenda si apre con la lente
+• Diario: tocca un giorno e scrivi le note di servizio sulla sua pagina
+• Nel Diario anche rientro e indennità; tre viste: Diario, Mese, Anno
+• Correzioni: colore dei giorni con orari cambiati, gesti più sicuri
 </it-IT>
