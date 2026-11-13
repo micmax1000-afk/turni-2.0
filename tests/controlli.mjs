@@ -464,6 +464,9 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
     const altezze = new Set([...document.querySelectorAll('#calendarioGriglia .giorno-cella')].map(c => Math.round(c.getBoundingClientRect().height)));
     return { classico: !document.body.classList.contains('calendario-moderno'), oggi: oggi && getComputedStyle(oggi).backgroundColor, ev: ev && getComputedStyle(ev).width, barrato: [...document.querySelectorAll('.giorno-cella .c2-numero')].some(n => getComputedStyle(n).textDecorationLine === 'line-through'), altezze: altezze.size, sigla: (document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla') || {}).textContent };
   });
+  // v3.8.36: a un turno nuovo l'app propone un colore che nessun altro turno usa.
+  const cp = await p.evaluate(() => { apriModificaModelloV2(null); const c = el('campoModModelloColore').value.toLowerCase(); const usati = (AppState.modelliTurno || []).map(m => String(coloreModelloV2(m)).toLowerCase()); el('overlayModificaModello').hidden = true; return { c, libero: !usati.includes(c), tav: document.querySelectorAll('#tavolozzaModello [data-colore-tavolozza]').length }; });
+  ok('Nuovo servizio: colore proposto libero e tavolozza di 12 colori', cp.libero && cp.tav === 12, JSON.stringify(cp));
   // v3.8.33: nel Classico si sceglie cosa mostrare: nome corto, lettera o la sigla del turno (e finisce nel backup).
   const sg = await p.evaluate(() => { const out = {}; for(const m of ['lettera', 'sigla', 'nome']){ document.querySelector(`[data-sigla-classico="${m}"]`).click(); out[m] = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla').textContent; } out.backup = costruisciDatiBackup().siglaClassico; return out; });
   ok('Classico: «Lettera» mostra S, «La tua sigla» SE, «Nome corto» Sera; la scelta va nel backup', sg.lettera === 'S' && sg.sigla === 'SE' && sg.nome === 'Sera' && sg.backup === 'nome', JSON.stringify(sg));

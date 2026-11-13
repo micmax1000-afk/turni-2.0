@@ -1121,6 +1121,12 @@ function inizializza(){
     dipingiSwatchModelloV2();
     aggiornaStatoColoreModelloV2();
   });
+  on('tavolozzaModello', 'click', e => {
+    const b = e.target.closest('[data-colore-tavolozza]'); if(!b) return;
+    modelloColoreForzatoV2 = b.dataset.coloreTavolozza;
+    el('campoModModelloColore').value = modelloColoreForzatoV2;
+    dipingiSwatchModelloV2(); aggiornaStatoColoreModelloV2(); aggiornaAnteprimaModelloV2();
+  });
   on('btnModModelloColoreAutomatico','click', () => {
     modelloColoreForzatoV2 = null;
     const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
@@ -2036,14 +2042,28 @@ function coloreAutomaticoPerModello(m){
 }
 // Il quadratino viene dipinto direttamente col colore scelto, invece di affidarsi solo a come la
 // WebView disegna il campo colore nativo: così mostra sempre il colore vero, in ogni caso.
+// v3.8.36: tavolozza di colori tenui; a un turno nuovo l'app propone un colore che nessun altro turno usa.
+const TAVOLOZZA_TURNI = ['#8EC5E8', '#A8D5A2', '#C9B6F0', '#F7C59F', '#E8D49A', '#F4A6B8', '#9FD8D0', '#D5C4A1', '#B5C7F5', '#F2B8E0', '#C2D98A', '#FFB3A7'];
+function coloreLiberoProposto(){
+  const usati = new Set((AppState.modelliTurno || []).map(m => String(coloreModelloV2(m) || '').toLowerCase()));
+  return TAVOLOZZA_TURNI.find(c => !usati.has(c.toLowerCase())) || TAVOLOZZA_TURNI[(AppState.modelliTurno || []).length % TAVOLOZZA_TURNI.length];
+}
+function disegnaTavolozzaModelloV2(){
+  const box = el('tavolozzaModello'); if(!box) return;
+  const attuale = String(el('campoModModelloColore').value || '').toLowerCase();
+  box.innerHTML = TAVOLOZZA_TURNI.map(c => `<button type="button" data-colore-tavolozza="${c}" class="${c.toLowerCase() === attuale ? 'attivo' : ''}" style="background:${c}" aria-label="Colore ${c}"></button>`).join('');
+}
 function dipingiSwatchModelloV2(){
+  disegnaTavolozzaModelloV2();
   const campo = el('campoModModelloColore');
   if(campo && campo.parentElement) campo.parentElement.style.background = campo.value;
 }
 function aggiornaStatoColoreModelloV2(){
   const stato = el('modModelloColoreStato');
   if(!stato) return;
-  stato.textContent = modelloColoreForzatoV2
+  stato.textContent = modelloColoreForzatoV2 && !modelloInModificaV2 && modelloColoreForzatoV2 === coloreLiberoProposto()
+    ? 'Colore proposto: nessun altro turno lo usa. Toccane un altro per cambiarlo.'
+    : modelloColoreForzatoV2
     ? 'Colore scelto a mano — resta questo, qualsiasi orario tu imposti.'
     : 'Colore automatico, in base alla fascia oraria del servizio.';
 }
@@ -2064,7 +2084,8 @@ function apriModificaModelloV2(id){
   el('campiModModelloOrario').hidden = isRiposo;
   el('campoModModelloInizio').value = m ? (m.oraInizio || '') : '';
   el('campoModModelloFine').value = m ? (m.oraFine || '') : '';
-  modelloColoreForzatoV2 = (m && m.colore) || null;
+  // v3.8.36: turno nuovo → colore proposto, diverso da quelli già usati (si cambia con un tocco).
+  modelloColoreForzatoV2 = (m && m.colore) || (!m ? coloreLiberoProposto() : null);
   el('campoModModelloColore').value = modelloColoreForzatoV2 || coloreAutomaticoPerModello(m);
   dipingiSwatchModelloV2();
   aggiornaStatoColoreModelloV2();
