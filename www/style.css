@@ -3549,12 +3549,3 @@ html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.c2-senza-co
 .ut-banner-x + i{display:none}
 html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.fuori-mese{filter:grayscale(1)}
 .ut-banner .ut-banner-x{flex:none}
-/* v3.8.35: settimana fissa in alto quando si scorre sotto il Mese */
-.settimana-fissa{position:fixed;top:0;z-index:40;box-sizing:border-box;padding:calc(env(safe-area-inset-top,0px) + 4px) 10px 8px;background:var(--pannello,#fff);border-radius:0 0 16px 16px;box-shadow:0 6px 18px rgba(20,30,60,.16);animation:settimanaGiu .18s ease-out}
-.settimana-fissa[hidden]{display:none}
-@keyframes settimanaGiu{from{transform:translateY(-30%);opacity:0}to{transform:none;opacity:1}}
-.settimana-fissa-testa{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:none;padding:4px 2px 6px;font:700 .8rem var(--font-corpo);color:var(--testo);cursor:pointer}
-.settimana-fissa-testa span{font-weight:600;color:var(--acc,#1D4FD7)}
-html[data-tema=scuro] .settimana-fissa-testa span{color:#8FB0FF}
-.settimana-fissa .giorno-cella{min-height:0!important;height:58px!important;max-height:58px!important}
-body:not(.calendario-moderno) .settimana-fissa-griglia{gap:0!important;border-top:1px solid var(--bordo);border-left:1px solid var(--bordo);border-radius:10px;overflow:hidden}
