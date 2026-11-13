@@ -3570,3 +3570,5 @@ html[data-tema=scuro] body:not(.calendario-moderno) .giorno-cella.c2.fuori-mese{
 .colori-turni-footer{flex-wrap:wrap;gap:8px}
 .colori-turni-footer .btn-secondario{flex:1 1 auto}
 .colori-avviso[hidden]{display:none}
+.btn-cambia-colori{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:10px 0 4px}
+.btn-cambia-colori .icona-linea{width:18px;height:18px;color:var(--acc,#1D4FD7)}

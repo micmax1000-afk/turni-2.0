@@ -864,6 +864,8 @@ function inizializza(){
   on('btnChiudiColoriTurni','click', chiudiPannelloColori);
   on('btnChiudiColoriTurni2','click', chiudiPannelloColori);
   on('btnApriColoriTurniPagina', 'click', apriColoriTurniPagina);
+  // v3.8.36: da «Stile calendario» si arriva ai colori con un tocco (si chiude il foglio dello stile).
+  on('btnStileApriColori', 'click', () => { const c = el('btnChiudiColoriTurni'); if(c) c.click(); apriColoriTurniPagina(); });
   on('btnChiudiColoriTurniPagina', 'click', () => { el('overlayColoriTurniPagina').hidden = true; });
   on('btnColoriDiversiTurni', 'click', coloriDiversiPerTurni);
   on('elencoColoriTurni', 'click', e => {
