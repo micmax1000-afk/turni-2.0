@@ -1084,6 +1084,9 @@ sezione('v3.8.27: vista Anno, maniglia, date sulle assenze, anni sfogliabili');
   ok('tocco dicembre: si apre il mese di dicembre', await p.evaluate(() => vistaCalendario() === 'mese' && meseCorrente === 11 && annoCorrente === 2026));
   // v3.8.35: niente più maniglia da trascinare: la vista si cambia solo dal menu in alto.
   ok('niente maniglia sotto il calendario: scorrendo la pagina la vista non cambia', await p.evaluate(() => !el('manigliaVista') && typeof cambiaVistaConManiglia === 'undefined'));
+  // v3.8.35: scorrendo sotto il Mese, la settimana del giorno scelto resta fissa in alto; un tocco sceglie il giorno.
+  const sf = await p.evaluate(async () => { document.body.style.minHeight = '4000px'; impostaVistaCalendario('mese'); selezionaGiorno('2026-12-15'); renderCalendario(); const c = el('calendarioGriglia').querySelector('.selezionata'); window.scrollTo(0, window.scrollY + c.getBoundingClientRect().top + 30); await new Promise(r => setTimeout(r, 150)); const s = el('settimanaFissa'); const out = { vista: s && !s.hidden, celle: s ? s.querySelectorAll('.giorno-cella').length : 0 }; window.scrollTo(0, 0); await new Promise(r => setTimeout(r, 150)); out.nascosta = !s || s.hidden; document.body.style.minHeight = ''; return out; });
+  ok('settimana fissa in alto quando si scorre, sparisce tornando su', sf.vista && sf.celle === 7 && sf.nascosta, JSON.stringify(sf));
   await p.evaluate(() => impostaVistaCalendario('mese'));
   await p.click('#tabAltro'); await p.evaluate(() => { mostraScheda('assenze'); });
   const co = await p.evaluate(() => [...document.querySelectorAll('.card-assenza')].find(c => /Congedo ordinario/.test(c.textContent)).querySelector('.card-assenza-compact-nome').innerText);
