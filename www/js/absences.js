@@ -636,10 +636,7 @@ function renderAssenze(){
   // v2.98: tutte le voci in un unico elenco; quelle a zero e mai usate (es. Riposo festivo) in fondo.
   const nonUsata = a => { const x = saldoAssenza(a); return !x.spettanti && !x.usate; };
   const ufficiali = AppState.assenze.filter(a => !a.personalizzata);
-  // v3.8.32: le voci a zero e mai usate in un gruppo chiuso «Altre voci», in fondo.
-  const zero = ufficiali.filter(nonUsata);
-  box.innerHTML = ufficiali.filter(a => !nonUsata(a)).map(renderCardAssenzaItem).join('')
-    + (zero.length ? `<details class="assenze-altre"${box.querySelector('.assenze-altre[open]') ? ' open' : ''}><summary>Altre voci <small>${zero.length} a zero</small></summary>${zero.map(renderCardAssenzaItem).join('')}</details>` : '');
+  box.innerHTML = ufficiali.filter(a => !nonUsata(a)).concat(ufficiali.filter(nonUsata)).map(renderCardAssenzaItem).join('');
   if(boxPersonalizzate){
     const personalizzate = AppState.assenze.filter(a => a.personalizzata);
     boxPersonalizzate.innerHTML = personalizzate.map(renderCardAssenzaItem).join('');

@@ -56,7 +56,7 @@ async function apri({ turni = {}, eventi = {}, stile = 'classico', colori = true
     localStorage.setItem('simCedolino_eventiGiorno_v1', e);
     localStorage.setItem('simCedolino_stileCalendario_v1', s);
     localStorage.setItem('simCedolino_calendarioAColori_v1', c ? '1' : '0');
-    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.31');
+    localStorage.setItem('simCedolino_novitaViste_v1', '3.8.32');
     localStorage.setItem('simCedolino_anagrafica_v1', JSON.stringify({ qualifica: 'Assistente Capo', regione: 'Lazio', coniugeACarico: 'no', sindacato: 'si' }));
     sessionStorage.setItem('preparato', '1');
     if(n){
@@ -636,8 +636,8 @@ sezione('v3.8.13: guida alle novità');
   await p.waitForTimeout(200);
   const passi = [];
   for(let i = 0; i < 1; i++){ passi.push(await p.evaluate(() => el('guidaNovitaTitolo').textContent + ' (' + el('guidaNovitaPasso').textContent + ')')); await p.click('#btnNovitaAvanti'); await p.waitForTimeout(150); }
-  ok('chi usava già l\'app vede 1 fumetto: Diario con le note di servizio', passi.join(' | ') === 'Diario con le note di servizio (1 di 1)', passi.join(' | '));
-  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.31'));
+  ok('chi usava già l\'app vede 1 fumetto: Agenda come il Diario', passi.join(' | ') === 'Agenda come il Diario (1 di 1)', passi.join(' | '));
+  ok('"Ho capito": la guida si chiude e non torna', await p.evaluate(() => el('guidaNovita').hidden && localStorage.getItem('simCedolino_novitaViste_v1') === '3.8.32'));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
@@ -1225,7 +1225,7 @@ sezione('Assenze nella barra e sequenza automatica');
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   await p.click('#tabAssenze');
   ok('Assenze nella barra apre la pagina delle assenze', await p.evaluate(() => !!document.getElementById('sezioneAssenze').offsetParent && document.getElementById('tabAssenze').classList.contains('attiva') && !document.getElementById('btnApriAssenzeV64')));
-  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, hero: document.getElementById('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), anelli: document.querySelectorAll('#corpoAssenze .saldo-anello').length, colonne: getComputedStyle(document.getElementById('corpoAssenze')).display === 'grid' ? getComputedStyle(document.getElementById('corpoAssenze')).gridTemplateColumns.split(' ').length : 1, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nomi: [...document.querySelectorAll('#corpoAssenze .card-assenza-compact-nome')].map(n => n.textContent), nuova: document.getElementById('btnNuovaAssenzaTesta').textContent, aggiungi: !!document.getElementById('btnAggiungiAssenzaPersonalizzata').offsetParent , altre: !!document.querySelector('#corpoAssenze .assenze-altre [data-id]')}));
+  const ass = await p.evaluate(() => ({ titolo: document.querySelector('#sezioneAssenze h2').textContent, hero: document.getElementById('assenzeSummaryGrid').innerText.replace(/\s+/g, ' '), anelli: document.querySelectorAll('#corpoAssenze .saldo-anello').length, colonne: getComputedStyle(document.getElementById('corpoAssenze')).display === 'grid' ? getComputedStyle(document.getElementById('corpoAssenze')).gridTemplateColumns.split(' ').length : 1, congedo: document.querySelector('#corpoAssenze .card-assenza-compact')?.innerText.replace(/\s+/g, ' '), nomi: [...document.querySelectorAll('#corpoAssenze .card-assenza-compact-nome')].map(n => n.textContent), nuova: document.getElementById('btnNuovaAssenzaTesta').textContent, aggiungi: !!document.getElementById('btnAggiungiAssenzaPersonalizzata').offsetParent }));
   ok('senza saldi di partenza: nessun numero inventato, "congedo ordinario da inserire"', ass.titolo === 'Assenze' && /Ti restano nel 2026\s*— giorni/.test(ass.hero) && /da inserire/.test(ass.hero) && /permesso breve/.test(ass.hero), ass.hero);
   ok('…riquadro "Da dove partiamo?" e scheda del congedo che chiede i giorni', await p.evaluate(() => /Da dove partiamo/.test(el('saldiPartenzaBox').textContent) && /Quanti giorni ti restano oggi/.test(document.querySelector('#corpoAssenze .card-da-inserire')?.textContent || '')));
   ok('ogni voce su una riga con l\'anello piccolo, una sotto l\'altra', ass.anelli > 3 && ass.colonne === 1, JSON.stringify(ass));
@@ -1257,7 +1257,7 @@ sezione('Assenze nella barra e sequenza automatica');
   ok('saldi salvati col formato di prima (totale 45, di cui 8 dell\'anno scorso): diventano 2026: 37 e 2025: 8', await p.evaluate(() => { const prima = localStorage.getItem('simCedolino_saldiPartenza_v1'); localStorage.setItem('simCedolino_saldiPartenza_v1', JSON.stringify({ data: '2026-10-09', congedo: 45, congedoVecchi: 8, recuperoRiposo: 0, recuperoFestivo: 0, riposoCompensativoOre: 0 })); const a = saldiPartenza().congedoAnni; localStorage.setItem('simCedolino_saldiPartenza_v1', prima); return a[2026] === 37 && a[2025] === 8; }));
   await p.evaluate(() => { AppState.turni['2026-10-05'] = window.__originali.a; AppState.turni['2026-10-21'] = window.__originali.b; salvaTurniStorage(); });
   ok('i saldi di partenza finiscono nel backup', await p.evaluate(() => JSON.stringify(costruisciDatiBackup()).includes('saldiPartenza')));
-  ok('tutte le assenze in un elenco, quelle a zero in fondo in «Altre voci»; «＋ Assenza» in alto e «＋» in fondo', ass.nomi.some(n => n.includes('Riposo festivo')) && ass.nomi.findIndex(n => n.includes('Riposo festivo')) > ass.nomi.findIndex(n => n.includes('Congedo straordinario')) && ass.nuova === '＋ Assenza' && ass.aggiungi && ass.altre, JSON.stringify(ass.nomi));
+  ok('tutte le assenze in un elenco sempre aperto, quelle a zero in fondo; «＋ Assenza» in alto e «＋» in fondo', ass.nomi.some(n => n.includes('Riposo festivo')) && ass.nomi.findIndex(n => n.includes('Riposo festivo')) > ass.nomi.findIndex(n => n.includes('Congedo straordinario')) && ass.nuova === '＋ Assenza' && ass.aggiungi, JSON.stringify(ass.nomi));
   await p.click('.card-assenza[data-id] .card-assenza-compact');
   ok('tocco su una scheda: si apre il dettaglio a tutta larghezza', await p.evaluate(() => { const c = document.querySelector('#corpoAssenze .card-assenza-aperta'); return !!c && c.getBoundingClientRect().width > document.getElementById('corpoAssenze').getBoundingClientRect().width - 24 && !!c.querySelector('.card-assenza-edit').offsetParent; }));
   await p.click('#tabAltro');
