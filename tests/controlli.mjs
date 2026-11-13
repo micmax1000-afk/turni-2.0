@@ -1082,10 +1082,8 @@ sezione('v3.8.27: vista Anno, maniglia, date sulle assenze, anni sfogliabili');
   await p.click('#btnMesePrec');
   await p.click('#vistaAnnoCal [data-anno-mese="11"]');
   ok('tocco dicembre: si apre il mese di dicembre', await p.evaluate(() => vistaCalendario() === 'mese' && meseCorrente === 11 && annoCorrente === 2026));
-  await p.evaluate(() => cambiaVistaConManiglia(-1));
-  ok('maniglia in su dal Mese: Diario (la maniglia c\'è anche lì)', await p.evaluate(() => vistaCalendario() === 'diario' && el('manigliaVista').offsetHeight > 0));
-  await p.evaluate(() => { cambiaVistaConManiglia(1); cambiaVistaConManiglia(1); });
-  ok('maniglia in giù due volte: Mese poi Anno', await p.evaluate(() => vistaCalendario() === 'anno'));
+  // v3.8.35: niente più maniglia da trascinare: la vista si cambia solo dal menu in alto.
+  ok('niente maniglia sotto il calendario: scorrendo la pagina la vista non cambia', await p.evaluate(() => !el('manigliaVista') && typeof cambiaVistaConManiglia === 'undefined'));
   await p.evaluate(() => impostaVistaCalendario('mese'));
   await p.click('#tabAltro'); await p.evaluate(() => { mostraScheda('assenze'); });
   const co = await p.evaluate(() => [...document.querySelectorAll('.card-assenza')].find(c => /Congedo ordinario/.test(c.textContent)).querySelector('.card-assenza-compact-nome').innerText);
