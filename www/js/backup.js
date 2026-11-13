@@ -514,6 +514,15 @@ async function ripristinaBackupDaDrive(opz){
   return true;
 }
 
+let backupAutoInCorso = false, ultimoControlloBackupAuto = 0;
+async function avviaBackupDriveAutomatico(){
+  if(backupAutoInCorso || Date.now() - ultimoControlloBackupAuto < 60000) return; // non più di un controllo al minuto
+  backupAutoInCorso = true; ultimoControlloBackupAuto = Date.now();
+  try{
+    if(!tokenClientGoogle) await inizializzaGoogleIdentity();
+    await controllaBackupDriveAutomatico();
+  }catch(e){} finally { backupAutoInCorso = false; }
+}
 async function controllaBackupDriveAutomatico(){
   if(!proAttivo()) return;
   if(TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_AUTO)!=='1') return; // spento di default
@@ -521,6 +530,11 @@ async function controllaBackupDriveAutomatico(){
   const ultimo=TurniPSStorage.getItem(CHIAVE_ULTIMO_BACKUP_DRIVE);
   const giorniPassati=ultimo?(Date.now()-new Date(ultimo).getTime())/86400000:Infinity;
   if(giorniPassati<GIORNI_TRA_BACKUP_DRIVE) return;
+  // Un tentativo ogni 6 ore al massimo: se non c'è niente di nuovo da salvare o Google non risponde,
+  // non si richiede l'accesso a ogni riapertura dell'app.
+  const CHIAVE_TENTATIVO = 'simCedolino_tentativoBackupAuto_v1';
+  if(Date.now() - Number(TurniPSStorage.getItem(CHIAVE_TENTATIVO) || 0) < 6 * 3600000) return;
+  TurniPSStorage.setItem(CHIAVE_TENTATIVO, String(Date.now()));
   const pluginNativo = pluginGoogleSignInNativo();
   if(pluginNativo){
     try{
