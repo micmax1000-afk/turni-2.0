@@ -301,8 +301,8 @@ function apriEditorMezzo(id){
 }
 
 // ── Dettatura in un campo (stessa voce di "Detta a voce": prima senza internet) ──
-async function dettaInCampo(nome, soloNumero, bottone){
-  const campo = el('editorUt') && el('editorUt').querySelector(`[data-campo="${nome}"]`);
+async function dettaInCampo(nome, soloNumero, bottone, campoDiretto){
+  const campo = campoDiretto || (el('editorUt') && el('editorUt').querySelector(`[data-campo="${nome}"]`));
   if(!campo) return;
   const metti = testo => {
     let t = String(testo || '').trim();
@@ -314,6 +314,7 @@ async function dettaInCampo(nome, soloNumero, bottone){
     }
     campo.value = soloNumero || !campo.value ? t : `${campo.value.replace(/\s+$/, '')}\n${t}`;
     campo.dispatchEvent(new Event('input', { bubbles: true }));
+    if(campoDiretto) campo.dispatchEvent(new Event('change', { bubbles: true })); // v3.8.34: le note del Diario si salvano subito
   };
   if(bottone) bottone.classList.add('in-ascolto');
   try{

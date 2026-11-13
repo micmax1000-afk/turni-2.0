@@ -772,7 +772,7 @@ function renderCalendario(){
         testoC2 = testoLeggibileSu(sfondoC2);
       } else {
         // Senza colori: sigla nera, rossa la domenica e nei festivi; il riposo in grigio.
-        testoC2 = eFestivoOdDomenica(iso) ? '#C62828' : categoria === 'riposo' ? '#8A909C' : '';
+        testoC2 = ''; // nero; rosso la domenica e nei festivi (dal CSS, più chiaro col tema scuro)
       }
     }
     const siglaC2 = !conTurno ? ''
@@ -1730,6 +1730,13 @@ function iconeIndennitaDiario(t){
   return ELENCO_INDENNITA.filter(x => x.chiave !== 'straordinario' && x.chiave !== 'servizioSvolto' && (x.chiave === 'recuperoFestivoLavorato' ? festivo : !!t[x.chiave]))
     .map(x => `<i title="${escapeHtml(x.nome)}" aria-label="${escapeHtml(x.nome)}">${iconaIndennita(x.chiave)}</i>`).join('');
 }
+// v3.8.34: in fondo al Diario le ore della settimana, come nell'Agenda.
+function oreSettimanaDiario(lun){
+  let minuti = 0, minStr = 0;
+  for(let k = 0; k < 7; k++){ const t = AppState.turni[giornoPiu(lun, k)]; minuti += Math.round(oreServizioGiorno(t) * 60); minStr += Math.round(straordinarioGiorno(t) * 60); }
+  if(!minuti) return '';
+  return ` · <b>${oreAgenda(minuti / 60)} ore</b>${minStr ? ` <span class="diario-sett-str">· straord. ${oreAgenda(minStr / 60)}</span>` : ''}`;
+}
 let paginaDaGirareDiario = 0;
 function renderVistaDiario(iso){
   const host = el('vistaDiarioCal'); if(!host) return;
@@ -1739,7 +1746,7 @@ function renderVistaDiario(iso){
     + `<div class="diario-pagina sx">${paginaGiornoDiario(g(0))}${paginaGiornoDiario(g(1))}${paginaGiornoDiario(g(2))}${paginaGiornoDiario(g(3))}</div>`
     + `<div class="diario-spirale" aria-hidden="true"></div>`
     + `<div class="diario-pagina dx">${paginaGiornoDiario(g(4))}${paginaGiornoDiario(g(5))}${paginaGiornoDiario(g(6))}`
-    + `</div><p class="diario-sett">Settimana ${settimanaDellAnno(dataDaIso(lun))}</p>`;
+    + `</div></div><p class="diario-sett">Settimana ${settimanaDellAnno(dataDaIso(lun))}${oreSettimanaDiario(lun)}</p>`;
   if(paginaDaGirareDiario){ voltaPaginaDiario(paginaDaGirareDiario); paginaDaGirareDiario = 0; }
 }
 function voltaPaginaDiario(dir){
@@ -1794,7 +1801,8 @@ function paginaGiornoIntera(iso){
   return `<div class="dpg${oggi ? ' oggi' : ''}${eFestivoOdDomenica(iso) ? ' festivo' : ''}">`
     + `<p class="dpg-testa"><b>${d.getDate()}</b><span>${nomi[d.getDay()]}<small>${NOMI_MESI[d.getMonth()]} ${d.getFullYear()}${festa ? ' · ' + escapeHtml(festa) : ''}</small></span></p>`
     + `<div class="dpg-righe">${righe.map(r => `<span>${r}</span>`).join('')}</div>`
-    + `<label class="dpg-note-tit" for="dpgNote${iso}">Note di servizio</label>`
+    + `<p class="dpg-note-riga"><label class="dpg-note-tit" for="dpgNote${iso}">Note di servizio</label>`
+    + `<button type="button" class="ut-mic dpg-mic" data-dpg-detta="${iso}" aria-label="Detta le note di servizio" title="Detta a voce">${typeof ICONA_MICROFONO !== 'undefined' ? ICONA_MICROFONO : '🎤'}</button></p>`
     + `<textarea id="dpgNote${iso}" class="dpg-note" data-dpg-note="${iso}" placeholder="Scrivi qui com'è andato il servizio…" maxlength="4000">${escapeHtml(nota ? nota.testo : '')}</textarea>`
     + `</div>`;
 }
@@ -1814,6 +1822,8 @@ document.addEventListener('change', e => { const ta = e.target.closest && e.targ
 document.addEventListener('click', e => {
   if(!e.target.closest) return;
   if(e.target.closest('[data-dpg-settimana]')){ diarioGiornoAperto = null; renderCalendario(); return; }
+  const mic = e.target.closest('[data-dpg-detta]');
+  if(mic){ const ta = el('dpgNote' + mic.dataset.dpgDetta); if(ta && typeof dettaInCampo === 'function') dettaInCampo(null, false, mic, ta); return; }
   const m = e.target.closest('[data-dpg-modifica]');
   if(m && typeof apriModaleTurno === 'function'){ giornoSelezionato = m.dataset.dpgModifica; apriModaleTurno(m.dataset.dpgModifica); }
 });
