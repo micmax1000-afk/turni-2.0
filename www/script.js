@@ -2044,6 +2044,8 @@ function coloreAutomaticoPerModello(m){
 // WebView disegna il campo colore nativo: così mostra sempre il colore vero, in ogni caso.
 // v3.8.36: tavolozza di colori tenui; a un turno nuovo l'app propone un colore che nessun altro turno usa.
 const TAVOLOZZA_TURNI = ['#8EC5E8', '#A8D5A2', '#C9B6F0', '#F7C59F', '#E8D49A', '#F4A6B8', '#9FD8D0', '#D5C4A1', '#B5C7F5', '#F2B8E0', '#C2D98A', '#FFB3A7'];
+// v3.8.36: seconda fila, colori più accesi per caselle ben visibili.
+const TAVOLOZZA_ACCESI = ['#1E88E5', '#43A047', '#E53935', '#8E24AA', '#FB8C00', '#FDD835', '#00ACC1', '#6D4C41', '#3949AB', '#D81B60', '#7CB342', '#546E7A'];
 function coloreLiberoProposto(){
   const usati = new Set((AppState.modelliTurno || []).map(m => String(coloreModelloV2(m) || '').toLowerCase()));
   return TAVOLOZZA_TURNI.find(c => !usati.has(c.toLowerCase())) || TAVOLOZZA_TURNI[(AppState.modelliTurno || []).length % TAVOLOZZA_TURNI.length];
@@ -2051,12 +2053,19 @@ function coloreLiberoProposto(){
 function disegnaTavolozzaModelloV2(){
   const box = el('tavolozzaModello'); if(!box) return;
   const attuale = String(el('campoModModelloColore').value || '').toLowerCase();
-  box.innerHTML = TAVOLOZZA_TURNI.map(c => `<button type="button" data-colore-tavolozza="${c}" class="${c.toLowerCase() === attuale ? 'attivo' : ''}" style="background:${c}" aria-label="Colore ${c}"></button>`).join('');
+  // Sui colori già usati da altri turni compare la loro sigla piccola, così si evitano due turni uguali.
+  const usati = {};
+  (AppState.modelliTurno || []).forEach(m => { if(m.id === modelloInModificaV2) return; const c = String(coloreModelloV2(m) || '').toLowerCase(); usati[c] = usati[c] || String(m.sigla || m.nome.slice(0, 2)).toUpperCase(); });
+  const pallino = c => { const u = usati[c.toLowerCase()]; return `<button type="button" data-colore-tavolozza="${c}" class="${modelloColoreForzatoV2 && c.toLowerCase() === attuale ? 'attivo' : ''}" style="background:${c};color:${testoSuColore(c)}" aria-label="Colore ${c}${u ? ', già usato da ' + u : ''}">${u ? `<small>${escapeHtml(u)}</small>` : ''}</button>`; };
+  box.innerHTML = `<p class="tavolozza-tit">Tenui</p><div class="tavolozza-fila">${TAVOLOZZA_TURNI.map(pallino).join('')}</div>`
+    + `<p class="tavolozza-tit">Accesi</p><div class="tavolozza-fila">${TAVOLOZZA_ACCESI.map(pallino).join('')}</div>`;
+  const tutti = TAVOLOZZA_TURNI.concat(TAVOLOZZA_ACCESI).map(x => x.toLowerCase());
+  const auto = el('btnModModelloColoreAutomatico'); if(auto){ auto.classList.toggle('attivo', !modelloColoreForzatoV2); const i = auto.querySelector('i'); if(i){ const ca = coloreAutomaticoPerModello(modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null); i.style.background = ca; i.style.color = testoSuColore(ca); } }
+  const altro = document.querySelector('.tavolozza-altro'); if(altro){ const fuori = !!modelloColoreForzatoV2 && !tutti.includes(attuale); altro.classList.toggle('attivo', fuori); const i = altro.querySelector('i'); if(i){ i.style.background = fuori ? attuale : ''; i.style.color = fuori ? testoSuColore(attuale) : ''; } }
 }
 function dipingiSwatchModelloV2(){
   disegnaTavolozzaModelloV2();
-  const campo = el('campoModModelloColore');
-  if(campo && campo.parentElement) campo.parentElement.style.background = campo.value;
+  // v3.8.36: il colore scelto si vede nella tavolozza (pallino cerchiato) e nell'anteprima in cima.
 }
 function aggiornaStatoColoreModelloV2(){
   const stato = el('modModelloColoreStato');

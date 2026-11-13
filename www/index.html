@@ -152,14 +152,12 @@
             <span aria-hidden="true">→</span>
             <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoModModelloFine"></label>
           </div>
-          <div class="riga-colore-modello">
-            <span>Colore</span>
-            <label class="swatch-colore-libero" title="Scegli un colore">
-              <input type="color" id="campoModModelloColore">
-            </label>
-            <button type="button" class="btn-secondario" id="btnModModelloColoreAutomatico">Automatico</button>
+          <div class="riga-colore-modello"><span>Colore</span></div>
+          <div class="tavolozza-modello" id="tavolozzaModello" role="group" aria-label="Colori"></div>
+          <div class="tavolozza-extra">
+            <button type="button" class="tavolozza-auto" id="btnModModelloColoreAutomatico"><i aria-hidden="true">A</i>Automatico</button>
+            <label class="tavolozza-altro" title="Scegli un altro colore"><input type="color" id="campoModModelloColore" aria-label="Altro colore"><i aria-hidden="true">＋</i>Altro colore</label>
           </div>
-          <div class="tavolozza-modello" id="tavolozzaModello" role="group" aria-label="Colori proposti"></div>
           <p class="sotto-titolo" id="modModelloColoreStato" style="margin:4px 0 0;font-size:.74rem;"></p>
         </div>
         <div class="modale-footer" style="justify-content:space-between;">
