@@ -759,27 +759,39 @@ function renderCalendario(){
       return cella;
     }
 
-    cella.innerHTML = `
-      <span class="giorno-topline">
-        <span class="giorno-numero">${g}</span>
-        <span class="giorno-badge-list">${badgeVisibili.join('')}</span>
-      </span>
-      <span class="giorno-turno-badge" style="background:transparent" title="${escapeHtml(nomeCategoria)}"><span class="giorno-turno-codice">${escapeHtml(codiceCategoria)}</span><span class="giorno-turno-nome"${siglaGrande ? ' data-sigla-singola="1"' : ''}>${escapeHtml(tipoLabel)}</span></span>
-      ${orario || oreLabel ? `<span class="giorno-meta">${orario}${oreLabel}</span>` : '<span class="giorno-meta giorno-meta-vuoto">—</span>'}
-      ${strisciaEvento}
-    `;
-
-    // Una regola CSS con !important altrove tiene questo testo fisso e piccolo (pensata per nomi
-    // come "Sera"/"Mattina") — per la sigla a una sola lettera lo ingrandiamo qui, scrivendo
-    // anche noi in !important dal JS: è l'unico modo di vincere con certezza su un'altra regola
-    // già !important, invece di sperare che la cascata CSS la scavalchi da sola.
-    if(siglaGrande){
-      const nodoSigla = cella.querySelector('[data-sigla-singola]');
-      if(nodoSigla){
-        nodoSigla.style.setProperty('font-size', '1.2rem', 'important');
-        nodoSigla.style.setProperty('font-weight', '900', 'important');
+    // ── v3.8.33: Classico rifatto — griglia regolare, casella colorata per ogni turno, sigla corta,
+    // testo sempre leggibile, giorni senza turno vuoti, «+2h» per lo straordinario, pallini per gli eventi.
+    const conTurno = !!(t && categoria);
+    let sfondoC2 = '', testoC2 = '';
+    if(conTurno){
+      const predefinito = ((typeof CATEGORIE_COLORABILI !== 'undefined' ? CATEGORIE_COLORABILI : []).find(c => c.chiave === categoria) || {}).predefinito || '#C9CED6';
+      if(calendarioAColoriAttivo()){
+        const base = coloreTurno || predefinito;
+        // Colore bianco o quasi: una leggera tinta del colore di serie, così il turno si riconosce lo stesso.
+        sfondoC2 = luminanzaColore(base) > 0.9 ? mescolaColori(predefinito, '#FFFFFF', 0.45) : base;
+        testoC2 = testoLeggibileSu(sfondoC2);
+      } else {
+        testoC2 = mescolaColori(predefinito, '#1E2129', 0.62);
       }
     }
+    const siglaC2 = !conTurno ? ''
+      : categoria === 'assenza' ? tipoLabel
+      : (t.aggiornamentoProfessionale || t.addestramentoTiro || ((t.compensazioneRiposo || t.recuperoFestivoLavorato) && !categoria)) ? etichetta
+      : modelloPersonalizzato ? (modelloUsato.nome.length <= 5 ? modelloUsato.nome : (modelloUsato.sigla || modelloUsato.nome.slice(0, 4)))
+      : SIGLA_CLASSICO_CATEGORIA[categoria] || etichetta || '';
+    const minStrC2 = typeof minutiStraordinario === 'function' ? minutiStraordinario(t) : 0;
+    const oreStrC2 = minStrC2 ? String(Math.round(minStrC2 / 6) / 10).replace('.', ',') : '';
+    const eventiC2 = eventiCella.length ? `<span class="c2-eventi">${eventiCella.slice(0, 3).map(x => `<i${coloreEventoStile(x.ev)}></i>`).join('')}</span>` : '';
+    cella.classList.add('c2');
+    if(conTurno) cella.classList.add('c2-turno');
+    if(sfondoC2) cella.style.setProperty('background', sfondoC2, 'important');
+    else cella.style.removeProperty('background');
+    cella.classList.toggle('c2-senza-colori', conTurno && !calendarioAColoriAttivo());
+    if(testoC2) cella.style.setProperty('--c2-testo', testoC2); else cella.style.removeProperty('--c2-testo');
+    cella.innerHTML = `<span class="c2-numero">${g}</span>`
+      + `<span class="c2-sigla" title="${escapeHtml(nomeCategoria)}">${escapeHtml(siglaC2)}</span>`
+      + (oreStrC2 ? `<span class="c2-straord" title="Straordinario ${oreStrC2} ore">+${oreStrC2}h</span>` : '')
+      + eventiC2;
 
     cella.addEventListener('click', () => gestisciTocchGiornoV2(iso));
     return cella;
@@ -908,6 +920,13 @@ function iconaIndennita(chiave, classe){
   return d ? `<svg class="icona-indennita${classe ? ' ' + classe : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>` : '';
 }
 
+// v3.8.33: sigle corte del calendario Classico (come nelle app di turni più usate).
+const SIGLA_CLASSICO_CATEGORIA = { mattina:'Matt', pomeriggio:'Pom', sera:'Sera', notte:'Not', riposo:'Rip', ufficio:'Uff', aggiornamentoProfessionale:'Agg', addestramentoTiro:'Tiro' };
+function rgbDaHex(hex){ const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim()); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+function luminanzaColore(hex){ const c = rgbDaHex(hex); if(!c) return 1; const l = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]; }
+// Testo scuro o bianco: quello con più contrasto sul colore (sul verde acceso vince lo scuro).
+function testoLeggibileSu(hex){ const L = luminanzaColore(hex); return (L + 0.05) / 0.05 * 0.8 >= 1.05 / (L + 0.05) ? '#1E2129' : '#FFFFFF'; }
+function mescolaColori(a, b, peso){ const x = rgbDaHex(a), y = rgbDaHex(b); if(!x || !y) return a; return '#' + x.map((v, k) => Math.round(v * peso + y[k] * (1 - peso)).toString(16).padStart(2, '0')).join(''); }
 const NOME_BREVE_CATEGORIA = { mattina:'Matt.', pomeriggio:'Pom.', sera:'Sera', notte:'Notte', riposo:'Riposo' };
 const INIZIALE_CATEGORIA = { mattina:'Mattina', pomeriggio:'Pomeriggio', sera:'Sera', notte:'Notte', riposo:'Riposo' };
 const CODICE_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };

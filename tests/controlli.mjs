@@ -459,11 +459,13 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'classico', eventi: { '2026-10-16': [{ id: 'evento_1', titolo: 'Visita medica', oraInizio: '10:00', colore: '#2E9E5B' }] } });
   const c = await p.evaluate(() => {
-    const oggi = document.querySelector('.giorno-cella.oggi .giorno-numero');
-    const ev = document.querySelector('.giorno-cella[data-data="2026-10-16"] .giorno-evento-titolo');
-    return { classico: !document.body.classList.contains('calendario-moderno'), oggi: oggi && getComputedStyle(oggi).backgroundColor, ev: ev && getComputedStyle(ev).width, barrato: [...document.querySelectorAll('.giorno-cella .giorno-numero')].some(n => getComputedStyle(n).textDecorationLine === 'line-through') };
+    const oggi = document.querySelector('.giorno-cella.oggi .c2-numero');
+    const ev = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-eventi i');
+    const altezze = new Set([...document.querySelectorAll('#calendarioGriglia .giorno-cella')].map(c => Math.round(c.getBoundingClientRect().height)));
+    return { classico: !document.body.classList.contains('calendario-moderno'), oggi: oggi && getComputedStyle(oggi).backgroundColor, ev: ev && getComputedStyle(ev).width, barrato: [...document.querySelectorAll('.giorno-cella .c2-numero')].some(n => getComputedStyle(n).textDecorationLine === 'line-through'), altezze: altezze.size, sigla: (document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla') || {}).textContent };
   });
-  ok('calendario classico: oggi nel cerchio blu, eventi a pallino, niente numeri barrati', c.classico && c.oggi === 'rgb(21, 94, 239)' && c.ev === '9px' && !c.barrato, JSON.stringify(c));
+  // v3.8.33: Classico rifatto — caselle tutte alte uguali, sigla corta, oggi nel cerchio blu, eventi a pallino.
+  ok('calendario classico: oggi nel cerchio blu, eventi a pallino, caselle uguali, sigla corta', c.classico && /^rgb\(/.test(c.oggi || '') && c.oggi !== 'rgba(0, 0, 0, 0)' && c.ev === '6px' && !c.barrato && c.altezze === 1 && /^(Matt|Pom|Sera|Not|Rip)$/.test(c.sigla || ''), JSON.stringify(c));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
   await ctx.close();
 }
