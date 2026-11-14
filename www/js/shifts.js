@@ -1,16 +1,47 @@
 /* FASE 1 — modulo estratto dal precedente script.js. */
 
+// v3.8.40: colori di serie più vivaci (le tinte pastello di prima restano in COLORI_SERIE_PRIMA, per riconoscerle).
 const CATEGORIE_COLORABILI = [
-  { chiave:'sera', etichetta:'Sera', predefinito:'#F5A0C0', spiegazione:'Sera — rosa tramonto' },
-  { chiave:'pomeriggio', etichetta:'Pomeriggio', predefinito:'#FFAB76', spiegazione:'Pomeriggio — arancio pieno giorno' },
-  { chiave:'mattina', etichetta:'Mattina', predefinito:'#FFD97D', spiegazione:'Mattina — giallo alba' },
-  { chiave:'notte', etichetta:'Notte', predefinito:'#B4A0E5', spiegazione:'Notte — viola notturno' },
-  { chiave:'riposo', etichetta:'Riposo', predefinito:'#8DD3C7', spiegazione:'Riposo — verde acqua' },
+  { chiave:'sera', etichetta:'Sera', predefinito:'#D81B60', spiegazione:'Sera — fucsia' },
+  { chiave:'pomeriggio', etichetta:'Pomeriggio', predefinito:'#FB8C00', spiegazione:'Pomeriggio — arancio' },
+  { chiave:'mattina', etichetta:'Mattina', predefinito:'#FDD835', spiegazione:'Mattina — giallo sole' },
+  { chiave:'notte', etichetta:'Notte', predefinito:'#8E24AA', spiegazione:'Notte — viola' },
+  { chiave:'riposo', etichetta:'Riposo', predefinito:'#43A047', spiegazione:'Riposo — verde' },
   { chiave:'assenza', etichetta:'Assenze', predefinito:'#D8DAE0', spiegazione:'Assenze — grigio neutro' },
-  { chiave:'ufficio', etichetta:'Ufficio', predefinito:'#A9C8E8', spiegazione:'Ufficio — azzurro' },
-  { chiave:'aggiornamentoProfessionale', etichetta:'Aggiornamento professionale', predefinito:'#B7DDA8', spiegazione:'Aggiornamento professionale — verde chiaro' },
-  { chiave:'addestramentoTiro', etichetta:'Addestramento tiro', predefinito:'#E5B896', spiegazione:'Addestramento tiro — cammello' }
+  { chiave:'ufficio', etichetta:'Ufficio', predefinito:'#1E88E5', spiegazione:'Ufficio — blu' },
+  { chiave:'aggiornamentoProfessionale', etichetta:'Aggiornamento professionale', predefinito:'#00ACC1', spiegazione:'Aggiornamento professionale — turchese' },
+  { chiave:'addestramentoTiro', etichetta:'Addestramento tiro', predefinito:'#6D4C41', spiegazione:'Addestramento tiro — marrone' }
 ];
+const COLORI_SERIE_PRIMA = { sera:'#F5A0C0', pomeriggio:'#FFAB76', mattina:'#FFD97D', notte:'#B4A0E5', riposo:'#8DD3C7', assenza:'#D8DAE0', ufficio:'#A9C8E8', aggiornamentoProfessionale:'#B7DDA8', addestramentoTiro:'#E5B896' };
+// Chi non aveva scelto colori suoi (o aveva premuto «Colori di serie») passa ai nuovi; chi ne ha scelti di suoi non cambia.
+function migraColoriDiSerie(forza){
+  try{
+    const CH = 'simCedolino_coloriVivaci_v1';
+    if(!forza && TurniPSStorage.getItem(CH) === '1') return false;
+    TurniPSStorage.setItem(CH, '1');
+    const cc = AppState.coloriTurni; if(!cc || typeof cc !== 'object') return false;
+    let cambiati = false;
+    CATEGORIE_COLORABILI.forEach(c => {
+      const v = String(cc[c.chiave] || '').toLowerCase(), vecchio = String(COLORI_SERIE_PRIMA[c.chiave] || '').toLowerCase();
+      if(v && v === vecchio && v !== c.predefinito.toLowerCase()){ cc[c.chiave] = c.predefinito; cambiati = true; }
+    });
+    if(cambiati) salvaColoriTurniStorage();
+    return cambiati;
+  }catch(e){ return false; }
+}
+// Le anteprime «Classico» e «Moderno» in Stile calendario usano i colori veri dei turni, non colori fissi.
+function aggiornaAnteprimeStileCalendario(){
+  try{
+    const modelli = (typeof AppState !== 'undefined' && AppState.modelliTurno) || [];
+    document.querySelectorAll('.stile-anteprima [data-sa]').forEach(n => {
+      const id = n.dataset.sa, m = modelli.find(x => id === 'riposo' ? x.riposo : x.id === id);
+      const c = m && typeof coloreModelloV2 === 'function' ? coloreModelloV2(m) : coloreCategoria(id);
+      const cella = n.closest('.sa-cella') || n;
+      if(n.tagName === 'I'){ n.style.setProperty('--c', c); n.style.setProperty('--sa-testo', testoSuColore(c)); }
+      else { n.style.background = c; n.style.setProperty('--sa-testo', testoSuColore(c)); }
+    });
+  }catch(e){}
+}
 
 
 // Acceso di default (da v2.67.4): chi non ha mai scelto vede il calendario a colori; chi l'ha
@@ -48,12 +79,15 @@ function scurisciColore(hex, fattore){
   const out = s === 0 ? [l, l, l] : [canale(h + 1/3), canale(h), canale(h - 1/3)];
   return '#' + out.map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('');
 }
+// v3.8.40: testo bianco se il contrasto col bianco è almeno 3:1, altrimenti scuro (prima il bianco finiva anche
+// su colori medio-chiari, come un arancio, dove si leggeva poco).
 function testoSuColore(hex){
   const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
   if(!m) return '#1E2129';
   const n = parseInt(m[1], 16);
-  const luminanza = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
-  return luminanza > 0.62 ? '#1E2129' : '#FFFFFF';
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return 1.05 / (L + 0.05) >= 3 ? '#FFFFFF' : '#1E2129';
 }
 
 const SIGLA_SINGOLA_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };

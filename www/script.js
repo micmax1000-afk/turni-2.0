@@ -283,6 +283,7 @@ let tokenAccessoDriveCorrente = null;
 
 
 function aggiornaClasseCalendarioColori(){
+  if(typeof aggiornaAnteprimeStileCalendario === 'function') aggiornaAnteprimeStileCalendario();
   document.body.classList.toggle('calendario-senza-colori', !calendarioAColoriAttivo());
   document.body.classList.toggle('calendario-moderno', calendarioModernoAttivo());
   document.querySelectorAll('[data-stile-calendario]').forEach(b => {
@@ -461,7 +462,9 @@ function inizializzaBarraETastiera(){
 
 function inizializza(){
   if(window.TurniPSDataGuard && !TurniPSDataGuard.validate(AppState)) Object.assign(AppState, TurniPSDataGuard.normalize(AppState));
+  if(typeof migraColoriDiSerie === 'function') migraColoriDiSerie();
   applicaColoriTurni();
+  aggiornaAnteprimeStileCalendario();
   aggiornaRiassuntoAnagrafica();
   renderCalendario();
   renderAvvisiApp();
