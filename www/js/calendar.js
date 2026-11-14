@@ -937,7 +937,7 @@ const SIGLA_CLASSICO_CATEGORIA = { mattina:'Matt', pomeriggio:'Pom', sera:'Sera'
 function rgbDaHex(hex){ const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim()); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
 function luminanzaColore(hex){ const c = rgbDaHex(hex); if(!c) return 1; const l = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]; }
 // Testo scuro o bianco: quello con più contrasto sul colore (sul verde acceso vince lo scuro).
-function testoLeggibileSu(hex){ const L = luminanzaColore(hex); return (L + 0.05) / 0.05 * 0.8 >= 1.05 / (L + 0.05) ? '#1E2129' : '#FFFFFF'; }
+function testoLeggibileSu(hex){ return testoSuColore(hex); }
 function mescolaColori(a, b, peso){ const x = rgbDaHex(a), y = rgbDaHex(b); if(!x || !y) return a; return '#' + x.map((v, k) => Math.round(v * peso + y[k] * (1 - peso)).toString(16).padStart(2, '0')).join(''); }
 const NOME_BREVE_CATEGORIA = { mattina:'Matt.', pomeriggio:'Pom.', sera:'Sera', notte:'Notte', riposo:'Riposo' };
 const INIZIALE_CATEGORIA = { mattina:'Mattina', pomeriggio:'Pomeriggio', sera:'Sera', notte:'Notte', riposo:'Riposo' };

@@ -1,5 +1,5 @@
 <it-IT>
-• Corretto: un turno colorato non cambia più il colore degli altri turni
-• Note di servizio: si salvano mentre scrivi, non si perdono più
-• Corretto il backup automatico su Drive; altre piccole correzioni
+• Colori di serie più vivaci per i turni
+• Tema automatico corretto: Diario, Agenda e riquadro del giorno seguono il telefono
+• Anteprime di Stile calendario con i colori veri dei turni
 </it-IT>

@@ -9,7 +9,15 @@
 <script>
   // Tema scelto in Altro (automatico/chiaro/scuro): applicato subito, prima di disegnare la pagina,
   // così non si vede un lampo di tema sbagliato all'apertura.
-  try{ var t = localStorage.getItem('simCedolino_tema_v1'); if(t === 'chiaro' || t === 'scuro') document.documentElement.setAttribute('data-tema', t); }catch(e){}
+  // v3.8.40: anche con «Come il telefono» si scrive subito chiaro/scuro (prima restava vuoto e le schermate nuove
+  // seguivano il telefono solo in parte).
+  try{
+    var t = localStorage.getItem('simCedolino_tema_v1'), r = document.documentElement;
+    var scuroTel = !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    if(t === 'chiaro') r.setAttribute('data-tema', 'chiaro');
+    else if(t === 'scuro' || t === 'grigio' || t === 'nero'){ r.setAttribute('data-tema', 'scuro'); if(t === 'nero') r.setAttribute('data-scuro', 'nero'); }
+    else r.setAttribute('data-tema', scuroTel ? 'scuro' : 'chiaro');
+  }catch(e){}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -725,11 +733,11 @@
       <p class="titolo-menu-v2">Aspetto delle caselle</p>
       <div class="stile-calendario-pulsanti">
         <button type="button" data-stile-calendario="classico" aria-pressed="true">
-          <span class="stile-anteprima" aria-hidden="true"><span class="sa-cella" style="background:#F5A0C0"><b>12</b><i>S</i></span><span class="sa-cella" style="background:#FFAB76"><b>13</b><i>P</i></span><span class="sa-cella" style="background:#FFD98A"><b>14</b><i>M</i></span><span class="sa-cella" style="background:#B9A6F0"><b>15</b><i>N</i></span><span class="sa-cella" style="background:#8FD5C7"><b>16</b><i>R</i></span><span class="sa-cella" style="background:#F5A0C0"><b>17</b><i>S</i></span></span>
+          <span class="stile-anteprima" aria-hidden="true"><span class="sa-cella" data-sa="sera" style="background:#F5A0C0"><b>12</b><i>S</i></span><span class="sa-cella" data-sa="pomeriggio" style="background:#FFAB76"><b>13</b><i>P</i></span><span class="sa-cella" data-sa="mattina" style="background:#FFD98A"><b>14</b><i>M</i></span><span class="sa-cella" data-sa="notte" style="background:#B9A6F0"><b>15</b><i>N</i></span><span class="sa-cella" data-sa="riposo" style="background:#8FD5C7"><b>16</b><i>R</i></span><span class="sa-cella" data-sa="sera" style="background:#F5A0C0"><b>17</b><i>S</i></span></span>
           <b>Classico</b><small>Casella colorata con il turno</small>
         </button>
         <button type="button" data-stile-calendario="moderno" aria-pressed="false">
-          <span class="stile-anteprima stile-anteprima-moderno" aria-hidden="true"><span class="sa-cella"><b>12</b><i style="--c:#F5A0C0">Sera</i></span><span class="sa-cella"><b>13</b><i style="--c:#FFAB76">Pom.</i></span><span class="sa-cella"><b>14</b><i style="--c:#FFD98A">Matt.</i></span><span class="sa-cella"><b>15</b><i style="--c:#B9A6F0">Notte</i></span><span class="sa-cella"><b>16</b><i style="--c:#8FD5C7">Rip.</i></span><span class="sa-cella"><b>17</b><i style="--c:#F5A0C0">Sera</i></span></span>
+          <span class="stile-anteprima stile-anteprima-moderno" aria-hidden="true"><span class="sa-cella"><b>12</b><i data-sa="sera" style="--c:#F5A0C0">Sera</i></span><span class="sa-cella"><b>13</b><i data-sa="pomeriggio" style="--c:#FFAB76">Pom.</i></span><span class="sa-cella"><b>14</b><i data-sa="mattina" style="--c:#FFD98A">Matt.</i></span><span class="sa-cella"><b>15</b><i data-sa="notte" style="--c:#B9A6F0">Notte</i></span><span class="sa-cella"><b>16</b><i data-sa="riposo" style="--c:#8FD5C7">Rip.</i></span><span class="sa-cella"><b>17</b><i data-sa="sera" style="--c:#F5A0C0">Sera</i></span></span>
           <b>Moderno</b><small>Etichetta col nome, eventi sotto</small>
         </button>
       </div>

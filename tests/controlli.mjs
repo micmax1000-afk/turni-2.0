@@ -491,6 +491,10 @@ sezione('v3.8.1: evento in stile Google e calendario classico');
   // v3.8.39: dati rovinati non bloccano l'app; lo straordinario rimasto su un giorno di riposo non compare.
   const dr = await p.evaluate(() => ({ puliti: Object.keys(pulisciTurni({ '2026-10-01': null, 'x': {}, '2026-10-02': { riposo: true } })).join(), str: minutiStraordinario({ riposo: true, straordinarioDopoInizio: '10:00', straordinarioDopoFine: '12:00' }), strTurno: minutiStraordinario({ oraInizio: '07:00', oraFine: '13:00', straordinarioDopoInizio: '13:00', straordinarioDopoFine: '15:00' }) }));
   ok('giorni rovinati scartati al caricamento; niente «+2h» su un riposo', dr.puliti === '2026-10-02' && dr.str === 0 && dr.strTurno === 120, JSON.stringify(dr));
+  // v3.8.40: colori di serie vivaci: chi aveva i vecchi pastello passa ai nuovi, chi ne aveva di suoi no; le anteprime
+  // di Stile calendario seguono i colori veri; il testo bianco o scuro si sceglie per il contrasto.
+  const cv = await p.evaluate(() => { const prima = AppState.coloriTurni; AppState.coloriTurni = { sera: '#F5A0C0', mattina: '#123456' }; migraColoriDiSerie(true); const r = { sera: AppState.coloriTurni.sera, mattina: AppState.coloriTurni.mattina }; AppState.coloriTurni = prima; aggiornaAnteprimeStileCalendario(); const c = document.querySelector('.stile-anteprima:not(.stile-anteprima-moderno) [data-sa="sera"]'); r.anteprima = c && c.style.background; r.arancio = testoSuColore('#FB8C00'); r.viola = testoSuColore('#8E24AA'); return r; });
+  ok('colori di serie vivaci: pastello → nuovi, colori propri intatti, anteprime con i colori veri, testo per contrasto', cv.sera.toLowerCase() === '#d81b60' && cv.mattina === '#123456' && /rgb\(216, 27, 96\)|#d81b60/i.test(cv.anteprima || '') && cv.arancio === '#1E2129' && cv.viola === '#FFFFFF', JSON.stringify(cv));
   // v3.8.33: nel Classico si sceglie cosa mostrare: nome corto, lettera o la sigla del turno (e finisce nel backup).
   const sg = await p.evaluate(() => { const out = {}; for(const m of ['lettera', 'sigla', 'nome']){ document.querySelector(`[data-sigla-classico="${m}"]`).click(); out[m] = document.querySelector('.giorno-cella[data-data="2026-10-16"] .c2-sigla').textContent; } out.backup = costruisciDatiBackup().siglaClassico; return out; });
   ok('Classico: «Lettera» mostra S, «La tua sigla» SE, «Nome corto» Sera; la scelta va nel backup', sg.lettera === 'S' && sg.sigla === 'SE' && sg.nome === 'Sera' && sg.backup === 'nome', JSON.stringify(sg));
@@ -1559,7 +1563,7 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   await p.click('.scelta-tema [data-tema="chiaro"]');
   ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(41, 45, 53)');
   await p.click('.scelta-tema [data-tema="auto"]');
-  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(41, 45, 53)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(41, 45, 53)' && await p.evaluate(() => document.documentElement.getAttribute('data-tema') === 'scuro')); // v3.8.40: in Auto si scrive scuro/chiaro, così vale per tutte le schermate
   await p.click('.scelta-tema [data-tema="nero"]');
   ok('"Nero": sfondo quasi nero', await sfondo() === 'rgb(10, 12, 16)');
   await p.click('#tabCalendario');
@@ -1594,7 +1598,7 @@ sezione('Stampa / Esporta PDF nell\'app Android');
   ok('si apre la finestra di stampa di Android (non window.print)', !!s && s[1].titolo === 'Cedolino stimato' && s[3]);
   ok('durante la stampa il foglio è chiaro anche col tema scuro', !!s && s[2] === 'chiaro');
   await p.waitForTimeout(500);
-  ok('chiusa la stampa, il tema torna come prima', await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('chiusa la stampa, il tema torna come prima', await p.evaluate(() => document.documentElement.getAttribute('data-tema') === (temaAttualeScuro() ? 'scuro' : 'chiaro')));
   ok('barre di Android in tinta con l\'app (sfondo e icone)', await p.evaluate(() => { scegliTema('nero'); const b = window.__log.filter(x => x[0] === 'barre').pop(); return !!b && b[1].colore === '#0A0C10' && b[1].iconeChiare === true; }));
   ok('in Chiaro le barre diventano chiare con icone scure', await p.evaluate(() => { scegliTema('chiaro'); const b = window.__log.filter(x => x[0] === 'barre').pop(); return b[1].colore === '#ECEFEA' && b[1].iconeChiare === false; }));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));

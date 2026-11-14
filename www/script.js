@@ -283,6 +283,7 @@ let tokenAccessoDriveCorrente = null;
 
 
 function aggiornaClasseCalendarioColori(){
+  if(typeof aggiornaAnteprimeStileCalendario === 'function') aggiornaAnteprimeStileCalendario();
   document.body.classList.toggle('calendario-senza-colori', !calendarioAColoriAttivo());
   document.body.classList.toggle('calendario-moderno', calendarioModernoAttivo());
   document.querySelectorAll('[data-stile-calendario]').forEach(b => {
@@ -399,7 +400,9 @@ function applicaTema(){
   const descrizione = document.getElementById('descrizioneTema');
   const testoLuce = statoLuce.fonte === 'sole' ? 'Scuro dal tramonto all\'alba' : 'Segue la luce intorno';
   if(descrizione) descrizione.textContent = { auto: 'Come il telefono', luce: testoLuce, chiaro: 'Sempre chiaro', grigio: 'Scuro, grigio antracite', nero: 'Scuro, quasi nero' }[t];
-  if(t === 'auto') radice.removeAttribute('data-tema');
+  // v3.8.40: con «Come il telefono» si scrive comunque chiaro/scuro sulla pagina. Prima non si scriveva niente e
+  // le parti nuove (Diario, Agenda, riquadro del giorno, Classico) restavano chiare anche col telefono in scuro.
+  if(t === 'auto') radice.setAttribute('data-tema', temaAttualeScuro() ? 'scuro' : 'chiaro');
   else if(t === 'luce') radice.setAttribute('data-tema', luceScuroOra() ? 'scuro' : 'chiaro');
   else radice.setAttribute('data-tema', t === 'chiaro' ? 'chiaro' : 'scuro');
   if(t === 'nero') radice.setAttribute('data-scuro', 'nero');
@@ -459,7 +462,9 @@ function inizializzaBarraETastiera(){
 
 function inizializza(){
   if(window.TurniPSDataGuard && !TurniPSDataGuard.validate(AppState)) Object.assign(AppState, TurniPSDataGuard.normalize(AppState));
+  if(typeof migraColoriDiSerie === 'function') migraColoriDiSerie();
   applicaColoriTurni();
+  aggiornaAnteprimeStileCalendario();
   aggiornaRiassuntoAnagrafica();
   renderCalendario();
   renderAvvisiApp();

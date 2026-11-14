@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V272 (v3.8.39 — correzioni: colori dei turni, note di servizio, robustezza) */
+/* Turni & Accessorio PS — Service Worker V273 (v3.8.40 — colori di serie vivaci, tema automatico corretto) */
 'use strict';
-const CACHE='turni-ps-v272';
+const CACHE='turni-ps-v273';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/domande-voce.js','./js/utilita.js','./js/pro.js','./js/data/tabelle-2026.js',

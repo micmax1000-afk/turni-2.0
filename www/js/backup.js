@@ -664,6 +664,7 @@ function ripristinaSnapshotPreRipristino(){
     AppState.sequenzaTurni = Array.isArray(dati.sequenzaTurni) ? dati.sequenzaTurni : [];
     AppState.noteGiorni = dati.noteGiorni && typeof dati.noteGiorni === 'object' ? dati.noteGiorni : {};
     AppState.coloriTurni = dati.coloriTurni && typeof dati.coloriTurni === 'object' ? dati.coloriTurni : {};
+    if(typeof migraColoriDiSerie === 'function') migraColoriDiSerie(true);
     salvaAnagraficaStorage(); salvaTurniStorage(); salvaTabelleStorage();
     salvaConguagliStorage(); salvaStoricoStorage(); salvaAssenzeStorage(); salvaSequenzaStorage();
     salvaNoteGiorniStorage(); salvaColoriTurniStorage();
@@ -743,6 +744,7 @@ function importaBackup(file, datiGiaLetti){
       if(typeof dati.agendaSottoCalendario === 'boolean') TurniPSStorage.setItem(CHIAVE_AGENDA_SOTTO, dati.agendaSottoCalendario ? '1' : '0');
       if(dati.coloriTurni && typeof dati.coloriTurni === 'object'){
         AppState.coloriTurni = Object.assign({}, dati.coloriTurni);
+        if(typeof migraColoriDiSerie === 'function') migraColoriDiSerie(true);
         salvaColoriTurniStorage();
         if(typeof applicaColoriTurni === 'function') applicaColoriTurni();
       }
