@@ -1559,7 +1559,7 @@ sezione('Scelta del tema (Automatico / Chiaro / Scuro)');
   await p.click('.scelta-tema [data-tema="chiaro"]');
   ok('"Chiaro" con il telefono in scuro: sfondo chiaro', await sfondo() !== 'rgb(41, 45, 53)');
   await p.click('.scelta-tema [data-tema="auto"]');
-  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(41, 45, 53)' && await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('"Auto" segue il telefono (scuro)', await sfondo() === 'rgb(41, 45, 53)' && await p.evaluate(() => document.documentElement.getAttribute('data-tema') === 'scuro')); // v3.8.40: in Auto si scrive scuro/chiaro, così vale per tutte le schermate
   await p.click('.scelta-tema [data-tema="nero"]');
   ok('"Nero": sfondo quasi nero', await sfondo() === 'rgb(10, 12, 16)');
   await p.click('#tabCalendario');
@@ -1594,7 +1594,7 @@ sezione('Stampa / Esporta PDF nell\'app Android');
   ok('si apre la finestra di stampa di Android (non window.print)', !!s && s[1].titolo === 'Cedolino stimato' && s[3]);
   ok('durante la stampa il foglio è chiaro anche col tema scuro', !!s && s[2] === 'chiaro');
   await p.waitForTimeout(500);
-  ok('chiusa la stampa, il tema torna come prima', await p.evaluate(() => !document.documentElement.hasAttribute('data-tema')));
+  ok('chiusa la stampa, il tema torna come prima', await p.evaluate(() => document.documentElement.getAttribute('data-tema') === (temaAttualeScuro() ? 'scuro' : 'chiaro')));
   ok('barre di Android in tinta con l\'app (sfondo e icone)', await p.evaluate(() => { scegliTema('nero'); const b = window.__log.filter(x => x[0] === 'barre').pop(); return !!b && b[1].colore === '#0A0C10' && b[1].iconeChiare === true; }));
   ok('in Chiaro le barre diventano chiare con icone scure', await p.evaluate(() => { scegliTema('chiaro'); const b = window.__log.filter(x => x[0] === 'barre').pop(); return b[1].colore === '#ECEFEA' && b[1].iconeChiare === false; }));
   ok('nessun errore JavaScript', !errori.length, errori.join(' | '));
