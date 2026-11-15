@@ -1113,6 +1113,9 @@ sezione('v3.8.27: vista Anno, maniglia, date sulle assenze, anni sfogliabili');
   await p.click('#btnMesePrec');
   await p.click('#vistaAnnoCal [data-anno-mese="11"]');
   ok('tocco dicembre: si apre il mese di dicembre', await p.evaluate(() => vistaCalendario() === 'mese' && meseCorrente === 11 && annoCorrente === 2026));
+  // v3.8.42: l'Anno si ingrandisce con ＋/− (3, 2 o 1 colonna) e ricorda la scelta.
+  const za = await p.evaluate(() => { impostaVistaCalendario('anno'); const col = () => getComputedStyle(document.querySelector('.anno-griglia')).gridTemplateColumns.split(' ').length; const a = col(); document.querySelector('[data-anno-zoom="1"]').click(); const b = col(); document.querySelector('[data-anno-zoom="1"]').click(); const c = col(); const salvato = zoomAnno(); document.querySelector('[data-anno-zoom="-1"]').click(); document.querySelector('[data-anno-zoom="-1"]').click(); const d = col(); impostaVistaCalendario('mese'); return { a, b, c, d, salvato }; });
+  ok('vista Anno: ＋ porta da 3 a 2 a 1 colonna, − torna a 3', za.a === 3 && za.b === 2 && za.c === 1 && za.d === 3 && za.salvato === 3, JSON.stringify(za));
   // v3.8.35: niente più maniglia da trascinare: la vista si cambia solo dal menu in alto.
   ok('niente maniglia sotto il calendario: scorrendo la pagina la vista non cambia', await p.evaluate(() => !el('manigliaVista') && typeof cambiaVistaConManiglia === 'undefined'));
   await p.evaluate(() => impostaVistaCalendario('mese'));

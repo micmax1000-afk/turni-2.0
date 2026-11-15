@@ -3584,3 +3584,21 @@ html[data-tema=scuro] .diario-giorno.oggi .diario-testa{color:#8FB0FF;border-col
 html[data-tema=scuro] .anno-mese.corrente > b{color:#8FB0FF}
 /* Tema scuro: i numeri colorati delle Assenze (marrone, viola, rosso scuro…) schiariti per leggerli sul fondo scuro */
 html[data-tema=scuro] .saldo-resta{filter:brightness(1.75) saturate(.85)}
+/* v3.8.42: Anno ingrandibile (＋/− o pizzico) */
+.anno-zoom{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 8px;font:600 .8rem var(--font-corpo);color:var(--testo-tenue)}
+.anno-zoom span{min-width:118px;text-align:center}
+.anno-zoom button{width:34px;height:34px;border-radius:50%;border:1px solid var(--bordo);background:var(--pannello);color:var(--acc,#1D4FD7);font-size:1.15rem;line-height:1;cursor:pointer}
+.anno-zoom button:disabled{opacity:.35;cursor:default}
+html[data-tema=scuro] .anno-zoom button{color:#8FB0FF}
+.anno-griglia[data-zoom="2"]{grid-template-columns:repeat(2,1fr);gap:18px 14px}
+.anno-griglia[data-zoom="2"] .anno-mese > b{font-size:1.15rem}
+.anno-griglia[data-zoom="2"] .anno-giorni{gap:2px}
+.anno-griglia[data-zoom="2"] .anno-giorni i{font-size:.66rem}
+.anno-griglia[data-zoom="2"] .anno-giorni em{font-size:.8rem;line-height:1.7;border-radius:4px}
+.anno-griglia[data-zoom="3"]{grid-template-columns:1fr;gap:22px}
+.anno-griglia[data-zoom="3"] .anno-mese > b{font-size:1.35rem}
+.anno-griglia[data-zoom="3"] .anno-giorni{gap:3px}
+.anno-griglia[data-zoom="3"] .anno-giorni i{font-size:.8rem}
+.anno-griglia[data-zoom="3"] .anno-giorni em{font-size:1.1rem;line-height:2.1;border-radius:7px}
+#vistaAnnoCal{touch-action:pan-y}
+.anno-giorni em.oggi{outline:0;box-shadow:0 0 0 1.5px var(--pannello,#fff),0 0 0 3.5px var(--acc,#1D4FD7);position:relative;z-index:1}
