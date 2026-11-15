@@ -1,5 +1,3 @@
 <it-IT>
-• Colori di serie più vivaci per i turni
-• Tema automatico corretto: Diario, Agenda e riquadro del giorno seguono il telefono
-• Anteprime di Stile calendario con i colori veri dei turni
+• Calendario Classico: il contorno del giorno selezionato circonda tutta la casella, numero compreso
 </it-IT>
