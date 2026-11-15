@@ -1,3 +1,5 @@
 <it-IT>
-• Calendario Classico: il contorno del giorno selezionato circonda tutta la casella, numero compreso
+• Vista Anno ingrandibile: pulsanti ＋/− o pizzico con due dita
+• Testi più leggibili: numero di oggi in Agenda, tema scuro, numeri sui colori scuri
+• Contorno del giorno selezionato nel Classico corretto
 </it-IT>

@@ -1646,10 +1646,38 @@ function aggiornaSuggerimentiCerca(){
 }
 
 // ── v3.8.27: vista Anno (12 mesi piccoli, colorati per turno) e maniglia per cambiare vista col dito ──
+const CHIAVE_ZOOM_ANNO = 'simCedolino_zoomAnno_v1';
+function zoomAnno(){ let v = 1; try{ v = Number(TurniPSStorage.getItem(CHIAVE_ZOOM_ANNO)) || 1; }catch(e){} return Math.min(3, Math.max(1, Math.round(v))); }
+function cambiaZoomAnno(d){
+  const prima = zoomAnno(), dopo = Math.min(3, Math.max(1, prima + d));
+  if(dopo === prima) return;
+  try{ TurniPSStorage.setItem(CHIAVE_ZOOM_ANNO, String(dopo)); }catch(e){}
+  renderVistaAnno(annoCorrente);
+  // Ingrandendo si resta sul mese di oggi (se è l'anno in corso), invece di tornare a gennaio.
+  const m = document.querySelector('#vistaAnnoCal .anno-mese.corrente'); if(m && dopo > 1) m.scrollIntoView({ block: 'center' });
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-anno-zoom]'); if(b){ e.stopPropagation(); cambiaZoomAnno(Number(b.dataset.annoZoom)); } }, true);
+// Pizzico con due dita sull'Anno: allargando si ingrandisce, stringendo si rimpicciolisce (uno scatto per gesto).
+(function(){
+  let d0 = null, fatto = false;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  document.addEventListener('touchstart', e => { if(e.touches.length === 2 && e.target.closest && e.target.closest('#vistaAnnoCal')){ d0 = dist(e.touches); fatto = false; } else d0 = null; }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if(d0 === null || e.touches.length !== 2) return;
+    if(e.cancelable) e.preventDefault();
+    if(fatto) return;
+    const r = dist(e.touches) / d0;
+    if(r > 1.25){ fatto = true; cambiaZoomAnno(1); } else if(r < 0.8){ fatto = true; cambiaZoomAnno(-1); }
+  }, { passive: false });
+  document.addEventListener('touchend', e => { if(e.touches.length < 2) d0 = null; }, { passive: true });
+})();
 function renderVistaAnno(anno){
   const host = el('vistaAnnoCal'); if(!host) return;
   const oggiIso = dataISO(new Date());
-  let html = '<div class="anno-griglia">';
+  // v3.8.42: l'Anno si ingrandisce: 3 colonne (tutto l'anno), 2 o 1 (mesi più grandi). Con ＋/− o col pizzico.
+  const z = zoomAnno();
+  let html = `<div class="anno-zoom" role="group" aria-label="Grandezza dei mesi"><button type="button" data-anno-zoom="-1" aria-label="Rimpicciolisci"${z <= 1 ? ' disabled' : ''}>−</button><span>${['', 'Tutto l\'anno', 'Mesi grandi', 'Un mese per riga'][z]}</span><button type="button" data-anno-zoom="1" aria-label="Ingrandisci"${z >= 3 ? ' disabled' : ''}>＋</button></div>`
+    + `<div class="anno-griglia" data-zoom="${z}">`;
   for(let m = 0; m < 12; m++){
     const primo = new Date(anno, m, 1, 12), giorni = new Date(anno, m + 1, 0).getDate();
     const vuoti = (primo.getDay() + 6) % 7;
@@ -1660,7 +1688,7 @@ function renderVistaAnno(anno){
       const iso = `${anno}-${String(m + 1).padStart(2, '0')}-${String(g).padStart(2, '0')}`;
       const t = AppState.turni[iso], col = coloreGiornoVista(t);
       const cls = (iso === oggiIso ? ' oggi' : '') + (t && t.assenzaTipo ? ' assenza' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
-      html += `<em class="${cls.trim()}"${col ? ` style="background:${col}"` : ''}>${g}</em>`;
+      html += `<em class="${cls.trim()}"${col ? ` style="background:${col};color:${testoSuColore(col)}"` : ''}>${g}</em>`;
     }
     html += '</span></button>';
   }
