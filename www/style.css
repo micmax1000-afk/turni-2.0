@@ -2148,6 +2148,8 @@ html.accento-bordeaux{--acc:#A3354F;--acc-scuro:#6B1F33;--acc-tinta:#F4DDE3;--ac
 html.accento-viola{--acc:#6B4FB3;--acc-scuro:#3F2C78;--acc-tinta:#E8E1F7;--acc-chiaro:#CBBDF2}
 html.accento-petrolio{--acc:#1F7A99;--acc-scuro:#134B5F;--acc-tinta:#DCEEF4;--acc-chiaro:#A7DBEC}
 html.accento-arancio{--acc:#C76A1A;--acc-scuro:#7A3E0B;--acc-tinta:#FBE9D8;--acc-chiaro:#F6C79A}
+/* v3.8.43: «Polizia» — blu istituzionale con il blu notte della divisa */
+html.accento-polizia{--acc:#0F4C9C;--acc-scuro:#0A2A5C;--acc-tinta:#DFE9F7;--acc-chiaro:#8CB4EA}
 html[class*="accento-"]{--inchiostro:var(--acc-scuro);--inchiostro-chiaro:var(--acc)}
 html[class*="accento-"][data-tema="scuro"]{--inchiostro:var(--acc-chiaro);--inchiostro-chiaro:var(--acc-chiaro)}
 html[class*="accento-"] .saldi-hero{background:linear-gradient(135deg,var(--acc-scuro),var(--acc))}

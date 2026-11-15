@@ -4065,7 +4065,7 @@ async function aggiornaTabelleDalSito({ forza = false, avvisaSeUguali = false } 
 // Si somma al tema (chiaro/scuro): cambia pulsanti, titoli, scheda attiva, oggi nel calendario e il
 // riquadro di Assenze. I colori dei turni restano quelli scelti. All'inizio è Blu (nessuna classe).
 const CHIAVE_ACCENTO = 'simCedolino_accento_v1';
-const ACCENTI = { blu: 'Blu', verde: 'Verde', bordeaux: 'Bordeaux', viola: 'Viola', petrolio: 'Petrolio', arancio: 'Arancio' };
+const ACCENTI = { blu: 'Blu', verde: 'Verde', bordeaux: 'Bordeaux', viola: 'Viola', petrolio: 'Petrolio', arancio: 'Arancio', polizia: 'Polizia' };
 function accentoScelto(){
   let a = 'blu';
   try{ a = TurniPSStorage.getItem(CHIAVE_ACCENTO) || 'blu'; }catch(e){}
