@@ -1,5 +1,5 @@
 <it-IT>
-• Vista Anno ingrandibile: pulsanti ＋/− o pizzico con due dita
-• Testi più leggibili: numero di oggi in Agenda, tema scuro, numeri sui colori scuri
-• Contorno del giorno selezionato nel Classico corretto
+• Nuovo turno di serie «OP Stadio» 18:00–00:00, con un colore suo
+• Cambiando l'orario di un giorno, il turno resta quello scelto (non diventa «Sera»)
+• I turni creati da te mantengono sempre il loro colore
 </it-IT>

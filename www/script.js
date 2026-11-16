@@ -1809,7 +1809,7 @@ function sincronizzaTutteVociCedolino(){
 // Scheda Turni: i modelli di turno con il loro colore e orario, toccandone uno si modifica.
 // Scheda Turni: in alto, a tessere, i modelli usati negli ultimi/prossimi 3 mesi; gli altri in
 // "Altri modelli", chiuso. Ogni tessera dice orario, durata e quante volte c'è nel mese visualizzato.
-const MODELLI_DI_SOLITO_RARI = ['aggiornamentoProfessionale', 'addestramentoTiro', 'ufficio'];
+const MODELLI_DI_SOLITO_RARI = ['aggiornamentoProfessionale', 'addestramentoTiro', 'ufficio', 'opStadio'];
 function turnoUsaModello(t, m){
   if(!t || t.assenzaTipo) return false;
   if(m.riposo) return !!t.riposo;
@@ -2038,7 +2038,7 @@ let modelloColoreForzatoV2 = null;
 function coloreAutomaticoPerModello(m){
   if(!m) return coloreCategoria('mattina');
   if(m.riposo) return coloreCategoria('riposo');
-  const categorieProprie = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'];
+  const categorieProprie = CATEGORIE_PROPRIE;
   if(categorieProprie.includes(m.id)) return coloreCategoria(m.id);
   if(m.oraInizio && m.oraFine){
     const cat = categoriaTurno(m.oraInizio, m.oraFine, '2026-01-01');
@@ -2454,7 +2454,7 @@ function intervalloOrari(inizio, fine, durataSenzaFine){
 function infoTurnoGiornata(t, iso){
   const categoria = categoriaTurno(t.oraInizio, t.oraFine, iso);
   const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
-  const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
+  const categoriaColore = CATEGORIE_PROPRIE.includes(t.modelloId) ? t.modelloId : categoria;
   return {
     nome: modello ? modello.nome : (nomeGiornoVista(t) !== 'Turno' ? nomeGiornoVista(t) : (INIZIALE_CATEGORIA[categoria] || 'Turno')),
     colore: (modello && modello.colore) || ((modelloColoreGiorno(t, categoriaColore) || {}).colore) || coloreCategoria(categoriaColore),

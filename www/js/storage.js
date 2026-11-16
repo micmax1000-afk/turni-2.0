@@ -128,15 +128,18 @@ const MODELLI_TURNO_BASE_V2 = [
   { id:'riposo', nome:'Riposo', riposo:true, sigla:'RI' },
   { id:'aggiornamentoProfessionale', nome:'Aggiornamento professionale', oraInizio:'08:00', oraFine:'14:00', sigla:'AG' },
   { id:'addestramentoTiro', nome:'Addestramento tiro', oraInizio:'08:00', oraFine:'14:00', sigla:'AT' },
-  { id:'ufficio', nome:'Ufficio', oraInizio:'08:00', oraFine:'14:00', sigla:'UF' }
+  { id:'ufficio', nome:'Ufficio', oraInizio:'08:00', oraFine:'14:00', sigla:'UF' },
+  { id:'opStadio', nome:'OP Stadio', oraInizio:'18:00', oraFine:'00:00', sigla:'OP' }
 ];
 // Turni aggiunti dopo il primo rilascio dei Modelli: chi ha già l'app installata ha un elenco
 // salvato che non li contiene. Li aggiungiamo qui, una volta sola, senza toccare nulla che
 // l'utente abbia già personalizzato (nome, orario) sugli altri turni.
 function aggiungiModelliMancantiV2(elenco){
   const idPresenti = new Set(elenco.map(m => m.id));
-  const idNuovi = ['aggiornamentoProfessionale', 'addestramentoTiro', 'ufficio'];
-  const daAggiungere = MODELLI_TURNO_BASE_V2.filter(base => idNuovi.includes(base.id) && !idPresenti.has(base.id));
+  const idNuovi = ['aggiornamentoProfessionale', 'addestramentoTiro', 'ufficio', 'opStadio'];
+  // v3.8.43: chi aveva già creato da sé un turno con lo stesso nome (es. «OP Stadio») non se lo ritrova doppio.
+  const nomiPresenti = new Set(elenco.map(m => String(m.nome || '').trim().toLowerCase()));
+  const daAggiungere = MODELLI_TURNO_BASE_V2.filter(base => idNuovi.includes(base.id) && !idPresenti.has(base.id) && !nomiPresenti.has(base.nome.toLowerCase()));
   return daAggiungere.length ? [...elenco, ...daAggiungere.map(m => ({...m}))] : elenco;
 }
 function caricaModelliTurno(){
