@@ -198,15 +198,15 @@ function modelloDaOrariGiorno(){
   const inizio = el('campoOraInizio').value, fine = el('campoOraFine').value;
   if(!inizio || !fine) return null;
   const adatti = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio === inizio && m.oraFine === fine);
-  if(modelloGiornoScelto && adatti.some(m => m.id === modelloGiornoScelto)) return modelloGiornoScelto;
-  const prima = (AppState.turni[giornoSelezionato] || {}).modelloId;
-  const esatto = (adatti.find(m => m.id === prima) || adatti[0] || {}).id;
-  if(esatto) return esatto;
-  // v3.8.43: orario cambiato solo per quel giorno (es. «OP Stadio» 18–24 portato a 16–24): il turno resta quello scelto,
-  // invece di diventare il turno generico della fascia («Sera»). Il turno toccato ora vale sempre; quello che il giorno
-  // aveva già vale se il nuovo orario resta nella stessa fascia (mattina, pomeriggio, sera, notte).
+  // v3.8.43: cambiando l'orario di un giorno il turno resta quello scelto (es. «OP Stadio» 18–24 portato a 16–24
+  // non diventa «Sera»). Il turno toccato nella finestra vale sempre; un turno creato dall'utente resta qualunque
+  // orario si scriva; un turno di serie resta se il nuovo orario è nella stessa fascia (mattina, pomeriggio, sera, notte).
   const modello = id => (AppState.modelliTurno || []).find(m => m.id === id && !m.riposo);
   if(modelloGiornoScelto && modello(modelloGiornoScelto)) return modelloGiornoScelto;
+  const prima = (AppState.turni[giornoSelezionato] || {}).modelloId;
+  if(prima && String(prima).startsWith('personalizzato_') && modello(prima)) return prima;
+  const esatto = (adatti.find(m => m.id === prima) || adatti[0] || {}).id;
+  if(esatto) return esatto;
   const m = prima && modello(prima);
   if(m && m.oraInizio && m.oraFine && typeof categoriaTurno === 'function'
     && categoriaTurno(m.oraInizio, m.oraFine, giornoSelezionato) === categoriaTurno(inizio, fine, giornoSelezionato)) return prima;

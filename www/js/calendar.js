@@ -1162,7 +1162,9 @@ function modelloColoreGiorno(t, categoria){
   const proprio = t.modelloId ? modelli.find(m => m.id === t.modelloId) : null;
   // v3.8.39: un giorno con il suo turno usa sempre quel turno (il suo colore, o quello automatico della fascia).
   // Prima un turno senza colore scelto prendeva per errore il colore di un altro turno colorato della stessa fascia.
-  if(proprio) return proprio;
+  // v3.8.43: il colore segue il turno, non l'orario del giorno: un turno senza colore scelto usa il suo colore
+  // automatico (calcolato sul suo orario), così resta uguale anche se quel giorno ha un orario diverso.
+  if(proprio) return proprio.colore || typeof coloreAutomaticoPerModello !== 'function' ? proprio : Object.assign({}, proprio, { colore: coloreAutomaticoPerModello(proprio) });
   // Solo i giorni con orari cambiati a mano prendono il turno di riferimento della fascia.
   return modelloBaseFascia(categoria, t.data);
 }
