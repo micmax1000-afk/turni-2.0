@@ -200,7 +200,17 @@ function modelloDaOrariGiorno(){
   const adatti = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio === inizio && m.oraFine === fine);
   if(modelloGiornoScelto && adatti.some(m => m.id === modelloGiornoScelto)) return modelloGiornoScelto;
   const prima = (AppState.turni[giornoSelezionato] || {}).modelloId;
-  return (adatti.find(m => m.id === prima) || adatti[0] || {}).id || null;
+  const esatto = (adatti.find(m => m.id === prima) || adatti[0] || {}).id;
+  if(esatto) return esatto;
+  // v3.8.43: orario cambiato solo per quel giorno (es. «OP Stadio» 18–24 portato a 16–24): il turno resta quello scelto,
+  // invece di diventare il turno generico della fascia («Sera»). Il turno toccato ora vale sempre; quello che il giorno
+  // aveva già vale se il nuovo orario resta nella stessa fascia (mattina, pomeriggio, sera, notte).
+  const modello = id => (AppState.modelliTurno || []).find(m => m.id === id && !m.riposo);
+  if(modelloGiornoScelto && modello(modelloGiornoScelto)) return modelloGiornoScelto;
+  const m = prima && modello(prima);
+  if(m && m.oraInizio && m.oraFine && typeof categoriaTurno === 'function'
+    && categoriaTurno(m.oraInizio, m.oraFine, giornoSelezionato) === categoriaTurno(inizio, fine, giornoSelezionato)) return prima;
+  return null;
 }
 function aggiornaEditorGiornoV3(){
   if(!el('sceltaTipoGiorno')) return;
@@ -218,8 +228,8 @@ function aggiornaEditorGiornoV3(){
   const nota = el('notaOrarioSoloGiorno');
   if(nota){
     const primaId = (AppState.turni[giornoSelezionato] || {}).modelloId;
-    const prima = (AppState.modelliTurno || []).find(m => m.id === primaId && !m.riposo);
-    const diverso = modo === 'turno' && inizio && fine && !idModello;
+    const prima = modello || (AppState.modelliTurno || []).find(m => m.id === primaId && !m.riposo);
+    const diverso = modo === 'turno' && inizio && fine && (!modello || modello.oraInizio !== inizio || modello.oraFine !== fine);
     nota.hidden = !diverso;
     if(diverso) nota.textContent = prima
       ? `Orario solo per questo giorno (${prima.nome} di solito è ${prima.oraInizio}–${prima.oraFine}). Per cambiarlo sempre: scheda Turni.`
