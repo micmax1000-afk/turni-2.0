@@ -1,5 +1,4 @@
 <it-IT>
-• Turni e Servizi separati: in alto Sera, Pomeriggio, Mattino, Notte e Riposo, sotto i tuoi servizi (Volante, OP Stadio, Ufficio…)
-• Nuovo pulsante «+ Nuovo servizio» e una riga che spiega come usarli
-• Nella scheda del giorno «Riposo» è accanto agli altri turni; in alto restano solo Turno e Assenza
+• Nel calendario i servizi con un nome lungo (es. Volante, Posto fisso) mostrano la loro sigla invece del nome tagliato
+• I turni restano Matt., Pom., Sera, Notte e Riposo; toccando il giorno vedi sempre il nome intero
 </it-IT>
