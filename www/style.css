@@ -1694,6 +1694,7 @@ html[data-tema="scuro"] .btn-aggiungi-tratteggiato{background:#1E2A44;border-col
 .titolo-sezione-giorno{display:flex;justify-content:space-between;font-size:.72rem;letter-spacing:.06em;color:var(--testo-tenue,#6B7280);text-transform:uppercase;margin:18px 0 8px;font-weight:700}
 .titolo-sezione-giorno em{font-style:normal;text-transform:none;letter-spacing:0;color:#1E7A46;font-weight:600}
 .scelta-modello-giorno{display:flex;gap:6px;flex-wrap:wrap}
+.scelta-modello-giorno .titolo-servizi-giorno{flex-basis:100%;margin:10px 0 2px}
 .scelta-modello-giorno button{border:1.5px solid;border-radius:16px;padding:6px 12px;font:700 .82rem var(--font-corpo);background:var(--pannello);cursor:pointer}
 .orari-giorno{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:10px}
 .orari-giorno>span{color:var(--testo-tenue,#999)}

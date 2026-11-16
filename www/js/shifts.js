@@ -239,12 +239,17 @@ function aggiornaEditorGiornoV3(){
       : 'Orario solo per questo giorno. Per cambiare l\'orario di un turno per sempre: scheda Turni.';
   }
   // Modelli
-  el('sceltaModelloGiorno').innerHTML = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine).map(m => {
+  // v3.8.45: prima i 4 turni della turnazione, poi (con la scritta «Servizio») gli altri.
+  const pulsanteModello = m => {
     // v2.91.1: colore esatto del modello (allineato al calendario moderno).
     const colore = coloreModelloV2(m);
     const attivo = m.id === idModello;
     return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};` : `color:${colore};`}border-color:${colore}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
-  }).join('');
+  };
+  const conOrario = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine);
+  const serviziGiorno = conOrario.filter(m => !eTurnoDellaTurnazione(m));
+  el('sceltaModelloGiorno').innerHTML = conOrario.filter(eTurnoDellaTurnazione).map(pulsanteModello).join('')
+    + (serviziGiorno.length ? `<p class="titolo-sezione-giorno titolo-servizi-giorno">Servizio</p>${serviziGiorno.map(pulsanteModello).join('')}` : '');
   // Indennità
   const attive = CASELLE_INDENNITA_GIORNO.filter(([, id]) => el(id).checked).length;
   el('grigliaIndennitaGiorno').innerHTML = CASELLE_INDENNITA_GIORNO.map(([chiave, id]) => {
@@ -320,6 +325,10 @@ function popolaCampiOreStraordinarioDaOrario(t){
   popola(t.straordinarioPrimaInizio, t.straordinarioPrimaFine, 'campoStrOre1', 'campoStrPosizione1');
   popola(t.straordinarioDopoInizio, t.straordinarioDopoFine, 'campoStrOre2', 'campoStrPosizione2');
 }
+
+// v3.8.45: i turni della turnazione (Mattino, Pomeriggio, Sera, Notte, Riposo); tutto il resto è un «servizio».
+const ID_TURNI_TURNAZIONE = ['mattina', 'pomeriggio', 'sera', 'notte', 'riposo'];
+function eTurnoDellaTurnazione(m){ return !!m && (!!m.riposo || ID_TURNI_TURNAZIONE.includes(m.id)); }
 
 // v3.8.44: scegliendo nella scheda del giorno un turno diverso da quello che c'era, si ripulisce:
 // le indennità e lo straordinario del turno di prima non passano al nuovo (si rimettono se servono).
