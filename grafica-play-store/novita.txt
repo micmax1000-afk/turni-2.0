@@ -1,5 +1,5 @@
 <it-IT>
-• Nuovo turno di serie «OP Stadio» 18:00–00:00, con un colore suo
-• Cambiando l'orario di un giorno, il turno resta quello scelto (non diventa «Sera»)
-• I turni creati da te mantengono sempre il loro colore
+• Cambiando turno a un giorno, indennità e straordinario del turno di prima si tolgono da soli; con «Rimetti» li recuperi
+• Mettendo Riposo o un'assenza non resta più l'ordine pubblico (o altre indennità) del turno di prima
+• Anche i giorni già salvati vengono sistemati da soli
 </it-IT>

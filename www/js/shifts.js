@@ -321,9 +321,62 @@ function popolaCampiOreStraordinarioDaOrario(t){
   popola(t.straordinarioDopoInizio, t.straordinarioDopoFine, 'campoStrOre2', 'campoStrPosizione2');
 }
 
+// v3.8.44: scegliendo nella scheda del giorno un turno diverso da quello che c'era, si ripulisce:
+// le indennità e lo straordinario del turno di prima non passano al nuovo (si rimettono se servono).
+// Restano rientro, permesso breve e recupero, che non dipendono dal turno.
+const INDENNITA_AZZERABILI = [['campoReperibilita','Reperibilità'],['campoMissione','Missione'],['campoServizioEsterno','Servizio esterno'],
+  ['campoOrdinePubblico','Ordine pubblico'],['campoControlloTerritorio','Controllo territorio'],['campoCambioTurno','Cambio turno'],
+  ['campoCompensazioneRiposo','Lavorato sul riposo'],['campoBuonoPasto','Buono pasto']];
+const CAMPI_VALORE_AZZERABILI = ['campoDurataMissione','campoOPSede','campoBuoniPastoGiorno','campoStrPrimaInizio','campoStrPrimaFine','campoStrDopoInizio','campoStrDopoFine',
+  'campoStrOre1','campoStrOre2','campoStrPosizione1','campoStrPosizione2','campoStrOrarioInizio1','campoStrOrarioFine1','campoStrOrarioInizio2','campoStrOrarioFine2'];
+// Fotografia dei campi prima di azzerarli, per il pulsante «Rimetti».
+function fotografaIndennitaGiorno(){
+  const f = { checked: {}, valori: {}, display: {}, hidden: {}, strAperto: !!(el('btnApriStraordinario') && el('btnApriStraordinario').hidden) };
+  [...INDENNITA_AZZERABILI.map(x => x[0]), 'campoCompensaStraordinario', 'campoOPPernottamento', 'campoRecuperoFestivo'].forEach(id => { if(el(id)) f.checked[id] = el(id).checked; });
+  CAMPI_VALORE_AZZERABILI.forEach(id => { if(el(id)) f.valori[id] = el(id).value; });
+  ['campoDurataMissioneBox','campoOrdinePubblicoBox','campoOPPernottamentoBox'].forEach(id => { if(el(id)) f.display[id] = el(id).style.display; });
+  ['blocchStrSecondo','bloccoStrPrimo','btnAggiungiSecondoStraordinario'].forEach(id => { if(el(id)) f.hidden[id] = el(id).hidden; });
+  return f;
+}
+function rimettiIndennitaGiorno(f){
+  Object.entries(f.checked).forEach(([id, v]) => { if(el(id)) el(id).checked = v; });
+  Object.entries(f.valori).forEach(([id, v]) => { if(el(id)) el(id).value = v; });
+  Object.entries(f.display).forEach(([id, v]) => { if(el(id)) el(id).style.display = v; });
+  Object.entries(f.hidden).forEach(([id, v]) => { if(el(id)) el(id).hidden = v; });
+  mostraStraordinarioGiorno(f.strAperto);
+}
+// Restituisce l'elenco di cosa è stato tolto (vuoto se non c'era niente) e mostra «Rimetti».
+function azzeraIndennitaGiorno(){
+  const foto = fotografaIndennitaGiorno(), iso = giornoSelezionato;
+  const tolte = INDENNITA_AZZERABILI.filter(([id]) => foto.checked[id]).map(([, nome]) => nome);
+  const oreStr = (Number(foto.valori.campoStrOre1) || 0) + (Number(foto.valori.campoStrOre2) || 0);
+  const esatto = (foto.valori.campoStrOrarioInizio1 && foto.valori.campoStrOrarioFine1) || (foto.valori.campoStrOrarioInizio2 && foto.valori.campoStrOrarioFine2);
+  if(oreStr > 0) tolte.push(`${String(oreStr).replace('.', ',')} h straordinario`); else if(esatto) tolte.push('straordinario');
+  ['campoReperibilita','campoMissione','campoServizioEsterno','campoOrdinePubblico','campoControlloTerritorio',
+   'campoCambioTurno','campoCompensazioneRiposo','campoBuonoPasto','campoCompensaStraordinario'].forEach(id => { if(el(id)) el(id).checked = false; });
+  el('campoDurataMissione').value = 0; el('campoDurataMissioneBox').style.display = 'none';
+  el('campoOPSede').value = 'in'; el('campoOPPernottamento').checked = true;
+  el('campoOrdinePubblicoBox').style.display = 'none'; el('campoOPPernottamentoBox').style.display = 'none';
+  el('campoBuoniPastoGiorno').value = '1';
+  el('campoRecuperoFestivo').checked = lavoratoInFestivo({ data: giornoSelezionato, oraInizio: el('campoOraInizio').value, oraFine: el('campoOraFine').value });
+  ['campoStrPrimaInizio','campoStrPrimaFine','campoStrDopoInizio','campoStrDopoFine','campoStrOre1','campoStrOre2',
+   'campoStrOrarioInizio1','campoStrOrarioFine1','campoStrOrarioInizio2','campoStrOrarioFine2'].forEach(id => { if(el(id)) el(id).value = ''; });
+  if(el('blocchStrSecondo')) el('blocchStrSecondo').hidden = true;
+  if(el('bloccoStrPrimo')) el('bloccoStrPrimo').hidden = false;
+  if(el('btnAggiungiSecondoStraordinario')) el('btnAggiungiSecondoStraordinario').hidden = false;
+  mostraStraordinarioGiorno(false);
+  if(tolte.length && typeof mostraToast === 'function'){
+    mostraToast('Tolti: ' + tolte.join(', '), 'info', 7000, { testo: 'Rimetti', fn: () => {
+      if(el('pannelloTurno').hidden || giornoSelezionato !== iso) return;
+      rimettiIndennitaGiorno(foto); aggiornaAnteprima(); aggiornaEditorGiornoV3();
+    } });
+  }
+  return tolte;
+}
+
 function leggiTurnoDalModale(){
   sincronizzaCampiStraordinarioDaOre();
-  return {
+  return togliExtraGiornoNonLavorato({
     data: giornoSelezionato,
     riposo: el('campoRiposo').checked,
     assenzaTipo: el('campoAssenzaTipo').value || null,
@@ -365,7 +418,7 @@ function leggiTurnoDalModale(){
     buonoPasto: el('campoBuonoPasto').checked,
     buoniPastoGiorno: el('campoBuonoPasto').checked ? (el('campoBuoniPastoGiorno').value === '2' ? 2 : 1) : 0,
     modelloId: el('campoRiposo').checked || el('campoAssenzaTipo').value ? null : modelloDaOrariGiorno()
-  };
+  });
 }
 
 function aggiornaAnteprima(){
