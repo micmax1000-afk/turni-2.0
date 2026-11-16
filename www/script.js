@@ -916,7 +916,14 @@ function inizializza(){
     const mod = e.target.closest('[data-modello-giorno]');
     if(mod){
       const m = (AppState.modelliTurno || []).find(x => x.id === mod.dataset.modelloGiorno);
-      if(m){ el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; modelloGiornoScelto = m.id; aggiornaAnteprima(); aggiornaEditorGiornoV3(); }
+      if(m){
+        // v3.8.44: un turno diverso da quello di prima parte senza indennità né straordinario.
+        const avevaTurno = !!(el('campoOraInizio').value && el('campoOraFine').value);
+        const prima = avevaTurno ? modelloDaOrariGiorno() : null;
+        el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; modelloGiornoScelto = m.id;
+        if(avevaTurno && prima !== m.id) azzeraIndennitaGiorno();
+        aggiornaAnteprima(); aggiornaEditorGiornoV3();
+      }
       return;
     }
     const bp = e.target.closest('[data-buoni-pasto]');

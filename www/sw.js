@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V276 (v3.8.43 — turno OP Stadio, orario cambiato senza perdere il turno) */
+/* Turni & Accessorio PS — Service Worker V277 (v3.8.44 — cambiando turno si tolgono indennità e straordinario, con Rimetti) */
 'use strict';
-const CACHE='turni-ps-v276';
+const CACHE='turni-ps-v277';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/domande-voce.js','./js/utilita.js','./js/pro.js','./js/data/tabelle-2026.js',

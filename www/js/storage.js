@@ -325,9 +325,24 @@ function caricaAnagrafica(){
 function salvaAnagraficaStorage(){ TurniPSStorage.setItem(CHIAVE_ANAGRAFICA, JSON.stringify(AppState.anagrafica)); }
 
 // v3.8.39: si tengono solo i giorni validi; una voce vuota o rovinata (es. da un backup danneggiato) bloccava l'app.
+// v3.8.44: un giorno di Riposo o di Assenza non tiene le indennità e lo straordinario rimasti dal
+// turno che c'era prima (es. Ordine pubblico ancora acceso dopo aver messo Riposo). I conti già li
+// ignoravano; così spariscono anche dalla scheda del giorno. Permesso breve e recupero restano.
+const CAMPI_SOLO_GIORNO_LAVORATO = ['reperibilita','missione','servizioEsterno','ordinePubblico','opPernottamento',
+  'controlloTerritorio','cambioTurno','compensazioneRiposo','recuperoFestivoLavorato','buonoPasto',
+  'compensaStraordinario','secondoAttivo','aggiornamentoProfessionale','addestramentoTiro'];
+const CAMPI_TESTO_SOLO_GIORNO_LAVORATO = ['straordinarioPrimaInizio','straordinarioPrimaFine','straordinarioDopoInizio','straordinarioDopoFine'];
+function togliExtraGiornoNonLavorato(g){
+  if(!g || !(g.riposo || g.assenzaTipo)) return g;
+  CAMPI_SOLO_GIORNO_LAVORATO.forEach(c => { if(g[c]) g[c] = false; });
+  CAMPI_TESTO_SOLO_GIORNO_LAVORATO.forEach(c => { if(g[c]) g[c] = ''; });
+  if(g.durataMissioneOre) g.durataMissioneOre = 0;
+  if(g.buoniPastoGiorno) g.buoniPastoGiorno = 0;
+  return g;
+}
 function pulisciTurni(t){
   if(!t || typeof t !== 'object' || Array.isArray(t)) return {};
-  Object.keys(t).forEach(k => { if(!t[k] || typeof t[k] !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(k)) delete t[k]; else if(!t[k].data) t[k].data = k; });
+  Object.keys(t).forEach(k => { if(!t[k] || typeof t[k] !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(k)) delete t[k]; else { if(!t[k].data) t[k].data = k; togliExtraGiornoNonLavorato(t[k]); } });
   return t;
 }
 function caricaTurni(){
