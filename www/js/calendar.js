@@ -734,7 +734,10 @@ function renderCalendario(){
         // Turni di base: nomi brevi fissi, che entrano sempre nella casella.
         : NOME_BREVE_CATEGORIA[categoria] && (!modelloUsato || NOME_BREVE_CATEGORIA[modelloUsato.id]) ? NOME_BREVE_CATEGORIA[categoria]
         : nomeCategoria;
-      if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
+      // v3.8.46: nella casella entrano 6 lettere («Riposo»): un servizio dal nome più lungo (Volante, Posto fisso…)
+      // mostra la sua sigla invece del nome tagliato con i puntini. Il nome intero si legge toccando il giorno.
+      if(categoria !== 'assenza' && nomeEtichetta.length > 6) nomeEtichetta = siglaServizioCasella(modelloUsato, nomeEtichetta);
+      else if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
       // v2.91.1: colore esatto scelto dall'utente (niente scurimento).
       // Il testo (chiaro/scuro) è calcolato automaticamente da testoSuColore per restare leggibile.
       const sfondoBadge = coloreTurno || '#C9CED6';
@@ -1550,6 +1553,12 @@ function nomeFestivita(iso){
 }
 
 // v3.8.12: "Condividi il mese": un'immagine del mese con i turni, da mandare su WhatsApp.
+// Sigla da mostrare nella casella per un servizio dal nome lungo: quella scritta nel servizio, se no le prime 3 lettere.
+function siglaServizioCasella(m, nome){
+  const s = m && String(m.sigla || '').trim();
+  if(s) return s.slice(0, 4);
+  return String(nome || '').replace(/[^A-Za-zÀ-ÿ0-9]/g, '').slice(0, 3).toUpperCase() || '?';
+}
 function etichettaBreveGiorno(t){
   if(!t) return '';
   if(t.assenzaTipo){ const v = (AppState.assenze || []).find(a => a.id === t.assenzaTipo); return siglaAssenza(v ? v.nome : 'Assenza'); }
