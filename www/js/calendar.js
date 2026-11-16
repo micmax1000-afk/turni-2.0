@@ -581,7 +581,7 @@ function renderCalendario(){
       categoria = categoriaTurno(t.oraInizio, t.oraFine, t.data);
       // Ufficio/Aggiornamento professionale/Addestramento tiro hanno lo stesso orario di
       // Mattina: senza questo, sarebbero indistinguibili anche nel colore, non solo nel nome.
-      const categorieProprie = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'];
+      const categorieProprie = CATEGORIE_PROPRIE;
       if(t.modelloId && categorieProprie.includes(t.modelloId)) categoria = t.modelloId;
       classi += ' ha-turno tipo-' + categoria;
     }
@@ -933,7 +933,7 @@ function iconaIndennita(chiave, classe){
 const CHIAVE_SIGLA_CLASSICO = 'simCedolino_siglaClassico_v1';
 function siglaClassicoScelta(){ let v = null; try{ v = TurniPSStorage.getItem(CHIAVE_SIGLA_CLASSICO); }catch(e){} return v === 'lettera' || v === 'sigla' ? v : 'nome'; }
 // v3.8.33: sigle corte del calendario Classico (come nelle app di turni più usate).
-const SIGLA_CLASSICO_CATEGORIA = { mattina:'Matt', pomeriggio:'Pom', sera:'Sera', notte:'Not', riposo:'Rip', ufficio:'Uff', aggiornamentoProfessionale:'Agg', addestramentoTiro:'Tiro' };
+const SIGLA_CLASSICO_CATEGORIA = { mattina:'Matt', pomeriggio:'Pom', sera:'Sera', notte:'Not', riposo:'Rip', ufficio:'Uff', aggiornamentoProfessionale:'Agg', addestramentoTiro:'Tiro', opStadio:'OP' };
 function rgbDaHex(hex){ const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim()); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
 function luminanzaColore(hex){ const c = rgbDaHex(hex); if(!c) return 1; const l = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]; }
 // Testo scuro o bianco: quello con più contrasto sul colore (sul verde acceso vince lo scuro).
@@ -1173,7 +1173,7 @@ function modelloColoreGiorno(t, categoria){
 function modelloBaseFascia(categoria, data){
   if(!categoria) return null;
   const modelli = (AppState.modelliTurno || []).filter(m => !m.riposo);
-  const speciali = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'];
+  const speciali = CATEGORIE_PROPRIE;
   return modelli.find(m => m.id === categoria)
     || modelli.find(m => !speciali.includes(m.id) && m.oraInizio && m.oraFine && categoriaTurno(m.oraInizio, m.oraFine, data) === categoria)
     || null;
@@ -1380,7 +1380,7 @@ function corpoGiornoAgenda(iso, t){
   const categoria = categoriaTurno(t.oraInizio, t.oraFine, iso);
   const modello = t.modelloId ? (AppState.modelliTurno || []).find(m => m.id === t.modelloId) : null;
   // Come nel calendario: Ufficio, Aggiornamento e Tiro hanno un colore proprio anche se l'orario è di mattina.
-  const categoriaColore = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro'].includes(t.modelloId) ? t.modelloId : categoria;
+  const categoriaColore = CATEGORIE_PROPRIE.includes(t.modelloId) ? t.modelloId : categoria;
   // v3.8.32: orari cambiati a mano → colore e nome del turno della stessa fascia, come nel calendario.
   const rif = modelloColoreGiorno(t, categoriaColore);
   const colore = (modello && modello.colore) || (rif && rif.colore) || coloreCategoria(categoriaColore);

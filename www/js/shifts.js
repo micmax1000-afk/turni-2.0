@@ -10,8 +10,11 @@ const CATEGORIE_COLORABILI = [
   { chiave:'assenza', etichetta:'Assenze', predefinito:'#D8DAE0', spiegazione:'Assenze — grigio neutro' },
   { chiave:'ufficio', etichetta:'Ufficio', predefinito:'#1E88E5', spiegazione:'Ufficio — blu' },
   { chiave:'aggiornamentoProfessionale', etichetta:'Aggiornamento professionale', predefinito:'#00ACC1', spiegazione:'Aggiornamento professionale — turchese' },
-  { chiave:'addestramentoTiro', etichetta:'Addestramento tiro', predefinito:'#6D4C41', spiegazione:'Addestramento tiro — marrone' }
+  { chiave:'addestramentoTiro', etichetta:'Addestramento tiro', predefinito:'#6D4C41', spiegazione:'Addestramento tiro — marrone' },
+  { chiave:'opStadio', etichetta:'OP Stadio', predefinito:'#3949AB', spiegazione:'OP Stadio — blu indaco' }
 ];
+// Turni con un colore loro, qualunque sia l'orario (gli altri prendono il colore della fascia: mattina, sera…).
+const CATEGORIE_PROPRIE = ['ufficio', 'aggiornamentoProfessionale', 'addestramentoTiro', 'opStadio'];
 const COLORI_SERIE_PRIMA = { sera:'#F5A0C0', pomeriggio:'#FFAB76', mattina:'#FFD97D', notte:'#B4A0E5', riposo:'#8DD3C7', assenza:'#D8DAE0', ufficio:'#A9C8E8', aggiornamentoProfessionale:'#B7DDA8', addestramentoTiro:'#E5B896' };
 // Chi non aveva scelto colori suoi (o aveva premuto «Colori di serie») passa ai nuovi; chi ne ha scelti di suoi non cambia.
 function migraColoriDiSerie(forza){
@@ -204,7 +207,7 @@ function modelloDaOrariGiorno(){
   const modello = id => (AppState.modelliTurno || []).find(m => m.id === id && !m.riposo);
   if(modelloGiornoScelto && modello(modelloGiornoScelto)) return modelloGiornoScelto;
   const prima = (AppState.turni[giornoSelezionato] || {}).modelloId;
-  if(prima && String(prima).startsWith('personalizzato_') && modello(prima)) return prima;
+  if(prima && !['mattina', 'pomeriggio', 'sera', 'notte'].includes(prima) && modello(prima)) return prima;
   const esatto = (adatti.find(m => m.id === prima) || adatti[0] || {}).id;
   if(esatto) return esatto;
   const m = prima && modello(prima);
