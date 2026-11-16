@@ -1869,7 +1869,7 @@ function renderModelliTabTurni(){
   const meseTitolo = el('meseTurniV4');
   if(meseTitolo) meseTitolo.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
   host.innerHTML = `<div class="elenco-turni-v4">${sopra.map(m => riga(m, true)).join('')}</div>`
-    + (sotto.length ? `<p class="strumenti-turni-titolo">Altri modelli</p><div class="altri-v4">${sotto.map(m => riga(m, false)).join('')}</div>` : '');
+    + (sotto.length ? `<p class="strumenti-turni-titolo">Altri turni · usati meno spesso</p><div class="altri-v4">${sotto.map(m => riga(m, false)).join('')}</div>` : '');
   aggiornaStatoStrumentiTurni();
 }
 // Sotto le voci degli strumenti: com'è adesso, invece di una descrizione fissa.

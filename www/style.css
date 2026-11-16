@@ -2307,6 +2307,7 @@ html[data-tema="scuro"] #riassuntoControlloPromemoria.da-sistemare{color:#F2D58A
 .testata-turni-v4{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
 .testata-turni-v4 h2{margin:0}
 .sotto-turni-v4{margin:2px 0 0;font-size:.8rem;color:var(--testo-tenue)}
+.aiuto-turni-v4{margin:0 2px 10px;font-size:.84rem;line-height:1.45;color:var(--testo-tenue)}
 .btn-nuovo-turni-v4{height:44px;padding:0 18px;border:0;border-radius:22px;background:#1D4FD7;color:#fff;font:600 .95rem var(--font-corpo);cursor:pointer;flex-shrink:0}
 .azione-genera-v4{box-sizing:border-box;width:100%;display:flex;align-items:center;gap:14px;padding:12px 14px 12px 12px;background:#E8EEFD;border:1px solid #C3D2F7;border-radius:18px;font:inherit;color:#1B2238;text-align:left;cursor:pointer}
 .icona-genera-v4{flex:none;width:46px;height:46px;border-radius:14px;background:#1D4FD7;color:#fff;display:flex;align-items:center;justify-content:center}
