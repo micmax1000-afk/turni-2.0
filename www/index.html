@@ -350,7 +350,6 @@
       <div class="pannello-turno-corpo">
         <div class="scelta-tipo-giorno" id="sceltaTipoGiorno" role="group" aria-label="Tipo di giorno">
           <button type="button" data-tipo-giorno="turno">Turno</button>
-          <button type="button" data-tipo-giorno="riposo">Riposo</button>
           <button type="button" data-tipo-giorno="assenza">Assenza</button>
         </div>
         <input type="checkbox" id="campoRiposo" hidden>
@@ -368,10 +367,12 @@
             <p class="sotto-titolo" id="anteprimaRiposoCompensativo" style="margin:-4px 0 6px;"></p>
           </div>
         </div>
-        <p class="sotto-titolo" id="testoRiposoGiorno" hidden>Giorno di riposo: nessuna ora da contare.</p>
-        <div id="campiOrario">
+        <div id="sceltaTurnoGiorno">
           <p class="titolo-sezione-giorno">Turno</p>
           <div class="scelta-modello-giorno" id="sceltaModelloGiorno"></div>
+          <p class="sotto-titolo testo-riposo-giorno" id="testoRiposoGiorno" hidden>Giorno di riposo: nessuna ora da contare.</p>
+        </div>
+        <div id="campiOrario">
           <div class="orari-giorno">
             <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoOraInizio"></label>
             <span aria-hidden="true">→</span>

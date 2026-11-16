@@ -916,6 +916,20 @@ function inizializza(){
     const mod = e.target.closest('[data-modello-giorno]');
     if(mod){
       const m = (AppState.modelliTurno || []).find(x => x.id === mod.dataset.modelloGiorno);
+      // v3.8.45: «Riposo» sta tra i pulsanti dei turni.
+      if(m && m.riposo){
+        modoGiornoEditor = 'riposo'; el('campoRiposo').checked = true; el('campoAssenzaTipo').value = '';
+        aggiornaVisibilitaCampiOrario(); aggiornaAnteprima(); aggiornaEditorGiornoV3();
+        return;
+      }
+      if(m && el('campoRiposo').checked){
+        // Da Riposo a un turno: si riparte pulito, con l'orario del turno scelto.
+        modoGiornoEditor = 'turno'; el('campoRiposo').checked = false;
+        el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; modelloGiornoScelto = m.id;
+        azzeraIndennitaGiorno();
+        aggiornaVisibilitaCampiOrario(); aggiornaAnteprima(); aggiornaEditorGiornoV3();
+        return;
+      }
       if(m){
         // v3.8.44: un turno diverso da quello di prima parte senza indennità né straordinario.
         const avevaTurno = !!(el('campoOraInizio').value && el('campoOraFine').value);
