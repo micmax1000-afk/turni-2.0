@@ -179,6 +179,8 @@ function aggiornaVisibilitaCampiOrario(){
   const assenza = modoGiornoEditor === 'assenza' || !!el('campoAssenzaTipo').value;
   const riposo = !assenza && el('campoRiposo').checked;
   el('campiOrario').style.display = (assenza || riposo) ? 'none' : '';
+  // v3.8.45: Riposo è un pulsante accanto a Sera, Pom., Matt., Notte: la riga dei turni resta visibile anche a riposo.
+  const sceltaTurno = el('sceltaTurnoGiorno'); if(sceltaTurno) sceltaTurno.hidden = assenza;
   const blocco = el('bloccoAssenzaGiorno'); if(blocco) blocco.hidden = !assenza;
   const testoRiposo = el('testoRiposoGiorno'); if(testoRiposo) testoRiposo.hidden = !riposo;
   const voceSelezionata = AppState.assenze.find(a => a.id === el('campoAssenzaTipo').value);
@@ -218,7 +220,7 @@ function modelloDaOrariGiorno(){
 function aggiornaEditorGiornoV3(){
   if(!el('sceltaTipoGiorno')) return;
   const modo = el('campoAssenzaTipo').value ? 'assenza' : modoGiornoEditor === 'assenza' ? 'assenza' : el('campoRiposo').checked ? 'riposo' : 'turno';
-  el('sceltaTipoGiorno').querySelectorAll('[data-tipo-giorno]').forEach(b => b.classList.toggle('attivo', b.dataset.tipoGiorno === modo));
+  el('sceltaTipoGiorno').querySelectorAll('[data-tipo-giorno]').forEach(b => b.classList.toggle('attivo', b.dataset.tipoGiorno === (modo === 'riposo' ? 'turno' : modo)));
   // Sottotitolo: cosa c'è in questo momento
   const inizio = el('campoOraInizio').value, fine = el('campoOraFine').value;
   const idModello = modelloDaOrariGiorno();
@@ -239,12 +241,18 @@ function aggiornaEditorGiornoV3(){
       : 'Orario solo per questo giorno. Per cambiare l\'orario di un turno per sempre: scheda Turni.';
   }
   // Modelli
-  el('sceltaModelloGiorno').innerHTML = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine).map(m => {
+  // v3.8.45: prima i 4 turni della turnazione, poi (con la scritta «Servizio») gli altri.
+  const pulsanteModello = m => {
     // v2.91.1: colore esatto del modello (allineato al calendario moderno).
     const colore = coloreModelloV2(m);
-    const attivo = m.id === idModello;
+    const attivo = m.riposo ? modo === 'riposo' : modo === 'turno' && m.id === idModello;
     return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};` : `color:${colore};`}border-color:${colore}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
-  }).join('');
+  };
+  const conOrario = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine);
+  const serviziGiorno = conOrario.filter(m => !eTurnoDellaTurnazione(m));
+  const modelloRiposo = (AppState.modelliTurno || []).find(m => m.riposo);
+  el('sceltaModelloGiorno').innerHTML = conOrario.filter(eTurnoDellaTurnazione).concat(modelloRiposo ? [modelloRiposo] : []).map(pulsanteModello).join('')
+    + (serviziGiorno.length ? `<p class="titolo-sezione-giorno titolo-servizi-giorno">Servizio</p>${serviziGiorno.map(pulsanteModello).join('')}` : '');
   // Indennità
   const attive = CASELLE_INDENNITA_GIORNO.filter(([, id]) => el(id).checked).length;
   el('grigliaIndennitaGiorno').innerHTML = CASELLE_INDENNITA_GIORNO.map(([chiave, id]) => {
@@ -320,6 +328,10 @@ function popolaCampiOreStraordinarioDaOrario(t){
   popola(t.straordinarioPrimaInizio, t.straordinarioPrimaFine, 'campoStrOre1', 'campoStrPosizione1');
   popola(t.straordinarioDopoInizio, t.straordinarioDopoFine, 'campoStrOre2', 'campoStrPosizione2');
 }
+
+// v3.8.45: i turni della turnazione (Mattino, Pomeriggio, Sera, Notte, Riposo); tutto il resto è un «servizio».
+const ID_TURNI_TURNAZIONE = ['mattina', 'pomeriggio', 'sera', 'notte', 'riposo'];
+function eTurnoDellaTurnazione(m){ return !!m && (!!m.riposo || ID_TURNI_TURNAZIONE.includes(m.id)); }
 
 // v3.8.44: scegliendo nella scheda del giorno un turno diverso da quello che c'era, si ripulisce:
 // le indennità e lo straordinario del turno di prima non passano al nuovo (si rimettono se servono).

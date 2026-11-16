@@ -350,7 +350,6 @@
       <div class="pannello-turno-corpo">
         <div class="scelta-tipo-giorno" id="sceltaTipoGiorno" role="group" aria-label="Tipo di giorno">
           <button type="button" data-tipo-giorno="turno">Turno</button>
-          <button type="button" data-tipo-giorno="riposo">Riposo</button>
           <button type="button" data-tipo-giorno="assenza">Assenza</button>
         </div>
         <input type="checkbox" id="campoRiposo" hidden>
@@ -368,10 +367,12 @@
             <p class="sotto-titolo" id="anteprimaRiposoCompensativo" style="margin:-4px 0 6px;"></p>
           </div>
         </div>
-        <p class="sotto-titolo" id="testoRiposoGiorno" hidden>Giorno di riposo: nessuna ora da contare.</p>
-        <div id="campiOrario">
+        <div id="sceltaTurnoGiorno">
           <p class="titolo-sezione-giorno">Turno</p>
           <div class="scelta-modello-giorno" id="sceltaModelloGiorno"></div>
+          <p class="sotto-titolo testo-riposo-giorno" id="testoRiposoGiorno" hidden>Giorno di riposo: nessuna ora da contare.</p>
+        </div>
+        <div id="campiOrario">
           <div class="orari-giorno">
             <label class="campo-orario-giorno"><small>Inizio</small><input type="time" id="campoOraInizio"></label>
             <span aria-hidden="true">→</span>
@@ -679,8 +680,8 @@
   <div id="vistaAssenze" hidden>
   <section class="scheda" id="sezioneStrumentiTurni">
     <div class="testata-turni-v4">
-      <div><h2>Turni</h2><p class="sotto-turni-v4" id="meseTurniV4"></p></div>
-      <button type="button" class="btn-nuovo-turni-v4" id="btnNuovoTurnoTab" aria-label="Nuovo servizio">＋ Servizio</button>
+      <div><h2>Turni e servizi</h2><p class="sotto-turni-v4" id="meseTurniV4"></p></div>
+      <button type="button" class="btn-nuovo-turni-v4" id="btnNuovoTurnoTab" aria-label="Nuovo servizio">＋ Nuovo servizio</button>
     </div>
     <button type="button" class="azione-genera-v4" id="settingsSequenza">
       <span class="icona-genera-v4"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 013-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 01-3 3H4"/></svg></span>

@@ -916,6 +916,20 @@ function inizializza(){
     const mod = e.target.closest('[data-modello-giorno]');
     if(mod){
       const m = (AppState.modelliTurno || []).find(x => x.id === mod.dataset.modelloGiorno);
+      // v3.8.45: «Riposo» sta tra i pulsanti dei turni.
+      if(m && m.riposo){
+        modoGiornoEditor = 'riposo'; el('campoRiposo').checked = true; el('campoAssenzaTipo').value = '';
+        aggiornaVisibilitaCampiOrario(); aggiornaAnteprima(); aggiornaEditorGiornoV3();
+        return;
+      }
+      if(m && el('campoRiposo').checked){
+        // Da Riposo a un turno: si riparte pulito, con l'orario del turno scelto.
+        modoGiornoEditor = 'turno'; el('campoRiposo').checked = false;
+        el('campoOraInizio').value = m.oraInizio; el('campoOraFine').value = m.oraFine; modelloGiornoScelto = m.id;
+        azzeraIndennitaGiorno();
+        aggiornaVisibilitaCampiOrario(); aggiornaAnteprima(); aggiornaEditorGiornoV3();
+        return;
+      }
       if(m){
         // v3.8.44: un turno diverso da quello di prima parte senza indennità né straordinario.
         const avevaTurno = !!(el('campoOraInizio').value && el('campoOraFine').value);
@@ -1844,15 +1858,6 @@ function renderModelliTabTurni(){
   const host = el('listaModelliTabTurni');
   if(!host) return;
   const modelli = AppState.modelliTurno || [];
-  const oggi = new Date();
-  const da = dataISO(new Date(oggi.getFullYear(), oggi.getMonth() - 3, oggi.getDate()));
-  const a = dataISO(new Date(oggi.getFullYear(), oggi.getMonth() + 3, oggi.getDate()));
-  const prefissoMese = `${annoCorrente}-${String(meseCorrente + 1).padStart(2, '0')}-`;
-  const voci = Object.entries(AppState.turni || {});
-  const usatiDiRecente = new Set(modelli.filter(m => voci.some(([iso, t]) => iso >= da && iso <= a && turnoUsaModello(t, m))).map(m => m.id));
-  // Senza turni recenti (app appena installata) in alto vanno tutti tranne quelli di solito rari.
-  const inAlto = m => usatiDiRecente.size ? usatiDiRecente.has(m.id) : !MODELLI_DI_SOLITO_RARI.includes(m.id);
-  const nomeMese = NOMI_MESI[meseCorrente].toLowerCase();
   const chev = '<svg class="chev-v4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   // Riga di un turno: sigla colorata, nome con l'orario sotto, freccia. Quelli usati stanno in alto con la sigla più grande,
   // gli altri in fondo in forma compatta. Nome e orario in colonna: i nomi lunghi non spezzano più l'orario.
@@ -1865,11 +1870,12 @@ function renderModelliTabTurni(){
       <span class="testo-v4"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(orario)}</small></span>${chev}
     </button>`;
   };
-  const sopra = modelli.filter(inAlto), sotto = modelli.filter(m => !inAlto(m));
+  // v3.8.45: divisione fissa. In alto i turni della turnazione, sotto «Servizi» tutti gli altri.
+  const sopra = modelli.filter(eTurnoDellaTurnazione), sotto = modelli.filter(m => !eTurnoDellaTurnazione(m));
   const meseTitolo = el('meseTurniV4');
   if(meseTitolo) meseTitolo.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
   host.innerHTML = `<div class="elenco-turni-v4">${sopra.map(m => riga(m, true)).join('')}</div>`
-    + (sotto.length ? `<p class="strumenti-turni-titolo">Altri modelli</p><div class="altri-v4">${sotto.map(m => riga(m, false)).join('')}</div>` : '');
+    + (sotto.length ? `<p class="strumenti-turni-titolo">Servizi</p><p class="aiuto-turni-v4">Fai servizi diversi (Volante, Posto fisso, OP…)? Crea un servizio per ognuno: nel calendario resta col suo nome e colore.</p><div class="altri-v4">${sotto.map(m => riga(m, false)).join('')}</div>` : '');
   aggiornaStatoStrumentiTurni();
 }
 // Sotto le voci degli strumenti: com'è adesso, invece di una descrizione fissa.

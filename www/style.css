@@ -1694,6 +1694,7 @@ html[data-tema="scuro"] .btn-aggiungi-tratteggiato{background:#1E2A44;border-col
 .titolo-sezione-giorno{display:flex;justify-content:space-between;font-size:.72rem;letter-spacing:.06em;color:var(--testo-tenue,#6B7280);text-transform:uppercase;margin:18px 0 8px;font-weight:700}
 .titolo-sezione-giorno em{font-style:normal;text-transform:none;letter-spacing:0;color:#1E7A46;font-weight:600}
 .scelta-modello-giorno{display:flex;gap:6px;flex-wrap:wrap}
+.scelta-modello-giorno .titolo-servizi-giorno{flex-basis:100%;margin:10px 0 2px}
 .scelta-modello-giorno button{border:1.5px solid;border-radius:16px;padding:6px 12px;font:700 .82rem var(--font-corpo);background:var(--pannello);cursor:pointer}
 .orari-giorno{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:10px}
 .orari-giorno>span{color:var(--testo-tenue,#999)}
@@ -2307,6 +2308,7 @@ html[data-tema="scuro"] #riassuntoControlloPromemoria.da-sistemare{color:#F2D58A
 .testata-turni-v4{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
 .testata-turni-v4 h2{margin:0}
 .sotto-turni-v4{margin:2px 0 0;font-size:.8rem;color:var(--testo-tenue)}
+.aiuto-turni-v4{margin:0 2px 10px;font-size:.84rem;line-height:1.45;color:var(--testo-tenue)}
 .btn-nuovo-turni-v4{height:44px;padding:0 18px;border:0;border-radius:22px;background:#1D4FD7;color:#fff;font:600 .95rem var(--font-corpo);cursor:pointer;flex-shrink:0}
 .azione-genera-v4{box-sizing:border-box;width:100%;display:flex;align-items:center;gap:14px;padding:12px 14px 12px 12px;background:#E8EEFD;border:1px solid #C3D2F7;border-radius:18px;font:inherit;color:#1B2238;text-align:left;cursor:pointer}
 .icona-genera-v4{flex:none;width:46px;height:46px;border-radius:14px;background:#1D4FD7;color:#fff;display:flex;align-items:center;justify-content:center}
