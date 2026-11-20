@@ -584,7 +584,7 @@ function renderCardAssenzaItem(a){
       <div class="card-assenza-compact riga-assenza-v4" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
         ${anelloAssenzaHtml(valoreVisuale > 0 ? rimangono / valoreVisuale : 1, rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA, icona)}
         <div class="card-assenza-compact-nome"><strong>${a.personalizzata ? (a.nome || 'Nuova voce') : a.nome}</strong>${anniCongedoRiga}</div>
-        <span class="saldo-resta" style="color:${rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA}"><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small> / ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small></span>
+        <span class="saldo-resta" style="color:${coloreTestoLeggibile(rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA)}"><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small> / ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small></span>
         <small class="saldo-usati" hidden>Usati <em>${numeroIt(usate)}</em> su <span class="saldo-su">${numeroIt(valoreVisuale)}</span></small>
       </div>
       <span class="barra-residuo-assenza" aria-hidden="true"><i style="width:${resto}%;background:${coloreResto}"></i></span>

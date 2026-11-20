@@ -3604,3 +3604,9 @@ html[data-tema=scuro] .anno-zoom button{color:#8FB0FF}
 .anno-griglia[data-zoom="3"] .anno-giorni em{font-size:1.1rem;line-height:2.1;border-radius:7px}
 #vistaAnnoCal{touch-action:pan-y}
 .anno-giorni em.oggi{outline:0;box-shadow:0 0 0 1.5px var(--pannello,#fff),0 0 0 3.5px var(--acc,#1D4FD7);position:relative;z-index:1}
+
+/* v3.8.48: scritte poco leggibili col tema scuro (blu scuro o rosso scuro su fondo scuro). */
+html[data-tema="scuro"] .partenza-v4 button{color:#A9C1FF!important}
+html[data-tema="scuro"] .calendario-giorni-settimana > :nth-child(n+6){color:#FF8A80}
+html[data-tema="scuro"] .report-hero-stima{color:#AEB6CC}
+html[data-tema="scuro"] .mese-info-v4 summary span{color:#A9C1FF!important}

@@ -105,6 +105,19 @@ function coloreLeggibileSuChiaro(hex){
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
+// v3.8.48: un colore usato come scritta, leggibile col tema attuale: sul chiaro si scurisce se serve,
+// sullo scuro si schiarisce (mescolato col bianco) finché ha un contrasto di almeno 4:1 col fondo scuro.
+function coloreTestoLeggibile(hex){
+  if(document.documentElement.getAttribute('data-tema') !== 'scuro') return coloreLeggibileSuChiaro(hex);
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if(!m) return hex;
+  let [r, g, b] = [16, 8, 0].map(s => (parseInt(m[1], 16) >> s) & 255);
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const Lfondo = 0.033; // circa #353A45, il fondo delle schede col tema scuro
+  const contrasto = () => (0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) + 0.05) / (Lfondo + 0.05);
+  for(let i = 0; i < 30 && contrasto() < 4; i++){ r += Math.ceil((255 - r) * 0.12); g += Math.ceil((255 - g) * 0.12); b += Math.ceil((255 - b) * 0.12); }
+  return '#' + [r, g, b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
 // Colore quasi bianco su fondo chiaro (contrasto col bianco sotto 1,6:1): serve un contorno per vederlo.
 function coloreQuasiBianco(hex){
   if(document.documentElement.getAttribute('data-tema') === 'scuro') return false;

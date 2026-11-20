@@ -736,6 +736,8 @@ function renderCalendario(){
         : nomeCategoria;
       // v3.8.46: nella casella entrano 6 lettere («Riposo»): un servizio dal nome più lungo (Volante, Posto fisso…)
       // mostra la sua sigla invece del nome tagliato con i puntini. Il nome intero si legge toccando il giorno.
+      // Sui telefoni stretti (meno di 350 px) «Riposo» non entra e diventava «Rip…».
+      if(nomeEtichetta === 'Riposo' && window.innerWidth < 350) nomeEtichetta = 'Rip.';
       if(categoria !== 'assenza' && nomeEtichetta.length > 6) nomeEtichetta = siglaServizioCasella(modelloUsato, nomeEtichetta);
       else if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
       // v2.91.1: colore esatto scelto dall'utente (niente scurimento).
