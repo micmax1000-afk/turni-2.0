@@ -1,3 +1,3 @@
 <it-IT>
-• Calendario come prima: tolto il riquadro intorno ai turni dai colori chiari (Mese, Giorno, Settimana, Agenda)
+• Calendario più compatto: meno spazio tra la riga del mese e i giorni della settimana
 </it-IT>
