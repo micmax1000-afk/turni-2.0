@@ -1,4 +1,3 @@
 <it-IT>
-• Nel calendario i servizi con un nome lungo (es. Volante, Posto fisso) mostrano la loro sigla invece del nome tagliato
-• I turni restano Matt., Pom., Sera, Notte e Riposo; toccando il giorno vedi sempre il nome intero
+• L'app si apre subito anche con poco segnale o senza internet: i caratteri ora sono inclusi nell'app
 </it-IT>
