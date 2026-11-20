@@ -744,7 +744,7 @@ function renderCalendario(){
       // Il testo (chiaro/scuro) è calcolato automaticamente da testoSuColore per restare leggibile.
       const sfondoBadge = coloreTurno || '#C9CED6';
       const etichettaTurno = t && categoria
-        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoBadge)};color:${testoSuColore(sfondoBadge)}">${escapeHtml(nomeEtichetta)}</b></span>`
+        ? `<span class="mod-turno"><b style="background:${escapeHtml(sfondoBadge)};${contornoSeChiaro(escapeHtml(sfondoBadge))};color:${testoSuColore(sfondoBadge)}">${escapeHtml(nomeEtichetta)}</b></span>`
         : '';
       // v3.8.2: un pallino per evento (al massimo 3), del colore dell'evento; il nome si legge toccando il giorno.
       const rigaEvento = eventiCella.length
@@ -1234,10 +1234,10 @@ function renderVistaGiorno(iso){
     return `<button type="button" class="vg-giorno${g === iso ? ' attivo' : ''}${g === oggiIso ? ' oggi' : ''}" data-vista-giorno="${g}">${n}<b>${dd.getDate()}</b></button>`; }).join('');
   const blocchi = (typeof turniNellaGiornata === 'function' ? turniNellaGiornata(iso) : []).map(b => {
     const top = b.da / 60 * H, alto = Math.max(22, (Math.min(b.a, 1440) - b.da) / 60 * H - 3);
-    return `<button type="button" class="vg-blocco vg-turno" data-vista-turno="${b.daIeri ? giornoPiu(iso, -1) : iso}" style="top:${top}px;height:${alto}px;background:${escapeHtml(b.colore || '#C9CED6')}"><b>${escapeHtml(b.nome || 'Turno')}</b><small>${escapeHtml(b.orario || '')}</small></button>`; }).join('');
+    return `<button type="button" class="vg-blocco vg-turno" data-vista-turno="${b.daIeri ? giornoPiu(iso, -1) : iso}" style="top:${top}px;height:${alto}px;background:${escapeHtml(b.colore || '#C9CED6')};${contornoSeChiaro(escapeHtml(b.colore || '#C9CED6'))}"><b>${escapeHtml(b.nome || 'Turno')}</b><small>${escapeHtml(b.orario || '')}</small></button>`; }).join('');
   const t = AppState.turni[iso];
   const tutto = [];
-  if(t && (t.riposo || t.assenzaTipo)) tutto.push(`<span style="background:${coloreGiornoVista(t)}">${escapeHtml(nomeGiornoVista(t))}</span>`);
+  if(t && (t.riposo || t.assenzaTipo)) tutto.push(`<span style="background:${coloreGiornoVista(t)};${contornoSeChiaro(coloreGiornoVista(t))}">${escapeHtml(nomeGiornoVista(t))}</span>`);
   let eventi = '';
   (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(iso) : []).forEach(({ ev, isoOrigine }) => {
     if(ev.tuttoIlGiorno || !ev.oraInizio){ tutto.push(`<span class="vg-ev-tutto" style="background:${coloreEvento(ev)}">${escapeHtml(ev.titolo || 'Evento')}</span>`); return; }
@@ -1305,7 +1305,7 @@ function renderVistaSettimana(iso){
     const ev = (typeof eventiDelGiorno === 'function' ? eventiDelGiorno(g) : []).map(({ ev, isoOrigine }) => `<span class="vs-ev" data-evento-giorno="${g}" data-evento-id="${escapeHtml(ev.id)}" data-evento-iso="${escapeHtml(isoOrigine || g)}"><i style="background:${coloreEvento(ev)}"></i>${ev.tuttoIlGiorno ? '' : escapeHtml(ev.oraInizio || '') + ' '}${escapeHtml(ev.titolo || 'Evento')}</span>`).join('');
     return `<button type="button" class="vs-riga${g === iso ? ' attivo' : ''}${g === oggiIso ? ' oggi' : ''}${typeof eFestivoOdDomenica === 'function' && eFestivoOdDomenica(g) ? ' festivo' : ''}" data-vista-giorno="${g}">`
       + `<span class="vs-data"><small>${n}</small><b>${dd.getDate()}</b></span>`
-      + `<span class="vs-corpo"><span class="vs-testa">${nome ? `<b style="background:${coloreGiornoVista(t)};color:${testoSuColore(coloreGiornoVista(t))}">${escapeHtml(nome)}</b>` : '<em>—</em>'}${t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? `<span class="vs-orario">${escapeHtml(t.oraInizio)}–${escapeHtml(t.oraFine)}</span>` : ''}${festa ? `<span class="vs-festa">${escapeHtml(festa)}</span>` : ''}</span>`
+      + `<span class="vs-corpo"><span class="vs-testa">${nome ? `<b style="background:${coloreGiornoVista(t)};${contornoSeChiaro(coloreGiornoVista(t))};color:${testoSuColore(coloreGiornoVista(t))}">${escapeHtml(nome)}</b>` : '<em>—</em>'}${t && t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo ? `<span class="vs-orario">${escapeHtml(t.oraInizio)}–${escapeHtml(t.oraFine)}</span>` : ''}${festa ? `<span class="vs-festa">${escapeHtml(festa)}</span>` : ''}</span>`
       + `${chip ? `<span class="vs-chip">${chip}</span>` : ''}${nota}${typeof righeUtilitaGiorno === 'function' ? righeUtilitaGiorno(g) : ''}${ev}</span>`
       + `${oreConStraordinarioHtml(t, 'vs-ore') || '<span class="vs-ore"></span>'}</button>`;
   }).join('');
@@ -1379,7 +1379,7 @@ function corpoGiornoAgenda(iso, t){
     const col = coloreGiornoVista(t);
     let nome = nomeGiornoVista(t);
     if(t.assenzaTipo){ const voce = AppState.assenze.find(a => a.id === t.assenzaTipo); if(voce) nome = voce.nome; }
-    return `<span class="agenda-semplice agenda-chip-giorno"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nome)}</b></span>`;
+    return `<span class="agenda-semplice agenda-chip-giorno"><b style="background:${col};${contornoSeChiaro(col)};color:${testoSuColore(col)}">${escapeHtml(nome)}</b></span>`;
   }
   if(!(t && t.oraInizio && t.oraFine)) return '<span class="agenda-semplice agenda-libero">Nessun turno</span>';
   const categoria = categoriaTurno(t.oraInizio, t.oraFine, iso);
@@ -1736,7 +1736,7 @@ function paginaGiornoDiario(iso, mezza){
   const righe = [];
   if(t && (t.riposo || t.assenzaTipo || t.oraInizio)){
     const col = coloreGiornoVista(t);
-    righe.push(`<span class="diario-turno"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <i class="diario-turno-ora">${t.oraInizio}–${t.oraFine}</i>` : ''}</span>`);
+    righe.push(`<span class="diario-turno"><b style="background:${col};${contornoSeChiaro(col)};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <i class="diario-turno-ora">${t.oraInizio}–${t.oraFine}</i>` : ''}</span>`);
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
     if(!t.riposo && !t.assenzaTipo && t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);
     if(!t.riposo && !t.assenzaTipo && t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
@@ -1816,7 +1816,7 @@ function paginaGiornoIntera(iso){
   const righe = [];
   if(t && (t.riposo || t.assenzaTipo || t.oraInizio)){
     const col = coloreGiornoVista(t);
-    righe.push(`<button type="button" class="dpg-turno" data-dpg-modifica="${iso}"><b style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <span>${t.oraInizio}–${t.oraFine}</span>` : ''}<i aria-hidden="true">›</i></button>`);
+    righe.push(`<button type="button" class="dpg-turno" data-dpg-modifica="${iso}"><b style="background:${col};${contornoSeChiaro(col)};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t))}</b>${t.oraInizio && !t.riposo && !t.assenzaTipo ? ` <span>${t.oraInizio}–${t.oraFine}</span>` : ''}<i aria-hidden="true">›</i></button>`);
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine && !t.riposo && !t.assenzaTipo) righe.push(`<span class="diario-ora">${t.secondoOraInizio}–${t.secondoOraFine}</span> rientro`);
     if(!t.riposo && !t.assenzaTipo && t.straordinarioPrimaInizio && t.straordinarioPrimaFine) righe.push(`<span class="diario-ora">${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}</span> straordinario`);
     if(!t.riposo && !t.assenzaTipo && t.straordinarioDopoInizio && t.straordinarioDopoFine) righe.push(`<span class="diario-ora">${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}</span> straordinario`);

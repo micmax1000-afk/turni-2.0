@@ -1,5 +1,4 @@
 <it-IT>
-• I turni con colori molto chiari (anche bianchi) ora si leggono bene ovunque: scheda del giorno, vista Anno e calendario
-• Tema scuro più leggibile in Assenze, Calendario e Report
-• Sui telefoni l'app resta in verticale; sui telefoni piccoli «Rip.» invece di «Rip…»
+• Congedo ordinario: se nel calendario hai già ferie programmate, quando scrivi i giorni rimasti l'app chiede se l'ufficio le ha già scalate (niente più conto sbagliato)
+• Turni con colori molto chiari o bianchi visibili anche in Turnazione automatica, Agenda, vista Giorno e Settimana
 </it-IT>

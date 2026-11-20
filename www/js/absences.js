@@ -38,6 +38,8 @@ function salvaSaldiPartenza(valori){
     recuperoFestivo: n(valori.recuperoFestivo),
     riposoCompensativoOre: n(valori.riposoCompensativoOre)
   };
+  // Ferie già programmate nel calendario che il numero scritto ha già tolto: non si contano di nuovo.
+  if(Array.isArray(valori.congedoGiaScalati) && valori.congedoGiaScalati.length) s.congedoGiaScalati = valori.congedoGiaScalati.slice();
   TurniPSStorage.setItem(CHIAVE_SALDI_PARTENZA, JSON.stringify(s));
   return s;
 }
@@ -45,7 +47,13 @@ function salvaSaldiPartenza(valori){
 // passato se lo straordinario a riposo, il recupero o l'assenza li hai segnati DOPO aver salvato i saldi
 // (campo: compensaDal, recuperoRiposoDal, recuperoFestivoDal, assenzaDal = quando l'hai segnato).
 const momentoSaldi = s => s.salvatoIl || Date.parse(`${s.data}T23:59:59`);
-const dopoSaldi = (iso, s, t, campo) => !s || iso > s.data || !!(t && campo && t[campo] && t[campo] >= momentoSaldi(s));
+const dopoSaldi = (iso, s, t, campo) => {
+  if(!s) return true;
+  // v3.8.49: un giorno di ferie programmato che l'ufficio aveva già scalato dal numero scritto non si conta di nuovo
+  // (finché resta un'assenza: se diventa un turno e poi di nuovo assenza, si segna con un momento successivo e conta).
+  if(campo === 'assenzaDal' && Array.isArray(s.congedoGiaScalati) && s.congedoGiaScalati.includes(iso) && !(t && t.assenzaDal && t.assenzaDal >= momentoSaldi(s))) return false;
+  return iso > s.data || !!(t && campo && t[campo] && t[campo] >= momentoSaldi(s));
+};
 // Quando salvi un giorno: segna il momento in cui hai acceso straordinario a riposo, recuperi o un'assenza.
 const CAMPI_SEGNATI = [['compensaStraordinario', 'compensaDal'], ['compensazioneRiposo', 'recuperoRiposoDal'], ['recuperoFestivoLavorato', 'recuperoFestivoDal'], ['assenzaTipo', 'assenzaDal']];
 function segnaQuandoNuovo(nuovo, vecchio){
@@ -749,6 +757,27 @@ renderAssenze=function(){
 };
 
 // ── Modulo dei saldi di partenza (apertura guidata e finestra "Saldi di partenza") ──
+// v3.8.49: giorni di congedo ordinario già messi nel calendario da domani in poi (ferie programmate).
+// Se il numero dell'ufficio li ha già tolti, non vanno tolti una seconda volta: lo si chiede nel modulo.
+function congedoProgrammatoInCalendario(){
+  const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
+  if(!co) return [];
+  const oggi = dataISO(new Date());
+  return Object.keys(AppState.turni).filter(iso => iso > oggi && AppState.turni[iso] && AppState.turni[iso].assenzaTipo === co.id).sort();
+}
+function bloccoCongedoProgrammatoHtml(prefisso){
+  const giorni = congedoProgrammatoInCalendario();
+  if(!giorni.length) return '';
+  const s = saldiPartenza();
+  const giaTolti = !!(s && Array.isArray(s.congedoGiaScalati) && giorni.every(g => s.congedoGiaScalati.includes(g)));
+  const n = giorni.length, primo = giorni[0].split('-').reverse().join('/');
+  return `<div class="partenza-programmato" data-prefisso-programmato="${prefisso}">
+    <p><b>Nel calendario hai già ${n} ${n === 1 ? 'giorno' : 'giorni'} di congedo</b> dal ${primo} in poi. Il numero che hai scritto sopra:</p>
+    <label><input type="radio" name="${prefisso}Programmato" value="dentro"${giaTolti ? '' : ' checked'}><span>li comprende ancora<small>l'app li toglie quando li fai</small></span></label>
+    <label><input type="radio" name="${prefisso}Programmato" value="tolti"${giaTolti ? ' checked' : ''}><span>li ha già tolti<small>l'ufficio li ha già scalati</small></span></label>
+  </div>`;
+}
+
 function formSaldiPartenzaHtml(prefisso, v){
   const campo = (id, val, unita, passo) => `<div class="partenza-campo"><div class="contatore-anagrafica"><button type="button" data-saldo-campo="${prefisso}${id}" data-saldo-delta="-${passo}" aria-label="Meno">−</button><input type="number" id="${prefisso}${id}" min="0" step="${passo === 1 ? 1 : 0.5}" inputmode="decimal" value="${val}"><button type="button" data-saldo-campo="${prefisso}${id}" data-saldo-delta="${passo}" aria-label="Più">+</button></div><span>${unita}</span></div>`;
   const riga = (testo, sotto, id, val, unita, passo, cls) => `<div class="partenza-riga${cls ? ' ' + cls : ''}"><div class="partenza-testo">${testo}<small>${sotto}</small></div>${campo(id, val, unita, passo)}</div>`;
@@ -762,7 +791,8 @@ function formSaldiPartenzaHtml(prefisso, v){
   const vecchio = anni[anni.length - 1];
   return voce('🌴', 'Congedo ordinario', `<div class="partenza-settimana"><span>Orario</span>${sceltaSettimanaCongedoHtml()}</div>` + righeAnni
       + `<div class="partenza-totale"><span>Totale</span><b id="${prefisso}CongedoTotale">${numeroIt(totale)} ${totale === 1 ? 'giorno' : 'giorni'}</b></div>`
-      + `<p class="partenza-nota">Si usano prima i giorni più vecchi (dal ${vecchio} in poi). Non scadono.</p>`)
+      + `<p class="partenza-nota">Si usano prima i giorni più vecchi (dal ${vecchio} in poi). Non scadono.</p>`
+      + bloccoCongedoProgrammatoHtml(prefisso))
     + voce('🔄', 'Recupero riposo', riga('Giorni da recuperare', 'riposi lavorati non ancora recuperati', 'RecuperoRiposo', v.recuperoRiposo, 'gg', 1))
     + voce('🔄', 'Recupero festivo', riga('Giorni da recuperare', 'festivi lavorati non ancora recuperati', 'RecuperoFestivo', v.recuperoFestivo, 'gg', 1))
     + voce('♻️', 'Riposo compensativo', riga('Ore accumulate', 'straordinario messo a riposo', 'RiposoCompensativo', numeroIt(v.riposoCompensativoOre).replace(',', '.'), 'h', 1));
@@ -771,7 +801,9 @@ function leggiFormSaldiPartenza(prefisso){
   const n = id => Number((el(prefisso + id) || {}).value) || 0;
   const congedoAnni = {};
   document.querySelectorAll(`[data-anno-congedo][data-prefisso="${prefisso}"]`).forEach(r => { congedoAnni[r.dataset.annoCongedo] = n('Congedo' + r.dataset.annoCongedo); });
-  return { congedoAnni, recuperoRiposo: n('RecuperoRiposo'), recuperoFestivo: n('RecuperoFestivo'), riposoCompensativoOre: n('RiposoCompensativo') };
+  const scelta = document.querySelector(`input[name="${prefisso}Programmato"]:checked`);
+  const congedoGiaScalati = scelta && scelta.value === 'tolti' ? congedoProgrammatoInCalendario() : [];
+  return { congedoAnni, congedoGiaScalati, recuperoRiposo: n('RecuperoRiposo'), recuperoFestivo: n('RecuperoFestivo'), riposoCompensativoOre: n('RiposoCompensativo') };
 }
 // Valori da proporre: con i saldi già inseriti, quanto resta oggi per anno (senza i congedi già
 // segnati nei prossimi giorni, che si contano dopo); altrimenti il conto fatto fin qui dall'app.

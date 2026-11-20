@@ -3610,3 +3610,10 @@ html[data-tema="scuro"] .partenza-v4 button{color:#A9C1FF!important}
 html[data-tema="scuro"] .calendario-giorni-settimana > :nth-child(n+6){color:#FF8A80}
 html[data-tema="scuro"] .report-hero-stima{color:#AEB6CC}
 html[data-tema="scuro"] .mese-info-v4 summary span{color:#A9C1FF!important}
+
+/* v3.8.49: saldi di partenza, ferie già programmate nel calendario */
+.partenza-programmato{margin:10px 0 2px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,#E0A100 12%,var(--pannello));font-size:.86rem;line-height:1.4}
+.partenza-programmato p{margin:0 0 6px}
+.partenza-programmato label{display:flex;gap:8px;align-items:flex-start;padding:5px 0;cursor:pointer}
+.partenza-programmato input{margin-top:3px;accent-color:#1D4FD7}
+.partenza-programmato small{display:block;color:var(--testo-tenue);font-size:.78rem}
