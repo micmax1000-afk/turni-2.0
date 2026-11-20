@@ -1,5 +1,3 @@
 <it-IT>
-• All'apertura niente più lampo nero: schermo di avvio col logo dell'app e colori come il tema
-• App più veloce nelle schede Assenze e Report
-• Turnazione automatica: giorni del ciclo tutti uguali, con contorno e angoli tondi; orari del Rientro e dello Straordinario ben allineati
+• Calendario come prima: tolto il riquadro intorno ai turni dai colori chiari (Mese, Giorno, Settimana, Agenda)
 </it-IT>
