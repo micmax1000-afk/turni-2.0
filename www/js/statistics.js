@@ -32,6 +32,10 @@ function statisticheAnno(anno){
 }
 
 function renderStatistiche(){
+  if(typeof conCacheConti==='function') return conCacheConti(renderStatisticheCorpo);
+  return renderStatisticheCorpo();
+}
+function renderStatisticheCorpo(){
   const host=el('contenitoreStatistiche');
   if(!host) return;
   const anno=Number(el('campoAnnoStatistiche')?.value)||new Date().getFullYear();
