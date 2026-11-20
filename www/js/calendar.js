@@ -1699,7 +1699,7 @@ function renderVistaAnno(anno){
       const iso = `${anno}-${String(m + 1).padStart(2, '0')}-${String(g).padStart(2, '0')}`;
       const t = AppState.turni[iso], col = coloreGiornoVista(t);
       const cls = (iso === oggiIso ? ' oggi' : '') + (t && t.assenzaTipo ? ' assenza' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
-      html += `<em class="${cls.trim()}"${col ? ` style="background:${col};color:${testoSuColore(col)}"` : ''}>${g}</em>`;
+      html += `<em class="${cls.trim()}"${col ? ` style="background:${col};color:${testoSuColore(col)};${contornoSeChiaro(col)}"` : ''}>${g}</em>`;
     }
     html += '</span></button>';
   }

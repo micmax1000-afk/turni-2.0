@@ -105,7 +105,19 @@ function coloreLeggibileSuChiaro(hex){
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
-const SIGLA_SINGOLA_CATEGORIA ={ mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
+// Colore quasi bianco su fondo chiaro (contrasto col bianco sotto 1,6:1): serve un contorno per vederlo.
+function coloreQuasiBianco(hex){
+  if(document.documentElement.getAttribute('data-tema') === 'scuro') return false;
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if(!m) return false;
+  const n = parseInt(m[1], 16);
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 1.05 / (0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255) + 0.05) < 1.6;
+}
+// Stile da aggiungere a un riquadro colorato: un contorno sottile se il colore è quasi bianco.
+function contornoSeChiaro(hex){ return coloreQuasiBianco(hex) ? `box-shadow:inset 0 0 0 1.5px ${coloreLeggibileSuChiaro(hex)};` : ''; }
+
+const SIGLA_SINGOLA_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
 
 function coloreCategoria(chiave){
   const c = CATEGORIE_COLORABILI.find(x => x.chiave === chiave);
