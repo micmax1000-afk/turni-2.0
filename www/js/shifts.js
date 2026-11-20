@@ -260,7 +260,7 @@ function aggiornaEditorGiornoV3(){
     const attivo = m.riposo ? modo === 'riposo' : modo === 'turno' && m.id === idModello;
     // Col tema scuro i colori chiari si leggono già bene: si scuriscono solo sul fondo chiaro.
     const leggibile = document.documentElement.getAttribute('data-tema') === 'scuro' ? colore : coloreLeggibileSuChiaro(colore);
-    return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};` : `color:${leggibile};`}border-color:${leggibile}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
+    return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};${leggibile !== String(colore).toUpperCase() ? `box-shadow:inset 0 0 0 2px ${leggibile};font-weight:800;` : ''}` : `color:${leggibile};`}border-color:${leggibile}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
   };
   const conOrario = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine);
   const serviziGiorno = conOrario.filter(m => !eTurnoDellaTurnazione(m));
