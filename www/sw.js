@@ -1,9 +1,10 @@
-/* Turni & Accessorio PS — Service Worker V279 (v3.8.46 — sigla per i servizi dal nome lungo nel calendario) */
+/* Turni & Accessorio PS — Service Worker V280 (v3.8.47 — caratteri inclusi nell'app, apertura veloce con poco segnale) */
 'use strict';
-const CACHE='turni-ps-v279';
+const CACHE='turni-ps-v280';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/domande-voce.js','./js/utilita.js','./js/pro.js','./js/data/tabelle-2026.js',
+ './fonts/IBMPlexMono-400-latin-ext.woff2','./fonts/IBMPlexMono-400-latin.woff2','./fonts/IBMPlexMono-500-latin-ext.woff2','./fonts/IBMPlexMono-500-latin.woff2','./fonts/IBMPlexMono-600-latin-ext.woff2','./fonts/IBMPlexMono-600-latin.woff2','./fonts/IBMPlexSans-400-latin-ext.woff2','./fonts/IBMPlexSans-400-latin.woff2','./fonts/SourceSerif4-500-latin-ext.woff2','./fonts/SourceSerif4-500-latin.woff2','./fonts/fonts.css',
  './icons/icon-48.png','./icons/icon-72.png','./icons/icon-96.png','./icons/icon-128.png','./icons/icon-144.png','./icons/icon-152.png','./icons/icon-192.png','./icons/icon-384.png','./icons/icon-512.png'
 ];
 // v2.99: nell'app Android (https://localhost, senza porta) i file sono già dentro l'app, quindi il
