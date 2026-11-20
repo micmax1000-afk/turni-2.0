@@ -93,7 +93,19 @@ function testoSuColore(hex){
   return 1.05 / (L + 0.05) >= 3 ? '#FFFFFF' : '#1E2129';
 }
 
-const SIGLA_SINGOLA_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
+// v3.8.48: un colore usato come scritta o bordo su fondo chiaro (i pulsanti dei turni nella scheda del giorno).
+// Se è troppo chiaro (bianco, pastello, giallo tenue) si scurisce finché si legge: contrasto almeno 3:1 col bianco.
+function coloreLeggibileSuChiaro(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if(!m) return '#1E2129';
+  let [r, g, b] = [0, 8, 16].map(s => (parseInt(m[1], 16) >> (16 - s)) & 255);
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const contrasto = () => 1.05 / (0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) + 0.05);
+  for(let i = 0; i < 40 && contrasto() < 3; i++){ r = Math.round(r * 0.9); g = Math.round(g * 0.9); b = Math.round(b * 0.9); }
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+const SIGLA_SINGOLA_CATEGORIA ={ mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
 
 function coloreCategoria(chiave){
   const c = CATEGORIE_COLORABILI.find(x => x.chiave === chiave);
@@ -246,7 +258,9 @@ function aggiornaEditorGiornoV3(){
     // v2.91.1: colore esatto del modello (allineato al calendario moderno).
     const colore = coloreModelloV2(m);
     const attivo = m.riposo ? modo === 'riposo' : modo === 'turno' && m.id === idModello;
-    return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};` : `color:${colore};`}border-color:${colore}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
+    // Col tema scuro i colori chiari si leggono già bene: si scuriscono solo sul fondo chiaro.
+    const leggibile = document.documentElement.getAttribute('data-tema') === 'scuro' ? colore : coloreLeggibileSuChiaro(colore);
+    return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};` : `color:${leggibile};`}border-color:${leggibile}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
   };
   const conOrario = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine);
   const serviziGiorno = conOrario.filter(m => !eTurnoDellaTurnazione(m));
