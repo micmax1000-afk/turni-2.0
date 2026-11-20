@@ -402,7 +402,7 @@ function dataRigaVoce(r){
 }
 function chipVoce(t){
   const col = coloreGiornoVista(t) || '#C9CED6';
-  return `<span class="voce-chip" style="background:${col};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t) || 'Turno')}</span>`;
+  return `<span class="voce-chip" style="background:${col};${contornoSeChiaro(col)};color:${testoSuColore(col)}">${escapeHtml(nomeGiornoVista(t) || 'Turno')}</span>`;
 }
 function primaVoce(iso){
   const t = AppState.turni[iso];

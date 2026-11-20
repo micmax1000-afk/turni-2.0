@@ -1324,7 +1324,7 @@ function renderListaPatternSempliceV2(){
   const inUso = patternInUsoV2();
   const fino = TurniPSStorage.getItem(CHIAVE_SEQUENZA_ULTIMO_GIORNO);
   host.innerHTML = elenco.map(p => {
-    const striscia = p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return `<i style="background:${m ? coloreModelloV2(m) : '#E8ECF0'}"></i>`; }).join('');
+    const striscia = p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return `<i style="background:${m ? coloreModelloV2(m) : '#E8ECF0'};${contornoSeChiaro(m ? coloreModelloV2(m) : '#E8ECF0')}"></i>`; }).join('');
     const usato = inUso && inUso.id === p.id;
     const stato = usato
       ? `<small class="stato-attivo">${fino ? 'Generato fino al ' + dataBreve(fino) : 'In uso'}</small><span class="continua-seq" data-continua-pattern="${escapeHtml(p.id)}">▶ Continua</span>`
@@ -1426,7 +1426,7 @@ function aggiornaPassiDueTreV2(){
     const m = modelli.find(x => x.id === g.modelloId);
     const scelta = i === editorSeq.fase;
     const colore = m ? coloreModelloV2(m) : '#888';
-    return `<button type="button" data-fase="${i}" class="${scelta ? 'attivo' : ''}" ${scelta ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
+    return `<button type="button" data-fase="${i}" class="${scelta ? 'attivo' : ''}" ${scelta ? `style="background:${colore};${contornoSeChiaro(colore)};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
   el('sceltaDurataSequenza').querySelectorAll('[data-durata]').forEach(b => b.classList.toggle('attivo', b.dataset.durata === editorSeq.durata));
   el('campoEditorPatternFino').hidden = editorSeq.durata !== 'data';
@@ -1469,7 +1469,7 @@ function aggiornaPassiDueTreV2(){
     const giorno = p.giorni[(editorSeq.fase + scarto) % p.giorni.length];
     const m = modelli.find(x => x.id === giorno.modelloId);
     const colore = m ? coloreModelloV2(m) : '#E8ECF0';
-    html += `<span style="background:${colore};color:${testoSuColore(colore)}"><em>${g}</em>${escapeHtml(m ? (m.sigla || nomeBreveModelloSeq(m).slice(0, 3)) : '?')}</span>`;
+    html += `<span style="background:${colore};${contornoSeChiaro(colore)};color:${testoSuColore(colore)}"><em>${g}</em>${escapeHtml(m ? (m.sigla || nomeBreveModelloSeq(m).slice(0, 3)) : '?')}</span>`;
   }
   el('anteprimaSeqGriglia').innerHTML = html;
   const note = [];
@@ -1513,7 +1513,7 @@ function renderCicloPatternSempliceV2(){
     const forte = colore; // v2.92.1: colore esatto, come nel calendario
     const icone = (g.indennita || []).slice(0, 2).map(k => iconaIndennita(k)).join('') + (g.straordinario ? iconaIndennita('straordinario') : '');
     return `<button type="button" class="giorno-ciclo-v3${i === giornoPatternSelezionatoSemplcieV2 ? ' selezionato' : ''}" data-giorno-index="${i}">
-      <small>${i + 1}°</small><b style="background:${forte};color:${testoSuColore(forte)}">${escapeHtml(nomeBreveModelloSeq(m))}</b><span style="background:${colore};color:${testoSuColore(colore)}">${icone || '&nbsp;'}</span>
+      <small>${i + 1}°</small><b style="background:${forte};${contornoSeChiaro(forte)};color:${testoSuColore(forte)}">${escapeHtml(nomeBreveModelloSeq(m))}</b><span style="background:${colore};${contornoSeChiaro(colore)};color:${testoSuColore(colore)}">${icone || '&nbsp;'}</span>
     </button>`;
   }).join('') + '<button type="button" class="giorno-ciclo-v3 giorno-ciclo-aggiungi" data-aggiungi-giorno aria-label="Aggiungi un giorno al ciclo">＋</button>';
   el('btnRimuoviGiornoEditorPatternV2').hidden = p.giorni.length <= 1;
@@ -1596,7 +1596,7 @@ function renderTavolozzaPatternSempliceV2(){
   host.innerHTML = (AppState.modelliTurno || []).map(m => {
     const colore = coloreModelloV2(m);
     const forte = colore; // v2.92.1: colore esatto, come nel calendario
-    return `<button type="button" class="tavolozza-pattern-v3" data-modello-id-pattern="${escapeHtml(m.id)}" style="background:${forte};color:${testoSuColore(forte)}" title="${escapeHtml(m.nome)}">${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
+    return `<button type="button" class="tavolozza-pattern-v3" data-modello-id-pattern="${escapeHtml(m.id)}" style="background:${forte};${contornoSeChiaro(forte)};color:${testoSuColore(forte)}" title="${escapeHtml(m.nome)}">${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
   }).join('');
 }
 
@@ -1866,7 +1866,7 @@ function renderModelliTabTurni(){
     const sigla = m.sigla || (m.nome || '??').slice(0, 2).toUpperCase();
     const orario = m.riposo ? 'Giornata libera' : `${m.oraInizio} – ${m.oraFine}`;
     return `<button type="button" class="turno-v4${grande ? '' : ' turno-compatto-v4'}" data-modello-tab="${escapeHtml(m.id)}">
-      <span class="sigla-v4" style="background:${escapeHtml(colore)};color:${testoSuColore(colore)}">${escapeHtml(sigla)}</span>
+      <span class="sigla-v4" style="background:${escapeHtml(colore)};${contornoSeChiaro(escapeHtml(colore))};color:${testoSuColore(colore)}">${escapeHtml(sigla)}</span>
       <span class="testo-v4"><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(orario)}</small></span>${chev}
     </button>`;
   };
@@ -1930,7 +1930,7 @@ function renderListaModelliTurniV2(){
     const durata = durataModelloTesto(m);
     const sotto = m.riposo ? 'giornata libera' : `${m.oraInizio} – ${m.oraFine}${durata ? ' · ' + durata : ''}`;
     return `<div class="riga-turno-menu${attiva ? ' attiva' : ''}">
-      <button type="button" class="riga-turno-menu-corpo" data-modello="${escapeHtml(m.id)}"><i style="background:${coloreModelloV2(m)}"></i><span><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(sotto)}</small></span>${attiva ? '<em aria-hidden="true">✓</em>' : ''}</button>
+      <button type="button" class="riga-turno-menu-corpo" data-modello="${escapeHtml(m.id)}"><i style="background:${coloreModelloV2(m)};${contornoSeChiaro(coloreModelloV2(m))}"></i><span><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(sotto)}</small></span>${attiva ? '<em aria-hidden="true">✓</em>' : ''}</button>
     </div>`;
   };
   const modelli = AppState.modelliTurno || [];
@@ -2138,7 +2138,7 @@ function aggiornaAnteprimaModelloV2(){
   const sigla = (el('campoModModelloSigla').value || finto.nome.slice(0, 2)).toUpperCase();
   const durata = durataModelloTesto(finto);
   const orario = finto.riposo ? 'Giornata libera' : finto.oraInizio && finto.oraFine ? `${finto.oraInizio} – ${finto.oraFine}${durata ? ' · ' + durata : ''}` : 'Orario da scegliere';
-  box.innerHTML = `<span class="tessera-modello"><b style="background:${forte};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</b><span style="background:${colore};color:${testoSuColore(colore)}"><strong>${escapeHtml(finto.nome)}</strong><small>${escapeHtml(orario)}</small></span></span>`;
+  box.innerHTML = `<span class="tessera-modello"><b style="background:${forte};${contornoSeChiaro(forte)};color:${testoSuColore(forte)}">${escapeHtml(sigla)}</b><span style="background:${colore};${contornoSeChiaro(colore)};color:${testoSuColore(colore)}"><strong>${escapeHtml(finto.nome)}</strong><small>${escapeHtml(orario)}</small></span></span>`;
 }
 function salvaModificaModelloV2(){
   const nome = el('campoModModelloNome').value.trim();
@@ -3603,7 +3603,7 @@ function apriBenvenuto(){
   const modelli = AppState.modelliTurno || [];
   el('benvenutoStriscia').innerHTML = ['sera', 'pomeriggio', 'mattina', 'notte', 'riposo', 'sera', 'pomeriggio'].map(id => {
     const m = modelli.find(x => x.id === id);
-    return m ? `<span style="background:${coloreModelloV2(m)};color:${testoSuColore(coloreModelloV2(m))}">${escapeHtml(SIGLA_SINGOLA_CATEGORIA[id] || m.sigla || '')}</span>` : '';
+    return m ? `<span style="background:${coloreModelloV2(m)};${contornoSeChiaro(coloreModelloV2(m))};color:${testoSuColore(coloreModelloV2(m))}">${escapeHtml(SIGLA_SINGOLA_CATEGORIA[id] || m.sigla || '')}</span>` : '';
   }).join('');
   renderSequenzeBenvenuto();
   mostraPassoBenvenuto(1);
@@ -3618,7 +3618,7 @@ function descrizioneSequenzaBenvenuto(p){
 function renderSequenzeBenvenuto(){
   const modelli = AppState.modelliTurno || [];
   el('benvenutoSequenze').innerHTML = sequenzeDisponibiliBenvenuto().map(p => {
-    const striscia = p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return `<i style="background:${m ? coloreModelloV2(m) : '#E8ECF0'}"></i>`; }).join('');
+    const striscia = p.giorni.map(g => { const m = modelli.find(x => x.id === g.modelloId); return `<i style="background:${m ? coloreModelloV2(m) : '#E8ECF0'};${contornoSeChiaro(m ? coloreModelloV2(m) : '#E8ECF0')}"></i>`; }).join('');
     return `<button type="button" class="card-sequenza${benvenuto.pattern === p.id ? ' in-uso' : ''}" data-benvenuto-pattern="${escapeHtml(p.id)}"><strong>${escapeHtml(p.nome)}</strong><span class="striscia-sequenza">${striscia}</span><span class="stato-sequenza"><small>${escapeHtml(descrizioneSequenzaBenvenuto(p))}</small></span></button>`;
   }).join('') + `<button type="button" class="card-sequenza${benvenuto.pattern === '' ? ' in-uso' : ''}" data-benvenuto-pattern=""><strong>Li inserisco a mano</strong><span class="stato-sequenza"><small>Tocchi i giorni sul calendario</small></span></button>`;
   const p = sequenzeDisponibiliBenvenuto().find(x => x.id === benvenuto.pattern);
@@ -3630,7 +3630,7 @@ function renderSequenzeBenvenuto(){
       const m = modelli.find(x => x.id === g.modelloId);
       const scelto = i === benvenuto.fase;
       const colore = m ? coloreModelloV2(m) : '#888';
-      return `<button type="button" data-benvenuto-fase="${i}" class="${scelto ? 'attivo' : ''}" ${scelto ? `style="background:${colore};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
+      return `<button type="button" data-benvenuto-fase="${i}" class="${scelto ? 'attivo' : ''}" ${scelto ? `style="background:${colore};${contornoSeChiaro(colore)};border-color:${colore};color:${testoSuColore(colore)}"` : ''}>${p.giorni.length > 5 ? (i + 1) + '° ' : ''}${escapeHtml(nomeBreveModelloSeq(m))}</button>`;
     }).join('');
     // Anteprima: i prossimi 7 giorni come verranno.
     const giorniSett = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
@@ -3641,7 +3641,7 @@ function renderSequenzeBenvenuto(){
       const m = modelli.find(x => x.id === g.modelloId);
       const col = m ? coloreModelloV2(m) : '#E8ECF0';
       const sigla = m ? (SIGLA_SINGOLA_CATEGORIA[m.id] || m.sigla || m.nome.slice(0, 2)) : '?';
-      return `<div>${giorniSett[d.getDay()]}<b>${d.getDate()}</b><span style="background:${col};color:${testoSuColore(col)}">${escapeHtml(sigla)}</span></div>`;
+      return `<div>${giorniSett[d.getDay()]}<b>${d.getDate()}</b><span style="background:${col};${contornoSeChiaro(col)};color:${testoSuColore(col)}">${escapeHtml(sigla)}</span></div>`;
     }).join('');
   }
   if(benvenuto.passo === 2) el('btnBenvenutoAvanti').textContent = benvenuto.pattern ? 'Crea i turni' : 'Avanti';
