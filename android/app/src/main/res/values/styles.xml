@@ -13,10 +13,16 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- v3.8.50: tra lo schermo di avvio e la pagina si vedeva lo sfondo di Android (nero col telefono in scuro). -->
+        <item name="android:windowBackground">@color/splash_sfondo</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="android:background">@drawable/splash_avvio</item>
+        <!-- Android 12 e successivi: colore e logo dell'app invece di quelli standard. -->
+        <item name="windowSplashScreenBackground">@color/splash_sfondo</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

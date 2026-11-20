@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sfondo dello schermo di avvio e della finestra prima che la pagina sia pronta: stesso colore dell'app (tema chiaro). -->
+<resources>
+    <color name="splash_sfondo">#ECEFEA</color>
+</resources>

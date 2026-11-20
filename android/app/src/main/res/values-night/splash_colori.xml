@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Telefono in modalità scura: grigio antracite come il tema scuro dell'app, così all'apertura non c'è un lampo bianco o nero. -->
+<resources>
+    <color name="splash_sfondo">#292D35</color>
+</resources>
