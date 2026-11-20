@@ -163,14 +163,25 @@ function calcolaGiorniRecuperoAccumulati(){
   return (s ? s.recuperoRiposo || 0 : 0) + Object.entries(AppState.turni).filter(([iso, t]) => t.compensazioneRiposo && dopoSaldi(iso, s, t, 'recuperoRiposoDal')).length;
 }
 
+// v3.8.50: mentre si disegna una schermata (renderAssenze) i turni non cambiano: il conto si fa una volta sola
+// invece di tre, e ogni volta rileggeva tutti i turni di due anni. Fuori da quel momento si ricalcola sempre.
+let _cacheConti = null;
+function conCacheConti(fn){
+  if(_cacheConti) return fn();
+  _cacheConti = {};
+  try{ return fn(); } finally { _cacheConti = null; }
+}
 function calcolaOreCompensateAccumulate(){
+  if(_cacheConti && _cacheConti.oreCompensate !== undefined) return _cacheConti.oreCompensate;
   const s = saldiPartenza();
   let totale = s ? s.riposoCompensativoOre || 0 : 0;
   for(const [iso, t] of Object.entries(AppState.turni)){
     if(t.riposo || t.assenzaTipo || !dopoSaldi(iso, s, t, 'compensaDal')) continue;
     totale += classificaTurno(t).oreCompensate || 0;
   }
-  return round2(totale);
+  totale = round2(totale);
+  if(_cacheConti) _cacheConti.oreCompensate = totale;
+  return totale;
 }
 
 // daData (facoltativo): si contano solo i giorni dopo quella data (i saldi di partenza).
@@ -346,7 +357,14 @@ function elencoDateDisponibiliCredito(nomeVoce, campoFonte){
 // Quanto spetta, quanto è stato usato e quanto resta di una voce (stesse regole di sempre:
 // congedo ordinario con il riporto, L104 al mese, alcune voci all'anno, recuperi automatici).
 const NOMI_ANNUALI_SEMPLICI = ['Congedo straordinario', 'Riposo legge', 'Donazione sangue', 'Ore studio', 'Permesso breve', 'Permesso sindacale'];
+// v3.8.50: mentre si disegna Assenze lo stesso saldo veniva chiesto 3 volte per voce: si ricorda per la durata del disegno.
 function saldoAssenza(a, rif){
+  if(!_cacheConti) return saldoAssenzaCalcolo(a, rif);
+  const k = `saldo${a && a.id}|${rif ? rif.anno + '-' + rif.mese : ''}`;
+  if(_cacheConti[k] === undefined) _cacheConti[k] = saldoAssenzaCalcolo(a, rif);
+  return _cacheConti[k];
+}
+function saldoAssenzaCalcolo(a, rif){
   const anno = rif ? rif.anno : annoCorrente, mese = rif ? rif.mese : meseCorrente;
   const eRiposoCompensativo = a.nome === 'Riposo compensativo';
   const eRecuperoRiposo = a.nome === 'Recupero riposo';
@@ -638,6 +656,9 @@ function renderCardAssenzaItem(a){
 function renderAssenze(){
   correggiPermessoBreve();
   aggiornaCongedoAutomatico();
+  conCacheConti(renderAssenzeCorpo);
+}
+function renderAssenzeCorpo(){
   renderDashboardAssenze();
   const box = el('corpoAssenze');
   const boxPersonalizzate = el('corpoAssenzePersonalizzate');

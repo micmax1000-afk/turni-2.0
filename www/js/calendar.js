@@ -67,14 +67,24 @@ function categoriaTurno(oraInizio, oraFine, dataStr){
   return Object.entries(minuti).sort((a, b) => b[1] - a[1])[0][0];
 }
 
+// v3.8.50: il risultato dipende solo dalla data (festività fisse + Pasqua): si ricorda, perché i conti di Report e Assenze
+// lo chiedono decine di migliaia di volte e rifare ogni volta Pasqua e le date rallentava l'app.
+const _cacheFestivoFisso = new Map();
 function eFestivoFisso(dataStr){
   if(!dataStr) return false;
+  const gia = _cacheFestivoFisso.get(dataStr);
+  if(gia !== undefined) return gia;
   const d = new Date(dataStr + 'T00:00:00');
-  if(isNaN(d)) return false;
-  const anno = d.getFullYear();
-  const pasqua = calcolaPasqua(anno);
-  const pasquetta = new Date(pasqua); pasquetta.setDate(pasqua.getDate() + 1);
-  return festivitaFisse(anno).includes(dataStr) || dataISO(pasqua) === dataStr || dataISO(pasquetta) === dataStr;
+  let r = false;
+  if(!isNaN(d)){
+    const anno = d.getFullYear();
+    const pasqua = calcolaPasqua(anno);
+    const pasquetta = new Date(pasqua); pasquetta.setDate(pasqua.getDate() + 1);
+    r = festivitaFisse(anno).includes(dataStr) || dataISO(pasqua) === dataStr || dataISO(pasquetta) === dataStr;
+  }
+  if(_cacheFestivoFisso.size > 5000) _cacheFestivoFisso.clear();
+  _cacheFestivoFisso.set(dataStr, r);
+  return r;
 }
 
 function eDomenica(dataStr){
@@ -307,8 +317,18 @@ function calcolaIndennitaMissioneOre(ore){
   return round2(ore * AppState.tabelle.indennitaTrasfertaOrariaRidotta); // oltre 8h: tariffa ridotta al 40%
 }
 
+// v3.8.50: durante il disegno di una schermata (Report, Assenze) il conto di un mese si fa una volta sola:
+// prima lo stesso mese veniva rifatto da statistiche, cedolino e riepiloghi (50 volte per aprire il Report).
 function calcolaRiepilogoOreMese(anno, mese){
-  const tot = { ordinarie:0, notturne:0, festive:0, domenicali:0, notturneFestive:0, strDiurno:0, strNotturno:0, strFestivo:0, strNotturnoFestivo:0 };
+  if(typeof _cacheConti !== 'undefined' && _cacheConti){
+    const k = `mese${anno}-${mese}`;
+    if(_cacheConti[k] === undefined) _cacheConti[k] = calcolaRiepilogoOreMeseCalcolo(anno, mese);
+    return _cacheConti[k];
+  }
+  return calcolaRiepilogoOreMeseCalcolo(anno, mese);
+}
+function calcolaRiepilogoOreMeseCalcolo(anno, mese){
+  const tot ={ ordinarie:0, notturne:0, festive:0, domenicali:0, notturneFestive:0, strDiurno:0, strNotturno:0, strFestivo:0, strNotturnoFestivo:0 };
   let riposi = 0, reperibilita = 0, missioni = 0, servizioEsterno = 0, ordinePubblico = 0, buoniPasto = 0, indennitaOPTotale = 0, oreCompensateTotale = 0;
   let giorniControlloTerritorioSerali = 0, giorniControlloTerritorioNotturni = 0, indennitaMissioniTotale = 0, turniServizioEsternoValidi = 0, turniFestiviLavorati = 0, turniFestivitaParticolare = 0, turniCompensazioneRiposo = 0, turniCambioTurno = 0, giorniPresenzaEffettiva = 0;
   const giorniNelMese = new Date(anno, mese + 1, 0).getDate();
