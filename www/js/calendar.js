@@ -736,6 +736,8 @@ function renderCalendario(){
         : nomeCategoria;
       // v3.8.46: nella casella entrano 6 lettere («Riposo»): un servizio dal nome più lungo (Volante, Posto fisso…)
       // mostra la sua sigla invece del nome tagliato con i puntini. Il nome intero si legge toccando il giorno.
+      // Sui telefoni stretti (meno di 350 px) «Riposo» non entra e diventava «Rip…».
+      if(nomeEtichetta === 'Riposo' && window.innerWidth < 350) nomeEtichetta = 'Rip.';
       if(categoria !== 'assenza' && nomeEtichetta.length > 6) nomeEtichetta = siglaServizioCasella(modelloUsato, nomeEtichetta);
       else if(nomeEtichetta.length > 8) nomeEtichetta = modelloUsato && modelloUsato.sigla ? modelloUsato.sigla : nomeEtichetta.slice(0, 6) + '.';
       // v2.91.1: colore esatto scelto dall'utente (niente scurimento).
@@ -1699,7 +1701,7 @@ function renderVistaAnno(anno){
       const iso = `${anno}-${String(m + 1).padStart(2, '0')}-${String(g).padStart(2, '0')}`;
       const t = AppState.turni[iso], col = coloreGiornoVista(t);
       const cls = (iso === oggiIso ? ' oggi' : '') + (t && t.assenzaTipo ? ' assenza' : '') + (eFestivoOdDomenica(iso) ? ' festivo' : '');
-      html += `<em class="${cls.trim()}"${col ? ` style="background:${col};color:${testoSuColore(col)}"` : ''}>${g}</em>`;
+      html += `<em class="${cls.trim()}"${col ? ` style="background:${col};color:${testoSuColore(col)};${contornoSeChiaro(col)}"` : ''}>${g}</em>`;
     }
     html += '</span></button>';
   }

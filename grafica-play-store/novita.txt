@@ -1,3 +1,5 @@
 <it-IT>
-• L'app si apre subito anche con poco segnale o senza internet: i caratteri ora sono inclusi nell'app
+• I turni con colori molto chiari (anche bianchi) ora si leggono bene ovunque: scheda del giorno, vista Anno e calendario
+• Tema scuro più leggibile in Assenze, Calendario e Report
+• Sui telefoni l'app resta in verticale; sui telefoni piccoli «Rip.» invece di «Rip…»
 </it-IT>

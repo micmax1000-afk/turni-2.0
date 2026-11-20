@@ -93,6 +93,43 @@ function testoSuColore(hex){
   return 1.05 / (L + 0.05) >= 3 ? '#FFFFFF' : '#1E2129';
 }
 
+// v3.8.48: un colore usato come scritta o bordo su fondo chiaro (i pulsanti dei turni nella scheda del giorno).
+// Se è troppo chiaro (bianco, pastello, giallo tenue) si scurisce finché si legge: contrasto almeno 3:1 col bianco.
+function coloreLeggibileSuChiaro(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if(!m) return '#1E2129';
+  let [r, g, b] = [0, 8, 16].map(s => (parseInt(m[1], 16) >> (16 - s)) & 255);
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const contrasto = () => 1.05 / (0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) + 0.05);
+  for(let i = 0; i < 40 && contrasto() < 3; i++){ r = Math.round(r * 0.9); g = Math.round(g * 0.9); b = Math.round(b * 0.9); }
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+// v3.8.48: un colore usato come scritta, leggibile col tema attuale: sul chiaro si scurisce se serve,
+// sullo scuro si schiarisce (mescolato col bianco) finché ha un contrasto di almeno 4:1 col fondo scuro.
+function coloreTestoLeggibile(hex){
+  if(document.documentElement.getAttribute('data-tema') !== 'scuro') return coloreLeggibileSuChiaro(hex);
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if(!m) return hex;
+  let [r, g, b] = [16, 8, 0].map(s => (parseInt(m[1], 16) >> s) & 255);
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const Lfondo = 0.033; // circa #353A45, il fondo delle schede col tema scuro
+  const contrasto = () => (0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) + 0.05) / (Lfondo + 0.05);
+  for(let i = 0; i < 30 && contrasto() < 4; i++){ r += Math.ceil((255 - r) * 0.12); g += Math.ceil((255 - g) * 0.12); b += Math.ceil((255 - b) * 0.12); }
+  return '#' + [r, g, b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+// Colore quasi bianco su fondo chiaro (contrasto col bianco sotto 1,6:1): serve un contorno per vederlo.
+function coloreQuasiBianco(hex){
+  if(document.documentElement.getAttribute('data-tema') === 'scuro') return false;
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if(!m) return false;
+  const n = parseInt(m[1], 16);
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 1.05 / (0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255) + 0.05) < 1.6;
+}
+// Stile da aggiungere a un riquadro colorato: un contorno sottile se il colore è quasi bianco.
+function contornoSeChiaro(hex){ return coloreQuasiBianco(hex) ? `box-shadow:inset 0 0 0 1.5px ${coloreLeggibileSuChiaro(hex)};` : ''; }
+
 const SIGLA_SINGOLA_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
 
 function coloreCategoria(chiave){
@@ -246,7 +283,9 @@ function aggiornaEditorGiornoV3(){
     // v2.91.1: colore esatto del modello (allineato al calendario moderno).
     const colore = coloreModelloV2(m);
     const attivo = m.riposo ? modo === 'riposo' : modo === 'turno' && m.id === idModello;
-    return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};` : `color:${colore};`}border-color:${colore}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
+    // Col tema scuro i colori chiari si leggono già bene: si scuriscono solo sul fondo chiaro.
+    const leggibile = document.documentElement.getAttribute('data-tema') === 'scuro' ? colore : coloreLeggibileSuChiaro(colore);
+    return `<button type="button" data-modello-giorno="${escapeHtml(m.id)}" class="${attivo ? 'attivo' : ''}" style="${attivo ? `background:${colore};color:${testoSuColore(colore)};${leggibile !== String(colore).toUpperCase() ? `box-shadow:inset 0 0 0 2px ${leggibile};font-weight:800;` : ''}` : `color:${leggibile};`}border-color:${leggibile}">${escapeHtml(typeof nomeBreveModelloSeq === 'function' ? nomeBreveModelloSeq(m) : m.nome)}</button>`;
   };
   const conOrario = (AppState.modelliTurno || []).filter(m => !m.riposo && m.oraInizio && m.oraFine);
   const serviziGiorno = conOrario.filter(m => !eTurnoDellaTurnazione(m));

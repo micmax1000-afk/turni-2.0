@@ -3444,7 +3444,9 @@ function aggiornaRiepilogoGiornoSelezionatoV2(){
   const festa = nomeFestivita(giornoSelezionato);
   el('festaGiornoSelezionatoV2').hidden = !festa;
   el('festaGiornoSelezionatoV2').textContent = festa ? ` · ${festa}` : '';
-  box.innerHTML = `<span class="giorno-v3-barra" style="background:${escapeHtml(colore)}"></span>
+  // v3.8.48: un turno bianco avrebbe la striscia invisibile: si usa la versione scurita del suo colore.
+  const coloreBarra = coloreQuasiBianco(colore) ? coloreLeggibileSuChiaro(colore) : colore;
+  box.innerHTML = `<span class="giorno-v3-barra" style="background:${escapeHtml(coloreBarra)}"></span>
     <span class="giorno-v3-testi"><span class="giorno-v3-nome">${escapeHtml(nome)}</span>${orario ? `<span class="giorno-v3-orario">${escapeHtml(orario)}</span>` : ''}</span>
     ${ore ? `<span class="giorno-v3-ore">${escapeHtml(ore)}</span>` : ''}`;
   const linkCancella = el('btnCancellaTurniMese');
