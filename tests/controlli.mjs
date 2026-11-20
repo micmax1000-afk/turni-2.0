@@ -1251,6 +1251,21 @@ sezione('Turni: cambio orario di un modello');
 {
   const { p, ctx, errori } = await apri({ turni: turniDiProva(), stile: 'moderno' });
   await p.click('#tabTurni');
+  // v3.8.49: saldi di partenza con ferie già programmate nel calendario: se l'ufficio le ha già tolte, non si tolgono di nuovo.
+  const fp = await p.evaluate(() => { const salvaT = JSON.stringify(AppState.turni), salvaS = TurniPSStorage.getItem(CHIAVE_SALDI_PARTENZA);
+    const co = AppState.assenze.find(a => a.nome === 'Congedo ordinario');
+    const prima = Date.now() - 60000;
+    ['2026-10-05', '2026-10-06', '2026-10-20', '2026-10-21'].forEach(iso => { AppState.turni[iso] = { data: iso, assenzaTipo: co.id, assenzaDal: prima }; });
+    const conta = () => { renderAssenze(); const c = document.querySelector(`.card-assenza[data-id="${co.id}"] .card-assenza-compact-residuo`); return c ? c.textContent : '?'; };
+    apriSaldiPartenza(); const blocco = !!document.querySelector('#formSaldiPartenza .partenza-programmato');
+    document.querySelector('#saldoCongedo2026').value = '20'; document.querySelector('#saldoCongedo2025').value = '0';
+    salvaSaldiPartenzaDaForm(); const dentro = conta();
+    apriSaldiPartenza(); document.querySelector('#saldoCongedo2026').value = '20'; document.querySelector('#saldoCongedo2025').value = '0';
+    document.querySelector('input[name="saldoProgrammato"][value="tolti"]').checked = true; salvaSaldiPartenzaDaForm(); const tolti = conta();
+    apriSaldiPartenza(); const ricorda = document.querySelector('input[name="saldoProgrammato"][value="tolti"]').checked; el('overlaySaldiPartenza').hidden = true;
+    AppState.turni = JSON.parse(salvaT); if(salvaS === null) TurniPSStorage.removeItem(CHIAVE_SALDI_PARTENZA); else TurniPSStorage.setItem(CHIAVE_SALDI_PARTENZA, salvaS); salvaTurniStorage(); renderAssenze();
+    return { blocco, dentro, tolti, ricorda }; });
+  ok('Saldi di partenza: con 2 giorni di ferie già nel calendario chiede se l\'ufficio li ha già tolti (20 → 18 oppure 20) e ricorda la scelta', fp.blocco && fp.dentro === '18' && fp.tolti === '20' && fp.ricorda, JSON.stringify(fp));
   // v3.8.48: nella scheda del giorno un turno con un colore chiarissimo (bianco, pastello) si legge lo stesso.
   const cl = await p.evaluate(() => { const vecchi = JSON.parse(JSON.stringify(AppState.modelliTurno)); AppState.modelliTurno.find(m => m.id === 'pomeriggio').colore = '#FFFFFF'; AppState.modelliTurno.find(m => m.id === 'mattina').colore = '#FFFDE7'; apriModaleTurno('2026-10-14'); const lum = c => { const [r, g, b] = c.match(/\d+/g).map(Number).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 1.05 / (0.2126 * r + 0.7152 * g + 0.0722 * b + 0.05); }; const r = ['pomeriggio', 'mattina', 'sera'].map(id => { const b = document.querySelector(`#sceltaModelloGiorno [data-modello-giorno="${id}"]`); return b.classList.contains('attivo') ? 9 : lum(getComputedStyle(b).color); }); el('pannelloTurno').hidden = true; AppState.modelliTurno = vecchi; return r; });
   ok('scheda del giorno: Pom. bianco e Matt. giallo chiarissimo restano leggibili (contrasto almeno 3:1)', cl.every(x => x >= 3), JSON.stringify(cl));
