@@ -19,8 +19,9 @@
     else r.setAttribute('data-tema', scuroTel ? 'scuro' : 'chiaro');
   }catch(e){}
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- v3.8.47: caratteri dentro l'app. Prima si scaricavano da internet a ogni apertura e con poco segnale
+     la pagina restava bianca finché non arrivavano (anche diversi secondi). -->
+<link href="fonts/fonts.css" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1B2440">
 <link rel="icon" href="icons/icon-192.png">
