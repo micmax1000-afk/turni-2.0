@@ -3621,3 +3621,7 @@ html[data-tema="scuro"] .mese-info-v4 summary span{color:#A9C1FF!important}
 /* v3.8.50: nella sequenza «Dalle / Alle» di rientro e straordinario restano nascosti finché non si accende la casella, e i due orari stanno dentro il riquadro. */
 .riga-straordinario-ore[hidden]{display:none!important}
 .riga-straordinario-ore .campo-modale input{width:100%;min-width:0;box-sizing:border-box}
+
+/* v3.8.50: giorni del ciclo con tutti gli angoli tondi (prima quelli in alto, sotto il numero, erano quadrati). */
+.giorno-ciclo-v3 b{border-radius:8px 8px 0 0}
+.giorno-ciclo-v3 span{border-radius:0 0 8px 8px}
