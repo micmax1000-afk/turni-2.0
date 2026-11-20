@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V282 (v3.8.49 — ferie programmate nei saldi di partenza, contorno per i colori chiari) */
+/* Turni & Accessorio PS — Service Worker V283 (v3.8.50 — giorni del ciclo, orari del rientro, più veloce, avvio senza lampo nero) */
 'use strict';
-const CACHE='turni-ps-v282';
+const CACHE='turni-ps-v283';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/domande-voce.js','./js/utilita.js','./js/pro.js','./js/data/tabelle-2026.js',

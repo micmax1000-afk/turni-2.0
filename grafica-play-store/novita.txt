@@ -1,4 +1,5 @@
 <it-IT>
-• Congedo ordinario: se nel calendario hai già ferie programmate, quando scrivi i giorni rimasti l'app chiede se l'ufficio le ha già scalate (niente più conto sbagliato)
-• Turni con colori molto chiari o bianchi visibili anche in Turnazione automatica, Agenda, vista Giorno e Settimana
+• All'apertura niente più lampo nero: schermo di avvio col logo dell'app e colori come il tema
+• App più veloce nelle schede Assenze e Report
+• Turnazione automatica: giorni del ciclo tutti uguali, con contorno e angoli tondi; orari del Rientro e dello Straordinario ben allineati
 </it-IT>
