@@ -3625,3 +3625,7 @@ html[data-tema="scuro"] .mese-info-v4 summary span{color:#A9C1FF!important}
 /* v3.8.50: giorni del ciclo con tutti gli angoli tondi (prima quelli in alto, sotto il numero, erano quadrati). */
 .giorno-ciclo-v3 b{border-radius:8px 8px 0 0}
 .giorno-ciclo-v3 span{border-radius:0 0 8px 8px}
+
+/* v3.8.50: tutti i giorni del ciclo con la stessa misura (anche senza icone, es. Riposo). */
+.giorno-ciclo-v3 b{display:flex;align-items:center;justify-content:center;height:26px;box-sizing:border-box;padding:0 1px}
+.giorno-ciclo-v3 span{height:22px;min-height:22px;box-sizing:border-box;align-items:center;padding:0;line-height:1}
