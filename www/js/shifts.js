@@ -129,6 +129,15 @@ function coloreQuasiBianco(hex){
 }
 // Stile da aggiungere a un riquadro colorato: un contorno sottile se il colore è quasi bianco.
 function contornoSeChiaro(hex){ return coloreQuasiBianco(hex) ? `box-shadow:inset 0 0 0 1.5px ${coloreLeggibileSuChiaro(hex)};` : ''; }
+// Contorno solo su alcuni lati ('alto' o 'basso' esclusi): per due pezzi uno sopra l'altro senza linea in mezzo.
+function contornoSeChiaroSenza(hex, latoEscluso){
+  if(!coloreQuasiBianco(hex)) return '';
+  const c = coloreLeggibileSuChiaro(hex), w = '1.5px';
+  const ombre = [`inset ${w} 0 0 ${c}`, `inset -${w} 0 0 ${c}`];
+  if(latoEscluso !== 'alto') ombre.push(`inset 0 ${w} 0 ${c}`);
+  if(latoEscluso !== 'basso') ombre.push(`inset 0 -${w} 0 ${c}`);
+  return `box-shadow:${ombre.join(',')};`;
+}
 
 const SIGLA_SINGOLA_CATEGORIA = { mattina:'M', pomeriggio:'P', sera:'S', notte:'N', riposo:'R' };
 

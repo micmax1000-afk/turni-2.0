@@ -3617,3 +3617,7 @@ html[data-tema="scuro"] .mese-info-v4 summary span{color:#A9C1FF!important}
 .partenza-programmato label{display:flex;gap:8px;align-items:flex-start;padding:5px 0;cursor:pointer}
 .partenza-programmato input{margin-top:3px;accent-color:#1D4FD7}
 .partenza-programmato small{display:block;color:var(--testo-tenue);font-size:.78rem}
+
+/* v3.8.50: nella sequenza «Dalle / Alle» di rientro e straordinario restano nascosti finché non si accende la casella, e i due orari stanno dentro il riquadro. */
+.riga-straordinario-ore[hidden]{display:none!important}
+.riga-straordinario-ore .campo-modale input{width:100%;min-width:0;box-sizing:border-box}
