@@ -1513,7 +1513,7 @@ function renderCicloPatternSempliceV2(){
     const forte = colore; // v2.92.1: colore esatto, come nel calendario
     const icone = (g.indennita || []).slice(0, 2).map(k => iconaIndennita(k)).join('') + (g.straordinario ? iconaIndennita('straordinario') : '');
     return `<button type="button" class="giorno-ciclo-v3${i === giornoPatternSelezionatoSemplcieV2 ? ' selezionato' : ''}" data-giorno-index="${i}">
-      <small>${i + 1}°</small><b style="background:${forte};${contornoSeChiaroSenza(forte, 'basso')};color:${testoSuColore(forte)}">${escapeHtml(nomeBreveModelloSeq(m))}</b><span style="background:${colore};${contornoSeChiaroSenza(colore, 'alto')};color:${testoSuColore(colore)}">${icone || '&nbsp;'}</span>
+      <small>${i + 1}°</small><b style="background:${forte};${contornoCicloSenza(forte, 'basso')};color:${testoSuColore(forte)}">${escapeHtml(nomeBreveModelloSeq(m))}</b><span style="background:${colore};${contornoCicloSenza(colore, 'alto')};color:${testoSuColore(colore)}">${icone || '&nbsp;'}</span>
     </button>`;
   }).join('') + '<button type="button" class="giorno-ciclo-v3 giorno-ciclo-aggiungi" data-aggiungi-giorno aria-label="Aggiungi un giorno al ciclo">＋</button>';
   el('btnRimuoviGiornoEditorPatternV2').hidden = p.giorni.length <= 1;

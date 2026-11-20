@@ -129,6 +129,16 @@ function coloreQuasiBianco(hex){
 }
 // Stile da aggiungere a un riquadro colorato: un contorno sottile se il colore è quasi bianco.
 function contornoSeChiaro(hex){ return coloreQuasiBianco(hex) ? `box-shadow:inset 0 0 0 1.5px ${coloreLeggibileSuChiaro(hex)};` : ''; }
+// v3.8.50: contorno sempre presente (per tutti i colori) intorno ai due pezzi di un giorno del ciclo, senza linea in mezzo.
+// È una versione più scura del colore del turno, così Sera, Pom., Matt., Notte e Riposo sembrano uguali.
+function contornoCicloSenza(hex, latoEscluso){
+  const base = /^#?[0-9a-f]{6}$/i.test(String(hex || '').trim()) ? (String(hex).trim().startsWith('#') ? String(hex).trim() : '#' + String(hex).trim()) : '#9AA1B0';
+  const c = typeof mescolaColori === 'function' ? mescolaColori(base, '#000000', 0.72) : base, w = '2px';
+  const ombre = [`inset ${w} 0 0 ${c}`, `inset -${w} 0 0 ${c}`];
+  if(latoEscluso !== 'alto') ombre.push(`inset 0 ${w} 0 ${c}`);
+  if(latoEscluso !== 'basso') ombre.push(`inset 0 -${w} 0 ${c}`);
+  return `box-shadow:${ombre.join(',')};`;
+}
 // Contorno solo su alcuni lati ('alto' o 'basso' esclusi): per due pezzi uno sopra l'altro senza linea in mezzo.
 function contornoSeChiaroSenza(hex, latoEscluso){
   if(!coloreQuasiBianco(hex)) return '';
