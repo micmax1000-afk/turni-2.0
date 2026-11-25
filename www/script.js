@@ -1142,6 +1142,7 @@ function inizializza(){
   on('btnChiudiModificaModello','click', () => { el('overlayModificaModello').hidden = true; });
   on('btnSalvaModello','click', salvaModificaModelloV2);
   on('overlayModificaModello','input', () => aggiornaAnteprimaModelloV2());
+  on('campoModModelloSeraPrima','change', e => { e.target.dataset.toccato = '1'; });
   on('overlayModificaModello','click', e => { if(e.target.closest('#btnModModelloColoreAutomatico')) setTimeout(aggiornaAnteprimaModelloV2, 0); });
   el('campoModModelloColore').addEventListener('input', () => {
     modelloColoreForzatoV2 = el('campoModModelloColore').value;
@@ -2123,11 +2124,24 @@ function apriModificaModelloV2(id){
   const base = m ? modelloBaseV2(m.id) : null;
   el('btnEliminaModello').hidden = !m || !!base;
   el('btnOrarioBaseModello').hidden = !base || base.riposo || (base.oraInizio === m.oraInizio && base.oraFine === m.oraFine);
+  // v3.8.53: «Inizia la sera prima» (solo per i turni che passano la mezzanotte).
+  const sp = el('campoModModelloSeraPrima');
+  if(sp){ sp.checked = !!(m && typeof iniziaSeraPrima === 'function' && iniziaSeraPrima({ oraInizio: m.oraInizio, oraFine: m.oraFine, modelloId: m.id })); sp.dataset.toccato = m && typeof m.seraPrima === 'boolean' ? '1' : ''; }
   aggiornaAnteprimaModelloV2();
   el('overlayModificaModello').hidden = false;
 }
 // In cima alla finestra: la tessera del turno come apparirà nella scheda Turni.
+function aggiornaRigaSeraPrimaModello(){
+  const riga = el('rigaSeraPrimaModello'), sp = el('campoModModelloSeraPrima');
+  if(!riga || !sp) return;
+  const i = el('campoModModelloInizio').value, f = el('campoModModelloFine').value;
+  const passaMezzanotte = !!(i && f && f <= i) && !el('campiModModelloOrario').hidden;
+  riga.hidden = !passaMezzanotte;
+  // Per la Notte, finché non la tocchi, la casella segue l'orario: accesa se si parte dalle 18:00 in poi.
+  if(passaMezzanotte && !sp.dataset.toccato && modelloInModificaV2 === 'notte') sp.checked = i >= '18:00';
+}
 function aggiornaAnteprimaModelloV2(){
+  aggiornaRigaSeraPrimaModello();
   const box = el('anteprimaModello');
   if(!box) return;
   const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
@@ -2168,6 +2182,10 @@ function salvaModificaModelloV2(){
   }
   if(modelloColoreForzatoV2) modelloSalvato.colore = modelloColoreForzatoV2;
   else delete modelloSalvato.colore;
+  // v3.8.53: «Inizia la sera prima» si salva solo per i turni che passano la mezzanotte.
+  const rigaSP = el('rigaSeraPrimaModello');
+  if(rigaSP && !rigaSP.hidden) modelloSalvato.seraPrima = !!el('campoModModelloSeraPrima').checked;
+  else delete modelloSalvato.seraPrima;
   salvaModelliTurnoStorage();
   riparaCollegamentiModelli();
   el('overlayModificaModello').hidden = true;
@@ -2479,10 +2497,13 @@ function turniNellaGiornata(iso){
   const out = [];
   const valido = t => t && !t.riposo && !t.assenzaTipo && t.oraInizio && t.oraFine;
   const t = AppState.turni[iso];
+  const seraPrima = x => typeof iniziaSeraPrima === 'function' && iniziaSeraPrima(x);
   if(valido(t)){
     const info = infoTurnoGiornata(t, iso);
     const r = intervalloOrari(t.oraInizio, t.oraFine);
-    out.push({ ...r, ...info, orario: `${t.oraInizio} – ${t.oraFine}` });
+    // v3.8.53: Notte che inizia la sera prima: in questo giorno c'è solo la parte dopo mezzanotte.
+    if(seraPrima(t) && r) out.push({ da: 0, a: Math.max(0, r.a - 1440), ...info, orario: `${t.oraInizio} – ${t.oraFine}`, iniziatoIeri: true, isoTurno: iso });
+    else out.push({ ...r, ...info, orario: `${t.oraInizio} – ${t.oraFine}` });
     if(t.secondoAttivo && t.secondoOraInizio && t.secondoOraFine){
       const r2 = intervalloOrari(t.secondoOraInizio, t.secondoOraFine);
       if(r2) out.push({ ...r2, ...info, nome: 'Rientro', orario: `${t.secondoOraInizio} – ${t.secondoOraFine}` });
@@ -2491,9 +2512,16 @@ function turniNellaGiornata(iso){
   const d = dataDaIso(iso);
   const ieri = dataISO(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
   const ty = AppState.turni[ieri];
-  if(valido(ty)){
+  if(valido(ty) && !seraPrima(ty)){
     const r = intervalloOrari(ty.oraInizio, ty.oraFine);
     if(r && r.a > 1440) out.push({ da: 0, a: r.a - 1440, ...infoTurnoGiornata(ty, ieri), orario: `${ty.oraInizio} – ${ty.oraFine}`, daIeri: true });
+  }
+  // La Notte di domani che inizia stasera: la sua prima parte sta in questo giorno.
+  const domani = dataISO(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1));
+  const td = AppState.turni[domani];
+  if(valido(td) && seraPrima({ ...td, data: td.data || domani })){
+    const r = intervalloOrari(td.oraInizio, td.oraFine);
+    if(r) out.push({ da: r.da, a: 1440, ...infoTurnoGiornata(td, domani), orario: `${td.oraInizio} – ${td.oraFine}`, perDomani: true, isoTurno: domani });
   }
   return out.sort((x, y) => x.da - y.da);
 }
@@ -2511,7 +2539,7 @@ function intestaGiornataEvento(iso){
   if(t && t.riposo) sotto = 'Riposo';
   else if(t && t.assenzaTipo){ const v = AppState.assenze.find(a => a.id === t.assenzaTipo); sotto = v ? v.nome : 'Assenza'; }
   else {
-    const turno = turniNellaGiornata(iso).find(x => !x.daIeri);
+    const turno = turniNellaGiornata(iso).find(x => !x.daIeri && !x.perDomani);
     sotto = turno ? `Turno ${turno.nome} ${turno.orario}` : 'Nessun turno';
   }
   const n = eventiDelGiorno(iso).length;
@@ -2563,7 +2591,7 @@ function aggiornaGiornataEvento(){
   const inModifica = eventoInModificaV2 ? eventoInModificaV2.id : null;
   const blocchi = [];
   const tutto = [];
-  turniNellaGiornata(iso).forEach(x => blocchi.push({ tipo: 'turno', da: x.da, a: Math.min(x.a, 1440), titolo: `${x.icona} ${x.daIeri ? x.nome + ' (da ieri)' : 'Turno ' + x.nome}`, sotto: x.orario, colore: x.colore }));
+  turniNellaGiornata(iso).forEach(x => blocchi.push({ tipo: 'turno', da: x.da, a: Math.min(x.a, 1440), titolo: `${x.icona} ${x.daIeri ? x.nome + ' (da ieri)' : x.perDomani ? x.nome + ' (inizia stasera)' : x.iniziatoIeri ? x.nome + ' (da ieri sera)' : 'Turno ' + x.nome}`, sotto: x.orario, colore: x.colore }));
   eventiDelGiorno(iso).forEach(({ ev }) => {
     if(ev.id === inModifica) return;
     if(ev.tuttoIlGiorno){ tutto.push({ titolo: ev.titolo, colore: coloreEvento(ev) }); return; }
@@ -2592,7 +2620,7 @@ function aggiornaAvvisoSovrapposizione(){
   const r = intervalloEventoNelForm();
   const turno = r ? turniNellaGiornata(giornoSelezionato).find(x => r.da < x.a && x.da < r.a) : null;
   box.hidden = !turno;
-  if(turno) box.innerHTML = `Durante il <b>${turno.daIeri ? 'turno di ieri' : 'turno ' + escapeHtml(turno.nome)}</b> (${escapeHtml(turno.orario)})`;
+  if(turno) box.innerHTML = `Durante il <b>${turno.daIeri ? 'turno di ieri' : turno.perDomani ? 'turno ' + escapeHtml(turno.nome) + ' di domani' : 'turno ' + escapeHtml(turno.nome)}</b> (${escapeHtml(turno.orario)})`;
 }
 function portaInVistaEvento(){
   const scorri = el('giornataEventoScorri');
@@ -3807,10 +3835,19 @@ function promemoriaTurnoDaProgrammare(adesso = new Date()){
     const t = AppState.turni[iso];
     if(!t || t.riposo || t.assenzaTipo || !t.oraInizio || !t.oraFine) continue;
     const nome = nomeTurnoPerAvviso(t);
+    // v3.8.53: la Notte che inizia la sera prima parte il giorno precedente (es. martedì 23:30 per la Notte di mercoledì).
+    const seraPrima = typeof iniziaSeraPrima === 'function' && iniziaSeraPrima({ ...t, data: t.data || iso });
+    const gi = seraPrima ? new Date(g.getFullYear(), g.getMonth(), g.getDate() - 1, 12) : g;
     let quando, titolo;
-    if(imp.modo === 'prima'){
+    if(seraPrima && imp.modo !== 'prima'){
+      // «La sera prima»: se l'ora dell'avviso viene prima dell'inizio, l'avviso arriva la sera stessa in cui si parte.
+      const [h, m] = (imp.ora || '20:00').split(':').map(Number);
+      const stessaSera = (imp.ora || '20:00') < t.oraInizio;
+      quando = new Date(gi.getFullYear(), gi.getMonth(), gi.getDate() - (stessaSera ? 0 : 1), h, m);
+      titolo = stessaSera ? `Stasera alle ${t.oraInizio}: ${nome}` : `Domani sera alle ${t.oraInizio}: ${nome}`;
+    } else if(imp.modo === 'prima'){
       const [h, m] = t.oraInizio.split(':').map(Number);
-      quando = new Date(g.getFullYear(), g.getMonth(), g.getDate(), h, m - Number(imp.minuti || 60));
+      quando = new Date(gi.getFullYear(), gi.getMonth(), gi.getDate(), h, m - Number(imp.minuti || 60));
       const min = Number(imp.minuti || 60);
       titolo = `Tra ${min >= 60 ? (min / 60) + (min === 60 ? ' ora' : ' ore') : min + ' minuti'}: ${nome}`;
     } else {
@@ -3995,12 +4032,15 @@ function creaIcsTurni(conRiposi, adesso = new Date()){
     const evento = ['BEGIN:VEVENT', `UID:turno-${iso}@turni-accessorio-ps`, `DTSTAMP:${stamp}`];
     if(t.oraInizio && t.oraFine && !t.riposo && !t.assenzaTipo){
       const m = (AppState.modelliTurno || []).find(x => x.id === t.modelloId);
-      const fineGiorno = t.oraFine <= t.oraInizio ? domani : iso;
+      // v3.8.53: la Notte che inizia la sera prima parte dal giorno precedente e finisce in questo giorno.
+      const daSeraPrima = typeof iniziaSeraPrima === 'function' && iniziaSeraPrima({ ...t, data: t.data || iso });
+      const inizioGiorno = daSeraPrima ? giornoPiu(iso, -1) : iso;
+      const fineGiorno = daSeraPrima ? iso : (t.oraFine <= t.oraInizio ? domani : iso);
       const extra = [];
       ELENCO_INDENNITA.forEach(x => { if(x.chiave !== 'straordinario' && x.chiave !== 'servizioSvolto' && t[x.chiave]) extra.push(x.nome); });
       if(t.straordinarioPrimaInizio && t.straordinarioPrimaFine) extra.push(`Straordinario ${t.straordinarioPrimaInizio}–${t.straordinarioPrimaFine}`);
       if(t.straordinarioDopoInizio && t.straordinarioDopoFine) extra.push(`Straordinario ${t.straordinarioDopoInizio}–${t.straordinarioDopoFine}`);
-      evento.push(`DTSTART;TZID=Europe/Rome:${compatto(iso)}T${t.oraInizio.replace(':', '')}00`, `DTEND;TZID=Europe/Rome:${compatto(fineGiorno)}T${t.oraFine.replace(':', '')}00`, `SUMMARY:${testoIcs(m ? m.nome : 'Turno')}`);
+      evento.push(`DTSTART;TZID=Europe/Rome:${compatto(inizioGiorno)}T${t.oraInizio.replace(':', '')}00`, `DTEND;TZID=Europe/Rome:${compatto(fineGiorno)}T${t.oraFine.replace(':', '')}00`, `SUMMARY:${testoIcs(m ? m.nome : 'Turno')}`);
       if(extra.length) evento.push(`DESCRIPTION:${testoIcs(extra.join(', '))}`);
     } else if(conRiposi && (t.riposo || t.assenzaTipo)){
       const v = t.assenzaTipo ? (AppState.assenze || []).find(x => x.id === t.assenzaTipo) : null;

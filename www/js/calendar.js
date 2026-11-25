@@ -228,7 +228,23 @@ function rilevaSovrapposizioneStraordinario(t){
   return finestreSovrapposte(turno, prima) || finestreSovrapposte(turno, dopo);
 }
 
+// v3.8.53: Notte che «inizia la sera prima». Es. Mattino martedì, poi Notte 23:30–07:00 che nel calendario
+// (e nella turnazione) sta su mercoledì: in realtà inizia martedì alle 23:30. Vale per i turni che passano la
+// mezzanotte con l'opzione accesa nel turno; per la Notte di serie è accesa da sola se inizia dalle 18:00 in poi.
+function iniziaSeraPrima(t){
+  if(!t || t.riposo || t.assenzaTipo || !t.oraInizio || !t.oraFine) return false;
+  if(t.oraFine > t.oraInizio) return false; // non passa la mezzanotte
+  const m = (typeof AppState !== 'undefined' && AppState.modelliTurno || []).find(x => x.id === t.modelloId);
+  if(!m || m.riposo) return false;
+  if(typeof m.seraPrima === 'boolean') return m.seraPrima;
+  return m.id === 'notte' && t.oraInizio >= '18:00';
+}
+// Giorno in cui il turno inizia davvero (quello prima, per la Notte che inizia la sera prima).
+function giornoInizioTurno(t){ return t && t.data && iniziaSeraPrima(t) ? giornoPiu(t.data, -1) : (t && t.data); }
+
 function classificaTurno(t){
+  // Notte che inizia la sera prima: si conta dal giorno prima (ore notturne, festive e domeniche al posto giusto).
+  if(t && !t.__daSeraPrima && iniziaSeraPrima(t) && t.data) return classificaTurno({ ...t, data: giornoPiu(t.data, -1), __daSeraPrima: true });
   const vuoto = {
     oreTotali:0, ordinarie:0, notturne:0, festive:0, domenicali:0, notturneFestive:0, serali:0,
     strDiurno:0, strNotturno:0, strFestivo:0, strNotturnoFestivo:0, oreCompensate:0, orePermessoBreve:0, oreRecuperoPermessoBreve:0, errore:null
@@ -1254,7 +1270,7 @@ function renderVistaGiorno(iso){
     return `<button type="button" class="vg-giorno${g === iso ? ' attivo' : ''}${g === oggiIso ? ' oggi' : ''}" data-vista-giorno="${g}">${n}<b>${dd.getDate()}</b></button>`; }).join('');
   const blocchi = (typeof turniNellaGiornata === 'function' ? turniNellaGiornata(iso) : []).map(b => {
     const top = b.da / 60 * H, alto = Math.max(22, (Math.min(b.a, 1440) - b.da) / 60 * H - 3);
-    return `<button type="button" class="vg-blocco vg-turno" data-vista-turno="${b.daIeri ? giornoPiu(iso, -1) : iso}" style="top:${top}px;height:${alto}px;background:${escapeHtml(b.colore || '#C9CED6')}"><b>${escapeHtml(b.nome || 'Turno')}</b><small>${escapeHtml(b.orario || '')}</small></button>`; }).join('');
+    return `<button type="button" class="vg-blocco vg-turno" data-vista-turno="${b.isoTurno || (b.daIeri ? giornoPiu(iso, -1) : iso)}" style="top:${top}px;height:${alto}px;background:${escapeHtml(b.colore || '#C9CED6')}"><b>${escapeHtml(b.nome || 'Turno')}</b><small>${escapeHtml(b.orario || '')}</small></button>`; }).join('');
   const t = AppState.turni[iso];
   const tutto = [];
   if(t && (t.riposo || t.assenzaTipo)) tutto.push(`<span style="background:${coloreGiornoVista(t)}">${escapeHtml(nomeGiornoVista(t))}</span>`);

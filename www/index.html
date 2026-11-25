@@ -161,6 +161,7 @@
             <span aria-hidden="true">→</span>
             <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoModModelloFine"></label>
           </div>
+          <label class="riga-sera-prima" id="rigaSeraPrimaModello" hidden><input type="checkbox" id="campoModModelloSeraPrima"><span>Inizia la sera prima<small>Es. Notte 23:30–07:00: nel calendario sta sul giorno in cui finisce, ma parte alle 23:30 del giorno prima (avvisi, ore e festivi si contano da lì).</small></span></label>
           <div class="riga-colore-modello"><span>Colore</span></div>
           <div class="tavolozza-modello" id="tavolozzaModello" role="group" aria-label="Colori"></div>
           <div class="tavolozza-extra">
@@ -380,6 +381,7 @@
             <label class="campo-orario-giorno"><small>Fine</small><input type="time" id="campoOraFine"></label>
           </div>
           <p class="nota-orario-giorno" id="notaOrarioSoloGiorno" hidden></p>
+          <p class="nota-orario-giorno nota-sera-prima" id="notaSeraPrimaGiorno" hidden></p>
           <div id="anteprimaClassificazione" class="anteprima-classificazione anteprima-giorno"></div>
 
           <p class="titolo-sezione-giorno">Indennità <em id="contaIndennitaGiorno"></em></p>
