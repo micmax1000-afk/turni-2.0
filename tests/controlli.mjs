@@ -364,8 +364,8 @@ sezione('Controllo promemoria (batteria, Xiaomi, prova)');
   await p.waitForFunction(() => /Tutto a posto/.test(el('esitoControlloPromemoria').textContent));
   ok('tornando con la batteria "senza restrizioni": tutto a posto, niente riga Xiaomi sugli altri telefoni', await p.evaluate(() => !document.querySelector('[data-riga-controllo="avvio"]') && !document.querySelector('.controllo-riga.no')));
   await p.click('#btnNotificaProva');
-  const prova = await p.evaluate(() => { const x = window.__log.find(y => y[0] === 'av.programma' && y[1] && y[1].titolo === 'Notifica di prova'); return x && { ...x[1], tra: x[1].quandoMs - Date.now() }; });
-  ok('notifica di prova tra 10 secondi, notifica semplice', prova && prova.titolo === 'Notifica di prova' && prova.durataSec === 0 && prova.tra > 7000 && prova.tra <= 10000, JSON.stringify(prova));
+  const prova = await p.evaluate(() => { const x = window.__log.find(y => y[0] === 'av.programma' && y[1] && /^(Notifica di prova|Prova · Prossimo turno)/.test(y[1].titolo)); return x && { ...x[1], tra: x[1].quandoMs - Date.now() }; });
+  ok('notifica di prova tra 10 secondi, notifica semplice', prova && /^Prova · Prossimo turno: \w+/.test(prova.titolo) && /alle \d\d:\d\d · fino alle \d\d:\d\d\. Se la vedi/.test(prova.testo) && prova.durataSec === 0 && prova.tra > 7000 && prova.tra <= 10000, JSON.stringify(prova));
   await p.click('#btnChiudiControlloPromemoria');
   await p.waitForFunction(() => el('riassuntoControlloPromemoria').textContent === 'Tutto a posto' && el('avvisoBatteriaTurno').hidden);
   ok('chiudendo: in Altro "Tutto a posto" e avviso batteria sparito', true);
@@ -1281,11 +1281,11 @@ sezione('Turni: cambio orario di un modello');
     const pP = promemoriaTurnoDaProgrammare(new Date(2026, 9, 9, 10)).find(x => /23:30/.test(x.body));
     const dom = turniNellaGiornata('2026-10-11').map(b => `${b.da}-${b.a}${b.perDomani ? 'D' : ''}`).join(), lun = turniNellaGiornata('2026-10-12').map(b => `${b.da}-${b.a}${b.iniziatoIeri ? 'I' : ''}`).join(), mar = turniNellaGiornata('2026-10-13').filter(b => b.daIeri).length;
     const ics = creaIcsTurni(false).testo;
-    notte.seraPrima = false; const c2 = classificaTurno(t), spento = c2.domenicali + c2.festive + c2.notturneFestive;
+    notte.seraPrima = false; const spento = iniziaSeraPrima(t) ? 0 : 1; // v3.8.54: automatico, la vecchia scelta salvata non conta più
     AppState.turni = JSON.parse(salvaT); AppState.modelliTurno = JSON.parse(salvaM); if(salvaP === null) TurniPSStorage.removeItem(CHIAVE_PROMEMORIA_TURNO); else TurniPSStorage.setItem(CHIAVE_PROMEMORIA_TURNO, salvaP);
-    return { ore: cOre, festDom: c.domenicali + c.festive + c.notturneFestive, notturne: c.notturne, seraNo: sera.oreTotali === 6, notteDopo, pS: pS && (new Date(pS.quando).toISOString() + ' ' + pS.title), pP: pP && new Date(pP.quando).toISOString(), dom, lun, mar, ics: /DTSTART;TZID=Europe\/Rome:20261011T233000\r\nDTEND;TZID=Europe\/Rome:20261012T070000/.test(ics), spento };
+    return { ore: cOre, festDom: c.domenicali + c.festive + c.notturneFestive, notturne: c.notturne, seraNo: sera.oreTotali === 6, notteDopo, pS: pS && (new Date(pS.quando).toISOString() + ' ' + pS.title + ' | ' + pS.body), pP: pP && new Date(pP.quando).toISOString(), dom, lun, mar, ics: /DTSTART;TZID=Europe\/Rome:20261011T233000\r\nDTEND;TZID=Europe\/Rome:20261012T070000/.test(ics), spento };
   });
-  ok('Notte 23:30 «inizia la sera prima»: parte domenica (½ h domenicale), avviso «Stasera alle 23:30» domenica 20:00 o 22:30, viste e .ics dal giorno prima; Sera e Notte 01:00 come prima', sp.ore === 7.5 && sp.festDom === 0.5 && sp.seraNo && !sp.notteDopo && sp.pS === '2026-10-11T18:00:00.000Z Stasera alle 23:30: Notte' && sp.pP === '2026-10-11T20:30:00.000Z' && sp.dom === '420-780,1410-1440D' && sp.lun === '0-420I' && sp.mar === 0 && sp.ics && sp.spento === 0, JSON.stringify(sp));
+  ok('Notte 23:30 «inizia la sera prima»: parte domenica (½ h domenicale), avviso «Stasera alle 23:30» domenica 20:00 o 22:30, viste e .ics dal giorno prima; Sera e Notte 01:00 come prima', sp.ore === 7.5 && sp.festDom === 0.5 && sp.seraNo && !sp.notteDopo && sp.pS === '2026-10-11T18:00:00.000Z Prossimo turno: Notte | Stasera alle 23:30 · fino alle 07:00' && sp.pP === '2026-10-11T20:30:00.000Z' && sp.dom === '420-780,1410-1440D' && sp.lun === '0-420I' && sp.mar === 0 && sp.ics && sp.spento === 0, JSON.stringify(sp));
   // v3.8.50: i conti ricordati durante il disegno di una schermata danno gli stessi numeri di quelli rifatti ogni volta.
   const cc = await p.evaluate(() => { const tutto = () => JSON.stringify([calcolaRiepilogoOreMese(2026, 9), calcolaRiepilogoOreMese(2026, 10), calcolaOreCompensateAccumulate(), AppState.assenze.map(a => saldoAssenza(a))]);
     const fuori = tutto(); const dentro = conCacheConti(tutto); const dopo = tutto();
@@ -1563,7 +1563,7 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
   ok('con la Pro: niente più etichette PRO', await p.evaluate(() => proAttivo() && !document.querySelector('.badge-pro') && el('overlayPro').hidden));
   await apriImpostazioniAltro(p); await p.click('#campoPromemoriaTurno');
   const prom = await p.evaluate(() => promemoriaTurnoDaProgrammare()[0]);
-  ok('acceso: "Domani: Mattino" la sera prima alle 20:00', prom.title === 'Domani: Mattino' && prom.body === '07:00 – 13:00' && new Date(prom.quando).toISOString() === '2026-10-09T18:00:00.000Z', JSON.stringify(prom));
+  ok('acceso: «Prossimo turno: Mattino — Domani alle 07:00 · fino alle 13:00» il giorno prima alle 20:00', prom.title === 'Prossimo turno: Mattino' && prom.body === 'Domani alle 07:00 · fino alle 13:00' && new Date(prom.quando).toISOString() === '2026-10-09T18:00:00.000Z', JSON.stringify(prom));
   // v3.8.53: la Notte (dopo mezzanotte) è «Stanotte alle 01:00», e i promemoria passano dal modulo nativo degli avvisi (puntuale anche di notte).
   const pn = await p.evaluate(async () => {
     const lista = promemoriaTurnoDaProgrammare(); const notte = lista.find(x => /01:00/.test(x.body));
@@ -1574,9 +1574,9 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
       LocalNotifications: { cancel: async () => { chiamate.cancelCapacitor++; }, checkPermissions: async () => ({ display: 'granted' }), schedule: async () => { throw new Error('non deve usare Capacitor'); }, createChannel: async () => {} },
       AvvisoEvento: { programma: async o => { chiamate.programma.push(o); }, annulla: async o => { chiamate.annulla.push(o.id); } } } };
     try{ await riprogrammaPromemoriaTurni(); } finally { window.Capacitor = vecchio; }
-    return { titolo: notte && notte.title, n: lista.length, prog: chiamate.programma.length, durata0: chiamate.programma.every(o => o.durataSec === 0 && o.quandoMs > 0), annullaVecchio: chiamate.annulla.includes(ID_BASE_PROMEMORIA_TURNO + 1), cancel: chiamate.cancelCapacitor };
+    return { titolo: notte && (notte.title + ' | ' + notte.body), n: lista.length, prog: chiamate.programma.length, durata0: chiamate.programma.every(o => o.durataSec === 0 && o.quandoMs > 0), annullaVecchio: chiamate.annulla.includes(ID_BASE_PROMEMORIA_TURNO + 1), cancel: chiamate.cancelCapacitor };
   });
-  ok('promemoria: la Notte è «Stanotte alle 01:00: Notte»; programmati col modulo nativo (puntuale di notte), tolti i vecchi', pn.titolo === 'Stanotte alle 01:00: Notte' && pn.n > 0 && pn.prog === pn.n && pn.durata0 && pn.annullaVecchio && pn.cancel === 1, JSON.stringify(pn));
+  ok('promemoria: la Notte è «Stanotte alle 01:00: Notte»; programmati col modulo nativo (puntuale di notte), tolti i vecchi', pn.titolo === 'Prossimo turno: Notte | Stanotte alle 01:00 · fino alle 07:00' && pn.n > 0 && pn.prog === pn.n && pn.durata0 && pn.annullaVecchio && pn.cancel === 1, JSON.stringify(pn));
   await apriImpostazioniAltro(p); await p.click('#campoWidget');
   const w = await p.evaluate(() => datiWidget());
   ok('widget acceso: oggi Pomeriggio 13:00 – 19:00', w.attivo && w.giorni['2026-10-09'].nome === 'Pomeriggio' && w.giorni['2026-10-09'].orario === '13:00 – 19:00', JSON.stringify(w.giorni['2026-10-09']));

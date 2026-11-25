@@ -236,7 +236,7 @@ function iniziaSeraPrima(t){
   if(t.oraFine > t.oraInizio) return false; // non passa la mezzanotte
   const m = (typeof AppState !== 'undefined' && AppState.modelliTurno || []).find(x => x.id === t.modelloId);
   if(!m || m.riposo) return false;
-  if(typeof m.seraPrima === 'boolean') return m.seraPrima;
+  // v3.8.54: niente più casella da spuntare: è sempre automatico per la Notte che inizia dalle 18:00 in poi.
   return m.id === 'notte' && t.oraInizio >= '18:00';
 }
 // Giorno in cui il turno inizia davvero (quello prima, per la Notte che inizia la sera prima).

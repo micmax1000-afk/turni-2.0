@@ -1142,7 +1142,6 @@ function inizializza(){
   on('btnChiudiModificaModello','click', () => { el('overlayModificaModello').hidden = true; });
   on('btnSalvaModello','click', salvaModificaModelloV2);
   on('overlayModificaModello','input', () => aggiornaAnteprimaModelloV2());
-  on('campoModModelloSeraPrima','change', e => { e.target.dataset.toccato = '1'; });
   on('overlayModificaModello','click', e => { if(e.target.closest('#btnModModelloColoreAutomatico')) setTimeout(aggiornaAnteprimaModelloV2, 0); });
   el('campoModModelloColore').addEventListener('input', () => {
     modelloColoreForzatoV2 = el('campoModModelloColore').value;
@@ -2124,24 +2123,11 @@ function apriModificaModelloV2(id){
   const base = m ? modelloBaseV2(m.id) : null;
   el('btnEliminaModello').hidden = !m || !!base;
   el('btnOrarioBaseModello').hidden = !base || base.riposo || (base.oraInizio === m.oraInizio && base.oraFine === m.oraFine);
-  // v3.8.53: «Inizia la sera prima» (solo per i turni che passano la mezzanotte).
-  const sp = el('campoModModelloSeraPrima');
-  if(sp){ sp.checked = !!(m && typeof iniziaSeraPrima === 'function' && iniziaSeraPrima({ oraInizio: m.oraInizio, oraFine: m.oraFine, modelloId: m.id })); sp.dataset.toccato = m && typeof m.seraPrima === 'boolean' ? '1' : ''; }
   aggiornaAnteprimaModelloV2();
   el('overlayModificaModello').hidden = false;
 }
 // In cima alla finestra: la tessera del turno come apparirà nella scheda Turni.
-function aggiornaRigaSeraPrimaModello(){
-  const riga = el('rigaSeraPrimaModello'), sp = el('campoModModelloSeraPrima');
-  if(!riga || !sp) return;
-  const i = el('campoModModelloInizio').value, f = el('campoModModelloFine').value;
-  const passaMezzanotte = !!(i && f && f <= i) && !el('campiModModelloOrario').hidden;
-  riga.hidden = !passaMezzanotte;
-  // Per la Notte, finché non la tocchi, la casella segue l'orario: accesa se si parte dalle 18:00 in poi.
-  if(passaMezzanotte && !sp.dataset.toccato && modelloInModificaV2 === 'notte') sp.checked = i >= '18:00';
-}
 function aggiornaAnteprimaModelloV2(){
-  aggiornaRigaSeraPrimaModello();
   const box = el('anteprimaModello');
   if(!box) return;
   const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
@@ -2182,10 +2168,8 @@ function salvaModificaModelloV2(){
   }
   if(modelloColoreForzatoV2) modelloSalvato.colore = modelloColoreForzatoV2;
   else delete modelloSalvato.colore;
-  // v3.8.53: «Inizia la sera prima» si salva solo per i turni che passano la mezzanotte.
-  const rigaSP = el('rigaSeraPrimaModello');
-  if(rigaSP && !rigaSP.hidden) modelloSalvato.seraPrima = !!el('campoModModelloSeraPrima').checked;
-  else delete modelloSalvato.seraPrima;
+  // v3.8.54: «Inizia la sera prima» è automatico: la vecchia scelta salvata (3.8.53) si toglie.
+  delete modelloSalvato.seraPrima;
   salvaModelliTurnoStorage();
   riparaCollegamentiModelli();
   el('overlayModificaModello').hidden = true;
@@ -2844,13 +2828,17 @@ const ID_NOTIFICA_PROVA = 1999999999; // fuori dai numeri dei promemoria degli e
 async function mandaNotificaProva(){
   const quando = Date.now() + 10000;
   const avviso = pluginAvvisoEvento();
+  // v3.8.54: la prova mostra com'è un promemoria vero, con il prossimo turno di lavoro.
+  const prossimo = typeof prossimoTurnoDiLavoro === 'function' ? prossimoTurnoDiLavoro(new Date(quando)) : null;
+  const titolo = prossimo ? `Prova · Prossimo turno: ${prossimo.nome}` : 'Notifica di prova';
+  const testo = prossimo ? `${prossimo.testo}. Se la vedi, i promemoria arrivano ✓` : 'Se la vedi, i promemoria arrivano. ✓';
   try{
     if(avviso){
-      await avviso.programma({ id: ID_NOTIFICA_PROVA, titolo: 'Notifica di prova', testo: 'Se la vedi, i promemoria arrivano. ✓', quandoMs: quando, durataSec: 0, modo: 'suono_vibra' });
+      await avviso.programma({ id: ID_NOTIFICA_PROVA, titolo, testo, quandoMs: quando, durataSec: 0, modo: 'suono_vibra' });
     } else {
       const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
       if(!plugin){ mostraToast('La notifica di prova funziona nell\'app per Android.', 'info'); return; }
-      await plugin.schedule({ notifications: [{ id: ID_NOTIFICA_PROVA, title: 'Notifica di prova', body: 'Se la vedi, i promemoria arrivano. ✓', channelId: 'promemoria_eventi_v2', schedule: { at: new Date(quando), allowWhileIdle: true } }] });
+      await plugin.schedule({ notifications: [{ id: ID_NOTIFICA_PROVA, title: titolo, body: testo, channelId: 'promemoria_eventi_v2', schedule: { at: new Date(quando), allowWhileIdle: true } }] });
     }
     mostraToast('Notifica di prova tra 10 secondi: puoi anche chiudere l\'app.', 'successo', 5000);
   }catch(e){ mostraToast('Notifica di prova non programmata.', 'avviso'); }
@@ -3824,6 +3812,30 @@ function nomeTurnoPerAvviso(t){
   return m ? m.nome : 'Turno';
 }
 // Le notifiche da programmare (anche senza Android: servono ai controlli automatici).
+// v3.8.54: quando inizia il turno, visto dal momento dell'avviso: Oggi, Stasera, Stanotte, Domani o il giorno (es. «Giovedì 15»).
+function testoQuandoTurno(avviso, inizio){
+  const g0 = new Date(avviso.getFullYear(), avviso.getMonth(), avviso.getDate());
+  const g1 = new Date(inizio.getFullYear(), inizio.getMonth(), inizio.getDate());
+  const diff = Math.round((g1 - g0) / 86400000), h = inizio.getHours();
+  if(diff === 0) return h >= 18 ? 'Stasera' : h < 6 ? 'Stanotte' : 'Oggi';
+  if(diff === 1) return h < 6 && avviso.getHours() >= 12 ? 'Stanotte' : 'Domani';
+  const g = inizio.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' });
+  return g.charAt(0).toUpperCase() + g.slice(1);
+}
+// Il primo turno di lavoro da adesso in poi (per la notifica di prova): { nome, testo } oppure null.
+function prossimoTurnoDiLavoro(adesso = new Date()){
+  for(let i = 0; i <= 31; i++){
+    const g = new Date(adesso.getFullYear(), adesso.getMonth(), adesso.getDate() + i, 12);
+    const iso = dataISO(g), t = AppState.turni[iso];
+    if(!t || t.riposo || t.assenzaTipo || !t.oraInizio || !t.oraFine) continue;
+    const seraPrima = typeof iniziaSeraPrima === 'function' && iniziaSeraPrima({ ...t, data: t.data || iso });
+    const [h, m] = t.oraInizio.split(':').map(Number);
+    const inizio = new Date(g.getFullYear(), g.getMonth(), g.getDate() - (seraPrima ? 1 : 0), h, m);
+    if(inizio <= adesso) continue;
+    return { nome: nomeTurnoPerAvviso(t), testo: `${testoQuandoTurno(adesso, inizio)} alle ${t.oraInizio} · fino alle ${t.oraFine}` };
+  }
+  return null;
+}
 function promemoriaTurnoDaProgrammare(adesso = new Date()){
   const imp = impostazioniPromemoriaTurno();
   if(!imp.attivo) return [];
@@ -3838,27 +3850,23 @@ function promemoriaTurnoDaProgrammare(adesso = new Date()){
     // v3.8.53: la Notte che inizia la sera prima parte il giorno precedente (es. martedì 23:30 per la Notte di mercoledì).
     const seraPrima = typeof iniziaSeraPrima === 'function' && iniziaSeraPrima({ ...t, data: t.data || iso });
     const gi = seraPrima ? new Date(g.getFullYear(), g.getMonth(), g.getDate() - 1, 12) : g;
-    let quando, titolo;
-    if(seraPrima && imp.modo !== 'prima'){
-      // «La sera prima»: se l'ora dell'avviso viene prima dell'inizio, l'avviso arriva la sera stessa in cui si parte.
-      const [h, m] = (imp.ora || '20:00').split(':').map(Number);
-      const stessaSera = (imp.ora || '20:00') < t.oraInizio;
-      quando = new Date(gi.getFullYear(), gi.getMonth(), gi.getDate() - (stessaSera ? 0 : 1), h, m);
-      titolo = stessaSera ? `Stasera alle ${t.oraInizio}: ${nome}` : `Domani sera alle ${t.oraInizio}: ${nome}`;
-    } else if(imp.modo === 'prima'){
-      const [h, m] = t.oraInizio.split(':').map(Number);
-      quando = new Date(gi.getFullYear(), gi.getMonth(), gi.getDate(), h, m - Number(imp.minuti || 60));
-      const min = Number(imp.minuti || 60);
-      titolo = `Tra ${min >= 60 ? (min / 60) + (min === 60 ? ' ora' : ' ore') : min + ' minuti'}: ${nome}`;
+    const [hi, mi] = t.oraInizio.split(':').map(Number);
+    const inizio = new Date(gi.getFullYear(), gi.getMonth(), gi.getDate(), hi, mi);
+    let quando;
+    if(imp.modo === 'prima'){
+      quando = new Date(inizio.getTime() - Number(imp.minuti || 60) * 60000);
     } else {
+      // «Il giorno prima» all'ora scelta. Per la Notte che inizia la sera prima, se l'ora dell'avviso viene
+      // prima dell'inizio l'avviso arriva lo stesso giorno in cui si parte (es. 20:00 per le 23:30).
       const [h, m] = (imp.ora || '20:00').split(':').map(Number);
-      quando = new Date(g.getFullYear(), g.getMonth(), g.getDate() - 1, h, m);
-      // v3.8.53: un turno che inizia dopo mezzanotte (es. Notte 01:00) per chi riceve l'avviso la sera è «stanotte», non «domani».
-      const oraTurno = Number(String(t.oraInizio).split(':')[0]);
-      titolo = oraTurno < 6 ? `Stanotte alle ${t.oraInizio}: ${nome}` : `Domani: ${nome}`;
+      const stessoGiorno = seraPrima && (imp.ora || '20:00') < t.oraInizio;
+      quando = new Date(gi.getFullYear(), gi.getMonth(), gi.getDate() - (stessoGiorno ? 0 : 1), h, m);
     }
     if(quando <= adesso) continue;
-    out.push({ id: ID_BASE_PROMEMORIA_TURNO + Math.round((g - epoca) / 86400000), title: titolo, body: `${t.oraInizio} – ${t.oraFine}`, quando });
+    // v3.8.54: «Prossimo turno: Notte» e sotto quando inizia (Stanotte/Stasera/Domani/Oggi alle …) e fino a quando.
+    const min = Number(imp.minuti || 60);
+    const tra = imp.modo === 'prima' ? `Tra ${min >= 60 ? (min / 60) + (min === 60 ? ' ora' : ' ore') : min + ' minuti'}, alle ${t.oraInizio}` : `${testoQuandoTurno(quando, inizio)} alle ${t.oraInizio}`;
+    out.push({ id: ID_BASE_PROMEMORIA_TURNO + Math.round((g - epoca) / 86400000), title: `Prossimo turno: ${nome}`, body: `${tra} · fino alle ${t.oraFine}`, quando });
   }
   return out;
 }

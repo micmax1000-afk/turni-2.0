@@ -1,6 +1,6 @@
-/* Turni & Accessorio PS — Service Worker V286 (v3.8.53 — Notte che inizia la sera prima, avviso del turno puntuale di notte) */
+/* Turni & Accessorio PS — Service Worker V287 (v3.8.54 — avviso «Prossimo turno», Notte sera prima automatica) */
 'use strict';
-const CACHE='turni-ps-v286';
+const CACHE='turni-ps-v287';
 const APP_SHELL=[
  './','./index.html','./manifest.json','./style.css','./script.js',
  './js/config.js','./js/state.js','./js/storage.js','./js/utils.js','./js/shifts.js','./js/absences.js','./js/calendar.js','./js/sequence.js','./js/payroll.js','./js/tables.js','./js/profile.js','./js/backup.js','./js/ui.js','./js/dashboard.js','./js/statistics.js','./js/offline.js','./js/migrations.js','./js/data-guard.js','./js/icone.js','./js/voce.js','./js/domande-voce.js','./js/utilita.js','./js/pro.js','./js/data/tabelle-2026.js',
