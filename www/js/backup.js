@@ -262,6 +262,19 @@ function pluginGoogleSignInNativo(){
   return (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleSignIn) || null;
 }
 
+let _scriptGoogleWeb = null;
+function caricaScriptGoogleWeb(){
+  if(_scriptGoogleWeb) return _scriptGoogleWeb;
+  _scriptGoogleWeb = new Promise(fatto => {
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    const t = setTimeout(() => fatto(), 10000);
+    s.onload = () => { clearTimeout(t); fatto(); };
+    s.onerror = () => { clearTimeout(t); _scriptGoogleWeb = null; fatto(); };
+    document.head.appendChild(s);
+  });
+  return _scriptGoogleWeb;
+}
 async function inizializzaGoogleIdentity(){
   if(!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('INSERISCI-QUI')) return;
   const pluginNativo = pluginGoogleSignInNativo();
@@ -274,6 +287,8 @@ async function inizializzaGoogleIdentity(){
     }
     return;
   }
+  // v3.8.55: lo script di Google (solo per la versione web) si scarica quando serve, non a ogni apertura.
+  if(typeof google === 'undefined' || !google.accounts) await caricaScriptGoogleWeb();
   if(typeof google === 'undefined' || !google.accounts) return;
   tokenClientGoogle = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
@@ -299,6 +314,8 @@ let azioneDrivePendente = null;
 async function richiediAccessoDrive(azione){
   if(tokenAccessoDriveCorrente){ azione(); return; }
   if(!navigator.onLine){ aggiornaStatoDrive('offline', 'Sei offline. Collegati a Internet per usare Google Drive.'); return; }
+  // v3.8.55: Google si prepara solo quando serve (prima all'apertura dell'app, anche senza backup su Drive).
+  if(!tokenClientGoogle){ aggiornaStatoDrive('connessione', 'Connessione a Google Drive in corso…'); await inizializzaGoogleIdentity(); }
   if(!tokenClientGoogle){
     aggiornaStatoDrive('configurazione', 'Il collegamento Google non è configurato o non è ancora pronto.');
     return;
@@ -517,6 +534,8 @@ async function ripristinaBackupDaDrive(opz){
 let backupAutoInCorso = false, ultimoControlloBackupAuto = 0;
 async function avviaBackupDriveAutomatico(){
   if(backupAutoInCorso || Date.now() - ultimoControlloBackupAuto < 60000) return; // non più di un controllo al minuto
+  // v3.8.55: se il backup automatico è spento (o manca la rete) non si prepara nemmeno l'accesso a Google.
+  if(!(typeof proAttivo === 'function' && proAttivo()) || TurniPSStorage.getItem(CHIAVE_BACKUP_DRIVE_AUTO) !== '1' || !navigator.onLine) return;
   backupAutoInCorso = true; ultimoControlloBackupAuto = Date.now();
   try{
     if(!tokenClientGoogle) await inizializzaGoogleIdentity();

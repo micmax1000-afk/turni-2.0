@@ -247,4 +247,5 @@ function aggiornaRiepilogoVisualeMese(){
   periodoEl.textContent = `${NOMI_MESI[meseCorrente]} ${annoCorrente}`;
 }
 
-if(!window.__dashboardTimer){ window.__dashboardTimer=setInterval(()=>{ if(typeof renderOperativoDashboard==='function') renderOperativoDashboard(); }, 60000); }
+// v3.8.55: con l'app in sottofondo (schermo spento o altra app) non si ridisegna niente.
+if(!window.__dashboardTimer){ window.__dashboardTimer=setInterval(()=>{ if(!document.hidden && typeof renderOperativoDashboard==='function') renderOperativoDashboard(); }, 60000); }

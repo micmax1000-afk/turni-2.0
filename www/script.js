@@ -2847,6 +2847,8 @@ async function mandaNotificaProva(){
 function apriPaginaBackupV4(apri){
   const sez = el('sezioneAltro');
   if(!sez) return;
+  // v3.8.55: aprendo Backup si prepara Google (così il tocco su «Google Drive» apre subito l'accesso).
+  if(apri && !tokenClientGoogle && typeof inizializzaGoogleIdentity === 'function' && navigator.onLine) inizializzaGoogleIdentity();
   sez.classList.toggle('mostra-backup', apri);
   el('paginaBackupV4').hidden = !apri;
   window.scrollTo(0, 0);
@@ -3950,7 +3952,8 @@ function inizializzaPromemoriaTurno(){
   inizializzaControlloPromemoria();
   inizializzaAltroV4();
   on('btnAttivaNotificheTurno', 'click', async () => { await attivaNotifichePromemoria(); setTimeout(controllaNotifichePromemoriaTurno, 800); });
-  document.addEventListener('visibilitychange', () => { if(!document.hidden) controllaNotifichePromemoriaTurno(); });
+  // v3.8.55: tornando nell'app si ricontrollano le notifiche solo se è aperta la scheda Altro (dove si vedono gli avvisi).
+  document.addEventListener('visibilitychange', () => { const a = el('sezioneAltro'); if(!document.hidden && a && a.offsetParent !== null) controllaNotifichePromemoriaTurno(); });
   on('sceltaModoPromemoriaTurno', 'click', e => { const b = e.target.closest('[data-modo-promemoria]'); if(b) cambiaPromemoriaTurno({ modo: b.dataset.modoPromemoria }); });
   on('campoOraPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ ora: e.target.value || '20:00' }));
   on('campoMinutiPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ minuti: Number(e.target.value) || 60 }));
