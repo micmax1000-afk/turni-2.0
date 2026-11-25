@@ -1,5 +1,5 @@
 <it-IT>
-• Notte che inizia la sera prima (es. 23:30): nuova opzione nel turno; avvisi, ore e festivi partono dal giorno giusto
-• Promemoria del turno puntuale anche di notte, col telefono in risparmio energetico
-• Per la Notte dopo mezzanotte l'avviso dice «Stanotte alle 01:00»
+• Promemoria più chiaro: «Prossimo turno: Notte — Stasera alle 23:30 · fino alle 07:00»
+• La notifica di prova mostra il tuo prossimo turno vero
+• Notte che inizia prima di mezzanotte: riconosciuta da sola, senza caselle da spuntare
 </it-IT>
