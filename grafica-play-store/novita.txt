@@ -1,5 +1,5 @@
 <it-IT>
-• Promemoria più chiaro: «Prossimo turno: Notte — Stasera alle 23:30 · fino alle 07:00»
-• La notifica di prova mostra il tuo prossimo turno vero
-• Notte che inizia prima di mezzanotte: riconosciuta da sola, senza caselle da spuntare
+• App più scorrevole: meno lavoro in sottofondo all'apertura e quando torni nell'app
+• Salvando un turno si aggiornano solo gli avvisi cambiati, non tutti
+• L'accesso a Google per il backup si prepara solo quando serve
 </it-IT>
