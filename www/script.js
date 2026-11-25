@@ -3816,25 +3816,40 @@ function promemoriaTurnoDaProgrammare(adesso = new Date()){
     } else {
       const [h, m] = (imp.ora || '20:00').split(':').map(Number);
       quando = new Date(g.getFullYear(), g.getMonth(), g.getDate() - 1, h, m);
-      titolo = `Domani: ${nome}`;
+      // v3.8.53: un turno che inizia dopo mezzanotte (es. Notte 01:00) per chi riceve l'avviso la sera è «stanotte», non «domani».
+      const oraTurno = Number(String(t.oraInizio).split(':')[0]);
+      titolo = oraTurno < 6 ? `Stanotte alle ${t.oraInizio}: ${nome}` : `Domani: ${nome}`;
     }
     if(quando <= adesso) continue;
     out.push({ id: ID_BASE_PROMEMORIA_TURNO + Math.round((g - epoca) / 86400000), title: titolo, body: `${t.oraInizio} – ${t.oraFine}`, quando });
   }
   return out;
 }
+// v3.8.53: i promemoria del turno passano dal modulo nativo degli avvisi degli eventi (sveglia di sistema se manca
+// il permesso «Allarmi e promemoria»). Con le notifiche di Capacitor, di notte col telefono fermo Android rimandava
+// l'avviso anche di ore: per la Notte (es. avviso a mezzanotte per le 01:00) arrivava tardi o sembrava non arrivare.
 async function riprogrammaPromemoriaTurni(){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
-  if(!plugin) return;
+  const avviso = typeof pluginAvvisoEvento === 'function' ? pluginAvvisoEvento() : null;
+  if(!plugin && !avviso) return;
   let prima = [];
   try{ prima = JSON.parse(localStorage.getItem('turni_promemoria_turno_ids') || '[]'); }catch(e){}
-  if(prima.length){ try{ await plugin.cancel({ notifications: prima.map(id => ({ id })) }); }catch(e){} }
   const lista = promemoriaTurnoDaProgrammare();
+  const nuovi = new Set(lista.map(x => x.id));
+  // Quelli programmati con Capacitor (versioni di prima) si tolgono sempre; quelli nativi solo se non servono più
+  // (gli altri vengono sovrascritti con lo stesso numero).
+  if(plugin && prima.length){ try{ await plugin.cancel({ notifications: prima.map(id => ({ id })) }); }catch(e){} }
+  if(avviso){ for(const id of prima){ if(!nuovi.has(id)){ try{ await avviso.annulla({ id }); }catch(e){} } } }
   localStorage.setItem('turni_promemoria_turno_ids', JSON.stringify(lista.map(x => x.id)));
   if(!lista.length) return;
   try{
-    const perm = await plugin.checkPermissions();
-    if(perm.display !== 'granted') return;
+    if(plugin){ const perm = await plugin.checkPermissions(); if(perm.display !== 'granted') return; }
+    if(avviso){
+      for(const x of lista){
+        await avviso.programma({ id: x.id, titolo: x.title, testo: x.body, quandoMs: x.quando.getTime(), durataSec: 0, modo: 'suono_vibra' });
+      }
+      return;
+    }
     try{ await plugin.createChannel({ id: 'promemoria_turno', name: 'Promemoria del turno', description: 'Il turno di domani o tra poco', importance: 4, visibility: 1, vibration: true }); }catch(e){}
     await plugin.schedule({ notifications: lista.map(x => ({ id: x.id, title: x.title, body: x.body, channelId: 'promemoria_turno', schedule: { at: x.quando, allowWhileIdle: true } })) });
   }catch(e){ console.warn('Promemoria del turno non programmati:', e); }

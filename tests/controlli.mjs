@@ -364,7 +364,7 @@ sezione('Controllo promemoria (batteria, Xiaomi, prova)');
   await p.waitForFunction(() => /Tutto a posto/.test(el('esitoControlloPromemoria').textContent));
   ok('tornando con la batteria "senza restrizioni": tutto a posto, niente riga Xiaomi sugli altri telefoni', await p.evaluate(() => !document.querySelector('[data-riga-controllo="avvio"]') && !document.querySelector('.controllo-riga.no')));
   await p.click('#btnNotificaProva');
-  const prova = await p.evaluate(() => { const x = window.__log.find(y => y[0] === 'av.programma'); return x && { ...x[1], tra: x[1].quandoMs - Date.now() }; });
+  const prova = await p.evaluate(() => { const x = window.__log.find(y => y[0] === 'av.programma' && y[1] && y[1].titolo === 'Notifica di prova'); return x && { ...x[1], tra: x[1].quandoMs - Date.now() }; });
   ok('notifica di prova tra 10 secondi, notifica semplice', prova && prova.titolo === 'Notifica di prova' && prova.durataSec === 0 && prova.tra > 7000 && prova.tra <= 10000, JSON.stringify(prova));
   await p.click('#btnChiudiControlloPromemoria');
   await p.waitForFunction(() => el('riassuntoControlloPromemoria').textContent === 'Tutto a posto' && el('avvisoBatteriaTurno').hidden);
@@ -1544,6 +1544,19 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
   await apriImpostazioniAltro(p); await p.click('#campoPromemoriaTurno');
   const prom = await p.evaluate(() => promemoriaTurnoDaProgrammare()[0]);
   ok('acceso: "Domani: Mattino" la sera prima alle 20:00', prom.title === 'Domani: Mattino' && prom.body === '07:00 – 13:00' && new Date(prom.quando).toISOString() === '2026-10-09T18:00:00.000Z', JSON.stringify(prom));
+  // v3.8.53: la Notte (dopo mezzanotte) è «Stanotte alle 01:00», e i promemoria passano dal modulo nativo degli avvisi (puntuale anche di notte).
+  const pn = await p.evaluate(async () => {
+    const lista = promemoriaTurnoDaProgrammare(); const notte = lista.find(x => /01:00/.test(x.body));
+    const chiamate = { programma: [], annulla: [], cancelCapacitor: 0 };
+    const vecchio = window.Capacitor;
+    localStorage.setItem('turni_promemoria_turno_ids', JSON.stringify([ID_BASE_PROMEMORIA_TURNO + 1]));
+    window.Capacitor = { isNativePlatform: () => true, Plugins: {
+      LocalNotifications: { cancel: async () => { chiamate.cancelCapacitor++; }, checkPermissions: async () => ({ display: 'granted' }), schedule: async () => { throw new Error('non deve usare Capacitor'); }, createChannel: async () => {} },
+      AvvisoEvento: { programma: async o => { chiamate.programma.push(o); }, annulla: async o => { chiamate.annulla.push(o.id); } } } };
+    try{ await riprogrammaPromemoriaTurni(); } finally { window.Capacitor = vecchio; }
+    return { titolo: notte && notte.title, n: lista.length, prog: chiamate.programma.length, durata0: chiamate.programma.every(o => o.durataSec === 0 && o.quandoMs > 0), annullaVecchio: chiamate.annulla.includes(ID_BASE_PROMEMORIA_TURNO + 1), cancel: chiamate.cancelCapacitor };
+  });
+  ok('promemoria: la Notte è «Stanotte alle 01:00: Notte»; programmati col modulo nativo (puntuale di notte), tolti i vecchi', pn.titolo === 'Stanotte alle 01:00: Notte' && pn.n > 0 && pn.prog === pn.n && pn.durata0 && pn.annullaVecchio && pn.cancel === 1, JSON.stringify(pn));
   await apriImpostazioniAltro(p); await p.click('#campoWidget');
   const w = await p.evaluate(() => datiWidget());
   ok('widget acceso: oggi Pomeriggio 13:00 – 19:00', w.attivo && w.giorni['2026-10-09'].nome === 'Pomeriggio' && w.giorni['2026-10-09'].orario === '13:00 – 19:00', JSON.stringify(w.giorni['2026-10-09']));
