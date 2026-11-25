@@ -1142,7 +1142,6 @@ function inizializza(){
   on('btnChiudiModificaModello','click', () => { el('overlayModificaModello').hidden = true; });
   on('btnSalvaModello','click', salvaModificaModelloV2);
   on('overlayModificaModello','input', () => aggiornaAnteprimaModelloV2());
-  on('campoModModelloSeraPrima','change', e => { e.target.dataset.toccato = '1'; });
   on('overlayModificaModello','click', e => { if(e.target.closest('#btnModModelloColoreAutomatico')) setTimeout(aggiornaAnteprimaModelloV2, 0); });
   el('campoModModelloColore').addEventListener('input', () => {
     modelloColoreForzatoV2 = el('campoModModelloColore').value;
@@ -2124,24 +2123,11 @@ function apriModificaModelloV2(id){
   const base = m ? modelloBaseV2(m.id) : null;
   el('btnEliminaModello').hidden = !m || !!base;
   el('btnOrarioBaseModello').hidden = !base || base.riposo || (base.oraInizio === m.oraInizio && base.oraFine === m.oraFine);
-  // v3.8.53: «Inizia la sera prima» (solo per i turni che passano la mezzanotte).
-  const sp = el('campoModModelloSeraPrima');
-  if(sp){ sp.checked = !!(m && typeof iniziaSeraPrima === 'function' && iniziaSeraPrima({ oraInizio: m.oraInizio, oraFine: m.oraFine, modelloId: m.id })); sp.dataset.toccato = m && typeof m.seraPrima === 'boolean' ? '1' : ''; }
   aggiornaAnteprimaModelloV2();
   el('overlayModificaModello').hidden = false;
 }
 // In cima alla finestra: la tessera del turno come apparirà nella scheda Turni.
-function aggiornaRigaSeraPrimaModello(){
-  const riga = el('rigaSeraPrimaModello'), sp = el('campoModModelloSeraPrima');
-  if(!riga || !sp) return;
-  const i = el('campoModModelloInizio').value, f = el('campoModModelloFine').value;
-  const passaMezzanotte = !!(i && f && f <= i) && !el('campiModModelloOrario').hidden;
-  riga.hidden = !passaMezzanotte;
-  // Per la Notte, finché non la tocchi, la casella segue l'orario: accesa se si parte dalle 18:00 in poi.
-  if(passaMezzanotte && !sp.dataset.toccato && modelloInModificaV2 === 'notte') sp.checked = i >= '18:00';
-}
 function aggiornaAnteprimaModelloV2(){
-  aggiornaRigaSeraPrimaModello();
   const box = el('anteprimaModello');
   if(!box) return;
   const m = modelloInModificaV2 ? (AppState.modelliTurno || []).find(x => x.id === modelloInModificaV2) : null;
@@ -2182,10 +2168,8 @@ function salvaModificaModelloV2(){
   }
   if(modelloColoreForzatoV2) modelloSalvato.colore = modelloColoreForzatoV2;
   else delete modelloSalvato.colore;
-  // v3.8.53: «Inizia la sera prima» si salva solo per i turni che passano la mezzanotte.
-  const rigaSP = el('rigaSeraPrimaModello');
-  if(rigaSP && !rigaSP.hidden) modelloSalvato.seraPrima = !!el('campoModModelloSeraPrima').checked;
-  else delete modelloSalvato.seraPrima;
+  // v3.8.54: «Inizia la sera prima» è automatico: la vecchia scelta salvata (3.8.53) si toglie.
+  delete modelloSalvato.seraPrima;
   salvaModelliTurnoStorage();
   riparaCollegamentiModelli();
   el('overlayModificaModello').hidden = true;

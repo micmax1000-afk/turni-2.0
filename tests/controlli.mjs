@@ -1281,7 +1281,7 @@ sezione('Turni: cambio orario di un modello');
     const pP = promemoriaTurnoDaProgrammare(new Date(2026, 9, 9, 10)).find(x => /23:30/.test(x.body));
     const dom = turniNellaGiornata('2026-10-11').map(b => `${b.da}-${b.a}${b.perDomani ? 'D' : ''}`).join(), lun = turniNellaGiornata('2026-10-12').map(b => `${b.da}-${b.a}${b.iniziatoIeri ? 'I' : ''}`).join(), mar = turniNellaGiornata('2026-10-13').filter(b => b.daIeri).length;
     const ics = creaIcsTurni(false).testo;
-    notte.seraPrima = false; const c2 = classificaTurno(t), spento = c2.domenicali + c2.festive + c2.notturneFestive;
+    notte.seraPrima = false; const spento = iniziaSeraPrima(t) ? 0 : 1; // v3.8.54: automatico, la vecchia scelta salvata non conta più
     AppState.turni = JSON.parse(salvaT); AppState.modelliTurno = JSON.parse(salvaM); if(salvaP === null) TurniPSStorage.removeItem(CHIAVE_PROMEMORIA_TURNO); else TurniPSStorage.setItem(CHIAVE_PROMEMORIA_TURNO, salvaP);
     return { ore: cOre, festDom: c.domenicali + c.festive + c.notturneFestive, notturne: c.notturne, seraNo: sera.oreTotali === 6, notteDopo, pS: pS && (new Date(pS.quando).toISOString() + ' ' + pS.title + ' | ' + pS.body), pP: pP && new Date(pP.quando).toISOString(), dom, lun, mar, ics: /DTSTART;TZID=Europe\/Rome:20261011T233000\r\nDTEND;TZID=Europe\/Rome:20261012T070000/.test(ics), spento };
   });
