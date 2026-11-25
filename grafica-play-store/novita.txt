@@ -1,3 +1,5 @@
 <it-IT>
-• Calendario più compatto: meno spazio tra la riga del mese e i giorni della settimana
+• Notte che inizia la sera prima (es. 23:30): nuova opzione nel turno; avvisi, ore e festivi partono dal giorno giusto
+• Promemoria del turno puntuale anche di notte, col telefono in risparmio energetico
+• Per la Notte dopo mezzanotte l'avviso dice «Stanotte alle 01:00»
 </it-IT>

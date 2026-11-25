@@ -296,6 +296,17 @@ function aggiornaEditorGiornoV3(){
       ? `Orario solo per questo giorno (${prima.nome} di solito è ${prima.oraInizio}–${prima.oraFine}). Per cambiarlo sempre: scheda Turni.`
       : 'Orario solo per questo giorno. Per cambiare l\'orario di un turno per sempre: scheda Turni.';
   }
+  // v3.8.53: Notte che inizia la sera prima: si scrive quando parte davvero.
+  const notaSP = el('notaSeraPrimaGiorno');
+  if(notaSP){
+    const sp = modo === 'turno' && inizio && fine && typeof iniziaSeraPrima === 'function' && iniziaSeraPrima({ oraInizio: inizio, oraFine: fine, modelloId: idModello });
+    notaSP.hidden = !sp;
+    if(sp){
+      const prima = new Date(giornoPiu(giornoSelezionato, -1) + 'T12:00:00');
+      const nomeG = prima.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric' });
+      notaSP.textContent = `🌙 Inizia la sera prima: ${nomeG} alle ${inizio}, finisce questo giorno alle ${fine}.`;
+    }
+  }
   // Modelli
   // v3.8.45: prima i 4 turni della turnazione, poi (con la scritta «Servizio») gli altri.
   const pulsanteModello = m => {

@@ -3632,3 +3632,11 @@ html[data-tema="scuro"] .mese-info-v4 summary span{color:#A9C1FF!important}
 
 /* v3.8.52: meno spazio tra la riga del mese (frecce, «Nov 2026», «Mese») e i giorni della settimana. Prima 26 px, ora circa 10 px. */
 .calendario-header.calendario-header-v2{padding-bottom:6px;margin-bottom:4px}
+
+/* v3.8.53: «Inizia la sera prima» nella scheda del turno */
+.riga-sera-prima{display:flex;gap:10px;align-items:flex-start;margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:var(--sfondo-secondario,#F1F3F0);cursor:pointer;font-weight:600;font-size:.92rem}
+.riga-sera-prima[hidden]{display:none}
+.riga-sera-prima input{margin-top:3px;width:18px;height:18px;accent-color:#1D4FD7;flex-shrink:0}
+.riga-sera-prima small{display:block;font-weight:400;font-size:.8rem;color:var(--testo-tenue);margin-top:2px;line-height:1.35}
+.nota-sera-prima{color:#3949AB;font-weight:600}
+html[data-tema="scuro"] .nota-sera-prima{color:#A9B6FF}
