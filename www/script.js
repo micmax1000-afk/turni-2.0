@@ -3873,26 +3873,41 @@ function promemoriaTurnoDaProgrammare(adesso = new Date()){
 // v3.8.53: i promemoria del turno passano dal modulo nativo degli avvisi degli eventi (sveglia di sistema se manca
 // il permesso «Allarmi e promemoria»). Con le notifiche di Capacitor, di notte col telefono fermo Android rimandava
 // l'avviso anche di ore: per la Notte (es. avviso a mezzanotte per le 01:00) arrivava tardi o sembrava non arrivare.
-async function riprogrammaPromemoriaTurni(){
+// v3.8.55: una riprogrammazione alla volta, e dopo un salvataggio si toccano solo gli avvisi cambiati
+// (prima ogni salvataggio rifaceva tutti gli avvisi dei 14 giorni, uno per uno, sul telefono).
+// All'apertura dell'app (tutti = true) si rifanno tutti, per sicurezza.
+let _codaPromemoriaTurni = Promise.resolve();
+function riprogrammaPromemoriaTurni(tutti){
+  _codaPromemoriaTurni = _codaPromemoriaTurni.then(() => riprogrammaPromemoriaTurniOra(tutti === true)).catch(() => {});
+  return _codaPromemoriaTurni;
+}
+async function riprogrammaPromemoriaTurniOra(tutti){
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
   const avviso = typeof pluginAvvisoEvento === 'function' ? pluginAvvisoEvento() : null;
   if(!plugin && !avviso) return;
-  let prima = [];
+  let prima = [], firme = {};
   try{ prima = JSON.parse(localStorage.getItem('turni_promemoria_turno_ids') || '[]'); }catch(e){}
+  try{ firme = JSON.parse(localStorage.getItem('turni_promemoria_turno_firme') || '{}') || {}; }catch(e){}
   const lista = promemoriaTurnoDaProgrammare();
   const nuovi = new Set(lista.map(x => x.id));
-  // Quelli programmati con Capacitor (versioni di prima) si tolgono sempre; quelli nativi solo se non servono più
-  // (gli altri vengono sovrascritti con lo stesso numero).
-  if(plugin && prima.length){ try{ await plugin.cancel({ notifications: prima.map(id => ({ id })) }); }catch(e){} }
-  if(avviso){ for(const id of prima){ if(!nuovi.has(id)){ try{ await avviso.annulla({ id }); }catch(e){} } } }
+  const firma = x => `${x.quando.getTime()}|${x.title}|${x.body}`;
+  // Quelli programmati con Capacitor (fino alla 3.8.52) si tolgono una volta sola; senza modulo nativo, sempre.
+  const capacitorTolti = localStorage.getItem('turni_promemoria_turno_capacitor_tolti') === '1';
+  if(plugin && prima.length && (!avviso || !capacitorTolti)){ try{ await plugin.cancel({ notifications: prima.map(id => ({ id })) }); }catch(e){} }
+  if(avviso) localStorage.setItem('turni_promemoria_turno_capacitor_tolti', '1');
+  if(avviso){ for(const id of prima){ if(!nuovi.has(id)){ try{ await avviso.annulla({ id }); }catch(e){} delete firme[id]; } } }
   localStorage.setItem('turni_promemoria_turno_ids', JSON.stringify(lista.map(x => x.id)));
-  if(!lista.length) return;
+  if(!lista.length){ localStorage.setItem('turni_promemoria_turno_firme', '{}'); return; }
   try{
     if(plugin){ const perm = await plugin.checkPermissions(); if(perm.display !== 'granted') return; }
     if(avviso){
+      const nuoveFirme = {};
       for(const x of lista){
+        nuoveFirme[x.id] = firma(x);
+        if(!tutti && firme[x.id] === nuoveFirme[x.id]) continue; // uguale a prima: già programmato
         await avviso.programma({ id: x.id, titolo: x.title, testo: x.body, quandoMs: x.quando.getTime(), durataSec: 0, modo: 'suono_vibra' });
       }
+      localStorage.setItem('turni_promemoria_turno_firme', JSON.stringify(nuoveFirme));
       return;
     }
     try{ await plugin.createChannel({ id: 'promemoria_turno', name: 'Promemoria del turno', description: 'Il turno di domani o tra poco', importance: 4, visibility: 1, vibration: true }); }catch(e){}
@@ -3918,7 +3933,7 @@ function cambiaPromemoriaTurno(modifica){
   const imp = Object.assign(impostazioniPromemoriaTurno(), modifica);
   salvaImpostazioniPromemoriaTurno(imp);
   aggiornaVistaPromemoriaTurno();
-  riprogrammaPromemoriaTurni();
+  riprogrammaPromemoriaTurni(true);
 }
 function inizializzaPromemoriaTurno(){
   aggiornaVistaPromemoriaTurno();
@@ -3939,7 +3954,7 @@ function inizializzaPromemoriaTurno(){
   on('sceltaModoPromemoriaTurno', 'click', e => { const b = e.target.closest('[data-modo-promemoria]'); if(b) cambiaPromemoriaTurno({ modo: b.dataset.modoPromemoria }); });
   on('campoOraPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ ora: e.target.value || '20:00' }));
   on('campoMinutiPromemoriaTurno', 'change', e => cambiaPromemoriaTurno({ minuti: Number(e.target.value) || 60 }));
-  setTimeout(riprogrammaPromemoriaTurni, 5000);
+  setTimeout(() => riprogrammaPromemoriaTurni(true), 5000);
 }
 
 // Dopo ogni salvataggio dei turni: promemoria del turno e widget si aggiornano (con calma).

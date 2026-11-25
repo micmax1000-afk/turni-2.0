@@ -1573,10 +1573,23 @@ sezione('Primo avvio, promemoria del turno, widget, esporta calendario');
     window.Capacitor = { isNativePlatform: () => true, Plugins: {
       LocalNotifications: { cancel: async () => { chiamate.cancelCapacitor++; }, checkPermissions: async () => ({ display: 'granted' }), schedule: async () => { throw new Error('non deve usare Capacitor'); }, createChannel: async () => {} },
       AvvisoEvento: { programma: async o => { chiamate.programma.push(o); }, annulla: async o => { chiamate.annulla.push(o.id); } } } };
-    try{ await riprogrammaPromemoriaTurni(); } finally { window.Capacitor = vecchio; }
-    return { titolo: notte && (notte.title + ' | ' + notte.body), n: lista.length, prog: chiamate.programma.length, durata0: chiamate.programma.every(o => o.durataSec === 0 && o.quandoMs > 0), annullaVecchio: chiamate.annulla.includes(ID_BASE_PROMEMORIA_TURNO + 1), cancel: chiamate.cancelCapacitor };
+    let prog2 = -1, prog3 = -1, prog4 = -1, cancel2 = -1;
+    try{
+      await riprogrammaPromemoriaTurni();
+      const prima = chiamate.programma.length, cancPrima = chiamate.cancelCapacitor;
+      // v3.8.55: secondo salvataggio senza modifiche → nessun avviso rifatto; un turno cambiato → solo quello; all'apertura → tutti.
+      await riprogrammaPromemoriaTurni(); prog2 = chiamate.programma.length - prima; cancel2 = chiamate.cancelCapacitor - cancPrima;
+      const k = Object.keys(AppState.turni).filter(iso => iso > dataISO(new Date()) && AppState.turni[iso].oraInizio && !AppState.turni[iso].riposo).sort()[2];
+      const salvato = AppState.turni[k].oraInizio; AppState.turni[k].oraInizio = '06:30';
+      const p3 = chiamate.programma.length; await riprogrammaPromemoriaTurni(); prog3 = chiamate.programma.length - p3;
+      AppState.turni[k].oraInizio = salvato;
+      const p4 = chiamate.programma.length; await riprogrammaPromemoriaTurni(true); prog4 = chiamate.programma.length - p4;
+    } finally { window.Capacitor = vecchio; }
+    const primoGiro = lista.length;
+    return { titolo: notte && (notte.title + ' | ' + notte.body), n: lista.length, prog: chiamate.programma.slice(0, primoGiro).length, durata0: chiamate.programma.every(o => o.durataSec === 0 && o.quandoMs > 0), annullaVecchio: chiamate.annulla.includes(ID_BASE_PROMEMORIA_TURNO + 1), cancel: chiamate.cancelCapacitor - Math.max(0, cancel2), prog2, prog3, prog4, cancel2 };
   });
   ok('promemoria: la Notte è «Stanotte alle 01:00: Notte»; programmati col modulo nativo (puntuale di notte), tolti i vecchi', pn.titolo === 'Prossimo turno: Notte | Stanotte alle 01:00 · fino alle 07:00' && pn.n > 0 && pn.prog === pn.n && pn.durata0 && pn.annullaVecchio && pn.cancel === 1, JSON.stringify(pn));
+  ok('promemoria: dopo un salvataggio si rifanno solo gli avvisi cambiati (0 se niente cambia, 1 per un turno), all\'apertura tutti', pn.prog2 === 0 && pn.cancel2 === 0 && pn.prog3 === 1 && pn.prog4 === pn.n, JSON.stringify(pn));
   await apriImpostazioniAltro(p); await p.click('#campoWidget');
   const w = await p.evaluate(() => datiWidget());
   ok('widget acceso: oggi Pomeriggio 13:00 – 19:00', w.attivo && w.giorni['2026-10-09'].nome === 'Pomeriggio' && w.giorni['2026-10-09'].orario === '13:00 – 19:00', JSON.stringify(w.giorni['2026-10-09']));
