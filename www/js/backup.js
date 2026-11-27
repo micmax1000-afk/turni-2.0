@@ -70,6 +70,7 @@ function costruisciDatiBackup(){
     turni: AppState.turni,
     tabelle: AppState.tabelle,
     conguagliPerMese: AppState.conguagliPerMese,
+    congedoParentalePerMese: AppState.congedoParentalePerMese,
     storico: AppState.storico,
     assenze: AppState.assenze,
     sequenzaTurni: AppState.sequenzaTurni,
@@ -655,6 +656,7 @@ function creaSnapshotPreRipristino(){
       turni: AppState.turni,
       tabelle: AppState.tabelle,
       conguagliPerMese: AppState.conguagliPerMese,
+      congedoParentalePerMese: AppState.congedoParentalePerMese,
       storico: AppState.storico,
       assenze: AppState.assenze,
       sequenzaTurni: AppState.sequenzaTurni,
@@ -678,6 +680,7 @@ function ripristinaSnapshotPreRipristino(){
     AppState.turni = pulisciTurni(dati.turni);
     AppState.tabelle = dati.tabelle && typeof dati.tabelle === 'object' ? dati.tabelle : AppState.tabelle;
     AppState.conguagliPerMese = dati.conguagliPerMese && typeof dati.conguagliPerMese === 'object' ? dati.conguagliPerMese : {};
+    AppState.congedoParentalePerMese = dati.congedoParentalePerMese && typeof dati.congedoParentalePerMese === 'object' && !Array.isArray(dati.congedoParentalePerMese) ? dati.congedoParentalePerMese : {};
     AppState.storico = dati.storico && typeof dati.storico === 'object' ? dati.storico : {};
     AppState.assenze = Array.isArray(dati.assenze) ? dati.assenze : [];
     AppState.sequenzaTurni = Array.isArray(dati.sequenzaTurni) ? dati.sequenzaTurni : [];
@@ -685,7 +688,7 @@ function ripristinaSnapshotPreRipristino(){
     AppState.coloriTurni = dati.coloriTurni && typeof dati.coloriTurni === 'object' ? dati.coloriTurni : {};
     if(typeof migraColoriDiSerie === 'function') migraColoriDiSerie(true);
     salvaAnagraficaStorage(); salvaTurniStorage(); salvaTabelleStorage();
-    salvaConguagliStorage(); salvaStoricoStorage(); salvaAssenzeStorage(); salvaSequenzaStorage();
+    salvaConguagliStorage(); salvaCongedoParentaleStorage(); salvaStoricoStorage(); salvaAssenzeStorage(); salvaSequenzaStorage();
     salvaNoteGiorniStorage(); salvaColoriTurniStorage();
     if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);
     else TurniPSStorage.removeItem(CHIAVE_SEQUENZA_ANCORA);
@@ -718,6 +721,7 @@ function importaBackup(file, datiGiaLetti){
       if(dati.turni) AppState.turni = pulisciTurni(dati.turni);
       if(dati.tabelle) AppState.tabelle = dati.tabelle;
       if(dati.conguagliPerMese) AppState.conguagliPerMese = dati.conguagliPerMese;
+      if(dati.congedoParentalePerMese && typeof dati.congedoParentalePerMese === 'object') AppState.congedoParentalePerMese = dati.congedoParentalePerMese;
       if(dati.storico) AppState.storico = dati.storico;
       if(dati.assenze) AppState.assenze = dati.assenze;
       if(dati.sequenzaTurni) AppState.sequenzaTurni = dati.sequenzaTurni;
@@ -769,7 +773,7 @@ function importaBackup(file, datiGiaLetti){
       }
 
       salvaAnagraficaStorage(); salvaTurniStorage(); salvaTabelleStorage();
-      salvaConguagliStorage(); salvaStoricoStorage(); salvaAssenzeStorage(); salvaSequenzaStorage();
+      salvaConguagliStorage(); salvaCongedoParentaleStorage(); salvaStoricoStorage(); salvaAssenzeStorage(); salvaSequenzaStorage();
 
       aggiornaRiassuntoAnagrafica();
       renderCalendario();

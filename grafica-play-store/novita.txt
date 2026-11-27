@@ -1,5 +1,5 @@
 <it-IT>
-• App più scorrevole: meno lavoro in sottofondo all'apertura e quando torni nell'app
-• Salvando un turno si aggiornano solo gli avvisi cambiati, non tutti
-• L'accesso a Google per il backup si prepara solo quando serve
+• Nuove assenze: Congedo parentale all'80% e al 30%, anche a voce
+• Nel Report, dentro «Indennità del mese», scrivi quanto ti tolgono per il congedo parentale: viene tolto dal netto che arriva sul conto
+• Le assenze di solo conteggio mostrano i giorni usati (es. «3 giorni»)
 </it-IT>

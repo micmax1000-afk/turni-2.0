@@ -58,6 +58,9 @@ const SINONIMI_ASSENZA = {
   'Donazione sangue': ['donazione sangue', 'donazione del sangue', 'donazione'],
   'Aspettativa': ['aspettativa'],
   'Congedo parentale': ['congedo parentale'],
+  // Detto in vari modi: «congedo parentale all'80%», «al 80 per cento», «parentale 80»… (dopo la preparazione: «all'80» → «al 80»).
+  'Congedo parentale 80%': ['congedo parentale al 80 per cento', 'congedo parentale al 80%', 'congedo parentale al 80', 'congedo parentale 80 per cento', 'congedo parentale 80', 'parentale al 80 per cento', 'parentale al 80', 'parentale 80'],
+  'Congedo parentale 30%': ['congedo parentale al 30 per cento', 'congedo parentale al 30%', 'congedo parentale al 30', 'congedo parentale 30 per cento', 'congedo parentale 30', 'parentale al 30 per cento', 'parentale al 30', 'parentale 30'],
   'Maternità/Paternità': ['maternita', 'paternita']
 };
 const SINONIMI_INDENNITA = [
@@ -253,10 +256,14 @@ function capisciFraseVoce(testo, rif){
     if(rn){ trovate.push({ tipo: 'nota', testo: note[Number(rn[1])] }); resto = resto.replace(rn[0], ' '); }
     else if(negativo && /\b(servizio svolto|nota del servizio|nota)\b/.test(resto)){ trovate.push({ tipo: 'nota', testo: '' }); resto = resto.replace(/\b(servizio svolto|nota del servizio|nota)\b/, ' '); }
     // Assenze (prima dei turni: "riposo compensativo" non è il turno "Riposo")
+    // v3.8.56: vince la voce con la frase più lunga: «congedo parentale all'80%» non diventa «congedo parentale»,
+    // e «congedo parentale» non diventa «Congedo ordinario» (che ha anche la parola «congedo»).
+    let migliore = null;
     for(const x of assenze){
       const t = togliParole(resto, x.parole);
-      if(t){ trovate.push({ tipo: 'assenza', assenzaId: x.a.id, nome: x.a.nome }); resto = ' ' + t.resto + ' '; break; }
+      if(t && (!migliore || t.trovata.length > migliore.t.trovata.length)) migliore = { x, t };
     }
+    if(migliore){ trovate.push({ tipo: 'assenza', assenzaId: migliore.x.a.id, nome: migliore.x.a.nome }); resto = ' ' + migliore.t.resto + ' '; }
     // Straordinario
     const rs = resto.match(/\bstraordinari[oi]\b/);
     if(rs){
