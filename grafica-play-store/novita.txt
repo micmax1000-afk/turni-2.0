@@ -1,3 +1,4 @@
 <it-IT>
-• Congedo parentale nel Report: ora è una riga dell'elenco «Indennità del mese»; toccala per scrivere quanto ti tolgono
+• Dopo un aggiornamento le novità si vedono subito, senza chiudere e riaprire l'app (dal prossimo aggiornamento)
+• Ripristinando un backup vecchio compaiono subito le voci Congedo parentale 80% e 30%
 </it-IT>
