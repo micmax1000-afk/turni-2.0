@@ -1,5 +1,3 @@
 <it-IT>
-• Nuove assenze: Congedo parentale all'80% e al 30%, anche a voce
-• Nel Report, dentro «Indennità del mese», scrivi quanto ti tolgono per il congedo parentale: viene tolto dal netto che arriva sul conto
-• Le assenze di solo conteggio mostrano i giorni usati (es. «3 giorni»)
+• Congedo parentale nel Report: ora puoi scrivere la cifra intera senza che il campo si chiuda
 </it-IT>
