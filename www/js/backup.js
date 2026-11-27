@@ -683,6 +683,7 @@ function ripristinaSnapshotPreRipristino(){
     AppState.congedoParentalePerMese = dati.congedoParentalePerMese && typeof dati.congedoParentalePerMese === 'object' && !Array.isArray(dati.congedoParentalePerMese) ? dati.congedoParentalePerMese : {};
     AppState.storico = dati.storico && typeof dati.storico === 'object' ? dati.storico : {};
     AppState.assenze = Array.isArray(dati.assenze) ? dati.assenze : [];
+    if(AppState.assenze.length){ salvaAssenzeStorage(); AppState.assenze = caricaAssenze(); }
     AppState.sequenzaTurni = Array.isArray(dati.sequenzaTurni) ? dati.sequenzaTurni : [];
     AppState.noteGiorni = dati.noteGiorni && typeof dati.noteGiorni === 'object' ? dati.noteGiorni : {};
     AppState.coloriTurni = dati.coloriTurni && typeof dati.coloriTurni === 'object' ? dati.coloriTurni : {};
@@ -723,7 +724,8 @@ function importaBackup(file, datiGiaLetti){
       if(dati.conguagliPerMese) AppState.conguagliPerMese = dati.conguagliPerMese;
       if(dati.congedoParentalePerMese && typeof dati.congedoParentalePerMese === 'object') AppState.congedoParentalePerMese = dati.congedoParentalePerMese;
       if(dati.storico) AppState.storico = dati.storico;
-      if(dati.assenze) AppState.assenze = dati.assenze;
+      // Un backup vecchio può non avere le voci nuove (es. Congedo parentale 80% e 30%): le aggiungo subito.
+      if(dati.assenze){ AppState.assenze = dati.assenze; salvaAssenzeStorage(); AppState.assenze = caricaAssenze(); }
       if(dati.sequenzaTurni) AppState.sequenzaTurni = dati.sequenzaTurni;
       if(dati.noteGiorni){ AppState.noteGiorni = dati.noteGiorni; salvaNoteGiorniStorage(); }
       if(dati.sequenzaAncora) TurniPSStorage.setItem(CHIAVE_SEQUENZA_ANCORA, dati.sequenzaAncora);

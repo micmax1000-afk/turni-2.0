@@ -1290,6 +1290,18 @@ sezione('Turni: cambio orario di un modello');
   await p.keyboard.type('1234.56', { delay: 30 });
   const cd = await p.evaluate(() => { const r = { v: el('campoCongedo80').value, aperto: !el('sezioneCongedoParentale').hidden, focus: document.activeElement === el('campoCongedo80') }; AppState.congedoParentalePerMese = JSON.parse(window.__cpSalva); salvaCongedoParentaleStorage(); document.activeElement && document.activeElement.blur(); congedoParentaleAperto = false; renderReportHero(); mostraScheda(window.__cpScheda); return r; });
   ok('Congedo parentale: si può scrivere una cifra intera (1234.56) senza che il campo si chiuda o perda il cursore', cd.v === '1234.56' && cd.aperto && cd.focus, JSON.stringify(cd));
+  // Un backup vecchio senza le due voci nuove: dopo il ripristino compaiono subito (senza riaprire l'app).
+  const bv = await p.evaluate(() => {
+    const salvaS = TurniPSStorage.getItem(CHIAVE_SNAPSHOT_RIPRISTINO), salvaA = JSON.stringify(AppState.assenze), salvaTutto = JSON.stringify(costruisciDatiBackup());
+    const vecchio = JSON.parse(salvaTutto); vecchio.assenze = vecchio.assenze.filter(a => !/Congedo parentale (80|30)%/.test(a.nome));
+    TurniPSStorage.setItem(CHIAVE_SNAPSHOT_RIPRISTINO, JSON.stringify(vecchio)); ripristinaSnapshotPreRipristino();
+    const nomi = AppState.assenze.map(a => a.nome);
+    TurniPSStorage.setItem(CHIAVE_SNAPSHOT_RIPRISTINO, salvaTutto); ripristinaSnapshotPreRipristino();
+    if(salvaS === null) TurniPSStorage.removeItem(CHIAVE_SNAPSHOT_RIPRISTINO); else TurniPSStorage.setItem(CHIAVE_SNAPSHOT_RIPRISTINO, salvaS);
+    AppState.assenze = JSON.parse(salvaA); salvaAssenzeStorage();
+    return { c80: nomi.includes('Congedo parentale 80%'), c30: nomi.includes('Congedo parentale 30%') };
+  });
+  ok('Ripristino di un backup vecchio: «Congedo parentale 80%» e «30%» compaiono subito', bv.c80 && bv.c30, JSON.stringify(bv));
   // v3.8.56: Congedo parentale 80% e 30% (solo giorni): voci nuove anche per chi ha già l'app, conteggi separati, sigle e dettatura a voce.
   const cp = await p.evaluate(() => {
     const salvaT = JSON.stringify(AppState.turni), salvaA = TurniPSStorage.getItem(CHIAVE_ASSENZE);
