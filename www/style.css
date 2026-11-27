@@ -3640,3 +3640,20 @@ html[data-tema="scuro"] .mese-info-v4 summary span{color:#A9C1FF!important}
 .riga-sera-prima small{display:block;font-weight:400;font-size:.8rem;color:var(--testo-tenue);margin-top:2px;line-height:1.35}
 .nota-sera-prima{color:#3949AB;font-weight:600}
 html[data-tema="scuro"] .nota-sera-prima{color:#A9B6FF}
+
+/* v3.8.56: sezione «Congedo parentale» nel Report (importi scritti dall utente) */
+.sezione-congedo-parentale{margin:10px 0;border:1px solid var(--bordo);border-radius:14px;background:var(--pannello);overflow:hidden}
+.sezione-congedo-parentale>summary{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;list-style:none;font-weight:700}
+.sezione-congedo-parentale>summary::-webkit-details-marker{display:none}
+.scp-stato{font-weight:600;font-size:.82rem;color:var(--testo-tenue)}
+.scp-stato.attivo{color:#2E7D32;font-weight:800}
+.scp-corpo{padding:0 14px 14px}
+.scp-corpo p{margin:0 0 10px;font-size:.86rem;line-height:1.4;color:var(--testo-tenue)}
+.scp-campo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;font-weight:700}
+.scp-campo span{font-weight:400;font-size:.78rem;color:var(--testo-tenue);margin-left:auto}
+.scp-campo input{width:110px;height:40px;border:1px solid var(--bordo);border-radius:10px;padding:0 10px;font:inherit;text-align:right;background:var(--sfondo-secondario,#F1F3F0);color:var(--testo)}
+.scp-corpo small{display:block;margin-top:6px;font-size:.76rem;color:var(--testo-tenue)}
+.scp-titolo{white-space:nowrap}
+.scp-stato{white-space:nowrap;text-align:right}
+.scp-stato.attivo{color:#C62828;font-weight:800}
+html[data-tema="scuro"] .scp-stato.attivo{color:#FF8A80}

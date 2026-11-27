@@ -9,6 +9,7 @@ window.AppState = window.AppState || {
   turni: {},
   tabelle: {},
   conguagliPerMese: {},
+  congedoParentalePerMese: {}, // v3.8.56: { 'YYYY-MM': { p80: €, p30: € } } — quanto in meno si prende in quel mese (scritto dall'utente)
   storico: {},
   assenze: [],
   indennitaPersonalizzate: [],

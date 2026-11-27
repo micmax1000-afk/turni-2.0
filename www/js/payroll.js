@@ -317,9 +317,12 @@ function generaAccreditoConto(anno, mese){
     ]
   };
   const r = calcolaRitenute(compMisto, mese);
-  const netto = round2(r.lordo - r.contributi - r.irpefTotale + r.detrazioni + r.trattamentoIntegrativo - r.addizionali - r.sindacato);
+  // v3.8.56: congedo parentale — quanto in meno si prende in questo mese, scritto dall'utente (dal cedolino): si toglie dal netto.
+  const congedo = typeof importoCongedoParentale === 'function' ? importoCongedoParentale(anno, mese) : { p80: 0, p30: 0, totale: 0 };
+  const netto = round2(r.lordo - r.contributi - r.irpefTotale + r.detrazioni + r.trattamentoIntegrativo - r.addizionali - r.sindacato - congedo.totale);
   const fisseBase = round2(sommaVoci(compFisse.fisse) - (compFisse.fisse.tredicesima || 0));
   return {
+    congedoParentale: congedo,
     meseFisse, annoFisse, meseAccessorie, annoAccessorie,
     fisseBase, tredicesimaAccredito, accessorieLorde: round2(r.lordo - fisseBase - tredicesimaAccredito), lordoTotale: r.lordo,
     contributi: r.contributi, irpefTotale: r.irpefTotale, detrazioni: r.detrazioni, trattamentoIntegrativo: r.trattamentoIntegrativo,

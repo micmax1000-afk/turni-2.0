@@ -10,6 +10,7 @@ window.TurniPSConfig = Object.freeze({
     CHIAVE_TURNI: 'simCedolino_turni_v1',
     CHIAVE_TABELLE: 'simCedolino_tabelle_v1',
     CHIAVE_CONGUAGLI: 'simCedolino_conguagli_v1',
+    CHIAVE_CONGEDO_PARENTALE: 'simCedolino_congedoParentaleImporti_v1',
     CHIAVE_STORICO: 'simCedolino_storico_v1',
     CHIAVE_ASSENZE: 'simCedolino_assenze_v1',
     CHIAVE_SEQUENZA: 'simCedolino_sequenza_v1',

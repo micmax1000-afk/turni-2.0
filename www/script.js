@@ -84,6 +84,7 @@ AppState.anagrafica = caricaAnagrafica();
 AppState.turni = caricaTurni(); // oggetto { 'YYYY-MM-DD': turnoData }
 AppState.tabelle = caricaTabelle();
 AppState.conguagliPerMese = caricaConguagli(); // oggetto { 'YYYY-MM': importo }
+AppState.congedoParentalePerMese = caricaCongedoParentale(); // oggetto { 'YYYY-MM': { p80, p30 } }
 AppState.storico = caricaStorico(); // oggetto { 'YYYY-MM': { totaleLordo, netto } }
 
 idContatore = 1; // già dichiarato in utils.js
@@ -806,6 +807,8 @@ function inizializza(){
     el('btnStampaRiepilogoAnnuale').hidden = true;
   });
   el('btnStampaRiepilogoAnnuale').addEventListener('click', () => stampaSezione('contenitoreRiepilogoAnnuale'));
+  el('campoCongedo80').addEventListener('input', salvaCongedoParentaleDaCampi);
+  el('campoCongedo30').addEventListener('input', salvaCongedoParentaleDaCampi);
   el('campoConguagliMese').addEventListener('input', () => {
     AppState.conguagliPerMese[chiaveMese(annoCorrente, meseCorrente)] = Number(el('campoConguagliMese').value) || 0;
     salvaConguagliStorage();
@@ -1667,6 +1670,22 @@ function eliminaPatternSempliceV2(){
 
 // Report: in cima quanto arriva sul conto il mese dopo quello visualizzato, più ore e netto
 // dello straordinario. Stessi calcoli di "Cosa arriva sul conto" e del riepilogo ore.
+// v3.8.56: sezione «Congedo parentale» del Report: i due importi (80% e 30%) del mese, scritti dall'utente.
+function aggiornaSezioneCongedoParentale(){
+  const c = importoCongedoParentale(annoCorrente, meseCorrente);
+  const c80 = el('campoCongedo80'), c30 = el('campoCongedo30'), stato = el('statoCongedoParentale');
+  if(!c80 || !c30) return;
+  if(document.activeElement !== c80) c80.value = c.p80 ? String(c.p80) : '';
+  if(document.activeElement !== c30) c30.value = c.p30 ? String(c.p30) : '';
+  if(stato){ stato.textContent = c.totale > 0 ? `−${euro(c.totale)}` : 'Nessun importo'; stato.classList.toggle('attivo', c.totale > 0); }
+}
+function salvaCongedoParentaleDaCampi(){
+  const k = chiaveMese(annoCorrente, meseCorrente);
+  const p80 = Math.max(0, Number(el('campoCongedo80').value) || 0), p30 = Math.max(0, Number(el('campoCongedo30').value) || 0);
+  if(p80 > 0 || p30 > 0) AppState.congedoParentalePerMese[k] = { p80, p30 }; else delete AppState.congedoParentalePerMese[k];
+  salvaCongedoParentaleStorage();
+  renderReportHero();
+}
 function renderReportHero(){
   if(typeof aggiornaAvvisiDatiMancanti === 'function') aggiornaAvvisiDatiMancanti();
   const box = el('reportHero');
@@ -1679,7 +1698,8 @@ function renderReportHero(){
     const precedente = NOMI_MESI[(meseCorrente + 11) % 12].toLowerCase();
     const dueMesiPrima = NOMI_MESI[(meseCorrente + 10) % 12].toLowerCase();
     const lordo = round2((acc.fisseBase || 0) + (acc.tredicesimaAccredito || 0) + (acc.accessorieLorde || 0));
-    const trattenute = round2(lordo - acc.netto);
+    const congedo = acc.congedoParentale || { p80: 0, p30: 0, totale: 0 };
+    const trattenute = round2(lordo - acc.netto - congedo.totale); // tasse e contributi, senza il congedo parentale
     box.innerHTML = `
       <div class="report-hero-et">💰 Arriva sul conto a ${NOMI_MESI[meseCorrente].toLowerCase()} <span class="tag-importo tag-netto">netto</span> <span class="report-hero-stima">stima</span></div>
       <div class="report-hero-cifra">${f(acc.netto)}</div>
@@ -1688,9 +1708,11 @@ function renderReportHero(){
         ${acc.tredicesimaAccredito > 0 ? `<div><span>Tredicesima</span><b>${f(acc.tredicesimaAccredito)}</b></div>` : ''}
         <div title="Indennità e straordinari di ${dueMesiPrima}"><span>Indennità</span><b>${f(acc.accessorieLorde)}</b></div>
         <div class="meno"><span>Tasse</span><b>−${f(trattenute)}</b></div>
+        ${congedo.totale > 0 ? `<div class="meno" title="Quanto in meno prendi questo mese per il congedo parentale (lo scrivi tu)"><span>Congedo parentale</span><b>−${f(congedo.totale)}</b></div>` : ''}
       </div>
-      <div class="report-hero-spiega">Stipendio di ${precedente} + indennità di ${dueMesiPrima}</div>`;
+      <div class="report-hero-spiega">Stipendio di ${precedente} + indennità di ${dueMesiPrima}${congedo.totale > 0 ? ' · meno il congedo parentale' : ''}</div>`;
     box.hidden = false;
+    aggiornaSezioneCongedoParentale();
   }catch(e){
     console.warn('Riquadro Report non calcolato:', e);
     box.hidden = true;

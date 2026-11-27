@@ -311,6 +311,20 @@ function caricaConguagli(){
 }
 
 function salvaConguagliStorage(){ TurniPSStorage.setItem(CHIAVE_CONGUAGLI, JSON.stringify(AppState.conguagliPerMese)); }
+// v3.8.56: importi del congedo parentale (80% e 30%) scritti dall'utente, per mese: { 'YYYY-MM': { p80, p30 } }.
+function caricaCongedoParentale(){
+  try{
+    const o = JSON.parse(TurniPSStorage.getItem(TurniPSConfig.keys.CHIAVE_CONGEDO_PARENTALE));
+    return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+  }catch{ return {}; }
+}
+function salvaCongedoParentaleStorage(){ TurniPSStorage.setItem(TurniPSConfig.keys.CHIAVE_CONGEDO_PARENTALE, JSON.stringify(AppState.congedoParentalePerMese)); }
+// Quanto in meno si prende in un mese per il congedo parentale (80% + 30%), mai negativo.
+function importoCongedoParentale(anno, mese){
+  const x = (AppState.congedoParentalePerMese || {})[chiaveMese(anno, mese)] || {};
+  const p80 = Math.max(0, round2(Number(x.p80) || 0)), p30 = Math.max(0, round2(Number(x.p30) || 0));
+  return { p80, p30, totale: round2(p80 + p30) };
+}
 
 function caricaStorico(){
   try{ return JSON.parse(TurniPSStorage.getItem(CHIAVE_STORICO)) || {}; }catch{ return {}; }
