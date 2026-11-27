@@ -1684,9 +1684,9 @@ function salvaCongedoParentaleDaCampi(){
   const p80 = Math.max(0, Number(el('campoCongedo80').value) || 0), p30 = Math.max(0, Number(el('campoCongedo30').value) || 0);
   if(p80 > 0 || p30 > 0) AppState.congedoParentalePerMese[k] = { p80, p30 }; else delete AppState.congedoParentalePerMese[k];
   salvaCongedoParentaleStorage();
-  renderReportHero();
+  renderReportHero(true);
 }
-function renderReportHero(){
+function renderReportHero(soloRiquadro){
   if(typeof aggiornaAvvisiDatiMancanti === 'function') aggiornaAvvisiDatiMancanti();
   const box = el('reportHero');
   if(!box) return;
@@ -1717,6 +1717,7 @@ function renderReportHero(){
     console.warn('Riquadro Report non calcolato:', e);
     box.hidden = true;
   }
+  if(soloRiquadro === true) return; // mentre scrivi l'importo non rifaccio il resto: i campi restano aperti e col cursore
   try{ renderMeseV3(); }catch(e){ console.warn('Il mese non calcolato:', e); }
   try{ renderCedolinoRiassuntoV3(); }catch(e){ console.warn('Cedolino non calcolato:', e); }
 }

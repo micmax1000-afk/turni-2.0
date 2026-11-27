@@ -1284,6 +1284,12 @@ sezione('Turni: cambio orario di un modello');
     return { diff: Math.round((prima - dopo) * 100) / 100, altroUguale: altroPrima === altroDopo, hero: /Congedo parentale/.test(hero) && /300,50/.test(hero), salvato: salvato && salvato.p80 === 200 && salvato.p30 === 100.5, backup: !!backup && backup.p80 === 200, stato, azzerato, negativo };
   });
   ok('Report «Congedo parentale»: 200 € (80%) + 100,50 € (30%) → netto −300,50 € solo in quel mese, riga nel riquadro, salvato e nel backup; vuoto/negativo non conta', ci.diff === 300.5 && ci.altroUguale && ci.hero && ci.salvato && ci.backup && /300,50/.test(ci.stato) && ci.azzerato && ci.negativo, JSON.stringify(ci));
+  // Scrivendo cifra per cifra, il campo resta aperto e col cursore (non si richiude dopo la prima cifra).
+  await p.evaluate(() => { const s = JSON.stringify(AppState.congedoParentalePerMese); window.__cpSalva = s; window.__cpScheda = !el('vistaStatistiche').hidden ? 'report' : !el('vistaAssenze').hidden ? 'turni' : !el('vistaImpostazioni').hidden ? 'altro' : 'calendario'; mostraScheda('report'); el('sezioneCongedoParentale').open = true; });
+  await p.click('#campoCongedo80');
+  await p.keyboard.type('1234.56', { delay: 30 });
+  const cd = await p.evaluate(() => { const r = { v: el('campoCongedo80').value, aperto: el('sezioneCongedoParentale').open, focus: document.activeElement === el('campoCongedo80') }; AppState.congedoParentalePerMese = JSON.parse(window.__cpSalva); salvaCongedoParentaleStorage(); document.activeElement && document.activeElement.blur(); el('sezioneCongedoParentale').open = false; renderReportHero(); mostraScheda(window.__cpScheda); return r; });
+  ok('Congedo parentale: si può scrivere una cifra intera (1234.56) senza che il campo si chiuda o perda il cursore', cd.v === '1234.56' && cd.aperto && cd.focus, JSON.stringify(cd));
   // v3.8.56: Congedo parentale 80% e 30% (solo giorni): voci nuove anche per chi ha già l'app, conteggi separati, sigle e dettatura a voce.
   const cp = await p.evaluate(() => {
     const salvaT = JSON.stringify(AppState.turni), salvaA = TurniPSStorage.getItem(CHIAVE_ASSENZE);
