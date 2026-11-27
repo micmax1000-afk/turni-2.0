@@ -500,17 +500,6 @@
         <button type="button" class="btn-freccia" id="btnReportMeseSucc" aria-label="Mese successivo">›</button>
       </div>
       <div class="report-hero" id="reportHero"></div>
-      <div id="ricoveroCongedoParentale" hidden>
-      <details class="sezione-congedo-parentale" id="sezioneCongedoParentale">
-        <summary><span class="scp-titolo">🧸 Congedo parentale</span><span class="scp-stato" id="statoCongedoParentale">Nessun importo</span></summary>
-        <div class="scp-corpo">
-          <p>Scrivi <b>quanto in meno prendi</b> questo mese per il congedo parentale: lo trovi nel cedolino. L'app non lo calcola da sola, lo toglie dal netto che arriva sul conto.</p>
-          <label class="scp-campo">All'80% <span>€ in meno</span><input type="number" inputmode="decimal" min="0" step="0.01" id="campoCongedo80" placeholder="0"></label>
-          <label class="scp-campo">Al 30% <span>€ in meno</span><input type="number" inputmode="decimal" min="0" step="0.01" id="campoCongedo30" placeholder="0"></label>
-          <small>Vale per il mese in cui l'importo arriva sul conto (quello che vedi in alto).</small>
-        </div>
-      </details>
-      </div>
       <div id="prossimoTurnoWidget" class="prossimo-turno-widget" hidden>
         <span class="prossimo-turno-eyebrow">⏭️ Prossimo turno</span>
         <div class="prossimo-turno-corpo">
@@ -555,6 +544,16 @@
         <div><b id="meseTileStraordinario">0:00</b><span>straord.</span></div>
       </div>
       <div id="meseDettaglioV3"></div>
+      <div id="ricoveroCongedoParentale" hidden>
+        <div class="sezione-congedo-parentale" id="sezioneCongedoParentale">
+          <div class="scp-corpo">
+            <p>Scrivi <b>quanto in meno prendi</b> questo mese per il congedo parentale: lo trovi nel cedolino. L'app non lo calcola da sola, lo toglie dal netto che arriva sul conto.</p>
+            <label class="scp-campo">All'80% <span>€ in meno</span><input type="number" inputmode="decimal" min="0" step="0.01" id="campoCongedo80" placeholder="0"></label>
+            <label class="scp-campo">Al 30% <span>€ in meno</span><input type="number" inputmode="decimal" min="0" step="0.01" id="campoCongedo30" placeholder="0"></label>
+            <small>Vale per il mese in cui l'importo arriva sul conto (quello che vedi in alto).</small>
+          </div>
+        </div>
+      </div>
 
       <div hidden>
       <div class="stat-panel-v17 stat-dettagli">

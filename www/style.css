@@ -3657,9 +3657,13 @@ html[data-tema="scuro"] .nota-sera-prima{color:#A9B6FF}
 .scp-stato{white-space:nowrap;text-align:right}
 .scp-stato.attivo{color:#C62828;font-weight:800}
 html[data-tema="scuro"] .scp-stato.attivo{color:#FF8A80}
-/* Congedo parentale dentro «Indennità del mese»: sembra una riga come le altre */
-.mese-ind-box-v4 .sezione-congedo-parentale{margin:4px 0 0;border:0;border-top:1px solid var(--bordo);border-radius:0;background:none}
-.mese-ind-box-v4 .sezione-congedo-parentale>summary{padding:6px 0;font-size:.82rem}
+/* Congedo parentale: una riga tra le indennità del mese; toccandola si aprono i due campi */
+.mese-congedo-riga{display:grid;grid-template-columns:24px 1fr auto;gap:3px 10px;align-items:center;width:100%;padding:6px 0;margin-top:4px;background:none;border:0;border-top:1px solid var(--bordo);font:inherit;font-size:.82rem;color:var(--testo);text-align:left;cursor:pointer}
+.mese-congedo-riga small{display:block;font-size:.68rem;color:var(--testo-tenue)}
+.mese-congedo-riga .scp-importo{font-weight:600;color:var(--testo-tenue);white-space:nowrap;text-align:right}
+.mese-congedo-riga .scp-importo.attivo{color:#C62828;font-weight:800}
+html[data-tema="scuro"] .mese-congedo-riga .scp-importo.attivo{color:#FF8A80}
+.mese-ind-box-v4 .sezione-congedo-parentale{margin:0 0 4px;border:0;background:none;border-radius:0}
 .mese-ind-box-v4 .scp-corpo{padding:0 0 8px}
 .mese-ind-box-v4 .scp-corpo p{font-size:.76rem;margin-bottom:6px}
 .mese-ind-box-v4 .scp-campo{margin:6px 0;font-size:.82rem}
