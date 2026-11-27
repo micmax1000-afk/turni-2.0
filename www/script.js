@@ -1773,9 +1773,6 @@ function renderMeseV3(){
   const fasce = [['Diurne', t.ordinarie, 'diurne'], ['Serali/notturne', t.notturne, 'notturne'],
     ['Festive', t.festive + t.domenicali + t.notturneFestive, 'festive', t.notturneFestive ? ` (${h(t.notturneFestive)} nott.)` : ''], ['Straord.', str, 'straordinario']]
     .filter(x => meseMostraZeriV3 || x[1] > 0);
-  // Il blocco «Congedo parentale» (con i campi) torna nel ricovero prima di rifare tutto, così non si perde.
-  const congedoBlocco = el('sezioneCongedoParentale'), congedoRicovero = el('ricoveroCongedoParentale');
-  if(congedoBlocco && congedoRicovero) congedoRicovero.appendChild(congedoBlocco);
   host.innerHTML = `
     <div class="mese-ore-v4">
       <div class="mese-ore-testa-v4"><span>Ore lavorate</span><b>${h(ore)}</b></div>
@@ -1786,15 +1783,12 @@ function renderMeseV3(){
       ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span>lordo</span><span>netto</span></div>` : ''}
       ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
       ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><b>${f(totInd)}</b><b class="netto-v3">~${f(round2(totInd * quotaNetta))}</b></div>` : ''}
-      <div id="slotCongedoParentale"></div>
       ${cambiAnno ? `<p class="mese-cambio-v5">${iconaIndennita('cambioTurno')}<span>Cambio turno: ${r.turniCambioTurno ? `${r.turniCambioTurno} a ${mese}, ` : ''}${cambiAnno} nel ${annoCorrente} · <b>${f(round2(cambiAnno * AppState.tabelle.indennitaCambioTurno))}</b> a luglio ${annoCorrente + 1}</span></p>` : ''}
       <div class="mese-piede-v4">
         ${ind.length ? `<details class="mese-info-v4"><summary>In busta a ${pag} · netto stimato <span aria-hidden="true">ⓘ</span></summary><p>${str > 0 ? `Straordinario di ${mese}: ${h(str)} · ${f(strLordo)} lordi → +${f(ns.netto)} netti. ` : ''}Il netto è una stima: il totale viene dal cedolino rifatto con e senza le indennità (contributi e IRPEF compresi), la singola voce è in proporzione.</p></details>` : '<span></span>'}
         ${ciSonoZeri || meseMostraZeriV3 ? `<button type="button" class="mese-mostra-v3" id="btnMeseZeriV3">${meseMostraZeriV3 ? 'Nascondi zeri ▴' : 'Voci a zero ▾'}</button>` : ''}
       </div>
     </div>`;
-  const slotCongedo = el('slotCongedoParentale');
-  if(slotCongedo && congedoBlocco){ slotCongedo.appendChild(congedoBlocco); aggiornaSezioneCongedoParentale(); }
   const bp = el('reportBuoniPasto');
   if(bp){ bp.hidden = !r.buoniPasto; el('reportBuoniPastoNumero').textContent = r.buoniPasto; }
   const btn = el('btnMeseZeriV3');
