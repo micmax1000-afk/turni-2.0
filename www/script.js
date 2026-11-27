@@ -1787,7 +1787,7 @@ function renderMeseV3(){
       ${ind.length ? `<div class="mese-ind-testa-v3"><span></span><span></span><span>lordo</span><span>netto</span></div>` : ''}
       ${ind.length ? ind.map(([ic, n, q, e]) => `<div class="mese-riga-v3 mese-ind-v3"><span class="mese-ind-icona">${ic}</span><span>${n}${q ? `<small>${q}</small>` : ''}</span><b>${f(e || 0)}</b><b class="netto-v3">~${nettoVoce(e)} €</b></div>`).join('') : '<p class="sotto-titolo" style="margin:0">Nessuna indennità in questo mese.</p>'}
       ${ind.length ? `<div class="mese-tot-v3"><span>Totale</span><b>${f(totInd)}</b><b class="netto-v3">~${f(round2(totInd * quotaNetta))}</b></div>` : ''}
-      <button type="button" class="mese-congedo-riga" id="rigaCongedoParentale" aria-expanded="${congedoParentaleAperto}"><span class="mese-ind-icona">🧸</span><span>Congedo parentale<small>Quanto ti tolgono (lo scrivi tu)</small></span><b></b><b class="scp-importo" id="statoCongedoParentale">—</b></button>
+      <button type="button" class="mese-congedo-riga" id="rigaCongedoParentale" aria-expanded="${congedoParentaleAperto}"><span class="mese-ind-icona">🧸</span><span>Congedo parentale<small>All'80% e al 30% · tocca e scrivi quanto ti tolgono</small></span><b></b><b class="scp-importo" id="statoCongedoParentale">—</b></button>
       <div id="slotCongedoParentale"></div>
       ${cambiAnno ? `<p class="mese-cambio-v5">${iconaIndennita('cambioTurno')}<span>Cambio turno: ${r.turniCambioTurno ? `${r.turniCambioTurno} a ${mese}, ` : ''}${cambiAnno} nel ${annoCorrente} · <b>${f(round2(cambiAnno * AppState.tabelle.indennitaCambioTurno))}</b> a luglio ${annoCorrente + 1}</span></p>` : ''}
       <div class="mese-piede-v4">
