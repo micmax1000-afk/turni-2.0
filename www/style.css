@@ -3657,3 +3657,10 @@ html[data-tema="scuro"] .nota-sera-prima{color:#A9B6FF}
 .scp-stato{white-space:nowrap;text-align:right}
 .scp-stato.attivo{color:#C62828;font-weight:800}
 html[data-tema="scuro"] .scp-stato.attivo{color:#FF8A80}
+/* Congedo parentale dentro «Indennità del mese»: sembra una riga come le altre */
+.mese-ind-box-v4 .sezione-congedo-parentale{margin:4px 0 0;border:0;border-top:1px solid var(--bordo);border-radius:0;background:none}
+.mese-ind-box-v4 .sezione-congedo-parentale>summary{padding:6px 0;font-size:.82rem}
+.mese-ind-box-v4 .scp-corpo{padding:0 0 8px}
+.mese-ind-box-v4 .scp-corpo p{font-size:.76rem;margin-bottom:6px}
+.mese-ind-box-v4 .scp-campo{margin:6px 0;font-size:.82rem}
+.mese-ind-box-v4 .scp-campo input{height:34px;width:100px}
