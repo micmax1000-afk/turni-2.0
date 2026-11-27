@@ -1351,10 +1351,39 @@ function renderVistaSettimana(iso){
 }
 // v3.8.15: il titolo ("Novembre 2026", "26 ott–1 nov") si rimpicciolisce quanto basta per starci
 // intero, anche con i caratteri grandi del telefono, invece di essere tagliato con "…".
+// v3.8.60: per i titoli «Mese anno» decide guardando il mese più lungo (Settembre): così tutti i
+// mesi sono scritti allo stesso modo (o tutti interi o tutti abbreviati) e con la stessa grandezza.
+function titoloMeseUguale(t){
+  const pieno = t.textContent === t.dataset.corto ? t.dataset.pieno : t.textContent;
+  const m = /^([A-Za-zÀ-ÿ]+) (\d{4})$/.exec(pieno || '');
+  if(!m || !NOMI_MESI.includes(m[1])) return false;
+  const anno = m[2];
+  // Provo nella testata vera il mese più lungo: prima intero, poi abbreviato, rimpicciolendo quanto serve.
+  const base = parseFloat(getComputedStyle(t).fontSize) || 18;
+  const entra = (testo, minimo) => {
+    t.textContent = testo;
+    for(let px = Math.floor(base); px >= minimo; px--){ t.style.fontSize = px + 'px'; if(t.scrollWidth <= t.clientWidth + 1) return px; }
+    return 0;
+  };
+  let px = entra(`Settembre ${anno}`, 14), testo = pieno;
+  if(!px){ px = entra(`Set ${anno}`, 11) || 11; testo = `${m[1].slice(0, 3)} ${anno}`; }
+  t.style.fontSize = px + 'px';
+  if(testo !== pieno){ t.dataset.pieno = pieno; t.dataset.corto = testo; }
+  else { delete t.dataset.corto; delete t.dataset.pieno; }
+  t.textContent = testo;
+  return true;
+}
 function adattaTitoloCalendario(){
   const t = el('etichettaMese');
   if(!t) return;
+  // Le prove scrivono nel titolo: quando la stessa situazione è già sistemata non rifaccio nulla
+  // (altrimenti ogni prova farebbe ripartire il controllo all'infinito).
+  const testa = t.closest('.calendario-header-v2') || t.parentNode;
+  const chiave = `${t.textContent}|${testa.clientWidth}|${getComputedStyle(document.documentElement).fontSize}`;
+  if(t.dataset.fatto === chiave) return;
   t.style.fontSize = '';
+  if(t.offsetParent !== null && titoloMeseUguale(t)){ t.dataset.fatto = `${t.textContent}|${testa.clientWidth}|${getComputedStyle(document.documentElement).fontSize}`; return; }
+  delete t.dataset.fatto;
   let px = parseFloat(getComputedStyle(t).fontSize) || 18, giri = 0;
   const minimo = t.textContent === t.dataset.corto ? 11 : 14;
   while(t.scrollWidth > t.clientWidth + 1 && px > minimo && giri++ < 20){ px -= 1; t.style.fontSize = px + 'px'; }

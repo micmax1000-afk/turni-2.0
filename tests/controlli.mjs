@@ -1290,6 +1290,17 @@ sezione('Turni: cambio orario di un modello');
   await p.keyboard.type('1234.56', { delay: 30 });
   const cd = await p.evaluate(() => { const r = { v: el('campoCongedo80').value, aperto: !el('sezioneCongedoParentale').hidden, focus: document.activeElement === el('campoCongedo80') }; AppState.congedoParentalePerMese = JSON.parse(window.__cpSalva); salvaCongedoParentaleStorage(); document.activeElement && document.activeElement.blur(); congedoParentaleAperto = false; renderReportHero(); mostraScheda(window.__cpScheda); return r; });
   ok('Congedo parentale: si può scrivere una cifra intera (1234.56) senza che il campo si chiuda o perda il cursore', cd.v === '1234.56' && cd.aperto && cd.focus, JSON.stringify(cd));
+  // Titolo del calendario: tutti i mesi scritti allo stesso modo (tutti interi o tutti abbreviati) e grandi uguali.
+  const tm = await p.evaluate(async () => {
+    const scheda = !el('vistaStatistiche').hidden ? 'report' : !el('vistaAssenze').hidden ? 'turni' : !el('vistaImpostazioni').hidden ? 'altro' : 'calendario';
+    const m0 = meseCorrente; mostraScheda('calendario');
+    const fuori = [];
+    for(let m = 0; m < 12; m++){ meseCorrente = m; renderCalendario(); adattaTitoloCalendario(); const t = el('etichettaMese'); fuori.push([t.textContent, getComputedStyle(t).fontSize]); }
+    meseCorrente = m0; renderCalendario(); mostraScheda(scheda);
+    const interi = fuori.filter(([x]) => NOMI_MESI.some(n => x.startsWith(n + ' '))).length;
+    return { interi, dimensioni: new Set(fuori.map(x => x[1])).size, esempi: fuori.map(x => x.join('@')).join(' | ') };
+  });
+  ok('Calendario: i mesi in alto sono scritti tutti uguali (interi o abbreviati) e con la stessa grandezza', (tm.interi === 0 || tm.interi === 12) && tm.dimensioni === 1, JSON.stringify(tm));
   // Un backup vecchio senza le due voci nuove: dopo il ripristino compaiono subito (senza riaprire l'app).
   const bv = await p.evaluate(() => {
     const salvaS = TurniPSStorage.getItem(CHIAVE_SNAPSHOT_RIPRISTINO), salvaA = JSON.stringify(AppState.assenze), salvaTutto = JSON.stringify(costruisciDatiBackup());

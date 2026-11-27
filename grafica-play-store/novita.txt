@@ -1,4 +1,3 @@
 <it-IT>
-• Dopo un aggiornamento le novità si vedono subito, senza chiudere e riaprire l'app (dal prossimo aggiornamento)
-• Ripristinando un backup vecchio compaiono subito le voci Congedo parentale 80% e 30%
+• Calendario: i mesi in alto sono scritti tutti allo stesso modo (tutti interi o tutti abbreviati) e con la stessa grandezza
 </it-IT>
