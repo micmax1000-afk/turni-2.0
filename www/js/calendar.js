@@ -1042,6 +1042,8 @@ const SIGLE_ASSENZE = {
   'Aspettativa': 'Asp.',
   'Maternità/Paternità': 'Mat.P.',
   'Congedo parentale': 'C.Par.',
+  'Congedo parentale 80%': 'C.P.80',
+  'Congedo parentale 30%': 'C.P.30',
   'L104': 'L104',
   'Donazione sangue': 'D.San',
   'Ore studio': 'Stud',

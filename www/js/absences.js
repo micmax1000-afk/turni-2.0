@@ -389,7 +389,7 @@ function saldoAssenzaCalcolo(a, rif){
     : contaGiorniUsatiAssenza(a.id, daData);
   return { spettanti, usate, rimangono: round2(spettanti - usate), unita, saldoCO, eRiposoCompensativo, eRecuperoRiposo, eRecuperoFestivo, eL104, eCongedoOrdinario, eAnnualeSemplice };
 }
-const ICONE_ASSENZE = { 'Congedo ordinario':'🌴', 'Congedo straordinario':'📋', 'Riposo legge':'🏛️', 'Riposo festivo':'🎉', 'Recupero festivo':'🔄', 'Recupero riposo':'🔄', 'Riposo compensativo':'♻️', 'Aspettativa':'🕰️', 'Maternità/Paternità':'👶', 'Congedo parentale':'🧸', 'L104':'♿', 'Donazione sangue':'🩸', 'Ore studio':'🎓', 'Permesso breve':'⏱️', 'Permesso sindacale':'🤝' };
+const ICONE_ASSENZE = { 'Congedo ordinario':'🌴', 'Congedo straordinario':'📋', 'Riposo legge':'🏛️', 'Riposo festivo':'🎉', 'Recupero festivo':'🔄', 'Recupero riposo':'🔄', 'Riposo compensativo':'♻️', 'Aspettativa':'🕰️', 'Maternità/Paternità':'👶', 'Congedo parentale':'🧸', 'Congedo parentale 80%':'🧸', 'Congedo parentale 30%':'🧸', 'L104':'♿', 'Donazione sangue':'🩸', 'Ore studio':'🎓', 'Permesso breve':'⏱️', 'Permesso sindacale':'🤝' };
 const numeroIt = n => String(round2(n)).replace('.', ',');
 
 // In cima: le tre cose che servono davvero (congedo, permesso breve, recuperi).
@@ -517,7 +517,7 @@ const COLORI_ANELLO_ASSENZE = ['#2E9E5B','#3A55B4','#E08A00','#8E44AD','#00838F'
 const COLORE_PER_ASSENZA = {
   'Congedo ordinario':'#2E9E5B', 'Congedo straordinario':'#3A55B4', 'Riposo legge':'#E08A00', 'Riposo festivo':'#8E44AD',
   'Recupero festivo':'#00838F', 'Recupero riposo':'#D64545', 'Riposo compensativo':'#2E7DD7', 'Aspettativa':'#6D4C41',
-  'Maternità/Paternità':'#C2185B', 'Congedo parentale':'#689F38', 'L104':'#5C6BC0', 'Donazione sangue':'#B71C1C',
+  'Maternità/Paternità':'#C2185B', 'Congedo parentale':'#689F38', 'Congedo parentale 80%':'#9CCC65', 'Congedo parentale 30%':'#33691E', 'L104':'#5C6BC0', 'Donazione sangue':'#B71C1C',
   'Ore studio':'#6A1B9A', 'Permesso breve':'#00897B', 'Permesso sindacale':'#F4511E'
 };
 const COLORE_ASSENZA_VUOTA = '#9AA1B0';
@@ -599,6 +599,8 @@ function renderCardAssenzaItem(a){
       + (eCongedoOrdinario && anno === new Date().getFullYear() ? programmatiCongedoHtml(a, anno) : '')
       // v3.8.9: i 4 riposi legge vanno usati entro il 31/12 (da ottobre in arancione).
       + (a.nome === 'Riposo legge' && rimangono > 0 && anno === new Date().getFullYear() ? `<span class="scadenza-assenza${mese >= 9 ? ' vicina' : ''}">Entro il 31/12</span>` : '');
+    // v3.8.56: voci di solo tracciamento (nessun giorno spettante): si mostrano i giorni segnati, non «−3 / 0 gg» in rosso.
+    const soloGiorni = !a.personalizzata && !(Number(a.valore) > 0) && ['Maternità/Paternità', 'Congedo parentale', 'Congedo parentale 80%', 'Congedo parentale 30%'].includes(a.nome);
     const anniServizio = Number((AppState.anagrafica || {}).anni) || 0;
     const notaCongedoAuto = eCongedoOrdinario
       ? `<div class="congedo-orario">${sceltaSettimanaCongedoHtml()}</div>` + (a.manuale
@@ -608,9 +610,11 @@ function renderCardAssenzaItem(a){
     return `
     <article class="card-assenza ${statoSaldo} card-assenza-chiusa" data-id="${a.id}">
       <div class="card-assenza-compact riga-assenza-v4" role="button" tabindex="0" aria-label="Apri dettagli e modifica">
-        ${anelloAssenzaHtml(valoreVisuale > 0 ? rimangono / valoreVisuale : 1, rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA, icona)}
+        ${anelloAssenzaHtml(soloGiorni ? 1 : valoreVisuale > 0 ? rimangono / valoreVisuale : 1, soloGiorni ? coloreAnelloAssenza(a) : rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA, icona)}
         <div class="card-assenza-compact-nome"><strong>${a.personalizzata ? (a.nome || 'Nuova voce') : a.nome}</strong>${anniCongedoRiga}</div>
-        <span class="saldo-resta" style="color:${coloreTestoLeggibile(rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA)}"><strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small> / ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small></span>
+        <span class="saldo-resta" style="color:${coloreTestoLeggibile(soloGiorni ? coloreAnelloAssenza(a) : rimangono < 0 ? '#D64545' : valoreVisuale > 0 ? coloreAnelloAssenza(a) : COLORE_ASSENZA_VUOTA)}">${soloGiorni
+          ? `<strong class="card-assenza-compact-residuo">${numeroIt(usate)}</strong><small> ${usate === 1 ? 'giorno' : 'giorni'}</small>`
+          : `<strong class="card-assenza-compact-residuo">${numeroIt(rimangono)}</strong><small> / ${numeroIt(valoreVisuale)} ${unitaEffettiva}</small>`}</span>
         <small class="saldo-usati" hidden>Usati <em>${numeroIt(usate)}</em> su <span class="saldo-su">${numeroIt(valoreVisuale)}</span></small>
       </div>
       <span class="barra-residuo-assenza" aria-hidden="true"><i style="width:${resto}%;background:${coloreResto}"></i></span>
@@ -749,6 +753,9 @@ const ASSENZE_PREDEFINITE = [
   { nome:'Aspettativa', valore:730, unita:'gg' }, // 2 anni nell'arco della vita lavorativa (non annuale) — fonte: SIULP (https://siulp.it/i-tuoi-diritti/le-assenze-per-motivi-di-famiglia/), confermato anche dall'utente
   { nome:'Maternità/Paternità', valore:0, unita:'gg' }, // solo tracciamento date, nessun calcolo di importo (il pagamento varia nel tempo, vedi nota in Assenze)
   { nome:'Congedo parentale', valore:0, unita:'gg' }, // solo tracciamento date, nessun calcolo di importo (il pagamento varia nel tempo, vedi nota in Assenze)
+  // v3.8.56: stesse giornate del congedo parentale, divise per percentuale di retribuzione (richiesta di un tester). Solo giorni, nessun importo.
+  { nome:'Congedo parentale 80%', valore:0, unita:'gg' },
+  { nome:'Congedo parentale 30%', valore:0, unita:'gg' },
   { nome:'L104', valore:3, unita:'gg' },
   { nome:'Donazione sangue', valore:12, unita:'gg' },
   { nome:'Ore studio', valore:150, unita:'h' },
